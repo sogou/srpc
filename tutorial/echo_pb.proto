@@ -1,0 +1,17 @@
+syntax="proto2";
+
+message EchoRequest {
+	required string message = 1;
+	required string name = 2;
+};
+
+message EchoResponse {
+	required string message = 1;
+	optional int32 state = 2;
+	optional int32 error = 3;
+};
+
+service Example {
+	rpc Echo(EchoRequest) returns (EchoResponse);
+};
+

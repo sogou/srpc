@@ -1,0 +1,12 @@
+syntax="proto3";
+
+message EmptyPBMsg { }
+
+message FixLengthPBMsg { bytes msg = 1; }
+
+service BenchmarkPB
+{
+	rpc echo_pb(FixLengthPBMsg) returns (EmptyPBMsg);
+	rpc slow_pb(FixLengthPBMsg) returns (EmptyPBMsg);
+}
+

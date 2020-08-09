@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.6)
+
+set(INCLUDE_HEADERS
+	src/compress/rpc_compress.h
+	src/compress/rpc_compress_gzip.h
+	src/message/rpc_message.h
+	src/message/rpc_message_srpc.h
+	src/message/rpc_message_thrift.h
+	src/message/rpc_message_brpc.h
+	src/thrift/rpc_thrift_buffer.h
+	src/thrift/rpc_thrift_enum.h
+	src/thrift/rpc_thrift_idl.h
+	src/thrift/rpc_thrift_idl.inl
+	src/rpc_basic.h
+	src/rpc_buffer.h
+	src/rpc_client.h
+	src/rpc_context.h
+	src/rpc_context.inl
+	src/rpc_global.h
+	src/rpc_options.h
+	src/rpc_server.h
+	src/rpc_service.h
+	src/rpc_task.inl
+	src/rpc_types.h
+	src/rpc_zero_copy_stream.h
+	src/sogou_rpc.h
+)
+

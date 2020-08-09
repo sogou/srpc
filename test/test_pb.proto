@@ -1,0 +1,27 @@
+syntax="proto2";
+package unit;
+
+message AddRequest {
+	required int32 a = 1;
+	required int32 b = 2;
+};
+
+message AddResponse {
+	required int32 c = 1;
+};
+
+message SubstrRequest {
+	required string str = 1;
+	required int32 idx = 2;
+	optional int32 length = 3;
+};
+
+message SubstrResponse {
+	required string str = 1;
+};
+
+service TestPB {
+      rpc Add(AddRequest) returns (AddResponse);
+      rpc Substr(SubstrRequest) returns (SubstrResponse);
+};
+

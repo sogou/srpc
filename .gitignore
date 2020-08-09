@@ -1,32 +1,42 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
+*.a
+*.bak
+*.gz
+*.zip
+*.tar
+*.la
 *.lo
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
+*.rpm
 *.so
-*.dylib
-*.dll
+*.so.*
+*.cmake
+*.vcxproj
+*.filters
+*.sln
+*.pb.h
+*.pb.cc
+*.log
+*.srpc.h
+*.thrift.h
+*.pb_skeleton.h
+*.pb_skeleton.cc
+*.thrift_skeleton.h
+*.thrift_skeleton.cc
 
-# Fortran module files
-*.mod
-*.smod
+_bin/
+_include/
+_lib/
+.deps/
+build/
+build_pkg/
+CMakeFiles/
+Debug/
+Release/
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+missing
+SRCINFO
+SRCNUMVER
+SRCVERSION
+CMakeCache.txt
+Makefile
 
-# Executables
-*.exe
-*.out
-*.app
