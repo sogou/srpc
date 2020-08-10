@@ -25,8 +25,18 @@ else ()
 	find_package(Protobuf REQUIRED)
 endif ()
 
-find_package(Workflow REQUIRED)
-find_package(SRPC REQUIRED CONFIG HINTS ..)
+if (APPLE)
+	if (WORKFLOW_INCLUDE_DIR)
+		set (WORKFLOW_INCLUDE_DIR ${Workflow_DIR}/_include)
+		set (WORKFLOW_LIB_DIR ${Workflow_DIR}/_lib)
+	else ()
+		find_package(Workflow REQUIRED)
+	endif ()
+else ()
+	find_package(Workflow REQUIRED)
+endif()
+
+find_package(srpc REQUIRED CONFIG HINTS ..)
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
@@ -80,7 +90,7 @@ add_custom_target(
 set(GTEST_LIB GTest::GTest GTest::Main)
 
 if (APPLE)
-	set(SRPC_LIB srpc)
+	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
 elseif (WIN32)
 	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto)
 	set(GTEST_LIB GTest::gtest GTest::gtest_main)
