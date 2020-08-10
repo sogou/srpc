@@ -12,6 +12,7 @@ all: base
 	make -C $(BUILD_DIR) -f Makefile
 
 base:
+	make -C workflow
 	mkdir -p $(BUILD_DIR)
 ifeq ($(DEBUG),y)
 	cd $(BUILD_DIR) && $(CMAKE3) -D CMAKE_BUILD_TYPE=Debug $(ROOT_DIR)
@@ -42,6 +43,7 @@ clean:
 ifeq (build, $(wildcard build))
 	-make -C build clean
 endif
+	-make -C workflow clean
 	-make -C test clean
 	-make -C benchmark clean
 	-make -C example clean

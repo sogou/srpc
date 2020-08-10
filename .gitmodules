@@ -1,0 +1,3 @@
+[submodule "workflow"]
+	path = workflow
+	url = https://github.com/sogou/workflow.git

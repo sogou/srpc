@@ -19,7 +19,8 @@ else ()
 	find_package(Protobuf REQUIRED)
 endif ()
 
-find_package(Workflow REQUIRED CONFIG HINTS /usr/lib64/cmake/workflow)
+#find_package(Workflow REQUIRED CONFIG HINTS /usr/lib64/cmake/workflow)
+find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
 
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
