@@ -49,7 +49,7 @@ make install
 ## Quick Start
 #### 1. example.proto
 ~~~proto
-syntax="proto2";//这里proto2和proto3都可以，srpc都支持
+syntax = "proto2";//这里proto2和proto3都可以，srpc都支持
 
 message EchoRequest {
 	optional string message = 1;
@@ -82,43 +82,43 @@ using namespace sogou;
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
-	{
-		response->set_message("Hi, " + request->name());
+    void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+    {
+        response->set_message("Hi, " + request->name());
 /*
-		// gzip/zlib/snappy/lz4/none
-		ctx->set_compress_type(RPCCompressGzip);
+        // gzip/zlib/snappy/lz4/none
+        ctx->set_compress_type(RPCCompressGzip);
 
-		// protobuf/json
-		ctx->set_data_type(RPCDataJson);
+        // protobuf/json
+        ctx->set_data_type(RPCDataJson);
 */
-		printf("get_req:\n%s\nset_resp:\n%s\n",
-				request->DebugString().c_str(),
-				response->DebugString().c_str());
-	}
+        printf("get_req:\n%s\nset_resp:\n%s\n",
+                request->DebugString().c_str(),
+                response->DebugString().c_str());
+    }
 };
 
 void sig_handler(int signo) { }
 
 int main()
 {
-	signal(SIGINT, sig_handler);
-	signal(SIGTERM, sig_handler);
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
 
-	SRPCServer server_tcp;
-	SRPCHttpServer server_http;
+    SRPCServer server_tcp;
+    SRPCHttpServer server_http;
 
-	ExampleServiceImpl impl;
-	server_tcp.add_service(&impl);
-	server_http.add_service(&impl);
+    ExampleServiceImpl impl;
+    server_tcp.add_service(&impl);
+    server_http.add_service(&impl);
 
-	server_tcp.start(1412);
-	server_http.start(8811);
-	pause();
-	server_http.stop();
-	server_tcp.stop();
+    server_tcp.start(1412);
+    server_http.start(8811);
+    pause();
+    server_http.stop();
+    server_tcp.stop();
 
-	return 0;
+    return 0;
 }
 ~~~
 
@@ -131,21 +131,21 @@ using namespace sogou;
 
 int main()
 {
-	Example::SRPCClient client("127.0.0.1", 1412);
-	EchoRequest req;
-	req.set_message("Hello, sogou rpc!");
-	req.set_name("Li Yingxin");
+    Example::SRPCClient client("127.0.0.1", 1412);
+    EchoRequest req;
+    req.set_message("Hello, sogou rpc!");
+    req.set_name("Li Yingxin");
 
-	client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
-		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
-		else
-			printf("status[%d] error[%d] errmsg:%s\n",
-					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
-	});
+    client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
+        if (ctx->success())
+            printf("%s\n", response->DebugString().c_str());
+        else
+            printf("status[%d] error[%d] errmsg:%s\n",
+                    ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+    });
 
-	pause();
-	return 0;
+    pause();
+    return 0;
 }
 ~~~
 
