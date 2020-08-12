@@ -36,38 +36,17 @@
 
 ## Install
   * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
-  * srpc依赖workflow和protobuf3
+  * srpc依赖workflow和protobuf3，其中workflow可以以git的submodule的形式进行源码依赖
 
-#### 1. yum安装
-##### centos7
 ~~~sh
-yum install srpc-devel workflow-devel protobuf3 protobuf3-devel
-~~~
-
-##### centos8
-~~~sh
-yum install srpc-devel workflow-devel protobuf protobuf-devel
+git clone --recursive https://github.com/holmes1412/srpc.git
+cd srpc
+make
+make check
+make install
 ~~~
 
 #### 2. 源码安装
-##### sogou centos7
-~~~sh
-yum install workflow-devel protobuf3 protobuf3-devel cmake3 gtest-devel valgrind
-git clone https://git.sogou-inc.com/liyingxin/srpc.git
-scl enable protobuf3 -- bash
-make
-make check
-make install
-~~~
-
-##### sogou centos8
-~~~sh
-yum install workflow-devel protobuf protobuf-devel cmake gtest-devel valgrind
-git clone https://git.sogou-inc.com/liyingxin/srpc.git
-make
-make check
-make install
-~~~
 
 ## Quick Start
 #### 1. example.proto
@@ -86,7 +65,6 @@ message EchoResponse {
 service Example {
  	rpc Echo(EchoRequest) returns (EchoResponse);
 };
-
 ~~~
 
 #### 2. generate code
