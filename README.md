@@ -36,7 +36,7 @@
 
 ## Install
   * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
-  * srpc依赖workflow和protobuf3，其中workflow可以以git的submodule的形式进行源码依赖
+  * srpc依赖workflow和protobuf3，其中workflow可以通过git的submodule的形式进行源码依赖
 
 ~~~sh
 git clone --recursive https://github.com/holmes1412/srpc.git
@@ -45,8 +45,6 @@ make
 make check
 make install
 ~~~
-
-#### 2. 源码安装
 
 ## Quick Start
 #### 1. example.proto
