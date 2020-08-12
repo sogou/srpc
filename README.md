@@ -52,16 +52,16 @@ make install
 syntax = "proto2";//这里proto2和proto3都可以，srpc都支持
 
 message EchoRequest {
-	optional string message = 1;
-	optional string name = 2;
+    optional string message = 1;
+    optional string name = 2;
 };
 
 message EchoResponse {
-	optional string message = 1;
+    optional string message = 1;
 };
 
 service Example {
- 	rpc Echo(EchoRequest) returns (EchoResponse);
+    rpc Echo(EchoRequest) returns (EchoResponse);
 };
 ~~~
 
