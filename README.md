@@ -1,7 +1,7 @@
 # Sogou RPC (Sogou Remote Procedure Call)
 ## Introduction
 #### 搜狗自研RPC简称srpc，主要功能和特点：
-  * 这是一个基于Sogou C++ Workflow的项目，兼具：
+  * 这是一个基于[Sogou C++ Workflow](https://github.com/sogou/workflow)的项目，兼具：
     * 高性能
     * 低开发和接入门槛
     * 完美兼容workflow的串并联任务流
@@ -32,11 +32,11 @@
   * 兼容workflow的使用方式：
     * 提供创建任务的接口来创建一个rpc任务
     * 可以把rpc任务放到任务流图中，回调函数里也可以拿到当前的任务流
-    * 其他workflow所支持的功能包括upstream等
+    * workflow所支持的其他功能，包括upstream、计算调度、异步文件IO等
 
-## Install
+## Installation
   * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
-  * srpc依赖workflow和protobuf3，其中workflow可以通过git的submodule的形式进行源码依赖
+  * srpc依赖workflow和protobuf3，其中workflow可以通过git的submodule形式进行源码依赖
 
 ~~~sh
 git clone --recursive https://github.com/holmes1412/srpc.git
@@ -85,16 +85,15 @@ public:
     void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
     {
         response->set_message("Hi, " + request->name());
-/*
+
         // gzip/zlib/snappy/lz4/none
-        ctx->set_compress_type(RPCCompressGzip);
+        // ctx->set_compress_type(RPCCompressGzip);
 
         // protobuf/json
-        ctx->set_data_type(RPCDataJson);
-*/
+        // ctx->set_data_type(RPCDataJson);
+
         printf("get_req:\n%s\nset_resp:\n%s\n",
-                request->DebugString().c_str(),
-                response->DebugString().c_str());
+                request->DebugString().c_str(), response->DebugString().c_str());
     }
 };
 
@@ -134,7 +133,7 @@ int main()
     Example::SRPCClient client("127.0.0.1", 1412);
     EchoRequest req;
     req.set_message("Hello, sogou rpc!");
-    req.set_name("Li Yingxin");
+    req.set_name("workflow");
 
     client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
         if (ctx->success())
@@ -170,10 +169,10 @@ curl 127.0.0.1:8811/Example/Echo -H 'Content-Type: application/json' -d '{messag
 ~~~sh
 get_req:
 message: "Hello, sogou rpc!"
-name: "Li Yingxin"
+name: "workflow"
 
 set_resp:
-message: "Hi, Li Yingxin"
+message: "Hi, workflow"
 
 get_req:
 message: "from curl"
@@ -185,7 +184,7 @@ message: "Hi, CURL"
 ~~~
 终端2输出
 ~~~sh
-message: "Hi, Li Yingxin"
+message: "Hi, workflow"
 {"message":"Hi, CURL"}
 ~~~
 
