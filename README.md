@@ -43,7 +43,7 @@ git clone --recursive https://github.com/holmes1412/srpc.git
 cd srpc
 make
 make check
-make install
+sudo make install
 ~~~
 
 ## Quick Start
