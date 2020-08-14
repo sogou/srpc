@@ -98,6 +98,7 @@ class SRPCResponse : public SRPCMessage
 public:
 	int get_status_code() const;
 	int get_error() const;
+	const char *get_errmsg() const;
 
 	void set_status_code(int code);
 	void set_error(int error);
@@ -187,6 +188,11 @@ public:
 		return this->SRPCResponse::get_error();
 	}
 
+	const char *get_errmsg() const override
+	{
+		return this->SRPCResponse::get_errmsg();
+	}
+
 	void set_status_code(int code) override
 	{
 		return this->SRPCResponse::set_status_code(code);
@@ -247,6 +253,11 @@ public:
 	int get_error() const override
 	{
 		return this->SRPCResponse::get_error();
+	}
+
+	const char *get_errmsg() const override
+	{
+		return this->SRPCResponse::get_errmsg();
 	}
 
 	void set_status_code(int code) override

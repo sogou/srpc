@@ -253,7 +253,8 @@ inline void RPCClientTask<RPCREQ, RPCRESP>::set_compress_type(RPCCompressType ty
 }
 
 template<class RPCREQ, class RPCRESP>
-inline void RPCClientTask<RPCREQ, RPCRESP>::set_attachment_nocopy(const char *attachment, size_t len)
+inline void RPCClientTask<RPCREQ, RPCRESP>::set_attachment_nocopy(const char *attachment,
+																  size_t len)
 {
 	this->req.set_attachment_nocopy(attachment, len);
 }
@@ -303,7 +304,8 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 	init_failed_(false)
 {
 	if (user_done_)
-		this->set_callback(std::bind(&RPCClientTask::rpc_callback, this, std::placeholders::_1));
+		this->set_callback(std::bind(&RPCClientTask::rpc_callback,
+									 this, std::placeholders::_1));
 
 	if (params->send_timeout != INT_UNSET)
 		this->set_send_timeout(params->send_timeout);
@@ -376,7 +378,8 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 template<class RPCREQ, class RPCRESP>
 void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP> *task)
 {
-	RPCWorker worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp);
+	RPCWorker worker(new RPCContextImpl<RPCREQ, RPCRESP>(this),
+					 &this->req, &this->resp);
 	int status_code = this->resp.get_status_code();
 
 	if (status_code != RPCStatusOK && status_code != RPCStatusUndefined)

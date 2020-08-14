@@ -140,7 +140,7 @@ bool ThriftResponse::deserialize_meta()
 			{
 				status_code_ = RPCStatusMetaError;
 				error_ = TET_INTERNAL_ERROR;
-				errmsg_ = srpc_error_string(status_code_);
+				errmsg_ = this->get_errmsg();
 			}
 		}
 
@@ -148,6 +148,37 @@ bool ThriftResponse::deserialize_meta()
 	}
 
 	return false;
+}
+
+const char *ThriftResponse::get_errmsg() const
+{
+	switch (status_code_)
+	{
+	case TET_UNKNOWN:
+		return "TApplicationException: Unknown application exception";
+	case TET_UNKNOWN_METHOD:
+		return "TApplicationException: Unknown method";
+	case TET_INVALID_MESSAGE_TYPE:
+		return "TApplicationException: Invalid message type";
+	case TET_WRONG_METHOD_NAME:
+		return "TApplicationException: Wrong method name";
+	case TET_BAD_SEQUENCE_ID:
+		return "TApplicationException: Bad sequence identifier";
+	case TET_MISSING_RESULT:
+		return "TApplicationException: Missing result";
+	case TET_INTERNAL_ERROR:
+		return "TApplicationException: Internal error";
+	case TET_PROTOCOL_ERROR:
+		return "TApplicationException: Protocol error";
+	case TET_INVALID_TRANSFORM:
+		return "TApplicationException: Invalid transform";
+	case TET_INVALID_PROTOCOL:
+		return "TApplicationException: Invalid protocol";
+	case TET_UNSUPPORTED_CLIENT_TYPE:
+		return "TApplicationException: Unsupported client type";
+	default:
+		return "TApplicationException: (Invalid exception type)";
+	};
 }
 
 bool ThriftHttpRequest::serialize_meta()

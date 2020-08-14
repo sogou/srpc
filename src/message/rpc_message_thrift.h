@@ -126,13 +126,13 @@ public:
 public:
 	int get_status_code() const { return status_code_; }
 	int get_error() const { return error_; }
-	const char *get_errmsg() const { return errmsg_.c_str(); }
+	const char *get_errmsg() const;
 
 	void set_status_code(int code)
 	{
 		status_code_ = code;
 		if (code != RPCStatusOK)
-			errmsg_ = srpc_error_string(code);
+			errmsg_ = this->get_errmsg();
 	}
 
 	void set_error(int error) { error_ = error; }

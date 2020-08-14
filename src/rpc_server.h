@@ -35,10 +35,12 @@ template<class RPCTYPE>
 class RPCServer : public WFServer<typename RPCTYPE::REQ, typename RPCTYPE::RESP>
 {
 public:
-	using TASK = RPCServerTask<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
+	using REQTYPE = typename RPCTYPE::REQ;
+	using RESPTYPE = typename RPCTYPE::RESP;
+	using TASK = RPCServerTask<REQTYPE, RESPTYPE>;
 
 protected:
-	using NETWORKTASK = WFNetworkTask<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
+	using NETWORKTASK = WFNetworkTask<REQTYPE, RESPTYPE>;
 
 public:
 	RPCServer();
@@ -48,7 +50,8 @@ public:
 	const RPCService* find_service(const std::string& name) const;
 
 protected:
-	RPCServer(const struct WFServerParams *params, std::function<void (NETWORKTASK *)>&& process);
+	RPCServer(const struct WFServerParams *params,
+			  std::function<void (NETWORKTASK *)>&& process);
 
 	CommSession *new_session(long long seq, CommConnection *conn) override;
 	void server_process(NETWORKTASK *task) const;
@@ -62,17 +65,22 @@ private:
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer():
-	WFServer<typename RPCTYPE::REQ, typename RPCTYPE::RESP>(&RPC_SERVER_PARAMS_DEFAULT, std::bind(&RPCServer::server_process, this, std::placeholders::_1))
+	WFServer<REQTYPE, RESPTYPE>(&RPC_SERVER_PARAMS_DEFAULT,
+								std::bind(&RPCServer::server_process,
+								this, std::placeholders::_1))
 {}
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params):
-	WFServer<typename RPCTYPE::REQ, typename RPCTYPE::RESP>(params, std::bind(&RPCServer::server_process, this, std::placeholders::_1))
+	WFServer<REQTYPE, RESPTYPE>(params,
+								std::bind(&RPCServer::server_process,
+								this, std::placeholders::_1))
 {}
 
 template<class RPCTYPE>
-inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params, std::function<void (NETWORKTASK *)>&& process):
-	WFServer<typename RPCTYPE::REQ, typename RPCTYPE::RESP>(params, std::move(process))
+inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params,
+									 std::function<void (NETWORKTASK *)>&& process):
+	WFServer<REQTYPE, RESPTYPE>(params, std::move(process))
 {}
 
 template<class RPCTYPE>
@@ -101,7 +109,8 @@ inline const RPCService *RPCServer<RPCTYPE>::find_service(const std::string& nam
 }
 
 template<class RPCTYPE>
-inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq, CommConnection *conn)
+inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq,
+													CommConnection *conn)
 {
 	auto *task = new TASK(this->process);
 
