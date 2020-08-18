@@ -532,8 +532,8 @@ int SRPCMessage::compress()
 	}
 
 	origin_size = (int)buflen;
-	static RPCCompresser *compresser = RPCCompresser::get_instance();
-	int ret = compresser->lease_compressed_size(type, buflen);
+	static RPCCompressor *compressor = RPCCompressor::get_instance();
+	int ret = compressor->lease_compressed_size(type, buflen);
 
 	if (ret == -2)
 	{
@@ -551,7 +551,7 @@ int SRPCMessage::compress()
 		return is_resp ? RPCStatusRespCompressError : RPCStatusReqCompressError;
 
 	RPCBuffer *dst_buf = new RPCBuffer();
-	ret = compresser->serialize_to_compressed(this->buf, dst_buf, type);
+	ret = compressor->serialize_to_compressed(this->buf, dst_buf, type);
 
 	if (ret == -2)
 	{
@@ -607,8 +607,8 @@ int SRPCMessage::decompress()
 		return is_resp ? RPCStatusRespCompressError : RPCStatusReqCompressError;
 
 	RPCBuffer *dst_buf = new RPCBuffer();
-	static RPCCompresser *compresser = RPCCompresser::get_instance();
-	int ret = compresser->parse_from_compressed(this->buf, dst_buf, type);
+	static RPCCompressor *compressor = RPCCompressor::get_instance();
+	int ret = compressor->parse_from_compressed(this->buf, dst_buf, type);
 
 	if (ret == -2)
 	{

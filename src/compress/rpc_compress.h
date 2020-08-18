@@ -52,12 +52,12 @@ public:
 	LeaseSizeFunction lease_size;	
 };
 
-class RPCCompresser
+class RPCCompressor
 {
 public:
-	static RPCCompresser *get_instance()
+	static RPCCompressor *get_instance()
 	{
-		static RPCCompresser kInstance;
+		static RPCCompressor kInstance;
 		return &kInstance;
 	}
 
@@ -103,7 +103,7 @@ public:
 	void clear();
 
 private:
-	RPCCompresser()
+	RPCCompressor()
 	{
 		this->add(RPCCompressGzip);
 		this->add(RPCCompressZlib);
@@ -117,7 +117,7 @@ private:
 ////////
 // inl
 
-inline int RPCCompresser::add_handler(int type, CompressHandler&& handler)
+inline int RPCCompressor::add_handler(int type, CompressHandler&& handler)
 {
 	if (type >= SRPC_COMPRESS_TYPE_MAX || type <= RPCCompressNone)
 		return -2;
@@ -138,7 +138,7 @@ inline int RPCCompresser::add_handler(int type, CompressHandler&& handler)
 	return ret;
 }
 
-inline const CompressHandler *RPCCompresser::find_handler(int type) const
+inline const CompressHandler *RPCCompressor::find_handler(int type) const
 {
 	if (type >= SRPC_COMPRESS_TYPE_MAX || type <= RPCCompressNone)
 	{
@@ -155,7 +155,7 @@ inline const CompressHandler *RPCCompresser::find_handler(int type) const
 	return &this->handler[type];
 }
 
-inline int RPCCompresser::parse_from_compressed(const char *buf, size_t buflen,
+inline int RPCCompressor::parse_from_compressed(const char *buf, size_t buflen,
 												char *msg, size_t msglen,
 												int type) const
 {
@@ -169,7 +169,7 @@ inline int RPCCompresser::parse_from_compressed(const char *buf, size_t buflen,
 	return this->handler[type].decompress(buf, buflen, msg, msglen);
 }
 
-inline int RPCCompresser::parse_from_compressed(RPCBuffer *src, RPCBuffer *dest,
+inline int RPCCompressor::parse_from_compressed(RPCBuffer *src, RPCBuffer *dest,
 												int type) const
 {
 	if (type >= SRPC_COMPRESS_TYPE_MAX
@@ -182,7 +182,7 @@ inline int RPCCompresser::parse_from_compressed(RPCBuffer *src, RPCBuffer *dest,
 	return this->handler[type].decompress_iovec(src, dest);
 }
 
-inline int RPCCompresser::serialize_to_compressed(const char *msg, size_t msglen,
+inline int RPCCompressor::serialize_to_compressed(const char *msg, size_t msglen,
 												  char *buf, size_t buflen,
 												  int type) const
 {
@@ -196,7 +196,7 @@ inline int RPCCompresser::serialize_to_compressed(const char *msg, size_t msglen
 	return this->handler[type].compress(msg, msglen, buf, buflen);
 }
 
-inline int RPCCompresser::serialize_to_compressed(RPCBuffer *src, RPCBuffer *dest,
+inline int RPCCompressor::serialize_to_compressed(RPCBuffer *src, RPCBuffer *dest,
 												  int type) const
 {
 	if (type >= SRPC_COMPRESS_TYPE_MAX
@@ -209,7 +209,7 @@ inline int RPCCompresser::serialize_to_compressed(RPCBuffer *src, RPCBuffer *des
 	return this->handler[type].compress_iovec(src, dest);
 }
 
-inline int RPCCompresser::lease_compressed_size(int type, size_t origin_size) const
+inline int RPCCompressor::lease_compressed_size(int type, size_t origin_size) const
 {
 	if (type >= SRPC_COMPRESS_TYPE_MAX
 		|| type <= RPCCompressNone
@@ -221,7 +221,7 @@ inline int RPCCompresser::lease_compressed_size(int type, size_t origin_size) co
 	return this->handler[type].lease_size(origin_size);
 }
 
-inline void RPCCompresser::clear()
+inline void RPCCompressor::clear()
 {
 	for (int i = 0; i < SRPC_COMPRESS_TYPE_MAX; i++)
 	{

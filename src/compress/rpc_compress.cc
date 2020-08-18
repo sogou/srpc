@@ -24,7 +24,7 @@
 namespace sogou
 {
 
-int RPCCompresser::add(RPCCompressType type)
+int RPCCompressor::add(RPCCompressType type)
 {
 	if (type >= SRPC_COMPRESS_TYPE_MAX || type <= RPCCompressNone)
 		return -2;
