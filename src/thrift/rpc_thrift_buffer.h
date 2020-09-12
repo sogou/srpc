@@ -36,7 +36,7 @@
 #include "rpc_thrift_enum.h"
 #include "rpc_buffer.h"
 
-namespace sogou
+namespace srpc
 {
 
 static constexpr int32_t THRIFT_VERSION_MASK	=	((int32_t)0xffff0000);
@@ -277,7 +277,7 @@ inline bool ThriftMeta::writeString(const std::string& str)
 	return true;
 }
 
-} // end namespace sogou
+} // end namespace srpc
 
 #endif
 

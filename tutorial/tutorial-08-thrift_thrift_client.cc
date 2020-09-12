@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include "echo_thrift.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 
 int main()
 {

@@ -23,7 +23,7 @@
 #include <workflow/lz4frame.h>
 #include "rpc_basic.h"
 
-namespace sogou
+namespace srpc
 {
 
 //#define IN_CHUNK_SIZE  (16*1024)
@@ -287,7 +287,7 @@ static int LZ4LeaseSize(size_t origin_size)
 	return LZ4_compressBound((int)origin_size);
 }
 
-} // end namespace sogou
+} // end namespace srpc
 
 #endif
 

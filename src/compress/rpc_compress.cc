@@ -21,7 +21,7 @@
 #include "rpc_compress_snappy.h"
 #include "rpc_compress_lz4.h"
 
-namespace sogou
+namespace srpc
 {
 
 int RPCCompressor::add(RPCCompressType type)
@@ -78,5 +78,5 @@ int RPCCompressor::add(RPCCompressType type)
 	return ret;
 }
 
-} // namespace sogou
+} // namespace srpc
 

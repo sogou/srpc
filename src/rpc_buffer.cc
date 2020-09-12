@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include "rpc_buffer.h"
 
-namespace sogou
+namespace srpc
 {
 
 size_t RPCBuffer::acquire(void **buf)
@@ -405,5 +405,5 @@ size_t RPCBuffer::cut(size_t offset, RPCBuffer *out)
 	return cutsize;
 }
 
-} // namespace sogou
+} // namespace srpc
 

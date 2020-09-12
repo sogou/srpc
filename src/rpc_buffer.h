@@ -28,7 +28,7 @@
 #include <string.h>
 #include <list>
 
-namespace sogou
+namespace srpc
 {
 
 static constexpr int	BUFFER_PIECE_MIN_SIZE		= 2 * 1024;
@@ -384,7 +384,7 @@ inline RPCBuffer::~RPCBuffer()
 	clear_list_buffer();
 }
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

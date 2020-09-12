@@ -30,7 +30,7 @@
 #include "test_pb.srpc.h"
 #include "test_thrift.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 using namespace unit;
 
 class ForceShutdown

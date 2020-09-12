@@ -23,7 +23,7 @@
 #include "rpc_thrift_idl.h"
 #include "rpc_buffer.h"
 
-namespace sogou
+namespace srpc
 {
 
 static constexpr const char *	SRPC_SCHEME				= "srpc";
@@ -89,7 +89,7 @@ enum RPCCompressType
 	RPCCompressLz4		=	4
 };
 
-} // end namespace sogou
+} // end namespace srpc
 
 #endif
 

@@ -20,7 +20,7 @@
 #include <errno.h>
 #include "rpc_thrift_idl.h"
 
-namespace sogou
+namespace srpc
 {
 
 static inline char __hex_ch(int x)
@@ -592,5 +592,5 @@ bool ThriftJsonUtil::escape_string(const std::string& str, std::string& escape_s
 	return true;
 }
 
-} // end namespace sogou
+} // end namespace srpc
 

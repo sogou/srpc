@@ -27,7 +27,7 @@
 #include <set>
 #include "rpc_thrift_buffer.h"
 
-namespace sogou
+namespace srpc
 {
 
 class ThriftDescriptor
@@ -105,7 +105,7 @@ public:
 	virtual ~ThriftIDLMessage() { }
 };
 
-} // end namespace sogou
+} // end namespace srpc
 
 #include "rpc_thrift_idl.inl"
 

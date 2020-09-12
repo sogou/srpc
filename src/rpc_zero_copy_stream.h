@@ -21,7 +21,7 @@
 
 #include <google/protobuf/io/zero_copy_stream.h>
 
-namespace sogou
+namespace srpc
 {
 
 class RPCOutputStream : public google::protobuf::io::ZeroCopyOutputStream
@@ -124,7 +124,7 @@ inline int64_t RPCInputStream::ByteCount() const
 	return (int64_t)this->buf->size();
 }
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

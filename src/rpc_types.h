@@ -25,7 +25,7 @@
 #include "rpc_message_thrift.h"
 #include "rpc_message_brpc.h"
 
-namespace sogou
+namespace srpc
 {
 
 struct RPCTYPESRPC
@@ -107,7 +107,7 @@ struct RPCTYPEThriftHttp
 	}
 };
 
-} // end namespace sogou
+} // end namespace srpc
 
 #endif
 

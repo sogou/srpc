@@ -25,7 +25,7 @@
 #include <workflow/ProtocolMessage.h>
 #include "rpc_basic.h"
 
-namespace sogou
+namespace srpc
 {
 
 class RPCRequest
@@ -95,7 +95,7 @@ public:
 	}
 };
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

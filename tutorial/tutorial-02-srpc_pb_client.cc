@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include "echo_pb.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 
 int main()
 {

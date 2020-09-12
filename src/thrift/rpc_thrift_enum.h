@@ -19,7 +19,7 @@
 #ifndef __RPC_THRIFT_ENUM_H__
 #define __RPC_THRIFT_ENUM_H__
 
-namespace sogou
+namespace srpc
 {
 
 static constexpr int THRIFT_STRUCT_FIELD_REQUIRED	= 0;
@@ -71,7 +71,7 @@ enum ThriftExceptionType
 	TET_UNSUPPORTED_CLIENT_TYPE	= 10
 };
 
-} // end namespace sogou
+} // end namespace srpc
 
 #endif
 

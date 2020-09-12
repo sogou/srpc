@@ -23,7 +23,7 @@
 #include <workflow/URIParser.h>
 #include "rpc_options.h"
 
-namespace sogou
+namespace srpc
 {
 
 class SRPCGlobal
@@ -46,7 +46,7 @@ private:
 	SRPCGlobal();
 };
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

@@ -24,7 +24,7 @@
 #include "rpc_message.h"
 #include "rpc_thrift_idl.h"
 
-namespace sogou
+namespace srpc
 {
 
 class ThriftException : public ThriftIDLMessage

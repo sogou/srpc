@@ -7,7 +7,7 @@
 #include "benchmark_pb.srpc.h"
 #include "benchmark_thrift.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 
 #define TEST_SECOND		20
 #define GET_CURRENT_MS	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()

@@ -67,13 +67,13 @@ static inline std::string make_package_prefix(const std::string& package,
 
 static inline bool is_simple_type(int8_t data_type)
 {
-	return data_type == sogou::TDT_BOOL
-		|| data_type == sogou::TDT_I08
-		|| data_type == sogou::TDT_I16
-		|| data_type == sogou::TDT_I32
-		|| data_type == sogou::TDT_I64
-		|| data_type == sogou::TDT_U64
-		|| data_type == sogou::TDT_DOUBLE;
+	return data_type == srpc::TDT_BOOL
+		|| data_type == srpc::TDT_I08
+		|| data_type == srpc::TDT_I16
+		|| data_type == srpc::TDT_I32
+		|| data_type == srpc::TDT_I64
+		|| data_type == srpc::TDT_U64
+		|| data_type == srpc::TDT_DOUBLE;
 }
 
 static inline void fill_thrift_sync_params(const rpc_descriptor& rpc, std::string& return_type, std::string& handler_params, std::string& send_params)
@@ -160,24 +160,24 @@ static void output_descriptor(int& i, FILE *f, const std::string& type_name, siz
 
 	std::string ret;
 	if (cpptype == "bool")
-		data_type = sogou::TDT_BOOL;
+		data_type = srpc::TDT_BOOL;
 	else if (cpptype == "int8_t")
-		data_type = sogou::TDT_I08;
+		data_type = srpc::TDT_I08;
 	else if (cpptype == "int16_t")
-		data_type = sogou::TDT_I16;
+		data_type = srpc::TDT_I16;
 	else if (cpptype == "int32_t")
-		data_type = sogou::TDT_I32;
+		data_type = srpc::TDT_I32;
 	else if (cpptype == "int64_t")
-		data_type = sogou::TDT_I64;
+		data_type = srpc::TDT_I64;
 	else if (cpptype == "uint64_t")
-		data_type = sogou::TDT_U64;
+		data_type = srpc::TDT_U64;
 	else if (cpptype == "double")
-		data_type = sogou::TDT_DOUBLE;
+		data_type = srpc::TDT_DOUBLE;
 	else if (cpptype == "std::string")
-		data_type = sogou::TDT_STRING;
+		data_type = srpc::TDT_STRING;
 	else if (cpptype == "std::map" && cur < type_name.size() && type_name[cur] == '<')
 	{
-		data_type = sogou::TDT_MAP;
+		data_type = srpc::TDT_MAP;
 		output_descriptor(i, f, type_name, ++cur);
 		key_arg = "subtype_" + std::to_string(i);
 		output_descriptor(i, f, type_name, ++cur);
@@ -186,22 +186,22 @@ static void output_descriptor(int& i, FILE *f, const std::string& type_name, siz
 	}
 	else if (cpptype == "std::set" && cur < type_name.size() && type_name[cur] == '<')
 	{
-		data_type = sogou::TDT_SET;
+		data_type = srpc::TDT_SET;
 		output_descriptor(i, f, type_name, ++cur);
 		val_arg = "subtype_" + std::to_string(i);
 		cpptype = SGenUtil::strip(type_name.substr(st, ++cur - st));
 	}
 	else if (cpptype == "std::vector" && cur < type_name.size() && type_name[cur] == '<')
 	{
-		data_type = sogou::TDT_LIST;
+		data_type = srpc::TDT_LIST;
 		output_descriptor(i, f, type_name, ++cur);
 		val_arg = "subtype_" + std::to_string(i);
 		cpptype = SGenUtil::strip(type_name.substr(st, ++cur - st));
 	}
 	else
-		data_type = sogou::TDT_STRUCT;
+		data_type = srpc::TDT_STRUCT;
 
-	fprintf(f, "\t\tusing subtype_%d = sogou::ThriftDescriptorImpl<%s, %d, %s, %s>;\n",
+	fprintf(f, "\t\tusing subtype_%d = srpc::ThriftDescriptorImpl<%s, %d, %s, %s>;\n",
 			++i, cpptype.c_str(), data_type, key_arg.c_str(), val_arg.c_str());
 }
 
@@ -252,7 +252,7 @@ public:
 
 		for (const auto& ele : class_params)
 		{
-			if (ele.required_state != sogou::THRIFT_STRUCT_FIELD_REQUIRED)
+			if (ele.required_state != srpc::THRIFT_STRUCT_FIELD_REQUIRED)
 				fprintf(this->out_file, "\t\tbool %s = false;\n", ele.var_name.c_str());
 		}
 
@@ -265,7 +265,7 @@ public:
 			if (!is_simple_type(ele.data_type))
 				type += '&';
 
-			if (ele.required_state == sogou::THRIFT_STRUCT_FIELD_REQUIRED)
+			if (ele.required_state == srpc::THRIFT_STRUCT_FIELD_REQUIRED)
 				fprintf(this->out_file, thrift_struct_class_set_required_format.c_str(),
 						ele.var_name.c_str(), type.c_str(), ele.var_name.c_str());
 			else
@@ -276,7 +276,7 @@ public:
 		fprintf(this->out_file, thrift_struct_class_operator_equal_begin_format.c_str(), class_name.c_str());
 		for (const auto& ele : class_params)
 		{
-			if (ele.required_state == sogou::THRIFT_STRUCT_FIELD_REQUIRED)
+			if (ele.required_state == srpc::THRIFT_STRUCT_FIELD_REQUIRED)
 				fprintf(this->out_file, thrift_struct_class_operator_equal_required_format.c_str(),
 						ele.var_name.c_str(), ele.var_name.c_str());
 			else
@@ -313,7 +313,7 @@ public:
 			output_descriptor(i, this->out_file, ele.type_name, cur);
 
 			std::string p_isset = "0";
-			if (ele.required_state != sogou::THRIFT_STRUCT_FIELD_REQUIRED)
+			if (ele.required_state != srpc::THRIFT_STRUCT_FIELD_REQUIRED)
 				p_isset = "(const char *)(&st->__isset." + ele.var_name + ") - base";
 
 			fprintf(this->out_file, "\t\telements->push_back({subtype_%d::get_instance(), \"%s\", %s, (const char *)(&st->%s) - base, %d, %d});\n",
@@ -846,7 +846,7 @@ public:
 		if (package.length())
 			fprintf(this->out_file, namespace_package_end_format.c_str(),
 					package.c_str());
-//		fprintf(this->out_file, "} // namespace sogou\n");
+//		fprintf(this->out_file, "} // namespace srpc\n");
 	}
 
 	void print_empty_line()
@@ -886,12 +886,12 @@ using namespace %s;
 )";
 
 	std::string using_namespace_sogou_format = R"(
-using namespace sogou;
+using namespace srpc;
 )";
 
 /*
 	std::string namespace_total_start_format = R"(
-namespace sogou
+namespace srpc
 {
 )";
 */
@@ -920,24 +920,24 @@ namespace %s
 
 )";
 
-	std::string client_define_done_format = R"(using %sDone = std::function<void (%s *, sogou::RPCContext *)>;
+	std::string client_define_done_format = R"(using %sDone = std::function<void (%s *, srpc::RPCContext *)>;
 )";
 
-	std::string client_define_task_format = R"(using %sTask = sogou::RPCClientTask<%s, %s>;
+	std::string client_define_task_format = R"(using %sTask = srpc::RPCClientTask<%s, %s>;
 )";
 
 	std::string server_context_format = R"(
-using %sContext = sogou::RPCContext<%s, %s>;
+using %sContext = srpc::RPCContext<%s, %s>;
 )";
 
 	std::string server_controller_format = R"(
-class Server%sCntl : public sogou::%sCntl
+class Server%sCntl : public srpc::%sCntl
 {
 public:
 	// must implement this in server codes
 	void %s(%s *request, %s *response);
 
-	Server%sCntl(sogou::RPCTask *task)
+	Server%sCntl(srpc::RPCTask *task)
 		: %sCntl(task)
 	{}
 };
@@ -949,10 +949,10 @@ class Client%sCntl;
 
 typedef std::function<void (Client%sCntl *, %s *)> %sDone;
 
-class Client%sCntl : public sogou::%sCntl
+class Client%sCntl : public srpc::%sCntl
 {
 public:
-	Client%sCntl(sogou::RPCTask *task)
+	Client%sCntl(srpc::RPCTask *task)
 		: %sCntl(task)
 	{}
 
@@ -972,9 +972,9 @@ public:
 )";
 
 	std::string server_method_format = R"(
-void %s(sogou::RPCTask *task, %s *request, %s *response);
+void %s(srpc::RPCTask *task, %s *request, %s *response);
 
-static inline void %s%s(sogou::RPCTask *task, \
+static inline void %s%s(srpc::RPCTask *task, \
 rpc_buf_t *req_buf, rpc_buf_t *resp_buf)
 {
 	%s pb_req;
@@ -988,7 +988,7 @@ rpc_buf_t *req_buf, rpc_buf_t *resp_buf)
 )";
 
 	std::string server_class_constructor_format = R"(
-class Service : public sogou::RPCService
+class Service : public srpc::RPCService
 {
 public:
 	// please implement these methods in server.cc
@@ -1002,16 +1002,16 @@ public:
 
 	std::string server_class_method_format = R"(
 	virtual void %s(%s *request, %s *response,
-					sogou::RPCContext *ctx) = 0;
+					srpc::RPCContext *ctx) = 0;
 )";
 
 	std::string server_class_method_declaration_thrift_format = R"(
 	virtual void %s(%s *request, %s *response,
-					sogou::RPCContext *ctx);
+					srpc::RPCContext *ctx);
 )";
 
 	std::string server_class_method_implementation_thrift_format = R"(
-inline void Service::%s(%s *request, %s *response, sogou::RPCContext *ctx)
+inline void Service::%s(%s *request, %s *response, srpc::RPCContext *ctx)
 {
 	%sthis->%s(%s);
 }
@@ -1027,33 +1027,33 @@ inline %s Service::%s(%s) {%s}
 
 	std::string server_class_construct_method_format = R"(
 
-	void %s%s(sogou::RPCTask *task);
+	void %s%s(srpc::RPCTask *task);
 )";
 
 	std::string server_constructor_method_format = R"(
-inline Service::Service(): sogou::RPCService("%s")
+inline Service::Service(): srpc::RPCService("%s")
 {
 )";
 
 	std::string server_constructor_add_method_format = R"(
-	this->sogou::RPCService::add_method("%s",
-		[this](sogou::RPCWorker& worker) ->int {
+	this->srpc::RPCService::add_method("%s",
+		[this](srpc::RPCWorker& worker) ->int {
 			return ServiceRPCCallImpl(this, worker, &Service::%s);
 		});
 )";
 
 	std::string server_methods_format = R"(
-void %s::%s%s(sogou::RPCTask *task)
+void %s::%s%s(srpc::RPCTask *task)
 {
 	Server%sCntl cntl(task);
-	sogou::RPCService::parse_from_buffer(task, cntl.get_input(), true);
+	srpc::RPCService::parse_from_buffer(task, cntl.get_input(), true);
 	cntl.%s(cntl.get_req(), cntl.get_resp());
-	sogou::RPCService::serialize_to_buffer(task, cntl.get_output(), false);
+	srpc::RPCService::serialize_to_buffer(task, cntl.get_output(), false);
 }
 )";
 
 	std::string client_class_constructor_start_format = R"(
-class %sClient : public sogou::%sClient
+class %sClient : public srpc::%sClient
 {
 public:
 )";
@@ -1061,51 +1061,51 @@ public:
 	std::string client_constructor_methods_format = R"(
 
 inline %sClient::%sClient(const char *host, unsigned short port):
-	sogou::%sClient("%s")
+	srpc::%sClient("%s")
 {
-	struct sogou::RPCClientParams params = sogou::RPC_CLIENT_PARAMS_DEFAULT;
+	struct srpc::RPCClientParams params = srpc::RPC_CLIENT_PARAMS_DEFAULT;
 
 	%s
 	params.host = host;
 	params.port = port;
-	this->sogou::%sClient::init(&params);
+	this->srpc::%sClient::init(&params);
 }
 
-inline %sClient::%sClient(const struct sogou::RPCClientParams *params):
-	sogou::%sClient("%s")
+inline %sClient::%sClient(const struct srpc::RPCClientParams *params):
+	srpc::%sClient("%s")
 {
-	const struct sogou::RPCClientParams *temp = params;
-	struct sogou::RPCClientParams temp_params;
+	const struct srpc::RPCClientParams *temp = params;
+	struct srpc::RPCClientParams temp_params;
 	%s
-	this->sogou::%sClient::init(temp);
+	this->srpc::%sClient::init(temp);
 }
 )";
 
 	std::string client_constructor_methods_ip_srpc_thrift_format = R"(
-	params.task_params.data_type = sogou::RPCDataThrift;
+	params.task_params.data_type = srpc::RPCDataThrift;
 )";
 
 	std::string client_constructor_methods_params_srpc_thrift_format = R"(
-	if (params->task_params.data_type == sogou::INT_UNSET)
+	if (params->task_params.data_type == srpc::INT_UNSET)
 	{
 		temp_params = *temp;
-		temp_params.task_params.data_type = sogou::RPCDataThrift;
+		temp_params.task_params.data_type = srpc::RPCDataThrift;
 		temp = &temp_params;
 	}
 )";
 
 	std::string client_class_constructor_ip_port_format = R"(
 	%sClient(const char *host, unsigned short port) :
-			sogou::RPCService("%s")
+			srpc::RPCService("%s")
 	{
 		this->params.service_params.host = host;
 		this->params.service_params.port = port;
-		this->register_compress_type(sogou::RPCCompressGzip);
+		this->register_compress_type(srpc::RPCCompressGzip);
 )";
 
 	std::string client_class_constructor_params_format = R"(
-	%sClient(struct sogou::RPCServiceParams& params) :
-			sogou::RPCService("%s")
+	%sClient(struct srpc::RPCServiceParams& params) :
+			srpc::RPCService("%s")
 	{
 		this->params.service_params = params;
 
@@ -1125,18 +1125,18 @@ inline %sClient::%sClient(const struct sogou::RPCClientParams *params):
 			this->params.has_addr_info = false;
 		}
 
-		this->register_compress_type(sogou::RPCCompressGzip);
+		this->register_compress_type(srpc::RPCCompressGzip);
 )";
 
 	std::string client_class_functions = R"(
-	const struct sogou::RPCClientParams *get_params()
+	const struct srpc::RPCClientParams *get_params()
 	{
 		return &this->params;
 	}
 )";
 
 	std::string client_class_variables = R"(
-	struct sogou::RPCClientParams params;
+	struct srpc::RPCClientParams params;
 )";
 
 	std::string tab_right_braket = R"(
@@ -1155,34 +1155,34 @@ inline %sClient::%sClient(const struct sogou::RPCClientParams *params):
 
 	std::string client_class_get_last_thrift_format = R"(
 	bool thrift_last_sync_success() const;
-	const sogou::RPCSyncContext& thrift_last_sync_ctx() const;
+	const srpc::RPCSyncContext& thrift_last_sync_ctx() const;
 )";
 
 	std::string client_class_private_get_thrift_format = R"(
 private:
-	static sogou::RPCSyncContext *get_thread_sync_ctx();
+	static srpc::RPCSyncContext *get_thread_sync_ctx();
 )";
 
 	std::string client_class_get_rpc_thread_resp_thrift_format = R"(
-	static sogou::ThriftReceiver<%s> *get_thread_sync_receiver_%s();
+	static srpc::ThriftReceiver<%s> *get_thread_sync_receiver_%s();
 )";
 
 	std::string client_class_construct_methods_format = R"(
 	void %s(const %s *req, %sDone done);
-	void %s(const %s *req, %s *resp, sogou::RPCSyncContext *sync_ctx);
-	WFFuture<std::pair<%s, sogou::RPCSyncContext>> async_%s(const %s *req);
+	void %s(const %s *req, %s *resp, srpc::RPCSyncContext *sync_ctx);
+	WFFuture<std::pair<%s, srpc::RPCSyncContext>> async_%s(const %s *req);
 )";
 
 	std::string client_class_constructor_format = R"(
 public:
 	%sClient(const char *host, unsigned short port);
-	%sClient(const struct sogou::RPCClientParams *params);
+	%sClient(const struct srpc::RPCClientParams *params);
 
 public:
 )";
 
 	std::string client_class_create_methods_format = R"(
-	sogou::%sClientTask *create_%s_task(%sDone done);
+	srpc::%sClientTask *create_%s_task(%sDone done);
 )";
 //%sClientTask *create_%s_task(%s *req, %sDone done);
 
@@ -1199,7 +1199,7 @@ inline void %sClient::%s(const %s *req, %sDone done)
 	task->start();
 }
 
-inline void %sClient::%s(const %s *req, %s *resp, sogou::RPCSyncContext *sync_ctx)
+inline void %sClient::%s(const %s *req, %s *resp, srpc::RPCSyncContext *sync_ctx)
 {
 	auto res = this->async_%s(req).get();
 
@@ -1210,12 +1210,12 @@ inline void %sClient::%s(const %s *req, %s *resp, sogou::RPCSyncContext *sync_ct
 		*sync_ctx = std::move(res.second);
 }
 
-inline WFFuture<std::pair<%s, sogou::RPCSyncContext>> %sClient::async_%s(const %s *req)
+inline WFFuture<std::pair<%s, srpc::RPCSyncContext>> %sClient::async_%s(const %s *req)
 {
-	using RESULT = std::pair<%s, sogou::RPCSyncContext>;
+	using RESULT = std::pair<%s, srpc::RPCSyncContext>;
 	auto *pr = new WFPromise<RESULT>();
 	auto fr = pr->get_future();
-	auto *task = this->create_rpc_client_task<%s>("%s", sogou::RPCAsyncFutureCallback<%s>);
+	auto *task = this->create_rpc_client_task<%s>("%s", srpc::RPCAsyncFutureCallback<%s>);
 
 	task->serialize_input(req);
 	task->user_data = pr;
@@ -1225,9 +1225,9 @@ inline WFFuture<std::pair<%s, sogou::RPCSyncContext>> %sClient::async_%s(const %
 )";
 
 	std::string client_method_thrift_begin_format = R"(
-inline sogou::ThriftReceiver<%s> *%sClient::get_thread_sync_receiver_%s()
+inline srpc::ThriftReceiver<%s> *%sClient::get_thread_sync_receiver_%s()
 {
-	static thread_local sogou::ThriftReceiver<%s> receiver;
+	static thread_local srpc::ThriftReceiver<%s> receiver;
 	return &receiver;
 }
 
@@ -1248,7 +1248,7 @@ inline void %sClient::send_%s(%s)
 )";
 
 	std::string cilent_method_thrift_send_end_format = R"(
-	auto *task = this->create_rpc_client_task<%s>("%s", sogou::ThriftSendCallback<%s>);
+	auto *task = this->create_rpc_client_task<%s>("%s", srpc::ThriftSendCallback<%s>);
 
 	task->serialize_input(&__thrift__sync__req);
 	task->user_data = get_thread_sync_receiver_%s();
@@ -1283,9 +1283,9 @@ inline %s %sClient::recv_%s(%s)
 )";
 
 	std::string client_method_get_last_thrift_format = R"(
-inline sogou::RPCSyncContext *%sClient::get_thread_sync_ctx()
+inline srpc::RPCSyncContext *%sClient::get_thread_sync_ctx()
 {
-	static thread_local sogou::RPCSyncContext thread_sync_ctx;
+	static thread_local srpc::RPCSyncContext thread_sync_ctx;
 	return &thread_sync_ctx;
 }
 
@@ -1294,7 +1294,7 @@ inline bool %sClient::thrift_last_sync_success() const
 	return get_thread_sync_ctx()->success;
 }
 
-inline const sogou::RPCSyncContext& %sClient::thrift_last_sync_ctx() const
+inline const srpc::RPCSyncContext& %sClient::thrift_last_sync_ctx() const
 {
 	return *get_thread_sync_ctx();
 }
@@ -1302,7 +1302,7 @@ inline const sogou::RPCSyncContext& %sClient::thrift_last_sync_ctx() const
 )";
 
 	std::string client_create_task_format = R"(
-inline sogou::%sClientTask *%sClient::create_%s_task(%sDone done)
+inline srpc::%sClientTask *%sClient::create_%s_task(%sDone done)
 {
 	return this->create_rpc_client_task("%s", std::move(done));
 }
@@ -1353,7 +1353,7 @@ public:
 )";
 
 	std::string server_impl_method_format = R"(
-	void %s(%s *request, %s *response, sogou::RPCContext *ctx) override
+	void %s(%s *request, %s *response, srpc::RPCContext *ctx) override
 	{}
 )";
 
@@ -1381,7 +1381,7 @@ int main()
 )";
 
 	std::string client_done_format = R"(
-static void %s_done(%s *response, sogou::RPCContext *context)
+static void %s_done(%s *response, srpc::RPCContext *context)
 {
 }
 )";
@@ -1409,7 +1409,7 @@ int main()
 	std::string client_main_create_task_format = R"(
 	// example for creating RPC task
 	%s %s_req;
-	sogou::RPC%s::%sTask *%s_task = client.create_%s_task(%s_done);
+	srpc::RPC%s::%sTask *%s_task = client.create_%s_task(%s_done);
 	%s_task->serialize_input(&%s_req);
 	%s_task->start();
 )";
@@ -1422,23 +1422,23 @@ int main()
 }
 )";
 	std::string thrift_struct_class_begin_format = R"(
-class %s : public sogou::ThriftIDLMessage
+class %s : public srpc::ThriftIDLMessage
 {
 public:
 )";
 	std::string thrift_struct_class_constructor_end_format = R"(
-		this->elements = sogou::ThriftElementsImpl<%s>::get_elements_instance();
-		this->descriptor = sogou::ThriftDescriptorImpl<%s, sogou::TDT_STRUCT, void, void>::get_instance();
+		this->elements = srpc::ThriftElementsImpl<%s>::get_elements_instance();
+		this->descriptor = srpc::ThriftDescriptorImpl<%s, srpc::TDT_STRUCT, void, void>::get_instance();
 	}
 )";
 	std::string thrift_struct_class_end_format = R"(
 	}
-	friend class sogou::ThriftElementsImpl<%s>;
+	friend class srpc::ThriftElementsImpl<%s>;
 };
 )";
 	std::string thrift_struct_element_impl_begin_format = R"(
 private:
-	static void StaticElementsImpl(std::list<sogou::struct_element> *elements)
+	static void StaticElementsImpl(std::list<srpc::struct_element> *elements)
 	{
 		const %s *st = (const %s *)0;
 		const char *base = (const char *)st;

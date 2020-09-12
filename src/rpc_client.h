@@ -24,7 +24,7 @@
 #include "rpc_options.h"
 #include "rpc_global.h"
 
-namespace sogou
+namespace srpc
 {
 
 template<class RPCTYPE>
@@ -196,7 +196,7 @@ inline void RPCClient<RPCTYPEThriftHttp>::task_init(COMPLEXTASK *task) const
 	task->get_req()->set_header_pair("Host", header_host.c_str());
 }
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

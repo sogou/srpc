@@ -28,7 +28,7 @@
 #include "rpc_service.h"
 #include "rpc_options.h"
 
-namespace sogou
+namespace srpc
 {
 
 template<class RPCTYPE>
@@ -171,7 +171,7 @@ inline const RPCService *RPCServer<RPCTYPEThriftHttp>::find_service(const std::s
 	return this->service_map.cbegin()->second;
 }
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

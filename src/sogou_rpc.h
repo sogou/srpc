@@ -29,7 +29,7 @@
 #include "rpc_server.h"
 #include "rpc_client.h"
 
-namespace sogou
+namespace srpc
 {
 
 using SRPCServer = RPCServer<RPCTYPESRPC>;
@@ -52,7 +52,7 @@ using ThriftHttpServer = RPCServer<RPCTYPEThriftHttp>;
 using ThriftHttpClient = RPCClient<RPCTYPEThriftHttp>;
 using ThriftHttpClientTask = ThriftHttpClient::TASK;
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

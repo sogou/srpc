@@ -30,7 +30,7 @@
 #include "rpc_basic.h"
 #include "rpc_global.h"
 
-namespace sogou
+namespace srpc
 {
 
 const char *SRPC_VERSION = "SRPC Library Version: 1.0.3";
@@ -119,5 +119,5 @@ bool SRPCGlobal::task_init(RPCClientParams& params, ParsedURI& uri,
 
 static const SRPCGlobal *srpc_global = SRPCGlobal::get_instance();
 
-} // namespace sogou
+} // namespace srpc
 

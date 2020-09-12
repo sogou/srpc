@@ -26,7 +26,7 @@
 #include "rpc_context.h"
 #include "rpc_options.h"
 
-namespace sogou
+namespace srpc
 {
 
 class RPCService
@@ -93,7 +93,7 @@ inline const RPCService::rpc_method_t *RPCService::find_method(const std::string
 	return NULL;
 }
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

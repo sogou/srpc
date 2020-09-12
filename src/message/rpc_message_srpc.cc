@@ -31,7 +31,7 @@
 #include "rpc_message_srpc.h"
 #include "rpc_zero_copy_stream.h"
 
-namespace sogou
+namespace srpc
 {
 
 struct SogouHttpHeadersString
@@ -948,5 +948,5 @@ bool SogouHttpResponse::deserialize_meta()
 	return true;
 }
 
-} // namespace sogou
+} // namespace srpc
 

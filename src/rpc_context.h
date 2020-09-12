@@ -31,7 +31,7 @@
 #include <workflow/Workflow.h>
 #include "rpc_basic.h"
 
-namespace sogou
+namespace srpc
 {
 
 struct RPCSyncContext
@@ -81,7 +81,7 @@ public:
 	virtual ~RPCContext() { }
 };
 
-} // namespace sogou
+} // namespace srpc
 
 ////////
 // inl

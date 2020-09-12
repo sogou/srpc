@@ -8,7 +8,7 @@
 #include "echo.srpc.h"
 #include "msg.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 using namespace example;
 
 class ExamplePBServiceImpl : public ExamplePB::Service

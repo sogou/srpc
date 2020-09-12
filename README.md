@@ -77,7 +77,7 @@ srpc_generator protobuf ./example.proto ./
 #include <signal.h>
 #include "example.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 
 class ExampleServiceImpl : public Example::Service
 {
@@ -126,7 +126,7 @@ int main()
 #include <stdio.h>
 #include "example.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 
 int main()
 {

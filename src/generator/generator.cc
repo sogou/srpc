@@ -195,9 +195,9 @@ void Generator::thrift_replace_include(const idl_info& cur_info, std::vector<rpc
 {
 	for (auto& param : params)
 	{
-		if (param.data_type == sogou::TDT_LIST
-			|| param.data_type == sogou::TDT_MAP
-			|| param.data_type == sogou::TDT_SET)
+		if (param.data_type == srpc::TDT_LIST
+			|| param.data_type == srpc::TDT_MAP
+			|| param.data_type == srpc::TDT_SET)
 		{
 			for (const auto& desc : cur_info.desc_list)
 			{

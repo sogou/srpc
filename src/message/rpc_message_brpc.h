@@ -28,7 +28,7 @@
 #include "rpc_message.h"
 #include "rpc_basic.h"
 
-namespace sogou
+namespace srpc
 {
 
 static constexpr int BRPC_HEADER_SIZE = 12;
@@ -266,7 +266,7 @@ inline int BRPCMessage::encode(struct iovec vectors[], int max, size_t size_limi
 	return 2 + total;
 }
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

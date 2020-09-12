@@ -20,7 +20,7 @@
 #include <workflow/snappy-sinksource.h>
 #include "rpc_compress_snappy.h"
 
-namespace sogou
+namespace srpc
 {
 
 class RPCSnappySink : public snappy::Sink
@@ -129,4 +129,4 @@ int SnappyManager::SnappyLeaseSize(size_t origin_size)
 	return (int)snappy::MaxCompressedLength(origin_size);
 }
 
-} // end namespace sogou
+} // end namespace srpc

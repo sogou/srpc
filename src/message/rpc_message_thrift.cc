@@ -19,7 +19,7 @@
 #include <workflow/HttpUtil.h>
 #include "rpc_message_thrift.h"
 
-namespace sogou
+namespace srpc
 {
 
 static int thrift_parser_append_message(const void *buf, size_t *size, ThriftBuffer *TBuffer)

@@ -25,7 +25,7 @@
 #include "rpc_message.h"
 #include "rpc_basic.h"
 
-namespace sogou {
+namespace srpc {
 
 struct RPCTaskParams
 {

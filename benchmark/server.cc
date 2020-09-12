@@ -7,7 +7,7 @@
 #include <unistd.h>
 #endif
 
-using namespace sogou;
+using namespace srpc;
 
 class BenchmarkPBServiceImpl : public BenchmarkPB::Service
 {

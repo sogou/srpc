@@ -32,7 +32,7 @@
 #include "rpc_thrift_idl.h"
 #include "rpc_buffer.h"
 
-namespace sogou
+namespace srpc
 {
 
 static constexpr int SRPC_HEADER_SIZE = 16;
@@ -324,7 +324,7 @@ inline bool SRPCMessage::deserialize_meta()
 	return this->meta->ParseFromArray(this->meta_buf, (int)this->meta_len);
 }
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

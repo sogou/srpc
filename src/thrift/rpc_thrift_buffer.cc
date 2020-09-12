@@ -18,7 +18,7 @@
 
 #include "rpc_thrift_buffer.h"
 
-namespace sogou
+namespace srpc
 {
 
 bool ThriftBuffer::readMessageBegin()
@@ -192,5 +192,5 @@ bool ThriftBuffer::skip(int8_t field_type)
 	return true;
 }
 
-} // end namespace sogou
+} // end namespace srpc
 

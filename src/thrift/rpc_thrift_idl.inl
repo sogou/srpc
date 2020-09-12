@@ -16,7 +16,7 @@
   Authors: Wu Jiaxu (wujiaxu@sogou-inc.com)
 */
 
-namespace sogou
+namespace srpc
 {
 
 class ThriftJsonUtil
@@ -1039,5 +1039,5 @@ inline bool ThriftDescriptorImpl<std::string, TDT_UTF16, void, void>::write_json
 	return buffer->writeStringBody(str);
 }
 
-} // end namespace sogou
+} // end namespace srpc
 

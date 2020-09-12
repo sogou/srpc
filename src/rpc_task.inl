@@ -27,7 +27,7 @@
 #include "rpc_message.h"
 #include "rpc_options.h"
 
-namespace sogou
+namespace srpc
 {
 
 class RPCWorker
@@ -158,9 +158,9 @@ protected:
 };
 
 template<class OUTPUT>
-static void RPCAsyncFutureCallback(OUTPUT *output, sogou::RPCContext *ctx)
+static void RPCAsyncFutureCallback(OUTPUT *output, srpc::RPCContext *ctx)
 {
-	using RESULT = std::pair<OUTPUT, sogou::RPCSyncContext>;
+	using RESULT = std::pair<OUTPUT, srpc::RPCSyncContext>;
 	auto *pr = static_cast<WFPromise<RESULT> *>(ctx->get_user_data());
 	RESULT res;
 
@@ -178,7 +178,7 @@ static void RPCAsyncFutureCallback(OUTPUT *output, sogou::RPCContext *ctx)
 }
 
 template<class OUTPUT>
-static void ThriftSendCallback(OUTPUT *output, sogou::RPCContext *ctx)
+static void ThriftSendCallback(OUTPUT *output, srpc::RPCContext *ctx)
 {
 	auto *receiver = static_cast<ThriftReceiver<OUTPUT> *>(ctx->get_user_data());
 
@@ -446,5 +446,5 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 	user_done_(status_code, worker);
 }
 
-} // namespace sogou
+} // namespace srpc
 

@@ -22,7 +22,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace sogou
+namespace srpc
 {
 
 template<class T>
@@ -182,5 +182,5 @@ private:
 	WFNetworkTask<RPCREQ, RPCRESP> *task_;
 };
 
-} // namespace sogou
+} // namespace srpc
 

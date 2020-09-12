@@ -17,7 +17,7 @@
 - RPC调用层：Service/Client IMPL
 
 ## RPC Global
-- 获取srpc版本号``sogou::SRPCGlobal::get_instance()->get_srpc_version()``
+- 获取srpc版本号``srpc::SRPCGlobal::get_instance()->get_srpc_version()``
 
 ## RPC Status Code
 |name                               | value     |含义               |
@@ -176,7 +176,7 @@ int main()
 #include <stdio.h>
 #include "example.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 
 int main()
 {

@@ -9,7 +9,7 @@
 #include "echo.srpc.h"
 #include "msg.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 using namespace example;
 
 #define PARALLEL_NUM	20

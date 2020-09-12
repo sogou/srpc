@@ -27,7 +27,7 @@
 #include "rpc_message_brpc.h"
 #include "rpc_zero_copy_stream.h"
 
-namespace sogou
+namespace srpc
 {
 
 BRPCMessage::BRPCMessage()

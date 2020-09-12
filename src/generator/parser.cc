@@ -394,60 +394,60 @@ static void fill_rpc_param_type(const std::string& file_name_prefix,
 {
 	if (idl_type == "bool")
 	{
-		param.data_type = sogou::TDT_BOOL;
+		param.data_type = srpc::TDT_BOOL;
 		param.type_name = "bool";
 	}
 	else if (idl_type == "i8" || idl_type == "byte")
 	{
-		param.data_type = sogou::TDT_I08;
+		param.data_type = srpc::TDT_I08;
 		param.type_name = "int8_t";
 	}
 	else if (idl_type == "i16")
 	{
-		param.data_type = sogou::TDT_I16;
+		param.data_type = srpc::TDT_I16;
 		param.type_name = "int16_t";
 	}
 	else if (idl_type == "i32")
 	{
-		param.data_type = sogou::TDT_I32;
+		param.data_type = srpc::TDT_I32;
 		param.type_name = "int32_t";
 	}
 	else if (idl_type == "i64")
 	{
-		param.data_type = sogou::TDT_I64;
+		param.data_type = srpc::TDT_I64;
 		param.type_name = "int64_t";
 	}
 	else if (idl_type == "u64")
 	{
-		param.data_type = sogou::TDT_U64;
+		param.data_type = srpc::TDT_U64;
 		param.type_name = "uint64_t";
 	}
 	else if (idl_type == "double")
 	{
-		param.data_type = sogou::TDT_DOUBLE;
+		param.data_type = srpc::TDT_DOUBLE;
 		param.type_name = "double";
 	}
 	else if (idl_type == "string" || idl_type == "binary")
 	{
-		param.data_type = sogou::TDT_STRING;
+		param.data_type = srpc::TDT_STRING;
 		param.type_name = "std::string";
 	}
 	else if (SGenUtil::start_with(idl_type, "list"))
 	{
 		size_t cur = 0;
-		param.data_type = sogou::TDT_LIST;
+		param.data_type = srpc::TDT_LIST;
 		param.type_name = gen_param_var(idl_type, cur);
 	}
 	else if (SGenUtil::start_with(idl_type, "map"))
 	{
 		size_t cur = 0;
-		param.data_type = sogou::TDT_MAP;
+		param.data_type = srpc::TDT_MAP;
 		param.type_name = gen_param_var(idl_type, cur);
 	}
 	else if (SGenUtil::start_with(idl_type, "set"))
 	{
 		size_t cur = 0;
-		param.data_type = sogou::TDT_SET;
+		param.data_type = srpc::TDT_SET;
 		param.type_name = gen_param_var(idl_type, cur);
 	}
 	else
@@ -456,13 +456,13 @@ static void fill_rpc_param_type(const std::string& file_name_prefix,
 		if (enum_set->count(idl_type) > 0 || enum_set->count(file_name_prefix + idl_type) > 0)
 		{
 			//enum
-			param.data_type = sogou::TDT_I32;
+			param.data_type = srpc::TDT_I32;
 			param.type_name = "int32_t";
 		}
 		else
 		{
 			//struct
-			param.data_type = sogou::TDT_STRUCT;
+			param.data_type = srpc::TDT_STRUCT;
 			param.type_name = idl_type;
 		}
 	}
@@ -517,7 +517,7 @@ bool Parser::parse_service_thrift(const std::string& file_name_prefix, const std
 		rpc_param param;
 
 		param.var_name = "result";
-		param.required_state = sogou::THRIFT_STRUCT_FIELD_REQUIRED;
+		param.required_state = srpc::THRIFT_STRUCT_FIELD_REQUIRED;
 		param.field_id = 0;
 		if (idl_type != "void")
 		{
@@ -539,7 +539,7 @@ bool Parser::parse_service_thrift(const std::string& file_name_prefix, const std
 					continue;
 
 				param.var_name = typevar[1];
-				param.required_state = sogou::THRIFT_STRUCT_FIELD_REQUIRED;
+				param.required_state = srpc::THRIFT_STRUCT_FIELD_REQUIRED;
 				param.field_id = atoi(SGenUtil::strip(filedparam[0]).c_str());
 				idl_type = SGenUtil::strip(typevar[0]);
 				fill_rpc_param_type(file_name_prefix, idl_type, param);
@@ -668,15 +668,15 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 
 		if (idx1 == idx2 || (b1 != "required" && b1 != "optional"))
 		{
-			param.required_state = sogou::THRIFT_STRUCT_FIELD_DEFAULT;
+			param.required_state = srpc::THRIFT_STRUCT_FIELD_DEFAULT;
 			b1 = "default";
 			b2 = SGenUtil::strip(bb.substr(0, idx2));
 			b3 = SGenUtil::strip(bb.substr(idx2 + 1));
 		}
 		else
 		{
-			param.required_state = (b1 == "required") ? sogou::THRIFT_STRUCT_FIELD_REQUIRED
-													  : sogou::THRIFT_STRUCT_FIELD_OPTIONAL;
+			param.required_state = (b1 == "required") ? srpc::THRIFT_STRUCT_FIELD_REQUIRED
+													  : srpc::THRIFT_STRUCT_FIELD_OPTIONAL;
 			b2 = SGenUtil::strip(bb.substr(idx1 + 1, idx2 - idx1 - 1));
 			b3 = SGenUtil::strip(bb.substr(idx2 + 1));
 		}

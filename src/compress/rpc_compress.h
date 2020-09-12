@@ -22,7 +22,7 @@
 #include "rpc_basic.h"
 #include "rpc_options.h"
 
-namespace sogou
+namespace srpc
 {
 
 using CompressFunction = int (*)(const char*, size_t, char *, size_t);
@@ -232,7 +232,7 @@ inline void RPCCompressor::clear()
 	}
 }
 
-} // namespace sogou
+} // namespace srpc
 
 #endif
 

@@ -24,7 +24,7 @@
 #include <unistd.h>
 #endif
 
-using namespace sogou;
+using namespace srpc;
 
 class ExampleServiceImpl : public Example::Service
 {

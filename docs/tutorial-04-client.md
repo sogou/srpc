@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include "example.srpc.h"
 
-using namespace sogou;
+using namespace srpc;
 
 int main()
 {

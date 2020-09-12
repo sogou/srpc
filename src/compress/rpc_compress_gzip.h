@@ -33,7 +33,7 @@
 #define GzipDecompressIOVec CommonDecompressIOVec
 #define ZlibDecompressIOVec CommonDecompressIOVec
 
-namespace sogou
+namespace srpc
 {
 
 static constexpr int GZIP_LEASE_HEADER		= 20;
@@ -399,7 +399,7 @@ static int ZlibLeaseSize(size_t origin_size)
 	return compressBound((uLong)origin_size);
 }
 
-} // end namespace sogou
+} // end namespace srpc
 
 #endif
 

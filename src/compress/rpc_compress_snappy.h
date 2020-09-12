@@ -21,7 +21,7 @@
 
 #include "rpc_basic.h"
 
-namespace sogou
+namespace srpc
 {
 
 class SnappyManager
@@ -61,7 +61,7 @@ public:
 	static int SnappyLeaseSize(size_t origin_size);
 };
 
-} // end namespace sogou
+} // end namespace srpc
 
 #endif
 
