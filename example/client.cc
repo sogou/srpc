@@ -12,7 +12,7 @@
 using namespace sogou;
 using namespace example;
 
-#define PARALLEL_NUM	100
+#define PARALLEL_NUM	20
 #define GET_CURRENT_MS	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
 #define GET_CURRENT_NS	std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
 
@@ -42,8 +42,8 @@ static void do_echo(CLIENT *client)
 		++query_count;
 		if (ctx->success())
 		{
-			//printf("%s\n", response->message().c_str());
-			//printf("%s\n", ctx->get_remote_ip().c_str());
+//			printf("%s\n", response->message().c_str());
+//			printf("%s\n", ctx->get_remote_ip().c_str());
 			++success_count;
 			latency_sum += GET_CURRENT_NS - ns_st;
 		}

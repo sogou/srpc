@@ -14,15 +14,15 @@
 syntax="proto2";
 
 message EchoRequest {
-	optional string message = 1;
-	optional string name = 2;
+    optional string message = 1;
+    optional string name = 2;
 };
 
 message EchoResponse {
-	optional string message = 1;
+    optional string message = 1;
 };
 
 service Example {
- 	rpc Echo(EchoRequest) returns (EchoResponse);
+     rpc Echo(EchoRequest) returns (EchoResponse);
 };
 ~~~

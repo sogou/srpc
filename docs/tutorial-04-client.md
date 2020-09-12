@@ -18,20 +18,20 @@ using namespace sogou;
 
 int main()
 {
-	Example::SRPCClient client("127.0.0.1", 1412);
-	EchoRequest req;
-	req.set_message("Hello, sogou rpc!");
-	req.set_name("Li Yingxin");
+    Example::SRPCClient client("127.0.0.1", 1412);
+    EchoRequest req;
+    req.set_message("Hello, sogou rpc!");
+    req.set_name("Li Yingxin");
 
-	client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
-		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
-		else
-			printf("status[%d] error[%d] errmsg:%s\n",
-					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
-	});
+    client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
+        if (ctx->success())
+            printf("%s\n", response->DebugString().c_str());
+        else
+            printf("status[%d] error[%d] errmsg:%s\n",
+                    ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+    });
 
-	pause();
-	return 0;
+    pause();
+    return 0;
 }
 ~~~

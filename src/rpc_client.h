@@ -34,7 +34,8 @@ public:
 	using TASK = RPCClientTask<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
 
 protected:
-	using COMPLEXTASK = WFComplexClientTask<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
+	using COMPLEXTASK = WFComplexClientTask<typename RPCTYPE::REQ,
+											typename RPCTYPE::RESP>;
 
 public:
 	RPCClient(const std::string& service_name);
@@ -52,8 +53,10 @@ protected:
 	TASK *create_rpc_client_task(const std::string& method_name,
 								 std::function<void (OUTPUT *, RPCContext *)>&& done)
 	{
-		auto *task = new TASK(this->service_name, method_name, &this->params.task_params,
-			[done](int status_code, RPCWorker& worker) -> int {
+		auto *task = new TASK(this->service_name,
+							  method_name,
+							  &this->params.task_params,
+							  [done](int status_code, RPCWorker& worker) -> int {
 				return ClientRPCDoneImpl(status_code, worker, done);
 			});
 
@@ -112,7 +115,10 @@ inline void RPCClient<RPCTYPE>::init(const RPCClientParams *params)
 	if (this->params.task_params.data_type == INT_UNSET)
 		this->params.task_params.data_type = RPCTYPE::default_data_type;
 
-	this->has_addr_info = SRPCGlobal::get_instance()->task_init(this->params, this->uri, &this->ss, &this->ss_len);
+	this->has_addr_info = SRPCGlobal::get_instance()->task_init(this->params,
+																this->uri,
+																&this->ss,
+																&this->ss_len);
 }
 
 template<class RPCTYPE>

@@ -68,16 +68,16 @@
 syntax="proto2";
 
 message EchoRequest {
-	optional string message = 1;
-	optional string name = 2;
+    optional string message = 1;
+    optional string name = 2;
 };
 
 message EchoResponse {
-	optional string message = 1;
+    optional string message = 1;
 };
 
 service Example {
- 	rpc Echo(EchoRequest) returns (EchoResponse);
+     rpc Echo(EchoRequest) returns (EchoResponse);
 };
 ~~~
 
@@ -98,14 +98,14 @@ service Example {
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
-	{
-		response->set_message("Hi, " + request->name());
+    void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+    {
+        response->set_message("Hi, " + request->name());
 
-		printf("get_req:\n%s\nset_resp:\n%s\n",
-				request->DebugString().c_str(),
-				response->DebugString().c_str());
-	}
+        printf("get_req:\n%s\nset_resp:\n%s\n",
+                request->DebugString().c_str(),
+                response->DebugString().c_str());
+    }
 };
 ~~~
 
@@ -131,32 +131,32 @@ public:
 ~~~cpp
 int main()
 {
-	SRPCServer server_srpc;
-	SRPCHttpServer server_srpc_http;
-	BRPCServer server_brpc;
-	ThriftServer server_thrift;
+    SRPCServer server_srpc;
+    SRPCHttpServer server_srpc_http;
+    BRPCServer server_brpc;
+    ThriftServer server_thrift;
 
-	ExampleServiceImpl impl_pb;
-	AnotherThriftServiceImpl impl_thrift;
+    ExampleServiceImpl impl_pb;
+    AnotherThriftServiceImpl impl_thrift;
 
-	server_srpc.add_service(&impl_pb);
-	server_srpc.add_service(&impl_thrift);
-	server_srpc_http.add_service(&impl_pb);
-	server_srpc_http.add_service(&impl_thrift);
-	server_brpc.add_service(&impl_pb);
-	server_thrift.add_service(&impl_thrift);
+    server_srpc.add_service(&impl_pb);
+    server_srpc.add_service(&impl_thrift);
+    server_srpc_http.add_service(&impl_pb);
+    server_srpc_http.add_service(&impl_thrift);
+    server_brpc.add_service(&impl_pb);
+    server_thrift.add_service(&impl_thrift);
 
-	server_srpc.start(1412);
-	server_srpc_http.start(8811);
-	server_brpc.start(2020);
-	server_thrift.start(9090);
-	pause();
-	server_thrift.stop();
-	server_brpc.stop();
-	server_srpc_http.stop();
-	server_srpc.stop();
+    server_srpc.start(1412);
+    server_srpc_http.start(8811);
+    server_brpc.start(2020);
+    server_thrift.start(9090);
+    pause();
+    server_thrift.stop();
+    server_brpc.stop();
+    server_srpc_http.stop();
+    server_srpc.stop();
 
-	return 0;
+    return 0;
 }
 ~~~
 
@@ -180,21 +180,21 @@ using namespace sogou;
 
 int main()
 {
-	Example::SRPCClient client("127.0.0.1", 1412);
-	EchoRequest req;
-	req.set_message("Hello, sogou rpc!");
-	req.set_name("Li Yingxin");
+    Example::SRPCClient client("127.0.0.1", 1412);
+    EchoRequest req;
+    req.set_message("Hello, sogou rpc!");
+    req.set_name("Li Yingxin");
 
-	client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
-		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
-		else
-			printf("status[%d] error[%d] errmsg:%s\n",
-					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
-	});
+    client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
+        if (ctx->success())
+            printf("%s\n", response->DebugString().c_str());
+        else
+            printf("status[%d] error[%d] errmsg:%s\n",
+                    ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+    });
 
-	pause();
-	return 0;
+    pause();
+    return 0;
 }
 ~~~
 
@@ -206,7 +206,7 @@ int main()
 
 ### RPCContext API - Common
 #### ``long long get_seqid() const;``
-请求+回复视为1次完整通信，获得当前socket连接上的通信seqid，seqid=0代表第1次
+请求+回复视为1次完整通信，获得当前socket连接上的通信sequence id，seqid=0代表第1次
 
 #### ``std::string get_remote_ip() const;``
 获得对方IP地址，支持ipv4/ipv6
@@ -237,7 +237,7 @@ client专用。这次请求的错误信息
 client专用。这次请求的错误码
 
 #### ``void *get_user_data() const;``
-client专用。获取ClientTask的user_data
+client专用。获取ClientTask的user_data。如果用户通过create_xxx_task接口产生task，则可以通过user_data域记录上下文，在创建task时设置，在回调函数中拿回。
 
 ### RPCContext API - Only for server process
 #### ``void set_data_type(RPCDataType type);``
@@ -247,7 +247,7 @@ Server专用。设置数据打包类型
 - RPCDataJson
 
 #### ``void set_compress_type(RPCCompressType type);``
-Server专用。设置数据压缩类型
+Server专用。设置数据压缩类型(注：Client的压缩类型在Client或Task上设置)
 - RPCCompressNone
 - RPCCompressSnappy
 - RPCCompressGzip
@@ -312,27 +312,27 @@ Server专用。设置连接保活时间，单位毫秒。-1代表无限。
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
-	{
-		auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0,
-			[request, response](WFHttpTask *task) {
-				if (task->get_state() == WFT_STATE_SUCCESS)
-				{
-					const void *data;
-					size_t len;
-					task->get_resp()->get_parsed_body(&data, &len);
-					response->mutable_message()->assign((const char *)data, len);
-				}
-				else
-					response->set_message("Error: " + std::to_string(task->get_error()));
+    void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+    {
+        auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0,
+            [request, response](WFHttpTask *task) {
+                if (task->get_state() == WFT_STATE_SUCCESS)
+                {
+                    const void *data;
+                    size_t len;
+                    task->get_resp()->get_parsed_body(&data, &len);
+                    response->mutable_message()->assign((const char *)data, len);
+                }
+                else
+                    response->set_message("Error: " + std::to_string(task->get_error()));
 
-				printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
-											request->DebugString().c_str(),
-											response->DebugString().c_str());
-			});
+                printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
+                                            request->DebugString().c_str(),
+                                            response->DebugString().c_str());
+            });
 
-		ctx->get_series()->push_back(http_task);
-	}
+        ctx->get_series()->push_back(http_task);
+    }
 };
 ~~~
 
@@ -347,48 +347,48 @@ public:
 ~~~cpp
 void calc(int x, int y)
 {
-	int z = x * x + y * y;
+    int z = x * x + y * y;
 
-	printf("calc result: %d\n", z);
+    printf("calc result: %d\n", z);
 }
 
 int main()
 {
-	Example::SRPCClient client("127.0.0.1", 1412);
+    Example::SRPCClient client("127.0.0.1", 1412);
 
-	auto *rpc_task = client.create_Echo_task([](EchoResponse *response, RPCContext *ctx) {
-		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
-		else
-			printf("status[%d] error[%d] errmsg:%s\n",
-					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
-	});
+    auto *rpc_task = client.create_Echo_task([](EchoResponse *response, RPCContext *ctx) {
+        if (ctx->success())
+            printf("%s\n", response->DebugString().c_str());
+        else
+            printf("status[%d] error[%d] errmsg:%s\n",
+                    ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+    });
 
-	auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0, [](WFHttpTask *task) {
-		if (task->get_state() == WFT_STATE_SUCCESS)
-		{
-			std::string body;
-			const void *data;
-			size_t len;
+    auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0, [](WFHttpTask *task) {
+        if (task->get_state() == WFT_STATE_SUCCESS)
+        {
+            std::string body;
+            const void *data;
+            size_t len;
 
-			task->get_resp()->get_parsed_body(&data, &len);
-			body.assign((const char *)data, len);
-			printf("%s\n\n", body.c_str());
-		}
-		else
-			printf("Http request fail\n\n");
-	});
+            task->get_resp()->get_parsed_body(&data, &len);
+            body.assign((const char *)data, len);
+            printf("%s\n\n", body.c_str());
+        }
+        else
+            printf("Http request fail\n\n");
+    });
 
-	auto *calc_task = WFTaskFactory::create_go_task(calc, 3, 4);
+    auto *calc_task = WFTaskFactory::create_go_task(calc, 3, 4);
 
-	EchoRequest req;
-	req.set_message("Hello, sogou rpc!");
-	req.set_name("1412");
-	rpc_task->serialize_input(&req);
+    EchoRequest req;
+    req.set_message("Hello, sogou rpc!");
+    req.set_name("1412");
+    rpc_task->serialize_input(&req);
 
-	((*http_task * rpc_task) > calc_task).start();
+    ((*http_task * rpc_task) > calc_task).start();
 
-	pause();
-	return 0;
+    pause();
+    return 0;
 }
 ~~~

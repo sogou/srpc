@@ -16,10 +16,15 @@ class ExamplePBServiceImpl : public ExamplePB::Service
 public:
 	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
 	{
-//		ctx->set_compress_type(RPCCompressGzip);
+/*
+		ctx->set_compress_type(RPCCompressGzip);
+		char buf[100000];
+		for (int i = 0; i < 100000; i++)
+			buf[i] = 'a';
+		buf[99999] = '\0';
+		response->set_message(buf);
+*/
 		response->set_message("Hi back");
-		//response->set_state(1);
-		//response->set_error(2);
 
 //		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
 //									request->DebugString().c_str(),
@@ -40,7 +45,15 @@ public:
 	void Message(ExampleThrift::MessageRequest *request, ExampleThrift::MessageResponse *response, RPCContext *ctx) override
 	{
 		//ctx->set_data_type(RPCDataJson);
-		response->result.message = "Hi back";
+
+		ctx->set_compress_type(RPCCompressGzip);
+		char buf[10000];
+		for (int i = 0; i < 10000; i++)
+			buf[i] = 'a';
+		buf[9999] = '\0';
+		response->result.message = buf;
+
+//		response->result.message = "Hi back";
 		//response->result.__isset.arr = true;
 		//response->result.state = 1;
 		//response->result.__isset.state = true;

@@ -6,7 +6,7 @@
 
 ### RPCContext API - Common
 #### ``long long get_seqid() const;``
-请求+回复视为1次完整通信，获得当前socket连接上的通信seqid，seqid=0代表第1次
+请求+回复视为1次完整通信，获得当前socket连接上的通信sequence id，seqid=0代表第1次
 
 #### ``std::string get_remote_ip() const;``
 获得对方IP地址，支持ipv4/ipv6
@@ -37,7 +37,7 @@ client专用。这次请求的错误信息
 client专用。这次请求的错误码
 
 #### ``void *get_user_data() const;``
-client专用。获取ClientTask的user_data
+client专用。获取ClientTask的user_data。如果用户通过create_xxx_task接口产生task，则可以通过user_data域记录上下文，在创建task时设置，在回调函数中拿回。
 
 ### RPCContext API - Only for server process
 #### ``void set_data_type(RPCDataType type);``
@@ -47,7 +47,7 @@ Server专用。设置数据打包类型
 - RPCDataJson
 
 #### ``void set_compress_type(RPCCompressType type);``
-Server专用。设置数据压缩类型
+Server专用。设置数据压缩类型(注：Client的压缩类型在Client或Task上设置)
 - RPCCompressNone
 - RPCCompressSnappy
 - RPCCompressGzip

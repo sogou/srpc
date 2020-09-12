@@ -20,31 +20,31 @@
 ~~~cpp
 int main()
 {
-	SRPCServer server_srpc;
-	SRPCHttpServer server_srpc_http;
-	BRPCServer server_brpc;
-	ThriftServer server_thrift;
+    SRPCServer server_srpc;
+    SRPCHttpServer server_srpc_http;
+    BRPCServer server_brpc;
+    ThriftServer server_thrift;
 
-	ExampleServiceImpl impl_pb;
-	AnotherThriftServiceImpl impl_thrift;
+    ExampleServiceImpl impl_pb;
+    AnotherThriftServiceImpl impl_thrift;
 
-	server_srpc.add_service(&impl_pb);
-	server_srpc.add_service(&impl_thrift);
-	server_srpc_http.add_service(&impl_pb);
-	server_srpc_http.add_service(&impl_thrift);
-	server_brpc.add_service(&impl_pb);
-	server_thrift.add_service(&impl_thrift);
+    server_srpc.add_service(&impl_pb);
+    server_srpc.add_service(&impl_thrift);
+    server_srpc_http.add_service(&impl_pb);
+    server_srpc_http.add_service(&impl_thrift);
+    server_brpc.add_service(&impl_pb);
+    server_thrift.add_service(&impl_thrift);
 
-	server_srpc.start(1412);
-	server_srpc_http.start(8811);
-	server_brpc.start(2020);
-	server_thrift.start(9090);
-	pause();
-	server_thrift.stop();
-	server_brpc.stop();
-	server_srpc_http.stop();
-	server_srpc.stop();
+    server_srpc.start(1412);
+    server_srpc_http.start(8811);
+    server_brpc.start(2020);
+    server_thrift.start(9090);
+    pause();
+    server_thrift.stop();
+    server_brpc.stop();
+    server_srpc_http.stop();
+    server_srpc.stop();
 
-	return 0;
+    return 0;
 }
 ~~~

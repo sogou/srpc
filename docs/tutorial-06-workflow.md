@@ -12,27 +12,27 @@
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
-	{
-		auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0,
-			[request, response](WFHttpTask *task) {
-				if (task->get_state() == WFT_STATE_SUCCESS)
-				{
-					const void *data;
-					size_t len;
-					task->get_resp()->get_parsed_body(&data, &len);
-					response->mutable_message()->assign((const char *)data, len);
-				}
-				else
-					response->set_message("Error: " + std::to_string(task->get_error()));
+    void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+    {
+        auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0,
+            [request, response](WFHttpTask *task) {
+                if (task->get_state() == WFT_STATE_SUCCESS)
+                {
+                    const void *data;
+                    size_t len;
+                    task->get_resp()->get_parsed_body(&data, &len);
+                    response->mutable_message()->assign((const char *)data, len);
+                }
+                else
+                    response->set_message("Error: " + std::to_string(task->get_error()));
 
-				printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
-											request->DebugString().c_str(),
-											response->DebugString().c_str());
-			});
+                printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
+                                            request->DebugString().c_str(),
+                                            response->DebugString().c_str());
+            });
 
-		ctx->get_series()->push_back(http_task);
-	}
+        ctx->get_series()->push_back(http_task);
+    }
 };
 ~~~
 
@@ -47,48 +47,48 @@ public:
 ~~~cpp
 void calc(int x, int y)
 {
-	int z = x * x + y * y;
+    int z = x * x + y * y;
 
-	printf("calc result: %d\n", z);
+    printf("calc result: %d\n", z);
 }
 
 int main()
 {
-	Example::SRPCClient client("127.0.0.1", 1412);
+    Example::SRPCClient client("127.0.0.1", 1412);
 
-	auto *rpc_task = client.create_Echo_task([](EchoResponse *response, RPCContext *ctx) {
-		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
-		else
-			printf("status[%d] error[%d] errmsg:%s\n",
-					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
-	});
+    auto *rpc_task = client.create_Echo_task([](EchoResponse *response, RPCContext *ctx) {
+        if (ctx->success())
+            printf("%s\n", response->DebugString().c_str());
+        else
+            printf("status[%d] error[%d] errmsg:%s\n",
+                    ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+    });
 
-	auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0, [](WFHttpTask *task) {
-		if (task->get_state() == WFT_STATE_SUCCESS)
-		{
-			std::string body;
-			const void *data;
-			size_t len;
+    auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0, [](WFHttpTask *task) {
+        if (task->get_state() == WFT_STATE_SUCCESS)
+        {
+            std::string body;
+            const void *data;
+            size_t len;
 
-			task->get_resp()->get_parsed_body(&data, &len);
-			body.assign((const char *)data, len);
-			printf("%s\n\n", body.c_str());
-		}
-		else
-			printf("Http request fail\n\n");
-	});
+            task->get_resp()->get_parsed_body(&data, &len);
+            body.assign((const char *)data, len);
+            printf("%s\n\n", body.c_str());
+        }
+        else
+            printf("Http request fail\n\n");
+    });
 
-	auto *calc_task = WFTaskFactory::create_go_task(calc, 3, 4);
+    auto *calc_task = WFTaskFactory::create_go_task(calc, 3, 4);
 
-	EchoRequest req;
-	req.set_message("Hello, sogou rpc!");
-	req.set_name("1412");
-	rpc_task->serialize_input(&req);
+    EchoRequest req;
+    req.set_message("Hello, sogou rpc!");
+    req.set_name("1412");
+    rpc_task->serialize_input(&req);
 
-	((*http_task * rpc_task) > calc_task).start();
+    ((*http_task * rpc_task) > calc_task).start();
 
-	pause();
-	return 0;
+    pause();
+    return 0;
 }
 ~~~

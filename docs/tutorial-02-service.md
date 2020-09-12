@@ -15,13 +15,13 @@
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
-	{
-		response->set_message("Hi, " + request->name());
+    void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+    {
+        response->set_message("Hi, " + request->name());
 
-		printf("get_req:\n%s\nset_resp:\n%s\n",
-				request->DebugString().c_str(),
-				response->DebugString().c_str());
-	}
+        printf("get_req:\n%s\nset_resp:\n%s\n",
+                request->DebugString().c_str(),
+                response->DebugString().c_str());
+    }
 };
 ~~~
