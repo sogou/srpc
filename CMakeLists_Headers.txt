@@ -23,6 +23,6 @@ set(INCLUDE_HEADERS
 	src/rpc_task.inl
 	src/rpc_types.h
 	src/rpc_zero_copy_stream.h
-	src/sogou_rpc.h
+	src/rpc_define.h
 )
 

@@ -869,7 +869,7 @@ private:
 #include <string>
 
 #include "%s.%s.h"
-#include "srpc/sogou_rpc.h"
+#include "srpc/rpc_define.h"
 )";
 
 	std::string thrift_include_package_format = R"(
