@@ -33,6 +33,7 @@
     * 提供创建任务的接口来创建一个rpc任务
     * 可以把rpc任务放到任务流图中，回调函数里也可以拿到当前的任务流
     * workflow所支持的其他功能，包括upstream、计算调度、异步文件IO等
+  * [更多功能和层次介绍](docs/rpc.md)
 
 ## Installation
   * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
@@ -132,7 +133,7 @@ int main()
 {
     Example::SRPCClient client("127.0.0.1", 1412);
     EchoRequest req;
-    req.set_message("Hello, sogou rpc!");
+    req.set_message("Hello, srpc!");
     req.set_name("workflow");
 
     client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
@@ -168,7 +169,7 @@ curl 127.0.0.1:8811/Example/Echo -H 'Content-Type: application/json' -d '{messag
 终端1输出
 ~~~sh
 get_req:
-message: "Hello, sogou rpc!"
+message: "Hello, srpc!"
 name: "workflow"
 
 set_resp:
