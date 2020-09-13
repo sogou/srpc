@@ -32,7 +32,7 @@ struct RPCTYPESRPC
 {
 	using REQ = SogouStdRequest;
 	using RESP = SogouStdResponse;
-	static const RPCDataType default_data_type = RPCDataProtobuf;
+	static constexpr RPCDataType default_data_type = RPCDataProtobuf;
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
 	{
@@ -44,7 +44,7 @@ struct RPCTYPESRPCHttp
 {
 	using REQ = SogouHttpRequest;
 	using RESP = SogouHttpResponse;
-	static const RPCDataType default_data_type = RPCDataJson;
+	static constexpr RPCDataType default_data_type = RPCDataJson;
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
 	{
@@ -56,14 +56,14 @@ struct RPCTYPEGRPC
 {
 	//using REQ = GRPCHttp2Request;
 	//using RESP = GRPCHttp2Response;
-	static const RPCDataType default_data_type = RPCDataProtobuf;
+	static constexpr RPCDataType default_data_type = RPCDataProtobuf;
 };
 
 struct RPCTYPEBRPC
 {
 	using REQ = BaiduStdRequest;
 	using RESP = BaiduStdResponse;
-	static const RPCDataType default_data_type = RPCDataProtobuf;
+	static constexpr RPCDataType default_data_type = RPCDataProtobuf;
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
 	{
@@ -75,7 +75,7 @@ struct RPCTYPEThrift
 {
 	using REQ = ThriftStdRequest;
 	using RESP = ThriftStdResponse;
-	static const RPCDataType default_data_type = RPCDataThrift;
+	static constexpr RPCDataType default_data_type = RPCDataThrift;
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
 	{
@@ -93,7 +93,7 @@ struct RPCTYPEThriftHttp
 {
 	using REQ = ThriftHttpRequest;
 	using RESP = ThriftHttpResponse;
-	static const RPCDataType default_data_type = RPCDataThrift;
+	static constexpr RPCDataType default_data_type = RPCDataThrift;
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
 	{

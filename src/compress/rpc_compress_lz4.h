@@ -28,7 +28,7 @@ namespace srpc
 
 //#define IN_CHUNK_SIZE  (16*1024)
 
-static const LZ4F_preferences_t kPrefs = {
+static constexpr LZ4F_preferences_t kPrefs = {
 	{
 		LZ4F_max256KB,
 		LZ4F_blockLinked,
