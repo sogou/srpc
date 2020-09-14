@@ -40,7 +40,7 @@
   * srpc依赖workflow和protobuf3，其中workflow可以通过git的submodule形式进行源码依赖。另外，third_party中也包含了压缩库snappy和lz4
 
 ~~~sh
-git clone --recursive https://github.com/holmes1412/srpc.git
+git clone --recursive https://github.com/sogou/srpc.git
 cd srpc
 make
 make check
