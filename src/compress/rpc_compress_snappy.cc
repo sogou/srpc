@@ -16,8 +16,8 @@
   Authors: Li Yingxin (liyingxin@sogou-inc.com)
 */
 
-#include <workflow/snappy.h>
-#include <workflow/snappy-sinksource.h>
+#include "snappy.h"
+#include "snappy-sinksource.h"
 #include "rpc_compress_snappy.h"
 
 namespace srpc

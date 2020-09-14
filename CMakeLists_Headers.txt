@@ -24,5 +24,11 @@ set(INCLUDE_HEADERS
 	src/rpc_types.h
 	src/rpc_zero_copy_stream.h
 	src/rpc_define.h
+	third_party/snappy/snappy.h
+	third_party/snappy/snappy-c.h
+	third_party/snappy/snappy-sinksource.h
+	third_party/snappy/snappy-stubs-public.h
+	third_party/lz4/lib/lz4.h
+	third_party/lz4/lib/lz4frame.h
 )
 

@@ -19,8 +19,8 @@
 #ifndef __RPC_COMPRESS_LZ4_H__
 #define __RPC_COMPRESS_LZ4_H__
 
-#include <workflow/lz4.h>
-#include <workflow/lz4frame.h>
+#include "lz4.h"
+#include "lz4frame.h"
 #include "rpc_basic.h"
 
 namespace srpc
