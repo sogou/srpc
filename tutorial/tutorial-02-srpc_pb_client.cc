@@ -43,8 +43,8 @@ int main()
 	EchoResponse sync_resp;
 	RPCSyncContext sync_ctx;
 
-	req.set_message("Hello, sogou rpc!");
-	req.set_name("Sync");
+	sync_req.set_message("Hello, sogou rpc!");
+	sync_req.set_name("Sync");
 	client.Echo(&sync_req, &sync_resp, &sync_ctx);
 	if (sync_ctx.success)
 		printf("%s\n", sync_resp.DebugString().c_str());

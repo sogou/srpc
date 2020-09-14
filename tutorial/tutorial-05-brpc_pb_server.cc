@@ -31,7 +31,7 @@ public:
 	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
 	{
 //		ctx->set_compress_type(RPCCompressGzip);
-		response->set_message("Hi back");
+		response->set_message("Hi back, " + request->name());
 
 		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
 									request->DebugString().c_str(),

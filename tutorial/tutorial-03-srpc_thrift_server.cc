@@ -30,7 +30,7 @@ class ExampleServiceImpl : public Example::Service
 public:
 	void Echo(EchoResult& _return, const std::string& message, const std::string& name) override
 	{
-		_return.message = "Hi back";
+		_return.message = "Hi back, " + name;
 
 		printf("Server Echo()\nreq_message:\n%s\nresp_message:\n%s\n",
 									message.c_str(),
