@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.6)
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "build type")
-set(CMAKE_INSTALL_PREFIX /opt/sogou CACHE PATH "install prefix")
+if (WIN32)
+	set (CMAKE_INSTALL_PREFIX "C:\Program Files\\" CACHE PATH "install prefix")
+elseif (APPLE)
+	set(CMAKE_INSTALL_PREFIX "/Applications/" CACHE PATH "install prefix")
+else ()
+	set(CMAKE_INSTALL_PREFIX "/usr/lib/" CACHE PATH "install prefix")
+endif ()
 
 project(srpc
-	VERSION 1.0.3
+	VERSION 0.9.1
 	LANGUAGES C CXX)
 
 set(INC_DIR ${PROJECT_SOURCE_DIR}/_include CACHE PATH "srpc inc")
