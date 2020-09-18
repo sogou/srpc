@@ -46,7 +46,6 @@
 git clone --recursive https://github.com/sogou/srpc.git
 cd srpc
 make
-make check
 sudo make install
 ~~~
 
@@ -289,9 +288,4 @@ Outiler = 1%
 ~~~
 
 ![IMG](/docs/images/benchmark6.png)
-
-## Authors
-
-* **Li Yingxin** - *[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)* - *main author*
-* **Wu Jiaxu** - *[wujiaxu@sogou-inc.com](mailto:wujiaxu@sogou-inc.com)* - *c++ template interface/implementation*
 
