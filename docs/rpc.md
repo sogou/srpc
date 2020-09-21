@@ -301,12 +301,12 @@ Server专用。设置连接保活时间，单位毫秒。-1代表无限。
 ## 与workflow异步框架的结合
 ### Server
 下面我们通过一个具体例子来呈现
-- Echo RPC在接收到请求时，像下游发起一次http请求
+- Echo RPC在接收到请求时，向下游发起一次http请求
 - 对下游请求完成后，我们将http response的body信息填充到response的message里，回复给客户端
 - 我们不希望阻塞/占据着Handler的线程，所以对下游的请求一定是一次异步请求
 - 首先，我们通过Workflow框架的工厂``WFTaskFactory::create_http_task``创建一个异步任务http_task
 - 然后，我们利用RPCContext的``ctx->get_series()``获取到ServerTask所在的SeriesWork
-- 最后，我们使用SeiresWork的``push_back``接口将http_task放到SeriesWork的后面
+- 最后，我们使用SeriesWork的``push_back``接口将http_task放到SeriesWork的后面
 
 ~~~cpp
 class ExampleServiceImpl : public Example::Service
