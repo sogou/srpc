@@ -1,4 +1,7 @@
 # Sogou RPC (Sogou Remote Procedure Call)
+[![license MIT](https://img.shields.io/badge/License-Apache-yellow.svg)](https://git.sogou-inc.com/wujiaxu/Filter/blob/master/LICENSE)
+[![C++](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
+[![platform](https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgrey.svg)](#%E9%A1%B9%E7%9B%AE%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%BE%E8%AE%A1%E7%89%B9%E7%82%B9)
 
 ## Introduction
 #### 搜狗自研RPC简称srpc，主要功能和特点：
