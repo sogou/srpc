@@ -1,4 +1,5 @@
 # Sogou RPC (Sogou Remote Procedure Call)
+
 ## Introduction
 #### 搜狗自研RPC简称srpc，主要功能和特点：
   * 这是一个基于[Sogou C++ Workflow](https://github.com/sogou/workflow)的项目，兼具：
@@ -288,4 +289,8 @@ Outiler = 1%
 ~~~
 
 ![IMG](/docs/images/benchmark6.png)
+
+## Authors
+
+* **Li Yingxin** - *[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)* - *main author*
 
