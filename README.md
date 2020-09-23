@@ -25,6 +25,9 @@
   * 支持多种通信协议，使用上完全透明，包括：
     * tcp
     * http
+	* sctp
+	* ssl
+	* https
   * 用户可以通过http+json实现跨语言：
     * 如果自己是server提供方，用任何语言的http server接受post请求，解析若干http header即可
     * 如果自己是client调用方，用任何语言的http client发送post请求，添加若干http header即可
