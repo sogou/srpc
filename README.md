@@ -1,7 +1,7 @@
 # SRPC
-[![license MIT](https://img.shields.io/badge/License-Apache-yellow.svg)](https://github.com/sogou/srpc/blob/master/LICENSE)
-[![C++](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
-[![platform](https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgrey.svg)](#%E9%A1%B9%E7%9B%AE%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%BE%E8%AE%A1%E7%89%B9%E7%82%B9)
+[![License](https://img.shields.io/github/license/apache/maven.svg?label=License)](https://github.com/sogou/srpc/blob/master/LICENSE)
+[![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
+[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgrey.svg)](#%E9%A1%B9%E7%9B%AE%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%BE%E8%AE%A1%E7%89%B9%E7%82%B9)
 
 ## Introduction
 #### 这是搜狗自研的RPC系统，主要功能和特点：
