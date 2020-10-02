@@ -119,7 +119,7 @@ public:
 ### 示例
 下面我们通过一个具体例子来呈现
 - 沿用上面的``ExampleServiceImpl``Service
-- 首先，我们创建1个RPC Server、需要确定协议、监听端口号
+- 首先，我们创建1个RPC Server、需要确定协议
 - 然后，我们可以创建任意个数的Service实例、任意不同proto形成的Service，把这些Service通过``add_service()``接口添加到Server里
 - 最后，通过Server的``start``或者``serve``开启服务，处理即将到来的rpc请求
 - 想像一下，我们也可以从``Example::Service``派生更多的功能的rpc``Echo``不同实现的Service
