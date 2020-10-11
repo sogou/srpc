@@ -49,7 +49,6 @@ struct RPCClientParams
 
 struct RPCServerParams
 {
-	WFServerParams wf_server_params;
 	bool trace_span_flag;
 	unsigned int trace_span_limit;
 };
@@ -86,7 +85,6 @@ static constexpr WFServerParams WF_SERVER_PARAMS_DEFAULT =
 
 static const RPCServerParams RPC_SERVER_PARAMS_DEFAULT =
 {
-/*	.wf_server_params	=	*/	WF_SERVER_PARAMS_DEFAULT,
 /*	.trace_span_flag	=	*/	false,
 /*	.trace_span_limit	=	*/	TRACE_SPAN_LIMIT
 };

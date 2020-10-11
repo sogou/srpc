@@ -73,8 +73,8 @@ static void sig_handler(int signo)
 template<class SERVER>
 static void run_server(unsigned short port)
 {
-	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
-	params.wf_server_params.max_connections = 2048;
+	WFServerParams params = WF_SERVER_PARAMS_DEFAULT;
+	params.max_connections = 2048;
 
 	SERVER server(&params);
 
@@ -96,8 +96,8 @@ static void run_server(unsigned short port)
 template<class SERVER>
 static void run_thrift_server(unsigned short port)
 {
-	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
-	params.wf_server_params.max_connections = 2048;
+	WFServerParams params = WF_SERVER_PARAMS_DEFAULT;
+	params.max_connections = 2048;
 
 	SERVER server(&params);
 

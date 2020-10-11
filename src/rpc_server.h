@@ -42,13 +42,16 @@ protected:
 
 public:
 	RPCServer();
-	RPCServer(const struct RPCServerParams *params);
+	RPCServer(const struct WFServerParams *params);
+	RPCServer(const struct WFServerParams *params,
+			  const struct RPCServerParams *rpc_params);
 
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 
 protected:
 	RPCServer(const struct RPCServerParams *params,
+			  const struct RPCServerParams *rpc_params,
 			  std::function<void (NETWORKTASK *)>&& process);
 
 	CommSession *new_session(long long seq, CommConnection *conn) override;
@@ -75,22 +78,31 @@ inline RPCServer<RPCTYPE>::RPCServer():
 {}
 
 template<class RPCTYPE>
-inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params):
-	WFServer<REQTYPE, RESPTYPE>(&params->wf_server_params,
+inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params):
+	WFServer<REQTYPE, RESPTYPE>(params,
+								std::bind(&RPCServer::server_process,
+								this, std::placeholders::_1))
+{}
+
+template<class RPCTYPE>
+inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params,
+									 const struct RPCServerParams *rpc_params):
+	WFServer<REQTYPE, RESPTYPE>(params,
 								std::bind(&RPCServer::server_process,
 								this, std::placeholders::_1)),
-	trace_span_flag(params->trace_span_flag),
-	trace_span_limit(params->trace_span_limit),
+	trace_span_flag(rpc_params->trace_span_flag),
+	trace_span_limit(rpc_params->trace_span_limit),
 	trace_span_timestamp(0L),
 	trace_span_count(0)
 {}
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params,
+									 const struct RPCServerParams *rpc_params,
 									 std::function<void (NETWORKTASK *)>&& process):
-	WFServer<REQTYPE, RESPTYPE>(&params->wf_server_params, std::move(process)),
-	trace_span_flag(params->trace_span_flag),
-	trace_span_limit(params->trace_span_limit),
+	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process)),
+	trace_span_flag(rpc_params->trace_span_flag),
+	trace_span_limit(rpc_params->trace_span_limit),
 	trace_span_timestamp(0L),
 	trace_span_count(0)
 {}
