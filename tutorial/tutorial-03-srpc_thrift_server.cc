@@ -12,8 +12,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
-  Author: Wu Jiaxu (wujiaxu@sogou-inc.com)
 */
 
 #include <signal.h>
@@ -30,7 +28,7 @@ class ExampleServiceImpl : public Example::Service
 public:
 	void Echo(EchoResult& _return, const std::string& message, const std::string& name) override
 	{
-		_return.message = "Hi back";
+		_return.message = "Hi back, " + name;
 
 		printf("Server Echo()\nreq_message:\n%s\nresp_message:\n%s\n",
 									message.c_str(),

@@ -12,8 +12,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
-  Author: Wu Jiaxu (wujiaxu@sogou-inc.com)
 */
 
 #include <stdio.h>
@@ -43,8 +41,8 @@ int main()
 	EchoResponse sync_resp;
 	RPCSyncContext sync_ctx;
 
-	req.set_message("Hello, sogou rpc!");
-	req.set_name("Sync");
+	sync_req.set_message("Hello, sogou rpc!");
+	sync_req.set_name("Sync");
 	client.Echo(&sync_req, &sync_resp, &sync_ctx);
 	if (sync_ctx.success)
 		printf("%s\n", sync_resp.DebugString().c_str());

@@ -1,6 +1,10 @@
-# Sogou RPC (Sogou Remote Procedure Call)
+# SRPC
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE)
+[![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
+[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos-lightgrey.svg)](#%E9%A1%B9%E7%9B%AE%E7%9A%84%E4%B8%80%E4%BA%9B%E8%AE%BE%E8%AE%A1%E7%89%B9%E7%82%B9)
+
 ## Introduction
-#### 搜狗自研RPC简称srpc，主要功能和特点：
+#### 这是搜狗自研的RPC系统，主要功能和特点：
   * 这是一个基于[Sogou C++ Workflow](https://github.com/sogou/workflow)的项目，兼具：
     * 高性能
     * 低开发和接入门槛
@@ -21,6 +25,9 @@
   * 支持多种通信协议，使用上完全透明，包括：
     * tcp
     * http
+	* sctp
+	* ssl
+	* https
   * 用户可以通过http+json实现跨语言：
     * 如果自己是server提供方，用任何语言的http server接受post请求，解析若干http header即可
     * 如果自己是client调用方，用任何语言的http client发送post请求，添加若干http header即可
@@ -37,13 +44,15 @@
 
 ## Installation
   * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
-  * srpc依赖workflow和protobuf3，其中workflow可以通过git的submodule形式进行源码依赖。另外，third_party中也包含了压缩库snappy和lz4
+  * srpc依赖workflow和protobuf3
+  	* protobuf需要用户自行安装v3.0.0以上的版本
+    * workflow可以通过git的submodule形式进行依赖
+	* 压缩库snappy和lz4也以submodule的形式在third_party/中作源码依赖
 
 ~~~sh
-git clone --recursive https://github.com/holmes1412/srpc.git
+git clone --recursive https://github.com/sogou/srpc.git
 cd srpc
 make
-make check
 sudo make install
 ~~~
 
@@ -290,5 +299,4 @@ Outiler = 1%
 ## Authors
 
 * **Li Yingxin** - *[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)* - *main author*
-* **Wu Jiaxu** - *[wujiaxu@sogou-inc.com](mailto:wujiaxu@sogou-inc.com)* - *c++ template interface/implementation*
 

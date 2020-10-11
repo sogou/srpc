@@ -12,9 +12,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
-  Authors: Wu Jiaxu (wujiaxu@sogou-inc.com)
-           Li Yingxin (liyingxin@sogou-inc.com)
 */
 
 #ifdef _WIN32
@@ -33,7 +30,7 @@
 namespace srpc
 {
 
-const char *SRPC_VERSION = "SRPC Library Version: 1.0.3";
+const char *SRPC_VERSION = "SRPC Library Version: 0.9.1";
 
 const char *SRPCGlobal::get_srpc_version() const { return SRPC_VERSION; }
 

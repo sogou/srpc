@@ -12,8 +12,6 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
-  Author: Wu Jiaxu (wujiaxu@sogou-inc.com)
 */
 
 #include <stdio.h>
@@ -75,7 +73,7 @@ int main()
 	sync_req.name = "Sync";
 	client.Echo(&sync_req, &sync_resp, &sync_ctx);
 	if (sync_ctx.success)
-		printf("%s\n", sync_res.message.c_str());
+		printf("%s\n", sync_resp.result.message.c_str());
 	else
 		printf("status[%d] error[%d] errmsg:%s\n",
 				sync_ctx.status_code, sync_ctx.error, sync_ctx.errmsg.c_str());

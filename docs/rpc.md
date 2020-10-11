@@ -119,7 +119,7 @@ public:
 ### 示例
 下面我们通过一个具体例子来呈现
 - 沿用上面的``ExampleServiceImpl``Service
-- 首先，我们创建1个RPC Server、需要确定协议、监听端口号
+- 首先，我们创建1个RPC Server、需要确定协议
 - 然后，我们可以创建任意个数的Service实例、任意不同proto形成的Service，把这些Service通过``add_service()``接口添加到Server里
 - 最后，通过Server的``start``或者``serve``开启服务，处理即将到来的rpc请求
 - 想像一下，我们也可以从``Example::Service``派生更多的功能的rpc``Echo``不同实现的Service
@@ -301,12 +301,12 @@ Server专用。设置连接保活时间，单位毫秒。-1代表无限。
 ## 与workflow异步框架的结合
 ### Server
 下面我们通过一个具体例子来呈现
-- Echo RPC在接收到请求时，像下游发起一次http请求
+- Echo RPC在接收到请求时，向下游发起一次http请求
 - 对下游请求完成后，我们将http response的body信息填充到response的message里，回复给客户端
 - 我们不希望阻塞/占据着Handler的线程，所以对下游的请求一定是一次异步请求
 - 首先，我们通过Workflow框架的工厂``WFTaskFactory::create_http_task``创建一个异步任务http_task
 - 然后，我们利用RPCContext的``ctx->get_series()``获取到ServerTask所在的SeriesWork
-- 最后，我们使用SeiresWork的``push_back``接口将http_task放到SeriesWork的后面
+- 最后，我们使用SeriesWork的``push_back``接口将http_task放到SeriesWork的后面
 
 ~~~cpp
 class ExampleServiceImpl : public Example::Service
