@@ -59,6 +59,9 @@ protected:
 			});
 
 		this->task_init(task);
+		if (this->params.trace_span_flag)
+			this->task_trace_span(task);
+
 		return task;
 	}
 
@@ -67,12 +70,15 @@ protected:
 
 private:
 	void __task_init(COMPLEXTASK *task) const;
+	void task_trace_span(TASK *Task);
 
 	RPCClientParams params;
 	ParsedURI uri;
 	struct sockaddr_storage ss;
 	socklen_t ss_len;
 	bool has_addr_info;
+	uint64_t trace_span_timestamp;
+	std::atomic<unsigned int> trace_span_count;
 };
 
 ////////
@@ -85,6 +91,8 @@ inline RPCClient<RPCTYPE>::RPCClient(const std::string& service_name):
 {
 	SRPCGlobal::get_instance();
 	this->service_name = service_name;
+	this->trace_span_timestamp = 0L;
+	this->trace_span_count = 0;
 }
 
 template<class RPCTYPE>
@@ -192,6 +200,28 @@ inline void RPCClient<RPCTYPEThriftHttp>::task_init(COMPLEXTASK *task) const
 		__set_host_by_uri(task->get_current_uri(), this->params.is_ssl, header_host);
 
 	task->get_req()->set_header_pair("Host", header_host.c_str());
+}
+
+template<class RPCTYPE>
+inline void RPCClient<RPCTYPE>::task_trace_span(TASK *task)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	uint64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+
+	if (timestamp == this->trace_span_timestamp
+		&& this->trace_span_count < this->params.trace_span_limit)
+	{
+		this->trace_span_count++;
+		task->enable_trace_span();
+	}
+	else if (timestamp > this->trace_span_timestamp)
+	{
+		this->trace_span_count = 0;
+		this->trace_span_timestamp = timestamp;
+		task->enable_trace_span();
+	}
+	// else < : do nothing
 }
 
 } // namespace srpc

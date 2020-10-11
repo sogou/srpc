@@ -74,7 +74,7 @@ template<class SERVER>
 static void run_server(unsigned short port)
 {
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
-	params.max_connections = 2048;
+	params.wf_server_params.max_connections = 2048;
 
 	SERVER server(&params);
 
@@ -97,7 +97,7 @@ template<class SERVER>
 static void run_thrift_server(unsigned short port)
 {
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
-	params.max_connections = 2048;
+	params.wf_server_params.max_connections = 2048;
 
 	SERVER server(&params);
 
