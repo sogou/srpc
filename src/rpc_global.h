@@ -40,7 +40,7 @@ public:
 				   struct sockaddr_storage *ss, socklen_t *ss_len) const;
 
 	uint64_t get_trace_id();
-	uint32_t get_span_id() { return this->span_id; }
+	uint32_t get_span_id() { return this->span_id++; }
 
 private:
 	SRPCGlobal();

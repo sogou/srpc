@@ -3,7 +3,7 @@ syntax="proto2";
 message Span {
 	required uint64 trace_id = 1;
 	required uint32 span_id = 2;
-	required uint32 parent_span_id = 3;
+	optional uint32 parent_span_id = 3;
 	optional uint32 request_size = 4;
 	optional uint32 response_size = 5;
 };

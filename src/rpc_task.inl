@@ -519,7 +519,7 @@ bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
 	span_->span_id = SRPCGlobal::get_instance()->get_span_id();
 
 	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	clock_gettime(CLOCK_REALTIME, &ts);
 	span_->start_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 
 	//SRPCGlobal::get_instance()->write_span_to_db(span_);
@@ -533,7 +533,7 @@ bool RPCClientTask<RPCREQ, RPCRESP>::end_span()
 
 	//this->resp.get_span(span_);
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	clock_gettime(CLOCK_REALTIME, &ts);
 	span_->end_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 	span_->cost = span_->end_time - span_->start_time;
 	span_->status = this->resp.get_status_code();
@@ -603,7 +603,7 @@ bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
 	span_->compress_type = this->req.get_compress_type();
 
 	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	clock_gettime(CLOCK_REALTIME, &ts);
 	span_->start_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 
 	//SRPCGlobal::get_instance()->write_span_to_db(&series_ctx_->span_);
@@ -615,7 +615,7 @@ bool RPCServerTask<RPCREQ, RPCRESP>::end_span()
 {
 	struct timespec ts;
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	clock_gettime(CLOCK_REALTIME, &ts);
 	span_->end_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 	span_->cost = span_->end_time - span_->start_time;
 	span_->status = this->resp.get_status_code();
