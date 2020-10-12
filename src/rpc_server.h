@@ -42,13 +42,13 @@ protected:
 
 public:
 	RPCServer();
-	RPCServer(const struct WFServerParams *params);
+	RPCServer(const RPCServerParams *params);
 
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 
 protected:
-	RPCServer(const struct WFServerParams *params,
+	RPCServer(const RPCServerParams *params,
 			  std::function<void (NETWORKTASK *)>&& process);
 
 	CommSession *new_session(long long seq, CommConnection *conn) override;
@@ -69,14 +69,14 @@ inline RPCServer<RPCTYPE>::RPCServer():
 {}
 
 template<class RPCTYPE>
-inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params):
+inline RPCServer<RPCTYPE>::RPCServer(const RPCServerParams *params):
 	WFServer<REQTYPE, RESPTYPE>(params,
 								std::bind(&RPCServer::server_process,
 								this, std::placeholders::_1))
 {}
 
 template<class RPCTYPE>
-inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params,
+inline RPCServer<RPCTYPE>::RPCServer(const RPCServerParams *params,
 									 std::function<void (NETWORKTASK *)>&& process):
 	WFServer<REQTYPE, RESPTYPE>(params, std::move(process))
 {}
