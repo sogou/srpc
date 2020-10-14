@@ -42,29 +42,23 @@ protected:
 
 public:
 	RPCServer();
-	RPCServer(const struct WFServerParams *params);
-	RPCServer(const struct WFServerParams *params,
-			  const struct RPCServerParams *rpc_params);
+	RPCServer(const struct RPCServerParams *params);
 
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 
 protected:
 	RPCServer(const struct RPCServerParams *params,
-			  const struct RPCServerParams *rpc_params,
 			  std::function<void (NETWORKTASK *)>&& process);
 
 	CommSession *new_session(long long seq, CommConnection *conn) override;
 	void server_process(NETWORKTASK *task) const;
 
 private:
-	void task_trace_span(TASK *Task);
+	void set_tracing(TASK *Task);
 
 	std::map<std::string, RPCService *> service_map;
-	bool trace_span_flag;
-	unsigned int trace_span_limit;
-	uint64_t trace_span_timestamp;
-	std::atomic<unsigned int> trace_span_count;
+	span_creator_t span_creator;
 };
 
 ////////
@@ -72,39 +66,24 @@ private:
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer():
-	WFServer<REQTYPE, RESPTYPE>(&WF_SERVER_PARAMS_DEFAULT,
+	WFServer<REQTYPE, RESPTYPE>(&RPC_SERVER_PARAMS_DEFAULT,
 								std::bind(&RPCServer::server_process,
 								this, std::placeholders::_1))
 {}
 
 template<class RPCTYPE>
-inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params):
-	WFServer<REQTYPE, RESPTYPE>(params,
-								std::bind(&RPCServer::server_process,
-								this, std::placeholders::_1))
-{}
-
-template<class RPCTYPE>
-inline RPCServer<RPCTYPE>::RPCServer(const struct WFServerParams *params,
-									 const struct RPCServerParams *rpc_params):
+inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params):
 	WFServer<REQTYPE, RESPTYPE>(params,
 								std::bind(&RPCServer::server_process,
 								this, std::placeholders::_1)),
-	trace_span_flag(rpc_params->trace_span_flag),
-	trace_span_limit(rpc_params->trace_span_limit),
-	trace_span_timestamp(0L),
-	trace_span_count(0)
+	span_creator(params->span_creator)
 {}
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params,
-									 const struct RPCServerParams *rpc_params,
 									 std::function<void (NETWORKTASK *)>&& process):
 	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process)),
-	trace_span_flag(rpc_params->trace_span_flag),
-	trace_span_limit(rpc_params->trace_span_limit),
-	trace_span_timestamp(0L),
-	trace_span_count(0)
+	span_creator(params->span_creator)
 {}
 
 template<class RPCTYPE>
@@ -136,12 +115,13 @@ template<class RPCTYPE>
 inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq,
 													CommConnection *conn)
 {
-	auto *task = new TASK(this->process);
+	auto *task = new TASK(this->process, this->span_creator);
 
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
-	if (this->trace_span_flag)
-		this->task_trace_span(task);
+	if (this->span_creator)
+		task->enable_tracing();
+
 	return task;
 }
 
@@ -169,7 +149,7 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
-				if (this->trace_span_flag)
+				if (this->span_creator)
 					static_cast<TASK *>(task)->start_span();
 
 				status_code = req->decompress();
@@ -180,28 +160,6 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 	}
 
 	resp->set_status_code(status_code);
-}
-
-template<class RPCTYPE>
-inline void RPCServer<RPCTYPE>::task_trace_span(TASK *task)
-{
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	uint64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-
-	if (timestamp == this->trace_span_timestamp
-		&& this->trace_span_count < this->trace_span_limit)
-	{
-		this->trace_span_count++;
-		task->enable_trace_span();
-	}
-	else if (timestamp > this->trace_span_timestamp)
-	{
-		this->trace_span_count = 0;
-		this->trace_span_timestamp = timestamp;
-		task->enable_trace_span();
-	}
-	// else < : do nothing
 }
 
 template<>

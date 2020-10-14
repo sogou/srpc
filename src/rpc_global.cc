@@ -122,6 +122,27 @@ uint64_t SRPCGlobal::get_trace_id()
 	return trace_id;
 }
 
+void SRPCGlobal::collect_span_default(RPCSpan *span, void **)
+{
+	char str[SPAN_LOG_MAX_LENGTH] = { 0 };
+	int ret;
+
+	ret = sprintf(str, "trace_id:%llu span_id:%u service:%s method:%s start:%llu",
+				  span->trace_id, span->span_id, span->service_name.c_str(),
+				  span->method_name.c_str(), span->start_time);
+
+	if (span->parent_span_id != UINT_UNSET)
+		ret += sprintf(str + ret, " parent_span_id:%u", span->parent_span_id);
+	if (span->end_time != UINT64_UNSET)
+		ret += sprintf(str + ret, " end_time:%llu", span->end_time);
+	if (span->cost != UINT64_UNSET)
+	{
+		ret += sprintf(str + ret, " cost:%llu remote_ip:%s", span->cost, span->remote_ip.c_str());
+	}
+
+	fprintf(stderr, "SPAN_LOG: %s\n", str);
+}
+
 static const SRPCGlobal *srpc_global = SRPCGlobal::get_instance();
 
 } // namespace srpc

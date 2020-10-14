@@ -46,6 +46,20 @@ private:
 	SRPCGlobal();
 	SnowFlake snowflake;
 	std::atomic<uint32_t> span_id;
+
+public:
+	static SubTask *create_span_task_default(const RPCSpan *span)
+	{
+		auto *task = RPCSpanTaskFactory::create_thread_task("rpc_span",
+															collect_span_default,
+															nullptr);
+        RPCSpan *input = task->get_input();
+		memcpy(input, span, sizeof(RPCSpan));
+		return task;
+	}
+
+private:
+	static void collect_span_default(RPCSpan *span, void **);
 };
 
 } // namespace srpc

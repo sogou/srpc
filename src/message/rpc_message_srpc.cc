@@ -972,7 +972,7 @@ bool SogouHttpResponse::deserialize_meta()
 bool SogouHttpRequest::set_span(RPCSpan *span)
 {
 	char value[50];
-	sprintf(value, "%lu", span->trace_id);
+	sprintf(value, "%llu", span->trace_id);
 	set_header_pair("Trace-Id", value);
 	sprintf(value, "%u", span->span_id);
 	set_header_pair("Span-Id", value);
@@ -1009,7 +1009,7 @@ bool SogouHttpRequest::get_span(RPCSpan *span) const
 bool SogouHttpResponse::set_span(RPCSpan *span)
 {
 	char value[50];
-	sprintf(value, "%lu", span->trace_id);
+	sprintf(value, "%llu", span->trace_id);
 	set_header_pair("Trace-Id", value);
 	sprintf(value, "%u", span->span_id);
 	set_header_pair("Span-Id", value);

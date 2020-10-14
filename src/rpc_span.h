@@ -19,6 +19,8 @@
 
 #include <time.h>
 #include <atomic>
+#include "workflow/WFTask.h"
+#include "workflow/WFTaskFactory.h"
 
 namespace srpc
 {
@@ -140,6 +142,46 @@ public:
 		cost(UINT64_UNSET)
 	{}
 };
+
+using RPCSpanTaskFactory = WFThreadTaskFactory<RPCSpan, void *>;
+
+/*
+class RPCSpanLogTask : public WFGenericTask
+{
+public:
+
+	RPCSpanLogTask(const RPCSpan *span,
+				   std::function<void (RPCSpan *)> collect,
+				   std::function<void (RPCSpanLogTask *)> callback) :
+		data(std::move(data)),
+		collect(std::move(collect)),
+		callback(std::move(callback))
+	{}
+
+private:
+    virtual void dispatch()
+	{
+		if (this->collect)
+			this->collect(data);
+		this->subtask_done();
+	}
+
+    virtual SubTask *done()
+	{
+		SeriesWork *series = series_of(this);
+
+		if (this->callback)
+			this->callback(this);
+		delete this;
+
+		return series->pop();
+	}
+
+	std::function<void (RPCSpan *)> collect;
+	std::function<void (RPCSpanLogTask *)> callback;
+	RPCSpan span_;
+};
+*/
 
 } // end namespace srpc
 
