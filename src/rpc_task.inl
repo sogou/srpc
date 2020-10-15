@@ -23,6 +23,7 @@
 #include "rpc_basic.h"
 #include "rpc_message.h"
 #include "rpc_options.h"
+#include "rpc_global.h"
 
 namespace srpc
 {
@@ -129,11 +130,20 @@ public:
 	RPCClientTask(const std::string& service_name,
 				  const std::string& method_name,
 				  const RPCTaskParams *params,
+				  RPCSpanLogger *span_logger,
 				  user_done_t&& user_done);
+
+	std::string get_remote_ip() const;
 
 private:
 	template<class IDL>
 	int __serialize_input(const IDL *in);
+
+	bool start_span();
+	bool end_span();
+
+	RPCSpan *span_;
+	RPCSpanLogger *span_logger_;
 
 	user_done_t user_done_;
 	bool init_failed_;
@@ -143,15 +153,31 @@ template<class RPCREQ, class RPCRESP>
 class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 {
 public:
-	RPCServerTask(std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process) :
+	RPCServerTask(std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
+				  RPCSpanLogger *span_logger) :
 		WFServerTask<RPCREQ, RPCRESP>(WFGlobal::get_scheduler(), process),
-		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp)
-	{}
+		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp),
+		span_(NULL),
+		span_logger_(span_logger)
+	{
+		if (span_logger_)
+			span_ = new RPCSpan();
+	}
 
-	RPCWorker worker;
+	bool start_span();
 
 protected:
 	CommMessageOut *message_out() override;
+
+public:
+	std::string get_remote_ip() const;
+
+	RPCWorker worker;
+
+private:
+	bool end_span();
+	RPCSpan *span_;
+	RPCSpanLogger *span_logger_;
 };
 
 template<class OUTPUT>
@@ -225,6 +251,9 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		status_code = this->resp.compress();
 		if (status_code == RPCStatusOK)
 		{
+			if (span_logger_)
+				this->end_span();
+
 			if (this->resp.serialize_meta())
 				return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
 
@@ -295,11 +324,17 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
 					const std::string& method_name,
 					const RPCTaskParams *params,
+					RPCSpanLogger *span_logger,
 					user_done_t&& user_done):
 	WFComplexClientTask<RPCREQ, RPCRESP>(0, nullptr),
+	span_(NULL),
+	span_logger_(span_logger),
 	user_done_(std::move(user_done)),
 	init_failed_(false)
 {
+	if (span_logger_)
+		span_ = new RPCSpan();
+
 	if (user_done_)
 		this->set_callback(std::bind(&RPCClientTask::rpc_callback,
 									 this, std::placeholders::_1));
@@ -341,10 +376,14 @@ template<class RPCREQ, class RPCRESP>
 CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 {
 	this->req.set_seqid(this->get_task_seq());
+
 	int status_code = this->req.compress();
 
 	if (status_code == RPCStatusOK)
 	{
+		if (span_logger_) // TODO: || get span info from series
+			this->start_span();
+
 		if (this->req.serialize_meta())
 			return this->WFClientTask<RPCREQ, RPCRESP>::message_out();
 
@@ -367,6 +406,9 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 	{
 		if (this->resp.deserialize_meta() == false)
 			this->resp.set_status_code(RPCStatusMetaError);
+
+		if (span_logger_)
+			this->end_span();
 	}
 
 	return true;
@@ -441,6 +483,135 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 	this->resp.set_error(this->error);
 
 	user_done_(status_code, worker);
+}
+
+template<class RPCREQ, class RPCRESP>
+std::string RPCClientTask<RPCREQ, RPCRESP>::get_remote_ip() const
+{
+	char ip_str[INET6_ADDRSTRLEN + 1] = { 0 };
+	struct sockaddr_storage addr;
+	socklen_t addrlen = sizeof (addr);
+
+	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
+	{
+		if (addr.ss_family == AF_INET)
+		{
+			struct sockaddr_in *sin = (struct sockaddr_in *)(&addr);
+
+			inet_ntop(AF_INET, &sin->sin_addr, ip_str, addrlen);
+		}
+		else if (addr.ss_family == AF_INET6)
+		{
+			struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)(&addr);
+
+			inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, addrlen);
+		}
+	}
+
+	return std::string(ip_str);
+}
+
+template<class RPCREQ, class RPCRESP>
+bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
+{
+	span_->set_service_name(this->req.get_service_name());
+	span_->set_method_name(this->req.get_method_name());
+	span_->set_data_type(this->req.get_data_type());
+	span_->set_compress_type(this->req.get_compress_type());
+
+	if (span_->get_trace_id() == UINT64_UNSET)
+		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
+	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
+
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	span_->set_start_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+
+	return this->req.set_span(span_);
+}
+
+template<class RPCREQ, class RPCRESP>
+bool RPCClientTask<RPCREQ, RPCRESP>::end_span()
+{
+	struct timespec ts;
+
+	//this->resp.get_span(span_);
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+	span_->set_end_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	span_->set_cost(span_->get_end_time() - span_->get_start_time());
+	span_->set_status(this->resp.get_status_code());
+	span_->set_error(this->resp.get_error());
+	span_->set_remote_ip(this->get_remote_ip());
+
+	SubTask *log_task_ = span_logger_->create_log_task(span_);
+	series_of(this)->push_front(log_task_);
+
+	return true;
+}
+
+template<class RPCREQ, class RPCRESP>
+std::string RPCServerTask<RPCREQ, RPCRESP>::get_remote_ip() const
+{
+	char ip_str[INET6_ADDRSTRLEN + 1] = { 0 };
+	struct sockaddr_storage addr;
+	socklen_t addrlen = sizeof (addr);
+
+	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
+	{
+		if (addr.ss_family == AF_INET)
+		{
+			struct sockaddr_in *sin = (struct sockaddr_in *)(&addr);
+
+			inet_ntop(AF_INET, &sin->sin_addr, ip_str, addrlen);
+		}
+		else if (addr.ss_family == AF_INET6)
+		{
+			struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)(&addr);
+
+			inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, addrlen);
+		}
+	}
+
+	return std::string(ip_str);
+}
+
+template<class RPCREQ, class RPCRESP>
+bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
+{
+	this->req.get_span(span_);
+	span_->set_service_name(this->req.get_service_name());
+	span_->set_method_name(this->req.get_method_name());
+	span_->set_data_type(this->req.get_data_type());
+	span_->set_compress_type(this->req.get_compress_type());
+
+	if (span_->get_trace_id() == UINT64_UNSET)
+		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
+	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
+
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	span_->set_start_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+
+	return true;
+}
+
+template<class RPCREQ, class RPCRESP>
+bool RPCServerTask<RPCREQ, RPCRESP>::end_span()
+{
+	struct timespec ts;
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+	span_->set_end_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	span_->set_cost(span_->get_end_time() - span_->get_start_time());
+	span_->set_status(this->resp.get_status_code());
+	span_->set_error(this->resp.get_error());
+	span_->set_remote_ip(this->get_remote_ip());
+
+	SubTask *log_task_ = span_logger_->create_log_task(span_);
+	series_of(this)->push_front(log_task_);
+
+	return true;
 }
 
 } // namespace srpc
