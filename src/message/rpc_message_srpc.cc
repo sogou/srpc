@@ -253,8 +253,8 @@ bool SRPCMessage::get_attachment(const char **attachment, size_t *len) const
 bool SRPCMessage::set_span(RPCSpan *span)
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
-	meta->mutable_span()->set_trace_id(span->trace_id);
-	meta->mutable_span()->set_span_id(span->span_id);
+	meta->mutable_span()->set_trace_id(span->get_trace_id());
+	meta->mutable_span()->set_span_id(span->get_span_id());
 //	meta->mutable_span()->set_parent_span_id(span->parent_span_id);
 	return true;
 }
@@ -265,9 +265,9 @@ bool SRPCMessage::get_span(RPCSpan *span) const
 	if (!meta->has_span())
 		return false;
 
-	span->trace_id = meta->mutable_span()->trace_id();
+	span->set_trace_id(meta->mutable_span()->trace_id());
 //	span->span_id = meta->mutable_span()->span_id();
-	span->parent_span_id = meta->mutable_span()->span_id();
+	span->set_parent_span_id(meta->mutable_span()->span_id());
 	return true;
 }
 
@@ -972,9 +972,9 @@ bool SogouHttpResponse::deserialize_meta()
 bool SogouHttpRequest::set_span(RPCSpan *span)
 {
 	char value[50];
-	sprintf(value, "%llu", span->trace_id);
+	sprintf(value, "%llu", span->get_trace_id());
 	set_header_pair("Trace-Id", value);
-	sprintf(value, "%u", span->span_id);
+	sprintf(value, "%u", span->get_span_id());
 	set_header_pair("Span-Id", value);
 	return true;
 }
@@ -991,14 +991,14 @@ bool SogouHttpRequest::get_span(RPCSpan *span) const
 	{
 		if (!strcasecmp(name.c_str(), "Trace-Id"))
 		{
-			span->trace_id = strtoull(value.c_str(), NULL, 10);
+			span->set_trace_id(strtoull(value.c_str(), NULL, 10));
 			found = true;
 			continue;
 		}
 
 		if (!strcasecmp(name.c_str(), "Span-Id"))
 		{
-			span->parent_span_id = strtoull(value.c_str(), NULL, 10);
+			span->set_parent_span_id(strtoull(value.c_str(), NULL, 10));
 			found = true;
 			continue;
 		}
@@ -1009,9 +1009,9 @@ bool SogouHttpRequest::get_span(RPCSpan *span) const
 bool SogouHttpResponse::set_span(RPCSpan *span)
 {
 	char value[50];
-	sprintf(value, "%llu", span->trace_id);
+	sprintf(value, "%llu", span->get_trace_id());
 	set_header_pair("Trace-Id", value);
-	sprintf(value, "%u", span->span_id);
+	sprintf(value, "%u", span->get_span_id());
 	set_header_pair("Span-Id", value);
 	return false;
 }
@@ -1028,14 +1028,14 @@ bool SogouHttpResponse::get_span(RPCSpan *span) const
 	{
 		if (!strcasecmp(name.c_str(), "Trace-Id"))
 		{
-			span->trace_id = strtoull(value.c_str(), NULL, 10);
+			span->set_trace_id(strtoull(value.c_str(), NULL, 10));
 			found = true;
 			continue;
 		}
 
 		if (!strcasecmp(name.c_str(), "Span-Id"))
 		{
-			span->parent_span_id = strtoull(value.c_str(), NULL, 10);
+			span->set_parent_span_id(strtoull(value.c_str(), NULL, 10));
 			found = true;
 			continue;
 		}

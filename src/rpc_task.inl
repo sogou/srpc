@@ -130,10 +130,9 @@ public:
 	RPCClientTask(const std::string& service_name,
 				  const std::string& method_name,
 				  const RPCTaskParams *params,
-				  span_creator_t& creator,
+				  RPCSpanLogger *span_logger,
 				  user_done_t&& user_done);
 
-	void enable_tracing();
 	std::string get_remote_ip() const;
 
 private:
@@ -144,7 +143,7 @@ private:
 	bool end_span();
 
 	RPCSpan *span_;
-	span_creator_t& span_creator_;
+	RPCSpanLogger *span_logger_;
 
 	user_done_t user_done_;
 	bool init_failed_;
@@ -155,14 +154,16 @@ class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 {
 public:
 	RPCServerTask(std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
-				  span_creator_t& creator) :
+				  RPCSpanLogger *span_logger) :
 		WFServerTask<RPCREQ, RPCRESP>(WFGlobal::get_scheduler(), process),
 		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp),
 		span_(NULL),
-		span_creator_(creator)
-	{}
+		span_logger_(span_logger)
+	{
+		if (span_logger_)
+			span_ = new RPCSpan();
+	}
 
-	void enable_tracing();
 	bool start_span();
 
 protected:
@@ -175,9 +176,8 @@ public:
 
 private:
 	bool end_span();
-
 	RPCSpan *span_;
-	span_creator_t& span_creator_;
+	RPCSpanLogger *span_logger_;
 };
 
 template<class OUTPUT>
@@ -251,7 +251,7 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		status_code = this->resp.compress();
 		if (status_code == RPCStatusOK)
 		{
-			if (span_)
+			if (span_logger_)
 				this->end_span();
 
 			if (this->resp.serialize_meta())
@@ -324,14 +324,17 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
 					const std::string& method_name,
 					const RPCTaskParams *params,
-					span_creator_t& creator,
+					RPCSpanLogger *span_logger,
 					user_done_t&& user_done):
 	WFComplexClientTask<RPCREQ, RPCRESP>(0, nullptr),
 	span_(NULL),
-	span_creator_(creator),
+	span_logger_(span_logger),
 	user_done_(std::move(user_done)),
 	init_failed_(false)
 {
+	if (span_logger_)
+		span_ = new RPCSpan();
+
 	if (user_done_)
 		this->set_callback(std::bind(&RPCClientTask::rpc_callback,
 									 this, std::placeholders::_1));
@@ -378,7 +381,7 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 
 	if (status_code == RPCStatusOK)
 	{
-		if (span_) // TODO: || get span info from series
+		if (span_logger_) // TODO: || get span info from series
 			this->start_span();
 
 		if (this->req.serialize_meta())
@@ -404,7 +407,7 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 		if (this->resp.deserialize_meta() == false)
 			this->resp.set_status_code(RPCStatusMetaError);
 
-		if (span_)
+		if (span_logger_)
 			this->end_span();
 	}
 
@@ -509,26 +512,20 @@ std::string RPCClientTask<RPCREQ, RPCRESP>::get_remote_ip() const
 }
 
 template<class RPCREQ, class RPCRESP>
-void RPCClientTask<RPCREQ, RPCRESP>::enable_tracing()
-{
-	span_ = new RPCSpan();
-}
-
-template<class RPCREQ, class RPCRESP>
 bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
 {
-	span_->service_name = this->req.get_service_name();
-	span_->method_name = this->req.get_method_name();
-	span_->data_type = this->req.get_data_type();
-	span_->compress_type = this->req.get_compress_type();
+	span_->set_service_name(this->req.get_service_name());
+	span_->set_method_name(this->req.get_method_name());
+	span_->set_data_type(this->req.get_data_type());
+	span_->set_compress_type(this->req.get_compress_type());
 
-	if (span_->trace_id == UINT64_UNSET)
-		span_->trace_id = SRPCGlobal::get_instance()->get_trace_id();
-	span_->span_id = SRPCGlobal::get_instance()->get_span_id();
+	if (span_->get_trace_id() == UINT64_UNSET)
+		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
+	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
 
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
-	span_->start_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+	span_->set_start_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 
 	return this->req.set_span(span_);
 }
@@ -541,18 +538,14 @@ bool RPCClientTask<RPCREQ, RPCRESP>::end_span()
 	//this->resp.get_span(span_);
 
 	clock_gettime(CLOCK_REALTIME, &ts);
-	span_->end_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-	span_->cost = span_->end_time - span_->start_time;
-	span_->status = this->resp.get_status_code();
-	span_->error = this->resp.get_error();
-	span_->remote_ip = this->get_remote_ip();
+	span_->set_end_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	span_->set_cost(span_->get_end_time() - span_->get_start_time());
+	span_->set_status(this->resp.get_status_code());
+	span_->set_error(this->resp.get_error());
+	span_->set_remote_ip(this->get_remote_ip());
 
-	if (span_creator_)
-	{
-		SubTask *span_task_ = span_creator_(span_);
-		series_of(this)->push_front(span_task_);
-	}
-	delete span_;
+	SubTask *log_task_ = span_logger_->create_log_task(span_);
+	series_of(this)->push_front(log_task_);
 
 	return true;
 }
@@ -584,39 +577,21 @@ std::string RPCServerTask<RPCREQ, RPCRESP>::get_remote_ip() const
 }
 
 template<class RPCREQ, class RPCRESP>
-void RPCServerTask<RPCREQ, RPCRESP>::enable_tracing()
-{
-	span_ = new RPCSpan();
-}
-
-template<class RPCREQ, class RPCRESP>
 bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
 {
-	if (!span_)
-	{
-		span_ = new RPCSpan();
-		if (!this->req.get_span(span_))
-		{
-			delete span_;
-			span_ = NULL;
-			return false;
-		}
-	}
-	else
-		this->req.get_span(span_);
+	this->req.get_span(span_);
+	span_->set_service_name(this->req.get_service_name());
+	span_->set_method_name(this->req.get_method_name());
+	span_->set_data_type(this->req.get_data_type());
+	span_->set_compress_type(this->req.get_compress_type());
 
-	if (span_->trace_id == UINT64_UNSET)
-		span_->trace_id = SRPCGlobal::get_instance()->get_trace_id();
-	span_->span_id = SRPCGlobal::get_instance()->get_span_id();
-
-	span_->service_name = this->req.get_service_name();
-	span_->method_name = this->req.get_method_name();
-	span_->data_type = this->req.get_data_type();
-	span_->compress_type = this->req.get_compress_type();
+	if (span_->get_trace_id() == UINT64_UNSET)
+		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
+	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
 
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
-	span_->start_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+	span_->set_start_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 
 	return true;
 }
@@ -627,18 +602,14 @@ bool RPCServerTask<RPCREQ, RPCRESP>::end_span()
 	struct timespec ts;
 
 	clock_gettime(CLOCK_REALTIME, &ts);
-	span_->end_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-	span_->cost = span_->end_time - span_->start_time;
-	span_->status = this->resp.get_status_code();
-	span_->error = this->resp.get_error();
-	span_->remote_ip = this->get_remote_ip();
+	span_->set_end_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	span_->set_cost(span_->get_end_time() - span_->get_start_time());
+	span_->set_status(this->resp.get_status_code());
+	span_->set_error(this->resp.get_error());
+	span_->set_remote_ip(this->get_remote_ip());
 
-	if (span_creator_)
-	{
-		SubTask *span_task_ = span_creator_(span_);
-		series_of(this)->push_front(span_task_);
-	}
-	delete span_;
+	SubTask *log_task_ = span_logger_->create_log_task(span_);
+	series_of(this)->push_front(log_task_);
 
 	return true;
 }

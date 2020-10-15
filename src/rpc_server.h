@@ -58,7 +58,7 @@ private:
 	void set_tracing(TASK *Task);
 
 	std::map<std::string, RPCService *> service_map;
-	span_creator_t span_creator;
+	RPCSpanLogger *span_logger;
 };
 
 ////////
@@ -76,14 +76,14 @@ inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params):
 	WFServer<REQTYPE, RESPTYPE>(params,
 								std::bind(&RPCServer::server_process,
 								this, std::placeholders::_1)),
-	span_creator(params->span_creator)
+	span_logger(params->span_logger)
 {}
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params,
 									 std::function<void (NETWORKTASK *)>&& process):
 	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process)),
-	span_creator(params->span_creator)
+	span_logger(params->span_logger)
 {}
 
 template<class RPCTYPE>
@@ -115,12 +115,10 @@ template<class RPCTYPE>
 inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq,
 													CommConnection *conn)
 {
-	auto *task = new TASK(this->process, this->span_creator);
+	auto *task = new TASK(this->process, this->span_logger);
 
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
-	if (this->span_creator)
-		task->enable_tracing();
 
 	return task;
 }
@@ -149,7 +147,7 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
-				if (this->span_creator)
+				if (this->span_logger)
 					static_cast<TASK *>(task)->start_span();
 
 				status_code = req->decompress();

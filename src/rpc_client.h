@@ -54,14 +54,12 @@ protected:
 		auto *task = new TASK(this->service_name,
 							  method_name,
 							  &this->params.task_params,
-							  this->params.span_creator,
+							  this->params.span_logger,
 							  [done](int status_code, RPCWorker& worker) -> int {
 				return ClientRPCDoneImpl(status_code, worker, done);
 			});
 
 		this->task_init(task);
-		if (this->params.span_creator)
-			task->enable_tracing();
 
 		return task;
 	}

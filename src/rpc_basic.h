@@ -35,7 +35,7 @@ static constexpr int				INT_UNSET				= 0x7FFFFFFF;
 static constexpr unsigned int		UINT_UNSET				= 0xFFFFFFFF;
 static constexpr unsigned long long	UINT64_UNSET			= 0xFFFFFFFFFFFFFFFFLLU;
 static constexpr size_t				RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
-static constexpr unsigned int		TRACE_SPAN_LIMIT		= 100;
+static constexpr unsigned int		SPAN_LIMIT_DEFAULT		= 1;
 static constexpr size_t				SPAN_LOG_MAX_LENGTH		= 1024;
 
 using ProtobufIDLMessage = google::protobuf::Message;

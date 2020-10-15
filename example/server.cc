@@ -73,9 +73,12 @@ static void sig_handler(int signo)
 template<class SERVER>
 static void run_server(unsigned short port)
 {
-	WFServerParams params = WF_SERVER_PARAMS_DEFAULT;
+	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
+	RPCSpanLoggerDefault RPC_SPAN_LOGGER_DEFAULT;
+	RPC_SPAN_LOGGER_DEFAULT.set_span_limit(2);
 
+	params.span_logger = &RPC_SPAN_LOGGER_DEFAULT;
 	SERVER server(&params);
 
 	ExamplePBServiceImpl pb_impl;
@@ -96,7 +99,7 @@ static void run_server(unsigned short port)
 template<class SERVER>
 static void run_thrift_server(unsigned short port)
 {
-	WFServerParams params = WF_SERVER_PARAMS_DEFAULT;
+	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
 
 	SERVER server(&params);

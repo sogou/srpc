@@ -33,8 +33,6 @@ struct RPCTaskParams
 	int data_type;		//RPCDataType
 };
 
-using span_creator_t = std::function<SubTask *(const RPCSpan *)>;
-
 struct RPCClientParams
 {
 	RPCTaskParams task_params;
@@ -45,7 +43,7 @@ struct RPCClientParams
 //or URL
 	std::string url;
 //for trace_span
-	span_creator_t span_creator;
+	RPCSpanLogger *span_logger;
 };
 
 struct RPCServerParams : public WFServerParams
@@ -58,10 +56,11 @@ struct RPCServerParams : public WFServerParams
 /*	.keep_alive_timeout		=	*/	60 * 1000,
 /*	.request_size_limit		=	*/	RPC_BODY_SIZE_LIMIT,
 /*	.ssl_accept_timeout		=	*/	10 * 1000
-		})
+		}),
+		span_logger(NULL)
 	{}
 
-	span_creator_t span_creator;
+	RPCSpanLogger *span_logger;
 };
 
 static constexpr RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
@@ -79,7 +78,8 @@ static const RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
 /*	.host				=	*/	"",
 /*	.port				=	*/	SRPC_DEFAULT_PORT,
 /*	.is_ssl				=	*/	false,
-/*	.url				=	*/	""
+/*	.url				=	*/	"",
+/*	.span_logger		=	*/	NULL
 };
 
 static const RPCServerParams RPC_SERVER_PARAMS_DEFAULT;
