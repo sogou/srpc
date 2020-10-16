@@ -161,7 +161,7 @@ public:
 		span_logger_(span_logger)
 	{
 		if (span_logger_)
-			span_ = new RPCSpan();
+			span_ = span_logger_->create_span();
 	}
 
 	bool start_span();
@@ -333,7 +333,7 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 	init_failed_(false)
 {
 	if (span_logger_)
-		span_ = new RPCSpan();
+		span_ = span_logger_->create_span();
 
 	if (user_done_)
 		this->set_callback(std::bind(&RPCClientTask::rpc_callback,

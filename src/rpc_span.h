@@ -232,23 +232,28 @@ public:
 class RPCSpanLogger
 {
 public:
-	virtual SubTask* create_log_task(RPCSpan *take)
+	virtual SubTask* create_log_task(RPCSpan *span)
 	{
-		delete take;
-		take = NULL;
+		delete span;
+		span = NULL;
 		return WFTaskFactory::create_empty_task();
+	}
+
+	virtual RPCSpan *create_span()
+	{
+		return new RPCSpan();
 	}
 };
 
 class RPCSpanLoggerDefault : public RPCSpanLogger
 {
 public:
-	SubTask* create_log_task(RPCSpan *take)
+	SubTask* create_log_task(RPCSpan *span)
 	{
-		if (this->filter(take))
-			return this->creator(take);
+		if (this->filter(span))
+			return this->creator(span);
 
-		delete take;
+		delete span;
 		return WFTaskFactory::create_empty_task();
 	}
 
@@ -288,17 +293,11 @@ private:
 		return true;
 	}
 
-	static void deleter(RPCSpanLogTask *task)
-	{
-		delete task->span;
-	}
-
 	SubTask *creator(RPCSpan *span)
 	{
 		return new RPCSpanLogTask(span, [span](RPCSpanLogTask *task) {
 										delete span;
 									});
-
 	}
 };
 
