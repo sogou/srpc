@@ -168,6 +168,7 @@ public:
 
 protected:
 	CommMessageOut *message_out() override;
+	void handle(int state, int error) override;
 
 public:
 	std::string get_remote_ip() const;
@@ -264,6 +265,18 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 	this->resp.set_status_code(status_code);
 	errno = EBADMSG;
 	return NULL;
+}
+
+template<class RPCREQ, class RPCRESP>
+void RPCServerTask<RPCREQ, RPCRESP>::handle(int state, int error)
+{
+	if (state != WFT_STATE_TOREPLY)
+		return WFServerTask<RPCREQ, RPCRESP>::handle(state, error);
+
+	this->state = WFT_STATE_TOREPLY;
+	this->target = this->get_target();
+	RPCSeriesWork *series = new RPCSeriesWork(&this->processor, this, nullptr);
+	series->start();
 }
 
 template<class RPCREQ, class RPCRESP>
@@ -514,14 +527,28 @@ std::string RPCClientTask<RPCREQ, RPCRESP>::get_remote_ip() const
 template<class RPCREQ, class RPCRESP>
 bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
 {
+	RPCSpan *tmp = NULL;
+	RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+
+	if (series)
+	{
+		tmp = series->get_span();
+		if (tmp != NULL)
+		{
+			span_->set_trace_id(tmp->get_trace_id());
+			span_->set_parent_span_id(tmp->get_span_id());
+		}
+	}
+
+	if (tmp == NULL)
+		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
+
+	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
+
 	span_->set_service_name(this->req.get_service_name());
 	span_->set_method_name(this->req.get_method_name());
 	span_->set_data_type(this->req.get_data_type());
 	span_->set_compress_type(this->req.get_compress_type());
-
-	if (span_->get_trace_id() == UINT64_UNSET)
-		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
-	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
 
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -593,6 +620,10 @@ bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
 	clock_gettime(CLOCK_REALTIME, &ts);
 	span_->set_start_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 
+	RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+	if (series)
+		series->set_span(span_);
+
 	return true;
 }
 
@@ -607,6 +638,9 @@ bool RPCServerTask<RPCREQ, RPCRESP>::end_span()
 	span_->set_status(this->resp.get_status_code());
 	span_->set_error(this->resp.get_error());
 	span_->set_remote_ip(this->get_remote_ip());
+
+	RPCSeriesWork *series = static_cast<RPCSeriesWork *>(series_of(this));
+	series->clear_span();
 
 	SubTask *log_task_ = span_logger_->create_log_task(span_);
 	series_of(this)->push_front(log_task_);
