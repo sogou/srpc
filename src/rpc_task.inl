@@ -639,8 +639,9 @@ bool RPCServerTask<RPCREQ, RPCRESP>::end_span()
 	span_->set_error(this->resp.get_error());
 	span_->set_remote_ip(this->get_remote_ip());
 
-	RPCSeriesWork *series = static_cast<RPCSeriesWork *>(series_of(this));
-	series->clear_span();
+	RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+	if (series)
+		series->clear_span();
 
 	SubTask *log_task_ = span_logger_->create_log_task(span_);
 	series_of(this)->push_front(log_task_);
