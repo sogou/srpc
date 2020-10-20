@@ -301,6 +301,30 @@ private:
 	}
 };
 
+class RPCSeriesWork : public SeriesWork
+{
+public:
+	RPCSeriesWork(SubTask *first, series_callback_t&& callback) :
+		SeriesWork(first, std::move(callback)),
+		span(NULL)
+	{}
+
+	RPCSeriesWork(SubTask *first, SubTask *last, series_callback_t&& callback) :
+		SeriesWork(first, std::move(callback)),
+		span(NULL)
+	{
+		this->set_last_task(last);
+	}
+
+	RPCSpan *get_span() const { return this->span; }
+	void set_span(RPCSpan *span) { this->span = span; }
+	bool has_span() const { this->span == NULL ? false : true; }
+	void clear_span() { this->span = NULL; }
+
+private:
+	RPCSpan *span;
+};
+
 } // end namespace srpc
 
 #endif
