@@ -196,7 +196,7 @@ private:
 	{
 		char str[SPAN_LOG_MAX_LENGTH] = { 0 };
 
-		int ret = sprintf(str, "trace_id:%llu span_id:%u service:%s method:%s start:%llu",
+		int ret = sprintf(str, "trace_id:%lu span_id:%u service:%s method:%s start:%lu",
 						  span->get_trace_id(), span->get_span_id(),
 						  span->get_service_name().c_str(), span->get_method_name().c_str(),
 						  span->get_start_time());
@@ -204,9 +204,9 @@ private:
 		if (span->get_parent_span_id() != UINT_UNSET)
 			ret += sprintf(str + ret, " parent_span_id:%u", span->get_parent_span_id());
 		if (span->get_end_time() != UINT64_UNSET)
-			ret += sprintf(str + ret, " end_time:%llu", span->get_end_time());
+			ret += sprintf(str + ret, " end_time:%lu", span->get_end_time());
 		if (span->get_cost() != UINT64_UNSET)
-			ret += sprintf(str + ret, " cost:%llu remote_ip:%s", span->get_cost(),
+			ret += sprintf(str + ret, " cost:%lu remote_ip:%s", span->get_cost(),
 						   span->get_remote_ip().c_str());
 
 		fprintf(stderr, "[SPAN_LOG] %s\n", str);
@@ -235,7 +235,6 @@ public:
 	virtual SubTask* create_log_task(RPCSpan *span)
 	{
 		delete span;
-		span = NULL;
 		return WFTaskFactory::create_empty_task();
 	}
 
@@ -318,7 +317,7 @@ public:
 
 	RPCSpan *get_span() const { return this->span; }
 	void set_span(RPCSpan *span) { this->span = span; }
-	bool has_span() const { this->span == NULL ? false : true; }
+	bool has_span() const { return this->span == NULL ? false : true; }
 	void clear_span() { this->span = NULL; }
 
 private:
