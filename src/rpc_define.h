@@ -22,8 +22,6 @@
 #include <C++11_REQUIRED>
 #endif
 
-#include "rpc_basic.h"
-#include "rpc_types.h"
 #include "rpc_server.h"
 #include "rpc_client.h"
 
