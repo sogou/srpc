@@ -24,6 +24,7 @@
 
 #include "rpc_server.h"
 #include "rpc_client.h"
+#include "rpc_span_policies.h"
 
 namespace srpc
 {

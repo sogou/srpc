@@ -21,6 +21,7 @@
 #include <atomic>
 #include "workflow/WFTask.h"
 #include "workflow/WFTaskFactory.h"
+#include "rpc_basic.h"
 
 namespace srpc
 {
@@ -183,52 +184,6 @@ public:
 	void set_error(int err) { this->error = err; }
 };
 
-class RPCSpanLogTask : public WFGenericTask
-{
-public:
-	RPCSpanLogTask(RPCSpan *span, std::function<void (RPCSpanLogTask *)> callback) :
-		span(span),
-		callback(std::move(callback))
-	{}
-
-private:
-	virtual void dispatch()
-	{
-		char str[SPAN_LOG_MAX_LENGTH] = { 0 };
-
-		int ret = sprintf(str, "trace_id:%lu span_id:%u service:%s method:%s start:%lu",
-						  span->get_trace_id(), span->get_span_id(),
-						  span->get_service_name().c_str(), span->get_method_name().c_str(),
-						  span->get_start_time());
-
-		if (span->get_parent_span_id() != UINT_UNSET)
-			ret += sprintf(str + ret, " parent_span_id:%u", span->get_parent_span_id());
-		if (span->get_end_time() != UINT64_UNSET)
-			ret += sprintf(str + ret, " end_time:%lu", span->get_end_time());
-		if (span->get_cost() != UINT64_UNSET)
-			ret += sprintf(str + ret, " cost:%lu remote_ip:%s", span->get_cost(),
-						   span->get_remote_ip().c_str());
-
-		fprintf(stderr, "[SPAN_LOG] %s\n", str);
-
-		this->subtask_done();
-	}
-
-	virtual SubTask *done()
-	{
-		SeriesWork *series = series_of(this);
-
-		if (this->callback)
-			this->callback(this);
-
-		delete this;
-		return series->pop();
-	}
-public:
-	RPCSpan *span;
-	std::function<void (RPCSpanLogTask *)> callback;
-};
-
 class RPCSpanLogger
 {
 public:
@@ -241,62 +196,6 @@ public:
 	virtual RPCSpan *create_span()
 	{
 		return new RPCSpan();
-	}
-};
-
-class RPCSpanLoggerDefault : public RPCSpanLogger
-{
-public:
-	SubTask* create_log_task(RPCSpan *span)
-	{
-		if (this->filter(span))
-			return this->creator(span);
-
-		delete span;
-		return WFTaskFactory::create_empty_task();
-	}
-
-	RPCSpanLoggerDefault() :
-		span_limit(SPAN_LIMIT_DEFAULT),
-		span_timestamp(0L),
-		span_count(0)
-	{
-	}
-
-	void set_span_limit(unsigned int limit) { this->span_limit = limit; }
-
-private:
-	unsigned int span_limit;
-	uint64_t span_timestamp;
-	std::atomic<unsigned int> span_count;
-
-	bool filter(RPCSpan *span)
-	{
-		struct timespec ts;
-		clock_gettime(CLOCK_MONOTONIC, &ts);
-		uint64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-
-		if ((timestamp == this->span_timestamp
-				&& this->span_count < this->span_limit)
-			|| span->get_trace_id() != UINT64_UNSET)
-		{
-			this->span_count++;
-		}
-		else if (timestamp > this->span_timestamp)
-		{
-			this->span_count = 0;
-			this->span_timestamp = timestamp;
-		} else
-			return false;
-
-		return true;
-	}
-
-	SubTask *creator(RPCSpan *span)
-	{
-		return new RPCSpanLogTask(span, [span](RPCSpanLogTask *task) {
-										delete span;
-									});
 	}
 };
 
@@ -317,7 +216,7 @@ public:
 
 	RPCSpan *get_span() const { return this->span; }
 	void set_span(RPCSpan *span) { this->span = span; }
-	bool has_span() const { return this->span == NULL ? false : true; }
+	bool has_span() const { return !!this->span; }
 	void clear_span() { this->span = NULL; }
 
 private:

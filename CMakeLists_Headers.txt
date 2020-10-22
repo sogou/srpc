@@ -25,6 +25,7 @@ set(INCLUDE_HEADERS
 	src/rpc_zero_copy_stream.h
 	src/rpc_define.h
 	src/rpc_span.h
+	src/rpc_span_policies.h
 	third_party/snappy/snappy.h
 	third_party/snappy/snappy-c.h
 	third_party/snappy/snappy-sinksource.h
