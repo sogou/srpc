@@ -33,7 +33,7 @@ namespace srpc
 {
 
 static constexpr unsigned int	SPAN_LIMIT_DEFAULT				= 1;
-static constexpr size_t			SPAN_LOG_MAX_LENGTH				= 2048;
+static constexpr size_t			SPAN_LOG_MAX_LENGTH				= 1024;
 static constexpr size_t			UINT64_STRING_LENGTH			= 20;
 static constexpr unsigned int	SPAN_REDIS_RETRY_MAX			= 0;
 static constexpr const char 	*SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
@@ -69,9 +69,9 @@ private:
 		clock_gettime(CLOCK_MONOTONIC, &ts);
 		uint64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 
-		if ((timestamp == this->span_timestamp
-				&& this->span_count < this->span_limit)
-			|| span->get_trace_id() != UINT64_UNSET)
+		if ((timestamp == this->span_timestamp &&
+					this->span_count < this->span_limit) ||
+			span->get_trace_id() != UINT64_UNSET)
 		{
 			this->span_count++;
 		}
@@ -159,8 +159,8 @@ private:
 	SubTask *create(RPCSpan *span)
 	{
 		return new RPCSpanLogTask(span, [span](RPCSpanLogTask *task) {
-										delete span;
-									});
+											delete span;
+										});
 	}
 };
 
@@ -196,40 +196,48 @@ public:
 
 	SubTask *create(RPCSpan *span)
 	{
-		if (this->fd < 0)
+		do
 		{
+			if (this->fd < 0)
+				break;
+
+			mutex.lock();
+
+			size_t len = this->pos - this->buffer;
+			len = rpc_span_log_format(span, this->pos, this->buffer_size - len);
+			if (len > SPAN_LOG_MAX_LENGTH)
+				break;
+
+			this->pos += len;
+			*this->pos = '\n';
+			len++;
+			this->pos++;
+
+			len = this->pos - this->buffer;
+
+			char *buf = NULL;
+			if (len + SPAN_LOG_MAX_LENGTH >= this->buffer_size) // = for '\n'
+			{
+				buf = this->buffer;
+				this->buffer = (char *)malloc(len);
+				this->offset += len;
+				this->pos = this->buffer;
+			}
+			mutex.unlock();
+
+			if (!buf)
+				break;
+
 			delete span;
-			return WFTaskFactory::create_empty_task();
-		}
-
-		mutex.lock();
-
-		size_t len = rpc_span_log_format(span, this->pos, SPAN_LOG_MAX_LENGTH);
-		sprintf(this->pos + len, "\n");
-		len++;
-		this->pos += len;
-
-		len = this->pos - this->buffer;
-		delete span;
-
-		char *buf = NULL;
-		if (len + SPAN_LOG_MAX_LENGTH > this->buffer_size)
-		{
-			buf = this->buffer;
-			this->buffer = (char *)malloc(len);
-			this->offset += len;
-			this->pos = this->buffer;
-		}
-		mutex.unlock();
-
-		if (buf)
 			return WFTaskFactory::create_pwrite_task(this->fd,
 													 buf, len,
 													 this->offset,
 													 [buf](WFFileIOTask *task) {
 													 	free(buf);
 													 });
+		} while (0);
 
+		delete span;
 		return WFTaskFactory::create_empty_task();
 	}
 

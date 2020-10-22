@@ -79,10 +79,10 @@ public:
 
 		this->last_timestamp = timestamp;
 
-		*uid = (timestamp << this->timestamp_shift)
-				| (group_id << this->group_shift)
-				| (machine_id << this->machine_shift)
-				| seq_id;
+		*uid = (timestamp << this->timestamp_shift) |
+				(group_id << this->group_shift) |
+				(machine_id << this->machine_shift) |
+				seq_id;
 
 		return true;
 	}

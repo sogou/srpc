@@ -394,7 +394,7 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 
 	if (status_code == RPCStatusOK)
 	{
-		if (span_logger_) // TODO: || get span info from series
+		if (span_logger_)
 			this->start_span();
 
 		if (this->req.serialize_meta())
