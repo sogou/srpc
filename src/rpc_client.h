@@ -140,7 +140,8 @@ inline void RPCClient<RPCTYPE>::task_init(COMPLEXTASK *task) const
 	__task_init(task);
 }
 
-static inline void __set_host_by_uri(const ParsedURI *uri, bool is_ssl, std::string& header_host)
+static inline void __set_host_by_uri(const ParsedURI *uri, bool is_ssl,
+									 std::string& header_host)
 {
 	if (uri->host && uri->host[0])
 		header_host = uri->host;
