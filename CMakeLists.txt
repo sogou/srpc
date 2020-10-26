@@ -115,7 +115,7 @@ if (NOT ${OS_RELEASE_CORE} EQUAL "")
 	endif()
 endif()
 
-set(CPACK_RPM_DEVEL_PACKAGE_REQUIRES "workflow-devel >= 0.9.0, ${PB_PACKAGE_REQUIRED}")
+set(CPACK_RPM_DEVEL_PACKAGE_REQUIRES "workflow-devel >= 0.9.2, ${PB_PACKAGE_REQUIRED}")
 
 install(
 	FILES ${INCLUDE_HEADERS}
