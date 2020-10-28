@@ -75,10 +75,10 @@ static void run_server(unsigned short port)
 {
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
-	RPCSpanLoggerDefault RPC_SPAN_LOGGER_DEFAULT;
-	RPC_SPAN_LOGGER_DEFAULT.set_span_limit(2);
+	RPCSpanLoggerDefault span_logger;
+	span_logger.set_span_limit(2);
 
-	params.span_logger = &RPC_SPAN_LOGGER_DEFAULT;
+	params.span_logger = &span_logger;
 	SERVER server(&params);
 
 	ExamplePBServiceImpl pb_impl;
