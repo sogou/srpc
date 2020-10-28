@@ -116,8 +116,8 @@ class RPCSpan
 {
 private:
 	uint64_t trace_id;
-	uint32_t span_id;
-	uint32_t parent_span_id;
+	uint64_t span_id;
+	uint64_t parent_span_id;
 	std::string service_name;
 	std::string method_name;
 	int data_type;
@@ -126,14 +126,14 @@ private:
 	uint64_t end_time;
 	uint64_t cost;
 	std::string remote_ip;
-	int status;
+	int state;
 	int error;
 
 public:
 	RPCSpan() :
 		trace_id(UINT64_UNSET),
-		span_id(UINT_UNSET),
-		parent_span_id(UINT_UNSET),
+		span_id(UINT64_UNSET),
+		parent_span_id(UINT64_UNSET),
 		service_name(""),
 		method_name(""),
 		data_type(INT_UNSET),
@@ -144,43 +144,43 @@ public:
 		remote_ip("")
 	{}
 
-	uint64_t get_trace_id() { return this->trace_id; }
+	uint64_t get_trace_id() const { return this->trace_id; }
 	void set_trace_id(uint64_t id) { this->trace_id = id; }
 
-	uint32_t get_span_id() { return this->span_id; }
-	void set_span_id(uint32_t id) { this->span_id = id; }
+	uint64_t get_span_id() const { return this->span_id; }
+	void set_span_id(uint64_t id) { this->span_id = id; }
 
-	uint32_t get_parent_span_id() { return this->parent_span_id; }
-	void set_parent_span_id(uint32_t id) { this->parent_span_id = id; }
+	uint64_t get_parent_span_id() const { return this->parent_span_id; }
+	void set_parent_span_id(uint64_t id) { this->parent_span_id = id; }
 
-	const std::string& get_service_name() { return this->service_name; }
+	const std::string& get_service_name() const { return this->service_name; }
 	void set_service_name(std::string name) { this->service_name = name; }
 
-	const std::string& get_method_name() { return this->method_name; }
+	const std::string& get_method_name() const { return this->method_name; }
 	void set_method_name(std::string name) { this->method_name = name; }
 
-	int get_data_type() { return this->data_type; }
+	int get_data_type() const { return this->data_type; }
 	void set_data_type(int type) { this->data_type = type; }
 
-	int get_compress_type() { return this->compress_type; }
+	int get_compress_type() const { return this->compress_type; }
 	void set_compress_type(int type) { this->compress_type = type; }
 
-	uint64_t get_start_time() { return this->start_time; }
+	uint64_t get_start_time() const { return this->start_time; }
 	void set_start_time(uint64_t time) { this->start_time = time; }
 
-	uint64_t get_end_time() { return this->end_time; }
+	uint64_t get_end_time() const { return this->end_time; }
 	void set_end_time(uint64_t time) { this->end_time = time; }
 
-	uint64_t get_cost() { return this->cost; }
+	uint64_t get_cost() const { return this->cost; }
 	void set_cost(uint64_t time) { this->cost = time; }
 
-	const std::string& get_remote_ip() { return this->remote_ip; }
+	const std::string& get_remote_ip() const { return this->remote_ip; }
 	void set_remote_ip(std::string ip) { this->remote_ip = std::move(ip); }
 
-	int get_status() { return this->status; }
-	void set_status(int stat) { this->status = stat; }
+	int get_state() const { return this->state; }
+	void set_state(int stat) { this->state = stat; }
 
-	int get_error() { return this->error; }
+	int get_error() const { return this->error; }
 	void set_error(int err) { this->error = err; }
 };
 

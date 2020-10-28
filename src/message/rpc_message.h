@@ -38,8 +38,8 @@ public:
 	virtual void set_service_name(const std::string& service_name) = 0;
 	virtual void set_method_name(const std::string& method_name) = 0;
 
-	virtual bool get_span(RPCSpan *span) const = 0;
-	virtual bool set_span(RPCSpan *span) = 0;
+	virtual bool get_span_from_meta(RPCSpan *span) const = 0;
+	virtual bool set_span_to_meta(const RPCSpan *span) = 0;
 
 	virtual void set_seqid(long long seqid) {}
 };
@@ -70,8 +70,8 @@ public:
 	//return RPCStatus
 	virtual int compress() = 0;
 	virtual int decompress() = 0;
-	virtual bool get_span(RPCSpan *span) const = 0;
-	virtual bool set_span(RPCSpan *span) = 0;
+	virtual bool get_span_from_meta(RPCSpan *span) const = 0;
+	virtual bool set_span_to_meta(const RPCSpan *span) = 0;
 
 public:
 	//pb

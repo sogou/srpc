@@ -93,7 +93,7 @@ private:
 
 static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
 {
-	size_t ret = snprintf(str, len, "trace_id: %lu span_id: %u service: %s"
+	size_t ret = snprintf(str, len, "trace_id: %lu span_id: %lu service: %s"
 						 			" method: %s start: %lu",
 					  	 span->get_trace_id(),
 						 span->get_span_id(),
@@ -101,9 +101,9 @@ static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
 						 span->get_method_name().c_str(),
 					  	 span->get_start_time());
 
-	if (span->get_parent_span_id() != UINT_UNSET)
+	if (span->get_parent_span_id() != UINT64_UNSET)
 	{
-		ret += snprintf(str + ret, len - ret, " parent_span_id: %u",
+		ret += snprintf(str + ret, len - ret, " parent_span_id: %lu",
 						span->get_parent_span_id());
 	}
 	if (span->get_end_time() != UINT64_UNSET)
@@ -113,9 +113,12 @@ static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
 	}
 	if (span->get_cost() != UINT64_UNSET)
 	{
-		ret += snprintf(str + ret, len - ret, " cost: %lu remote_ip: %s",
-						span->get_cost(), span->get_remote_ip().c_str());
+		ret += snprintf(str + ret, len - ret, " cost: %lu remote_ip: %s"
+											  " state: %d error: %d",
+						span->get_cost(), span->get_remote_ip().c_str(),
+						span->get_state(), span->get_error());
 	}
+
 
 	return ret;
 }
