@@ -65,11 +65,11 @@ struct RPCServerParams : public WFServerParams
 
 static constexpr RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
 {
-/*	.send_timeout		=	*/	INT_UNSET,
-/*	.keep_alive_timeout	=	*/	INT_UNSET,
-/*	.retry_max			=	*/	INT_UNSET,
-/*	.compress_type		=	*/	INT_UNSET,
-/*	.data_type			=	*/	INT_UNSET
+/*	.send_timeout		=	*/	INT_MAX,
+/*	.keep_alive_timeout	=	*/	INT_MAX,
+/*	.retry_max			=	*/	INT_MAX,
+/*	.compress_type		=	*/	INT_MAX,
+/*	.data_type			=	*/	INT_MAX
 };
 
 static const RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =

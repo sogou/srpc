@@ -52,13 +52,13 @@ public:
 	}
 
 	RPCSpanFilterLogger() :
-		span_limit(SPAN_LIMIT_DEFAULT),
+		spans_per_msec(SPAN_LIMIT_DEFAULT),
 		span_timestamp(0L),
 		span_count(0)
 	{
 	}
 
-	void set_span_limit(unsigned int limit) { this->span_limit = limit; }
+	void set_spans_per_msec(size_t n) { this->spans_per_msec = n; }
 
 private:
 	virtual SubTask *create(RPCSpan *span) = 0;
@@ -70,8 +70,8 @@ private:
 		uint64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 
 		if ((timestamp == this->span_timestamp &&
-					this->span_count < this->span_limit) ||
-			span->get_trace_id() != UINT64_UNSET)
+					this->span_count < this->spans_per_msec) ||
+			span->get_trace_id() != ULLONG_MAX)
 		{
 			this->span_count++;
 		}
@@ -86,9 +86,9 @@ private:
 	}
 
 private:
-	unsigned int span_limit;
-	uint64_t span_timestamp;
-	std::atomic<unsigned int> span_count;
+	size_t spans_per_msec;
+	int64_t span_timestamp;
+	std::atomic<size_t> span_count;
 };
 
 static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
@@ -101,17 +101,17 @@ static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
 						 span->get_method_name().c_str(),
 					  	 span->get_start_time());
 
-	if (span->get_parent_span_id() != UINT64_UNSET)
+	if (span->get_parent_span_id() != ULLONG_MAX)
 	{
 		ret += snprintf(str + ret, len - ret, " parent_span_id: %lu",
 						span->get_parent_span_id());
 	}
-	if (span->get_end_time() != UINT64_UNSET)
+	if (span->get_end_time() != ULLONG_MAX)
 	{
 		ret += snprintf(str + ret, len - ret, " end_time: %lu",
 						span->get_end_time());
 	}
-	if (span->get_cost() != UINT64_UNSET)
+	if (span->get_cost() != ULLONG_MAX)
 	{
 		ret += snprintf(str + ret, len - ret, " cost: %lu remote_ip: %s"
 											  " state: %d error: %d",

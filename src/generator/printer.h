@@ -1083,7 +1083,7 @@ inline %sClient::%sClient(const struct srpc::RPCClientParams *params):
 )";
 
 	std::string client_constructor_methods_params_srpc_thrift_format = R"(
-	if (params->task_params.data_type == srpc::INT_UNSET)
+	if (params->task_params.data_type == INT_MAX)
 	{
 		temp_params = *temp;
 		temp_params.task_params.data_type = srpc::RPCDataThrift;

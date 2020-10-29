@@ -19,6 +19,7 @@
 
 #include <time.h>
 #include <atomic>
+#include <limits>
 #include "workflow/WFTask.h"
 #include "workflow/WFTaskFactory.h"
 #include "rpc_basic.h"
@@ -131,16 +132,16 @@ private:
 
 public:
 	RPCSpan() :
-		trace_id(UINT64_UNSET),
-		span_id(UINT64_UNSET),
-		parent_span_id(UINT64_UNSET),
+		trace_id(ULLONG_MAX),
+		span_id(ULLONG_MAX),
+		parent_span_id(ULLONG_MAX),
 		service_name(""),
 		method_name(""),
-		data_type(INT_UNSET),
-		compress_type(INT_UNSET),
-		start_time(UINT64_UNSET),
-		end_time(UINT64_UNSET),
-		cost(UINT64_UNSET),
+		data_type(INT_MAX),
+		compress_type(INT_MAX),
+		start_time(ULLONG_MAX),
+		end_time(ULLONG_MAX),
+		cost(ULLONG_MAX),
 		remote_ip("")
 	{}
 

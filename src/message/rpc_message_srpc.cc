@@ -250,7 +250,7 @@ bool SRPCMessage::get_attachment(const char **attachment, size_t *len) const
 	return false;
 }
 
-bool SRPCMessage::set_span_to_meta(const RPCSpan *span)
+bool SRPCMessage::set_meta_span(const RPCSpan *span)
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
 	meta->mutable_span()->set_trace_id(span->get_trace_id());
@@ -259,7 +259,7 @@ bool SRPCMessage::set_span_to_meta(const RPCSpan *span)
 	return true;
 }
 
-bool SRPCMessage::get_span_from_meta(RPCSpan *span) const
+bool SRPCMessage::get_meta_span(RPCSpan *span) const
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
 	if (!meta->has_span())
@@ -969,7 +969,7 @@ bool SogouHttpResponse::deserialize_meta()
 	return true;
 }
 
-bool SogouHttpRequest::set_span_to_meta(const RPCSpan *span)
+bool SogouHttpRequest::set_meta_span(const RPCSpan *span)
 {
 	char value[50];
 	sprintf(value, "%lu", span->get_trace_id());
@@ -979,7 +979,7 @@ bool SogouHttpRequest::set_span_to_meta(const RPCSpan *span)
 	return true;
 }
 
-bool SogouHttpRequest::get_span_from_meta(RPCSpan *span) const
+bool SogouHttpRequest::get_meta_span(RPCSpan *span) const
 {
 	std::string name;
 	std::string value;
@@ -1006,7 +1006,7 @@ bool SogouHttpRequest::get_span_from_meta(RPCSpan *span) const
 	return found;
 }
 
-bool SogouHttpResponse::set_span_to_meta(const RPCSpan *span)
+bool SogouHttpResponse::set_meta_span(const RPCSpan *span)
 {
 	char value[50];
 	sprintf(value, "%lu", span->get_trace_id());
@@ -1016,7 +1016,7 @@ bool SogouHttpResponse::set_span_to_meta(const RPCSpan *span)
 	return false;
 }
 
-bool SogouHttpResponse::get_span_from_meta(RPCSpan *span) const
+bool SogouHttpResponse::get_meta_span(RPCSpan *span) const
 {
 	std::string name;
 	std::string value;
