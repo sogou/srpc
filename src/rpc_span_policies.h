@@ -67,11 +67,11 @@ private:
 	{
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC, &ts);
-		uint64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+		int64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 
 		if ((timestamp == this->span_timestamp &&
 					this->span_count < this->spans_per_msec) ||
-			span->get_trace_id() != ULLONG_MAX)
+			span->get_trace_id() != LLONG_MAX)
 		{
 			this->span_count++;
 		}
@@ -93,27 +93,27 @@ private:
 
 static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
 {
-	size_t ret = snprintf(str, len, "trace_id: %lu span_id: %lu service: %s"
-						 			" method: %s start: %lu",
+	size_t ret = snprintf(str, len, "trace_id: %lld span_id: %lld service: %s"
+						 			" method: %s start: %lld",
 					  	 span->get_trace_id(),
 						 span->get_span_id(),
 					  	 span->get_service_name().c_str(),
 						 span->get_method_name().c_str(),
 					  	 span->get_start_time());
 
-	if (span->get_parent_span_id() != ULLONG_MAX)
+	if (span->get_parent_span_id() != LLONG_MAX)
 	{
-		ret += snprintf(str + ret, len - ret, " parent_span_id: %lu",
+		ret += snprintf(str + ret, len - ret, " parent_span_id: %lld",
 						span->get_parent_span_id());
 	}
-	if (span->get_end_time() != ULLONG_MAX)
+	if (span->get_end_time() != LLONG_MAX)
 	{
-		ret += snprintf(str + ret, len - ret, " end_time: %lu",
+		ret += snprintf(str + ret, len - ret, " end_time: %lld",
 						span->get_end_time());
 	}
-	if (span->get_cost() != ULLONG_MAX)
+	if (span->get_cost() != LLONG_MAX)
 	{
-		ret += snprintf(str + ret, len - ret, " cost: %lu remote_ip: %s"
+		ret += snprintf(str + ret, len - ret, " cost: %lld remote_ip: %s"
 											  " state: %d error: %d",
 						span->get_cost(), span->get_remote_ip().c_str(),
 						span->get_state(), span->get_error());
@@ -282,7 +282,7 @@ private:
 		char key[UINT64_STRING_LENGTH] = { 0 };
 		char value[SPAN_LOG_MAX_LENGTH] = { 0 };
 
-		sprintf(key, "%llu", span->get_trace_id());
+		sprintf(key, "%lld", span->get_trace_id());
 		rpc_span_log_format(span, value, SPAN_LOG_MAX_LENGTH);
 		req->set_request("SET", { key, value} );
 		delete span;

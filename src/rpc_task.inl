@@ -604,7 +604,7 @@ bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
 	span_->set_data_type(this->req.get_data_type());
 	span_->set_compress_type(this->req.get_compress_type());
 
-	if (span_->get_trace_id() == ULLONG_MAX)
+	if (span_->get_trace_id() == LLONG_MAX)
 		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
 	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
 

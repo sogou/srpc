@@ -39,13 +39,13 @@ public:
 	bool task_init(RPCClientParams& params, ParsedURI& uri,
 				   struct sockaddr_storage *ss, socklen_t *ss_len) const;
 
-	uint64_t get_trace_id();
-	uint32_t get_span_id() { return this->span_id++; }
+	int64_t get_trace_id();
+	int64_t get_span_id() { return this->span_id++; }
 
 private:
 	SRPCGlobal();
 	SnowFlake snowflake;
-	std::atomic<uint32_t> span_id;
+	std::atomic<int64_t> span_id;
 };
 
 } // namespace srpc
