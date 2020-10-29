@@ -67,7 +67,7 @@ private:
 	{
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC, &ts);
-		int64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+		long long timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 
 		if ((timestamp == this->span_timestamp &&
 					this->span_count < this->spans_per_msec) ||
@@ -87,7 +87,7 @@ private:
 
 private:
 	size_t spans_per_msec;
-	int64_t span_timestamp;
+	long long span_timestamp;
 	std::atomic<size_t> span_count;
 };
 
