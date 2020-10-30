@@ -51,44 +51,10 @@ public:
 		return WFTaskFactory::create_empty_task();
 	}
 
-	RPCSpanFilterLogger() :
-		spans_per_msec(SPAN_LIMIT_DEFAULT),
-		span_timestamp(0L),
-		span_count(0)
-	{
-	}
-
-	void set_spans_per_msec(size_t n) { this->spans_per_msec = n; }
-
 private:
 	virtual SubTask *create(RPCSpan *span) = 0;
 
-	virtual bool filter(RPCSpan *span)
-	{
-		struct timespec ts;
-		clock_gettime(CLOCK_MONOTONIC, &ts);
-		long long timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-
-		if ((timestamp == this->span_timestamp &&
-					this->span_count < this->spans_per_msec) ||
-			span->get_trace_id() != LLONG_MAX)
-		{
-			this->span_count++;
-		}
-		else if (timestamp > this->span_timestamp)
-		{
-			this->span_count = 0;
-			this->span_timestamp = timestamp;
-		} else
-			return false;
-
-		return true;
-	}
-
-private:
-	size_t spans_per_msec;
-	long long span_timestamp;
-	std::atomic<size_t> span_count;
+	virtual bool filter(RPCSpan *span) = 0;
 };
 
 static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
@@ -122,6 +88,46 @@ static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
 
 	return ret;
 }
+
+class RPCSpanFilterPolicy
+{
+public:
+	RPCSpanFilterPolicy() :
+		spans_per_msec(SPAN_LIMIT_DEFAULT),
+		span_timestamp(0L),
+		span_count(0)
+	{
+	}
+
+	void set_spans_per_msec(size_t n) { this->spans_per_msec = n; }
+
+	bool filter(RPCSpan *span)
+	{
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		long long timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+
+		if ((timestamp == this->span_timestamp &&
+					this->span_count < this->spans_per_msec) ||
+			span->get_trace_id() != LLONG_MAX)
+		{
+			this->span_count++;
+		}
+		else if (timestamp > this->span_timestamp)
+		{
+			this->span_count = 0;
+			this->span_timestamp = timestamp;
+		} else
+			return false;
+
+		return true;
+	}
+
+private:
+	size_t spans_per_msec;
+	long long span_timestamp;
+	std::atomic<size_t> span_count;
+};
 
 class RPCSpanLogTask : public WFGenericTask
 {
@@ -165,6 +171,20 @@ private:
 											delete span;
 										});
 	}
+
+	bool filter(RPCSpan *span) override
+	{
+		return this->filter_policy.filter(span);
+	}
+
+public:
+	void set_spans_per_msec(size_t n)
+	{
+		this->filter_policy.set_spans_per_msec(n);
+	}
+
+private:
+	RPCSpanFilterPolicy filter_policy;
 };
 
 class RPCSpanBatchLogger : public RPCSpanFilterLogger
@@ -244,7 +264,19 @@ public:
 		return WFTaskFactory::create_empty_task();
 	}
 
+	bool filter(RPCSpan *span) override
+	{
+		return this->filter_policy.filter(span);
+	}
+
+public:
+	void set_spans_per_msec(size_t n)
+	{
+		this->filter_policy.set_spans_per_msec(n);
+	}
+
 private:
+	RPCSpanFilterPolicy filter_policy;
 	size_t buffer_size;
 	char *buffer;
 	size_t offset;
@@ -289,6 +321,20 @@ private:
 
 		return task;
 	}
+
+	bool filter(RPCSpan *span) override
+	{
+		return this->filter_policy.filter(span);
+	}
+
+public:
+	void set_spans_per_msec(size_t n)
+	{
+		this->filter_policy.set_spans_per_msec(n);
+	}
+
+private:
+	RPCSpanFilterPolicy filter_policy;
 };
 
 } // end namespace srpc
