@@ -76,7 +76,8 @@ static void run_server(unsigned short port)
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
 	RPCSpanLoggerDefault span_logger;
-	span_logger.set_spans_per_msec(2);
+	span_logger.set_stat_interval(100);
+	span_logger.set_spans_per_sec(10);
 
 	params.span_logger = &span_logger;
 	SERVER server(&params);
