@@ -38,6 +38,7 @@ static constexpr size_t			UINT64_STRING_LENGTH			= 20;
 static constexpr unsigned int	SPAN_REDIS_RETRY_MAX			= 0;
 static constexpr const char 	*SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
 static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT		= 4 * 1024 * 1024;
+static constexpr size_t			SPANS_PER_SECOND_DEFAULT		= 1000;
 
 class RPCSpanFilterLogger : public RPCSpanLogger
 {
@@ -92,41 +93,71 @@ static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
 class RPCSpanFilterPolicy
 {
 public:
-	RPCSpanFilterPolicy() :
-		spans_per_msec(SPAN_LIMIT_DEFAULT),
-		span_timestamp(0L),
-		span_count(0)
+	RPCSpanFilterPolicy(size_t spans_per_second) :
+		spans_per_sec(spans_per_second),
+		stat_interval(1), // default 1 msec
+		last_timestamp(0L),
+		spans_second_count(0),
+		spans_interval_count(0)
 	{
+		this->spans_per_interval = (this->spans_per_sec + 999) / 1000;
 	}
 
-	void set_spans_per_msec(size_t n) { this->spans_per_msec = n; }
+	void set_spans_per_sec(size_t n)
+	{
+		this->spans_per_sec = n;
+		this->spans_per_interval = (n * this->stat_interval + 999 ) / 1000;
+	}
+
+	void set_stat_interval(int msec)
+	{
+		if (msec <= 0)
+			msec = 1;
+		this->stat_interval = msec;
+		this->spans_per_interval = (this->spans_per_sec * msec + 999 ) / 1000;
+	}
 
 	bool filter(RPCSpan *span)
 	{
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC, &ts);
-		long long timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+		long long timestamp = ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
 
-		if ((timestamp == this->span_timestamp &&
-					this->span_count < this->spans_per_msec) ||
-			span->get_trace_id() != LLONG_MAX)
+		if (timestamp < this->last_timestamp + this->stat_interval &&
+			this->spans_interval_count < this->spans_per_interval &&
+			this->spans_second_count < this->spans_per_sec)
 		{
-			this->span_count++;
+			this->spans_interval_count++;
+			this->spans_second_count++;
+			return true;
 		}
-		else if (timestamp > this->span_timestamp)
+		else if (timestamp >= this->last_timestamp + this->stat_interval &&
+				this->spans_per_sec)
 		{
-			this->span_count = 0;
-			this->span_timestamp = timestamp;
-		} else
-			return false;
+			this->spans_interval_count = 0;
 
-		return true;
+			if (timestamp / 1000 > this->last_timestamp / 1000) // next second
+				this->spans_second_count = 0;
+
+			this->last_timestamp = timestamp;
+			if (this->spans_second_count < this->spans_per_sec)
+			{
+				this->spans_second_count++;
+				this->spans_interval_count++;
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 private:
-	size_t spans_per_msec;
-	long long span_timestamp;
-	std::atomic<size_t> span_count;
+	int stat_interval;
+	size_t spans_per_sec;
+	size_t spans_per_interval;
+	std::atomic<long long> last_timestamp;
+	std::atomic<size_t> spans_second_count;
+	std::atomic<size_t> spans_interval_count;
 };
 
 class RPCSpanLogTask : public WFGenericTask
@@ -164,6 +195,13 @@ public:
 
 class RPCSpanLoggerDefault : public RPCSpanFilterLogger
 {
+public:
+	RPCSpanLoggerDefault() :
+		filter_policy(SPANS_PER_SECOND_DEFAULT) {}
+
+	RPCSpanLoggerDefault(size_t spans_per_second) :
+		filter_policy(spans_per_second) {}
+
 private:
 	SubTask *create(RPCSpan *span)
 	{
@@ -178,9 +216,14 @@ private:
 	}
 
 public:
-	void set_spans_per_msec(size_t n)
+	void set_spans_per_sec(size_t n)
 	{
-		this->filter_policy.set_spans_per_msec(n);
+		this->filter_policy.set_spans_per_sec(n);
+	}
+
+	void set_stat_interval(int msec)
+	{
+		this->filter_policy.set_stat_interval(msec);
 	}
 
 private:
@@ -192,10 +235,24 @@ class RPCSpanBatchLogger : public RPCSpanFilterLogger
 public:
 	RPCSpanBatchLogger() :
 		RPCSpanBatchLogger(SPAN_BATCH_LOG_NAME_DEFAULT,
-						   SPAN_BATCH_LOG_SIZE_DEFAULT)
+						   SPAN_BATCH_LOG_SIZE_DEFAULT,
+						   SPANS_PER_SECOND_DEFAULT)
+	{}
+
+	RPCSpanBatchLogger(size_t spans_per_second) :
+		RPCSpanBatchLogger(SPAN_BATCH_LOG_NAME_DEFAULT,
+						   SPAN_BATCH_LOG_SIZE_DEFAULT,
+						   spans_per_second)
 	{}
 
 	RPCSpanBatchLogger(const char *log_name, size_t buffer_size) :
+		RPCSpanBatchLogger(log_name, buffer_size,
+						   SPANS_PER_SECOND_DEFAULT)
+	{}
+
+	RPCSpanBatchLogger(const char *log_name, size_t buffer_size,
+					   size_t spans_per_second) :
+		filter_policy(spans_per_second),
 		buffer_size(buffer_size),
 		offset(0)
 	{
@@ -270,9 +327,14 @@ public:
 	}
 
 public:
-	void set_spans_per_msec(size_t n)
+	void set_spans_per_sec(size_t n)
 	{
-		this->filter_policy.set_spans_per_msec(n);
+		this->filter_policy.set_spans_per_sec(n);
+	}
+
+	void set_stat_interval(int msec)
+	{
+		this->filter_policy.set_stat_interval(msec);
 	}
 
 private:
@@ -288,16 +350,17 @@ private:
 class RPCSpanRedisLogger : public RPCSpanFilterLogger
 {
 public:
-	RPCSpanRedisLogger() :
-		RPCSpanRedisLogger(this->redis_url, SPAN_REDIS_RETRY_MAX)
+	RPCSpanRedisLogger(const std::string& url) :
+		RPCSpanRedisLogger(url, SPAN_REDIS_RETRY_MAX,
+						   SPANS_PER_SECOND_DEFAULT)
 	{}
 
-	RPCSpanRedisLogger(const std::string& url, int retry_max) :
+	RPCSpanRedisLogger(const std::string& url, int retry_max,
+					   size_t spans_per_second) :
+		filter_policy(spans_per_second),
 		redis_url(url),
 		retry_max(retry_max)
 	{}
-
-	void set_redis_url(const std::string& url) { this->redis_url = url; }
 
 private:
 	std::string redis_url;
@@ -328,9 +391,14 @@ private:
 	}
 
 public:
-	void set_spans_per_msec(size_t n)
+	void set_spans_per_sec(size_t n)
 	{
-		this->filter_policy.set_spans_per_msec(n);
+		this->filter_policy.set_spans_per_sec(n);
+	}
+
+	void set_stat_interval(int msec)
+	{
+		this->filter_policy.set_stat_interval(msec);
 	}
 
 private:
