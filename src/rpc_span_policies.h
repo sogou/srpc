@@ -38,6 +38,7 @@ static constexpr size_t			UINT64_STRING_LENGTH			= 20;
 static constexpr unsigned int	SPAN_REDIS_RETRY_MAX			= 0;
 static constexpr const char 	*SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
 static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT		= 4 * 1024 * 1024;
+static constexpr size_t			SPANS_PER_SECOND_DEFAULT		= 1000;
 
 class RPCSpanFilterLogger : public RPCSpanLogger
 {
@@ -51,74 +52,113 @@ public:
 		return WFTaskFactory::create_empty_task();
 	}
 
-	RPCSpanFilterLogger() :
-		span_limit(SPAN_LIMIT_DEFAULT),
-		span_timestamp(0L),
-		span_count(0)
-	{
-	}
-
-	void set_span_limit(unsigned int limit) { this->span_limit = limit; }
-
 private:
 	virtual SubTask *create(RPCSpan *span) = 0;
 
-	virtual bool filter(RPCSpan *span)
-	{
-		struct timespec ts;
-		clock_gettime(CLOCK_MONOTONIC, &ts);
-		uint64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-
-		if ((timestamp == this->span_timestamp &&
-					this->span_count < this->span_limit) ||
-			span->get_trace_id() != UINT64_UNSET)
-		{
-			this->span_count++;
-		}
-		else if (timestamp > this->span_timestamp)
-		{
-			this->span_count = 0;
-			this->span_timestamp = timestamp;
-		} else
-			return false;
-
-		return true;
-	}
-
-private:
-	unsigned int span_limit;
-	uint64_t span_timestamp;
-	std::atomic<unsigned int> span_count;
+	virtual bool filter(RPCSpan *span) = 0;
 };
 
 static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
 {
-	size_t ret = snprintf(str, len, "trace_id: %lu span_id: %u service: %s"
-						 			" method: %s start: %lu",
+	size_t ret = snprintf(str, len, "trace_id: %lld span_id: %lld service: %s"
+						 			" method: %s start: %lld",
 					  	 span->get_trace_id(),
 						 span->get_span_id(),
 					  	 span->get_service_name().c_str(),
 						 span->get_method_name().c_str(),
 					  	 span->get_start_time());
 
-	if (span->get_parent_span_id() != UINT_UNSET)
+	if (span->get_parent_span_id() != LLONG_MAX)
 	{
-		ret += snprintf(str + ret, len - ret, " parent_span_id: %u",
+		ret += snprintf(str + ret, len - ret, " parent_span_id: %lld",
 						span->get_parent_span_id());
 	}
-	if (span->get_end_time() != UINT64_UNSET)
+	if (span->get_end_time() != LLONG_MAX)
 	{
-		ret += snprintf(str + ret, len - ret, " end_time: %lu",
+		ret += snprintf(str + ret, len - ret, " end_time: %lld",
 						span->get_end_time());
 	}
-	if (span->get_cost() != UINT64_UNSET)
+	if (span->get_cost() != LLONG_MAX)
 	{
-		ret += snprintf(str + ret, len - ret, " cost: %lu remote_ip: %s",
-						span->get_cost(), span->get_remote_ip().c_str());
+		ret += snprintf(str + ret, len - ret, " cost: %lld remote_ip: %s"
+											  " state: %d error: %d",
+						span->get_cost(), span->get_remote_ip().c_str(),
+						span->get_state(), span->get_error());
 	}
+
 
 	return ret;
 }
+
+class RPCSpanFilterPolicy
+{
+public:
+	RPCSpanFilterPolicy(size_t spans_per_second) :
+		spans_per_sec(spans_per_second),
+		stat_interval(1), // default 1 msec
+		last_timestamp(0L),
+		spans_second_count(0),
+		spans_interval_count(0)
+	{
+		this->spans_per_interval = (this->spans_per_sec + 999) / 1000;
+	}
+
+	void set_spans_per_sec(size_t n)
+	{
+		this->spans_per_sec = n;
+		this->spans_per_interval = (n * this->stat_interval + 999 ) / 1000;
+	}
+
+	void set_stat_interval(int msec)
+	{
+		if (msec <= 0)
+			msec = 1;
+		this->stat_interval = msec;
+		this->spans_per_interval = (this->spans_per_sec * msec + 999 ) / 1000;
+	}
+
+	bool filter(RPCSpan *span)
+	{
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		long long timestamp = ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
+
+		if (timestamp < this->last_timestamp + this->stat_interval &&
+			this->spans_interval_count < this->spans_per_interval &&
+			this->spans_second_count < this->spans_per_sec)
+		{
+			this->spans_interval_count++;
+			this->spans_second_count++;
+			return true;
+		}
+		else if (timestamp >= this->last_timestamp + this->stat_interval &&
+				this->spans_per_sec)
+		{
+			this->spans_interval_count = 0;
+
+			if (timestamp / 1000 > this->last_timestamp / 1000) // next second
+				this->spans_second_count = 0;
+
+			this->last_timestamp = timestamp;
+			if (this->spans_second_count < this->spans_per_sec)
+			{
+				this->spans_second_count++;
+				this->spans_interval_count++;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+private:
+	int stat_interval;
+	size_t spans_per_sec;
+	size_t spans_per_interval;
+	std::atomic<long long> last_timestamp;
+	std::atomic<size_t> spans_second_count;
+	std::atomic<size_t> spans_interval_count;
+};
 
 class RPCSpanLogTask : public WFGenericTask
 {
@@ -155,6 +195,13 @@ public:
 
 class RPCSpanLoggerDefault : public RPCSpanFilterLogger
 {
+public:
+	RPCSpanLoggerDefault() :
+		filter_policy(SPANS_PER_SECOND_DEFAULT) {}
+
+	RPCSpanLoggerDefault(size_t spans_per_second) :
+		filter_policy(spans_per_second) {}
+
 private:
 	SubTask *create(RPCSpan *span)
 	{
@@ -162,107 +209,41 @@ private:
 											delete span;
 										});
 	}
-};
 
-class RPCSpanBatchLogger : public RPCSpanFilterLogger
-{
+	bool filter(RPCSpan *span) override
+	{
+		return this->filter_policy.filter(span);
+	}
+
 public:
-	RPCSpanBatchLogger() :
-		RPCSpanBatchLogger(SPAN_BATCH_LOG_NAME_DEFAULT,
-						   SPAN_BATCH_LOG_SIZE_DEFAULT)
-	{}
-
-	RPCSpanBatchLogger(const char *log_name, size_t buffer_size) :
-		buffer_size(buffer_size),
-		offset(0)
+	void set_spans_per_sec(size_t n)
 	{
-		if (this->buffer_size < SPAN_LOG_MAX_LENGTH)
-			this->buffer_size = SPAN_LOG_MAX_LENGTH;
-
-		this->buffer = (char *)malloc(this->buffer_size);
-		this->pos = this->buffer;
-		this->fd = open(log_name, O_WRONLY | O_CREAT | O_APPEND, 0644);
-		this->offset = lseek(this->fd, 0, SEEK_END);
+		this->filter_policy.set_spans_per_sec(n);
 	}
 
-	~RPCSpanBatchLogger()
+	void set_stat_interval(int msec)
 	{
-		if (this->fd > 0 && this->pos != this->buffer)
-			write(this->fd, this->buffer, this->pos - this->buffer);
-
-		free(this->buffer);
-		close(this->fd);
-	}
-
-	SubTask *create(RPCSpan *span)
-	{
-		do
-		{
-			if (this->fd < 0)
-				break;
-
-			mutex.lock();
-
-			size_t len = this->pos - this->buffer;
-			len = rpc_span_log_format(span, this->pos, this->buffer_size - len);
-			if (len > SPAN_LOG_MAX_LENGTH)
-				break;
-
-			this->pos += len;
-			*this->pos = '\n';
-			len++;
-			this->pos++;
-
-			len = this->pos - this->buffer;
-
-			char *buf = NULL;
-			if (len + SPAN_LOG_MAX_LENGTH >= this->buffer_size) // = for '\n'
-			{
-				buf = this->buffer;
-				this->buffer = (char *)malloc(len);
-				this->offset += len;
-				this->pos = this->buffer;
-			}
-			mutex.unlock();
-
-			if (!buf)
-				break;
-
-			delete span;
-			return WFTaskFactory::create_pwrite_task(this->fd,
-													 buf, len,
-													 this->offset,
-													 [buf](WFFileIOTask *task) {
-													 	free(buf);
-													 });
-		} while (0);
-
-		delete span;
-		return WFTaskFactory::create_empty_task();
+		this->filter_policy.set_stat_interval(msec);
 	}
 
 private:
-	size_t buffer_size;
-	char *buffer;
-	size_t offset;
-	char *pos;
-	int fd;
-	std::mutex mutex;
+	RPCSpanFilterPolicy filter_policy;
 };
 
 class RPCSpanRedisLogger : public RPCSpanFilterLogger
 {
 public:
-	RPCSpanRedisLogger() :
-		RPCSpanRedisLogger(this->redis_url, SPAN_REDIS_RETRY_MAX)
+	RPCSpanRedisLogger(const std::string& url) :
+		RPCSpanRedisLogger(url, SPAN_REDIS_RETRY_MAX,
+						   SPANS_PER_SECOND_DEFAULT)
 	{}
 
-	RPCSpanRedisLogger(const std::string& url, int retry_max) :
+	RPCSpanRedisLogger(const std::string& url, int retry_max,
+					   size_t spans_per_second) :
+		filter_policy(spans_per_second),
 		redis_url(url),
 		retry_max(retry_max)
 	{}
-
-	void set_redis_url(const std::string& url) { this->redis_url = url; }
 
 private:
 	std::string redis_url;
@@ -279,13 +260,32 @@ private:
 		char key[UINT64_STRING_LENGTH] = { 0 };
 		char value[SPAN_LOG_MAX_LENGTH] = { 0 };
 
-		sprintf(key, "%llu", span->get_trace_id());
+		sprintf(key, "%lld", span->get_trace_id());
 		rpc_span_log_format(span, value, SPAN_LOG_MAX_LENGTH);
 		req->set_request("SET", { key, value} );
 		delete span;
 
 		return task;
 	}
+
+	bool filter(RPCSpan *span) override
+	{
+		return this->filter_policy.filter(span);
+	}
+
+public:
+	void set_spans_per_sec(size_t n)
+	{
+		this->filter_policy.set_spans_per_sec(n);
+	}
+
+	void set_stat_interval(int msec)
+	{
+		this->filter_policy.set_stat_interval(msec);
+	}
+
+private:
+	RPCSpanFilterPolicy filter_policy;
 };
 
 } // end namespace srpc

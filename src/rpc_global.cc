@@ -115,10 +115,10 @@ bool SRPCGlobal::task_init(RPCClientParams& params, ParsedURI& uri,
 	return false;
 }
 
-uint64_t SRPCGlobal::get_trace_id()
+long long SRPCGlobal::get_trace_id()
 {
-	uint64_t trace_id = 0;
-	this->snowflake.get_uid(0, 0, &trace_id);
+	long long trace_id = 0;
+	this->snowflake.get_id(0, 0, &trace_id);
 	return trace_id;
 }
 

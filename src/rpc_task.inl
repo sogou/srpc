@@ -332,6 +332,24 @@ inline int RPCClientTask<RPCREQ, RPCRESP>::__serialize_input(const IDL *in)
 	return -1;
 }
 
+static void addr_to_string(const struct sockaddr *addr,
+						   char *ip_str, socklen_t len)
+{
+	
+	if (addr->sa_family == AF_INET)
+	{
+		struct sockaddr_in *sin = (struct sockaddr_in *)addr;
+
+		inet_ntop(AF_INET, &sin->sin_addr, ip_str, len);
+	}
+	else if (addr->sa_family == AF_INET6)
+	{
+		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)addr;
+
+		inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, len);
+	}
+}
+
 template<class RPCREQ, class RPCRESP>
 inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
@@ -352,19 +370,19 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 		this->set_callback(std::bind(&RPCClientTask::rpc_callback,
 									 this, std::placeholders::_1));
 
-	if (params->send_timeout != INT_UNSET)
+	if (params->send_timeout != INT_MAX)
 		this->set_send_timeout(params->send_timeout);
 
-	if (params->keep_alive_timeout != INT_UNSET)
+	if (params->keep_alive_timeout != INT_MAX)
 		this->set_keep_alive(params->keep_alive_timeout);
 
-	if (params->retry_max != INT_UNSET)
+	if (params->retry_max != INT_MAX)
 		this->set_retry_max(params->retry_max);
 
-	if (params->compress_type != INT_UNSET)
+	if (params->compress_type != INT_MAX)
 		this->req.set_compress_type(params->compress_type);
 
-	if (params->data_type != INT_UNSET)
+	if (params->data_type != INT_MAX)
 		this->req.set_data_type(params->data_type);
 
 	this->req.set_service_name(service_name);
@@ -501,46 +519,34 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 template<class RPCREQ, class RPCRESP>
 std::string RPCClientTask<RPCREQ, RPCRESP>::get_remote_ip() const
 {
-	char ip_str[INET6_ADDRSTRLEN + 1] = { 0 };
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof (addr);
+	char ip_str[INET6_ADDRSTRLEN + 1];
+	ip_str[0] = '0';
 
 	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
-	{
-		if (addr.ss_family == AF_INET)
-		{
-			struct sockaddr_in *sin = (struct sockaddr_in *)(&addr);
+		addr_to_string((struct sockaddr *)&addr, ip_str, INET6_ADDRSTRLEN + 1);
 
-			inet_ntop(AF_INET, &sin->sin_addr, ip_str, addrlen);
-		}
-		else if (addr.ss_family == AF_INET6)
-		{
-			struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)(&addr);
-
-			inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, addrlen);
-		}
-	}
-
-	return std::string(ip_str);
+	return ip_str;
 }
 
 template<class RPCREQ, class RPCRESP>
 bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
 {
-	RPCSpan *tmp = NULL;
 	RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+	RPCSpan *span = NULL;
 
 	if (series)
 	{
-		tmp = series->get_span();
-		if (tmp != NULL)
+		span = series->get_span();
+		if (span != NULL)
 		{
-			span_->set_trace_id(tmp->get_trace_id());
-			span_->set_parent_span_id(tmp->get_span_id());
+			span_->set_trace_id(span->get_trace_id());
+			span_->set_parent_span_id(span->get_span_id());
 		}
 	}
 
-	if (tmp == NULL)
+	if (span == NULL)
 		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
 
 	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
@@ -554,7 +560,7 @@ bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
 	clock_gettime(CLOCK_REALTIME, &ts);
 	span_->set_start_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 
-	return this->req.set_span(span_);
+	return this->req.set_meta_span(span_);
 }
 
 template<class RPCREQ, class RPCRESP>
@@ -562,12 +568,10 @@ bool RPCClientTask<RPCREQ, RPCRESP>::end_span()
 {
 	struct timespec ts;
 
-	//this->resp.get_span(span_);
-
 	clock_gettime(CLOCK_REALTIME, &ts);
 	span_->set_end_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 	span_->set_cost(span_->get_end_time() - span_->get_start_time());
-	span_->set_status(this->resp.get_status_code());
+	span_->set_state(this->resp.get_status_code());
 	span_->set_error(this->resp.get_error());
 	span_->set_remote_ip(this->get_remote_ip());
 
@@ -580,39 +584,27 @@ bool RPCClientTask<RPCREQ, RPCRESP>::end_span()
 template<class RPCREQ, class RPCRESP>
 std::string RPCServerTask<RPCREQ, RPCRESP>::get_remote_ip() const
 {
-	char ip_str[INET6_ADDRSTRLEN + 1] = { 0 };
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof (addr);
+	char ip_str[INET6_ADDRSTRLEN + 1];
+	ip_str[0] = '0';
 
 	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
-	{
-		if (addr.ss_family == AF_INET)
-		{
-			struct sockaddr_in *sin = (struct sockaddr_in *)(&addr);
+		addr_to_string((struct sockaddr *)&addr, ip_str, INET6_ADDRSTRLEN + 1);
 
-			inet_ntop(AF_INET, &sin->sin_addr, ip_str, addrlen);
-		}
-		else if (addr.ss_family == AF_INET6)
-		{
-			struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)(&addr);
-
-			inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, addrlen);
-		}
-	}
-
-	return std::string(ip_str);
+	return ip_str;
 }
 
 template<class RPCREQ, class RPCRESP>
 bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
 {
-	this->req.get_span(span_);
+	this->req.get_meta_span(span_);
 	span_->set_service_name(this->req.get_service_name());
 	span_->set_method_name(this->req.get_method_name());
 	span_->set_data_type(this->req.get_data_type());
 	span_->set_compress_type(this->req.get_compress_type());
 
-	if (span_->get_trace_id() == UINT64_UNSET)
+	if (span_->get_trace_id() == LLONG_MAX)
 		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
 	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
 
@@ -635,7 +627,7 @@ bool RPCServerTask<RPCREQ, RPCRESP>::end_span()
 	clock_gettime(CLOCK_REALTIME, &ts);
 	span_->set_end_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 	span_->set_cost(span_->get_end_time() - span_->get_start_time());
-	span_->set_status(this->resp.get_status_code());
+	span_->set_state(this->resp.get_status_code());
 	span_->set_error(this->resp.get_error());
 	span_->set_remote_ip(this->get_remote_ip());
 

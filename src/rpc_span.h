@@ -19,6 +19,7 @@
 
 #include <time.h>
 #include <atomic>
+#include <limits>
 #include "workflow/WFTask.h"
 #include "workflow/WFTaskFactory.h"
 #include "rpc_basic.h"
@@ -34,9 +35,9 @@ public:
 	{
 	}
 
-	SnowFlake(uint64_t timestamp_bits,
-			  uint64_t group_bits,
-			  uint64_t machine_bits)
+	SnowFlake(int timestamp_bits,
+			  int group_bits,
+			  int machine_bits)
 	{
 		this->timestamp_bits = timestamp_bits;
 		this->group_bits = group_bits;
@@ -55,15 +56,15 @@ public:
 		this->timestamp_shift = this->group_shift + this->group_bits;
 	}
 
-	bool get_uid(uint64_t group_id, uint64_t machine_id, uint64_t *uid)
+	bool get_id(long long group_id, long long machine_id, long long *uid)
 	{
-		if (group_id > this->machine_id_max || machine_id > this->machine_id_max)
+		if (group_id > this->group_id_max || machine_id > this->machine_id_max)
 			return false;
 
 		struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC, &ts);
-		uint64_t timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-		uint64_t seq_id;
+		long long timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+		long long seq_id;
 
 		if (timestamp < this->last_timestamp)
 			return false;
@@ -88,99 +89,99 @@ public:
 	}
 
 private:
-	std::atomic<uint64_t> last_timestamp; // -1L;
-	std::atomic<uint64_t> sequence; // 0L;
+	std::atomic<long long> last_timestamp; // -1L;
+	std::atomic<long long> sequence; // 0L;
 
-	uint64_t timestamp_bits;
-	uint64_t group_bits;
-	uint64_t machine_bits;
-	uint64_t sequence_bits;
+	int timestamp_bits;
+	int group_bits;
+	int machine_bits;
+	int sequence_bits;
 
-	uint64_t group_id_max;
-	uint64_t machine_id_max;
-	uint64_t sequence_max;
+	long long group_id_max;
+	long long machine_id_max;
+	long long sequence_max;
 
-	uint64_t timestamp_shift;
-	uint64_t group_shift;
-	uint64_t machine_shift;
+	long long timestamp_shift;
+	long long group_shift;
+	long long machine_shift;
 
 	// u_id = [timestamp][group][machine][sequence]
-	static constexpr uint64_t TIMESTAMP_BITS = 37L;
-	static constexpr uint64_t GROUP_BITS = 5L;
-	static constexpr uint64_t MACHINE_BITS = 10L;
-//	static constexpr uint64_t SEQUENCE_BITS = 12L;
-	static constexpr uint64_t TOTAL_BITS = 64L;
+	static constexpr int TIMESTAMP_BITS = 37;
+	static constexpr int GROUP_BITS = 4;
+	static constexpr int MACHINE_BITS = 10;
+//	static constexpr int SEQUENCE_BITS = 12;
+	static constexpr int TOTAL_BITS = 63;
 };
 
 class RPCSpan
 {
 private:
-	uint64_t trace_id;
-	uint32_t span_id;
-	uint32_t parent_span_id;
+	long long trace_id;
+	long long span_id;
+	long long parent_span_id;
 	std::string service_name;
 	std::string method_name;
 	int data_type;
 	int compress_type;
-	uint64_t start_time;
-	uint64_t end_time;
-	uint64_t cost;
+	long long start_time;
+	long long end_time;
+	long long cost;
 	std::string remote_ip;
-	int status;
+	int state;
 	int error;
 
 public:
 	RPCSpan() :
-		trace_id(UINT64_UNSET),
-		span_id(UINT_UNSET),
-		parent_span_id(UINT_UNSET),
+		trace_id(LLONG_MAX),
+		span_id(LLONG_MAX),
+		parent_span_id(LLONG_MAX),
 		service_name(""),
 		method_name(""),
-		data_type(INT_UNSET),
-		compress_type(INT_UNSET),
-		start_time(UINT64_UNSET),
-		end_time(UINT64_UNSET),
-		cost(UINT64_UNSET),
+		data_type(INT_MAX),
+		compress_type(INT_MAX),
+		start_time(LLONG_MAX),
+		end_time(LLONG_MAX),
+		cost(LLONG_MAX),
 		remote_ip("")
 	{}
 
-	uint64_t get_trace_id() { return this->trace_id; }
-	void set_trace_id(uint64_t id) { this->trace_id = id; }
+	long long get_trace_id() const { return this->trace_id; }
+	void set_trace_id(long long id) { this->trace_id = id; }
 
-	uint32_t get_span_id() { return this->span_id; }
-	void set_span_id(uint32_t id) { this->span_id = id; }
+	long long get_span_id() const { return this->span_id; }
+	void set_span_id(long long id) { this->span_id = id; }
 
-	uint32_t get_parent_span_id() { return this->parent_span_id; }
-	void set_parent_span_id(uint32_t id) { this->parent_span_id = id; }
+	long long get_parent_span_id() const { return this->parent_span_id; }
+	void set_parent_span_id(long long id) { this->parent_span_id = id; }
 
-	const std::string& get_service_name() { return this->service_name; }
+	const std::string& get_service_name() const { return this->service_name; }
 	void set_service_name(std::string name) { this->service_name = name; }
 
-	const std::string& get_method_name() { return this->method_name; }
+	const std::string& get_method_name() const { return this->method_name; }
 	void set_method_name(std::string name) { this->method_name = name; }
 
-	int get_data_type() { return this->data_type; }
+	int get_data_type() const { return this->data_type; }
 	void set_data_type(int type) { this->data_type = type; }
 
-	int get_compress_type() { return this->compress_type; }
+	int get_compress_type() const { return this->compress_type; }
 	void set_compress_type(int type) { this->compress_type = type; }
 
-	uint64_t get_start_time() { return this->start_time; }
-	void set_start_time(uint64_t time) { this->start_time = time; }
+	long long get_start_time() const { return this->start_time; }
+	void set_start_time(long long time) { this->start_time = time; }
 
-	uint64_t get_end_time() { return this->end_time; }
-	void set_end_time(uint64_t time) { this->end_time = time; }
+	long long get_end_time() const { return this->end_time; }
+	void set_end_time(long long time) { this->end_time = time; }
 
-	uint64_t get_cost() { return this->cost; }
-	void set_cost(uint64_t time) { this->cost = time; }
+	long long get_cost() const { return this->cost; }
+	void set_cost(long long time) { this->cost = time; }
 
-	const std::string& get_remote_ip() { return this->remote_ip; }
+	const std::string& get_remote_ip() const { return this->remote_ip; }
 	void set_remote_ip(std::string ip) { this->remote_ip = std::move(ip); }
 
-	int get_status() { return this->status; }
-	void set_status(int stat) { this->status = stat; }
+	int get_state() const { return this->state; }
+	void set_state(int stat) { this->state = stat; }
 
-	int get_error() { return this->error; }
+	int get_error() const { return this->error; }
 	void set_error(int err) { this->error = err; }
 };
 
