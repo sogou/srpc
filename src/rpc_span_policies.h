@@ -43,7 +43,7 @@ static constexpr size_t			SPANS_PER_SECOND_DEFAULT		= 1000;
 class RPCSpanFilterLogger : public RPCSpanLogger
 {
 public:
-	SubTask* create_log_task(RPCSpan *span)
+	SubTask* create_log_task(RPCSpan *span) override
 	{
 		if (this->filter(span))
 			return this->create(span);
@@ -203,7 +203,7 @@ public:
 		filter_policy(spans_per_second) {}
 
 private:
-	SubTask *create(RPCSpan *span)
+	SubTask *create(RPCSpan *span) override
 	{
 		return new RPCSpanLogTask(span, [span](RPCSpanLogTask *task) {
 											delete span;
@@ -250,15 +250,17 @@ private:
 	int retry_max;
 
 private:
-	SubTask *create(RPCSpan *span)
+	SubTask *create(RPCSpan *span) override
 	{
 		auto *task = WFTaskFactory::create_redis_task(this->redis_url,
 													  this->retry_max,
 													  nullptr);
 
 		protocol::RedisRequest *req = task->get_req();
-		char key[UINT64_STRING_LENGTH] = { 0 };
-		char value[SPAN_LOG_MAX_LENGTH] = { 0 };
+		char key[UINT64_STRING_LENGTH];
+		char value[SPAN_LOG_MAX_LENGTH];
+		key[0] = '0';
+		value[0] = '0';
 
 		sprintf(key, "%lld", span->get_trace_id());
 		rpc_span_log_format(span, value, SPAN_LOG_MAX_LENGTH);
