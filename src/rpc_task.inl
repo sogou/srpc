@@ -332,22 +332,27 @@ inline int RPCClientTask<RPCREQ, RPCRESP>::__serialize_input(const IDL *in)
 	return -1;
 }
 
-static void addr_to_string(const struct sockaddr *addr,
+static bool addr_to_string(const struct sockaddr *addr,
 						   char *ip_str, socklen_t len)
 {
-	
+	const char *ret = NULL;
+
 	if (addr->sa_family == AF_INET)
 	{
 		struct sockaddr_in *sin = (struct sockaddr_in *)addr;
 
-		inet_ntop(AF_INET, &sin->sin_addr, ip_str, len);
+		ret = inet_ntop(AF_INET, &sin->sin_addr, ip_str, len);
 	}
 	else if (addr->sa_family == AF_INET6)
 	{
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)addr;
 
-		inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, len);
+		ret = inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, len);
 	}
+	else
+		errno = EINVAL;
+
+	return ret != NULL;
 }
 
 template<class RPCREQ, class RPCRESP>
