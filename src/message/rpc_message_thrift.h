@@ -124,7 +124,7 @@ public:
 	bool serialize_meta();
 	bool deserialize_meta();
 	bool get_meta_span(RPCSpan *span) const override { return false; }
-    bool set_meta_span(const RPCSpan *span) override { return false; }
+	bool set_meta_span(const RPCSpan *span) override { return false; }
 
 public:
 	int get_status_code() const { return status_code_; }
