@@ -61,9 +61,7 @@ public:
 		if (group_id > this->group_id_max || machine_id > this->machine_id_max)
 			return false;
 
-		struct timespec ts;
-		clock_gettime(CLOCK_MONOTONIC, &ts);
-		long long timestamp = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+		long long timestamp = GET_CURRENT_MS;
 		long long seq_id;
 
 		if (timestamp < this->last_timestamp)
