@@ -61,7 +61,7 @@ public:
 		if (group_id > this->group_id_max || machine_id > this->machine_id_max)
 			return false;
 
-		long long timestamp = GET_CURRENT_MS;
+		long long timestamp = GET_CURRENT_MS_STEADY;
 		long long seq_id;
 
 		if (timestamp < this->last_timestamp)
