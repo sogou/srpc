@@ -560,10 +560,7 @@ bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
 	span_->set_method_name(this->req.get_method_name());
 	span_->set_data_type(this->req.get_data_type());
 	span_->set_compress_type(this->req.get_compress_type());
-
-	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
-	span_->set_start_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	span_->set_start_time(GET_CURRENT_MS);
 
 	return this->req.set_meta_span(span_);
 }
@@ -571,10 +568,7 @@ bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
 template<class RPCREQ, class RPCRESP>
 bool RPCClientTask<RPCREQ, RPCRESP>::end_span()
 {
-	struct timespec ts;
-
-	clock_gettime(CLOCK_REALTIME, &ts);
-	span_->set_end_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	span_->set_end_time(GET_CURRENT_MS);
 	span_->set_cost(span_->get_end_time() - span_->get_start_time());
 	span_->set_state(this->resp.get_status_code());
 	span_->set_error(this->resp.get_error());
@@ -612,10 +606,7 @@ bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
 	if (span_->get_trace_id() == LLONG_MAX)
 		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
 	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
-
-	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
-	span_->set_start_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	span_->set_start_time(GET_CURRENT_MS);
 
 	RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
 	if (series)
@@ -627,10 +618,7 @@ bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
 template<class RPCREQ, class RPCRESP>
 bool RPCServerTask<RPCREQ, RPCRESP>::end_span()
 {
-	struct timespec ts;
-
-	clock_gettime(CLOCK_REALTIME, &ts);
-	span_->set_end_time(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+	span_->set_end_time(GET_CURRENT_MS);
 	span_->set_cost(span_->get_end_time() - span_->get_start_time());
 	span_->set_state(this->resp.get_status_code());
 	span_->set_error(this->resp.get_error());

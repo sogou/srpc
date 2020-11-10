@@ -35,6 +35,9 @@ static constexpr size_t				RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
 
 using ProtobufIDLMessage = google::protobuf::Message;
 
+#define GET_CURRENT_MS std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
+#define GET_CURRENT_MS_STEADY std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
+
 enum RPCDataType
 {
 	RPCDataProtobuf		=	0,
