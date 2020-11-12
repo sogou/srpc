@@ -25,6 +25,18 @@
 #include "descriptor.h"
 #include "thrift/rpc_thrift_enum.h"
 
+static inline std::string join_package_names(const std::vector<std::string>& package)
+{
+	std::string ret;
+	for (int i = 0; i < package.size(); i++)
+	{
+		if (i != 0)
+			ret.append("::");
+		ret.append(package[i]);
+	}
+	return ret;
+}
+
 static inline std::string change_include_prefix(const std::string& param)
 {
 	size_t pos = param.find('.');
@@ -37,29 +49,29 @@ static inline std::string change_include_prefix(const std::string& param)
 	return ret;
 }
 
-static inline std::string make_thrift_package_prefix(const std::string& package,
+static inline std::string make_thrift_package_prefix(const std::vector<std::string>& package,
 													 const std::string& service,
 													 const std::string& param)
 {
-	if (package.empty())
+	if (package.size() == 0)
 		return service + "::" + param;
 
-	return "::" + package + "::" + service + "::" + param;
+	std::string package_str = join_package_names(package);
+	return "::" + package_str + "::" + service + "::" + param;
 }
 
-static inline std::string make_package_prefix(const std::string& package,
+static inline std::string make_package_prefix(const std::vector<std::string>& package,
 											  const std::string& param)
 {
-	std::string tmp = package;
-
 	size_t pos = param.find('.');
 	if (pos != std::string::npos)
 		return change_include_prefix(param);
 
-	if (tmp.empty())
+	if (package.size() == 0)
 		return param;
 
-	return "::" + tmp + "::" + param;
+	std::string package_str = join_package_names(package);
+	return "::" + package_str + "::" + param;
 }
 
 static inline bool is_simple_type(int8_t data_type)
@@ -222,10 +234,11 @@ public:
 		for (const auto& sub_info : cur_info.include_list)
 			fprintf(this->out_file, "#include \"%s.h\"\n", sub_info.file_name.c_str());
 
-		if (cur_info.package_name.length())
+		//if (cur_info.package_name.length())
+		for (int i = 0; i < cur_info.package_name.size(); i++)
 		{
 			fprintf(this->out_file, this->namespace_package_start_format.c_str(),
-					cur_info.package_name.c_str());
+					cur_info.package_name[i].c_str());
 		}
 	}
 
@@ -320,13 +333,14 @@ public:
 		fprintf(this->out_file, thrift_struct_class_end_format.c_str(), class_name.c_str());
 	}
 
-	void print_srpc_include(const std::string& prefix, const std::string& package)
+	void print_srpc_include(const std::string& prefix, const std::vector<std::string>& package)
 	{
 		fprintf(this->out_file, this->srpc_include_format.c_str(), prefix.c_str(),
 				this->is_thrift ? "thrift" : "pb");
-		if (package.length())
+
+		for (int i = 0; i < package.size(); i++)
 			fprintf(this->out_file, this->namespace_package_start_format.c_str(),
-					package.c_str());
+					package[i].c_str());
 	}
 
 	void print_server_file_include(const std::string& prefix)
@@ -351,7 +365,7 @@ public:
 		fprintf(this->out_file, this->client_comment_format.c_str());
 	}
 
-	void print_client_define_done(const std::string& package, const std::string& method,
+	void print_client_define_done(const std::string& method,
 								  const std::string& response)
 	{
 		std::string resp = change_include_prefix(response);
@@ -385,7 +399,8 @@ public:
 	}
 */
 
-	void print_server_class_impl(const std::string& package, const std::string& service)
+	void print_server_class_impl(const std::vector<std::string>& package,
+								 const std::string& service)
 	{
 		std::string base_service = make_package_prefix(package, service);
 
@@ -393,7 +408,7 @@ public:
 				service.c_str(), base_service.c_str());
 	}
 
-	void print_server_impl_method(const std::string& package,
+	void print_server_impl_method(const std::vector<std::string>& package,
 								  const std::string& service, const std::string& method,
 								  const std::string& request, const std::string& response)
 	{
@@ -487,7 +502,7 @@ public:
 		}
 	}
 
-	void print_server_class(const std::string& package, const std::string& service,
+	void print_server_class(const std::string& service,
 							const std::vector<rpc_descriptor>& rpcs)
 	{
 		fprintf(this->out_file, this->server_class_constructor_format.c_str());
@@ -516,7 +531,7 @@ public:
 		}
 	}
 
-	void print_client_class(const std::string& type, const std::string& package,
+	void print_client_class(const std::string& type,
 							const std::string& service,
 							const std::vector<rpc_descriptor>& rpcs)
 	{
@@ -624,7 +639,7 @@ public:
 				method_params, type.c_str());
 	}
 
-	void print_client_methods(const std::string& type, const std::string& package,
+	void print_client_methods(const std::string& type,
 							  const std::string& service,
 							  const std::vector<rpc_descriptor>& rpcs)
 	{
@@ -760,8 +775,10 @@ public:
 				method.c_str(), method.c_str());
 	}
 
-	void print_client_done_method(const std::string& package, const std::string& service,
-								  const std::string& method, const std::string& response)
+	void print_client_done_method(const std::vector<std::string>& package,
+								  const std::string& service,
+								  const std::string& method,
+								  const std::string& response)
 	{
 		std::string method_lower = method;
 		std::transform(method_lower.begin(), method_lower.end(),
@@ -784,7 +801,8 @@ public:
 		fprintf(this->out_file, this->client_main_begin_format.c_str());
 	}
 
-	void print_client_main_service(const std::string& type, const std::string& package,
+	void print_client_main_service(const std::string& type,
+								   const std::vector<std::string>& package,
 								   const std::string& service)
 	{
 		//std::string service_lower = service;
@@ -796,8 +814,10 @@ public:
 				base_service.c_str(), type.c_str());
 	}
 
-	void print_client_main_method_call(const std::string& package, const std::string& service,
-									   const std::string& method, const std::string& request)
+	void print_client_main_method_call(const std::vector<std::string>& package,
+									   const std::string& service,
+									   const std::string& method,
+									   const std::string& request)
 	{
 		std::string method_lower = method;
 		std::transform(method_lower.begin(), method_lower.end(),
@@ -838,11 +858,11 @@ public:
 		fprintf(this->out_file, this->client_main_end_format.c_str());
 	}
 
-	void print_end(const std::string& package)
+	void print_end(const std::vector<std::string>& package)
 	{
-		if (package.length())
+		for (int i = package.size() - 1; i >=0; i--)
 			fprintf(this->out_file, namespace_package_end_format.c_str(),
-					package.c_str());
+					package[i].c_str());
 //		fprintf(this->out_file, "} // namespace srpc\n");
 	}
 
@@ -880,6 +900,7 @@ using namespace %s;
 
 	std::string srpc_file_include_format = R"(
 #include "%s.srpc.h"
+#include "unistd.h"
 )";
 
 	std::string using_namespace_sogou_format = R"(
@@ -895,12 +916,10 @@ namespace srpc
 
 	std::string namespace_package_start_format = R"(
 namespace %s
-{
-)";
+{)";
 
 	std::string namespace_package_end_format = R"(
-} // end namespace %s
-)";
+} // end namespace %s)";
 
 	std::string server_comment_format = R"(
 /*

@@ -291,7 +291,8 @@ bool Parser::parse_include_file(const std::string& line, std::string& file_name)
 	return true;*/
 }
 
-bool Parser::parse_package_name(const std::string& line, std::string& package_name)
+bool Parser::parse_package_name(const std::string& line,
+								std::vector<std::string>& package_name)
 {
 	std::string package_prefix = (this->is_thrift ? "namespace" : "package");
 
@@ -330,8 +331,17 @@ bool Parser::parse_package_name(const std::string& line, std::string& package_na
 			&& line[pos] != ';')
 		pos++;
 
+	std::string names = line.substr(begin, pos - begin);
 
-	package_name = line.substr(begin, pos - begin);
+	pos = names.find('.');
+	while (pos != -1)
+	{
+		package_name.push_back(names.substr(0, pos));
+		names = names.substr(pos + 1, names.length() - pos);
+		pos = names.find('.');
+	}
+	package_name.push_back(names.substr(0, pos));
+
 	return true;
 }
 
