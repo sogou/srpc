@@ -27,11 +27,10 @@
 
 static inline std::string join_package_names(const std::vector<std::string>& package)
 {
-	std::string ret;
-	for (int i = 0; i < package.size(); i++)
+	std::string ret = package[0];
+	for (int i = 1; i < package.size(); i++)
 	{
-		if (i != 0)
-			ret.append("::");
+		ret.append("::");
 		ret.append(package[i]);
 	}
 	return ret;
@@ -347,12 +346,14 @@ public:
 	{
 		fprintf(this->out_file, this->srpc_file_include_format.c_str(), prefix.c_str());
 		fprintf(this->out_file, this->using_namespace_sogou_format.c_str());
+		fprintf(this->out_file, this->wait_group_declaration_format.c_str());
 	}
 
 	void print_client_file_include(const std::string& prefix)
 	{
 		fprintf(this->out_file, this->srpc_file_include_format.c_str(), prefix.c_str());
 		fprintf(this->out_file, this->using_namespace_sogou_format.c_str());
+		fprintf(this->out_file, this->wait_group_declaration_format.c_str());
 	}
 
 	void print_server_comment()
@@ -860,7 +861,7 @@ public:
 
 	void print_end(const std::vector<std::string>& package)
 	{
-		for (int i = package.size() - 1; i >=0; i--)
+		for (int i = package.size() - 1; i >= 0; i--)
 			fprintf(this->out_file, namespace_package_end_format.c_str(),
 					package[i].c_str());
 //		fprintf(this->out_file, "} // namespace srpc\n");
@@ -900,11 +901,20 @@ using namespace %s;
 
 	std::string srpc_file_include_format = R"(
 #include "%s.srpc.h"
-#include "unistd.h"
+#include "workflow/WFFacilities.h"
 )";
 
 	std::string using_namespace_sogou_format = R"(
 using namespace srpc;
+)";
+
+	std::string wait_group_declaration_format = R"(
+static WFFacilities::WaitGroup wait_group(1);
+
+void sig_handler(int signo)
+{
+	wait_group.done();
+}
 )";
 
 /*
@@ -916,10 +926,12 @@ namespace srpc
 
 	std::string namespace_package_start_format = R"(
 namespace %s
-{)";
+{
+)";
 
 	std::string namespace_package_end_format = R"(
-} // end namespace %s)";
+} // end namespace %s
+)";
 
 	std::string server_comment_format = R"(
 /*
@@ -1389,7 +1401,7 @@ int main()
 
 	std::string server_main_end_format = R"(
 	server.start(port);
-	pause();
+	wait_group.wait();
 	server.stop();
 	google::protobuf::ShutdownProtobufLibrary();
 	return 0;
@@ -1432,7 +1444,7 @@ int main()
 */
 
 	std::string client_main_end_format = R"(
-	pause();
+	wait_group.wait();
 	google::protobuf::ShutdownProtobufLibrary();
 	return 0;
 }
