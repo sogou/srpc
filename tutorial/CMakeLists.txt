@@ -87,7 +87,7 @@ set(TUTORIAL_PB_LIST
 if (APPLE)
 	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
 elseif (WIN32)
-	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto)
+	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto z)
 else ()
 	set(SRPC_LIB srpc)
 endif ()

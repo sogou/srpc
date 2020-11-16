@@ -42,20 +42,24 @@ protected:
 
 public:
 	RPCServer();
-	RPCServer(const RPCServerParams *params);
+	RPCServer(const struct RPCServerParams *params);
+
 
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 
 protected:
-	RPCServer(const RPCServerParams *params,
+	RPCServer(const struct RPCServerParams *params,
 			  std::function<void (NETWORKTASK *)>&& process);
 
 	CommSession *new_session(long long seq, CommConnection *conn) override;
 	void server_process(NETWORKTASK *task) const;
 
 private:
+	void set_tracing(TASK *Task);
+
 	std::map<std::string, RPCService *> service_map;
+	RPCSpanLogger *span_logger;
 };
 
 ////////
@@ -69,16 +73,18 @@ inline RPCServer<RPCTYPE>::RPCServer():
 {}
 
 template<class RPCTYPE>
-inline RPCServer<RPCTYPE>::RPCServer(const RPCServerParams *params):
+inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params):
 	WFServer<REQTYPE, RESPTYPE>(params,
 								std::bind(&RPCServer::server_process,
-								this, std::placeholders::_1))
+								this, std::placeholders::_1)),
+	span_logger(params->span_logger)
 {}
 
 template<class RPCTYPE>
-inline RPCServer<RPCTYPE>::RPCServer(const RPCServerParams *params,
+inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params,
 									 std::function<void (NETWORKTASK *)>&& process):
-	WFServer<REQTYPE, RESPTYPE>(params, std::move(process))
+	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process)),
+	span_logger(params->span_logger)
 {}
 
 template<class RPCTYPE>
@@ -110,10 +116,11 @@ template<class RPCTYPE>
 inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq,
 													CommConnection *conn)
 {
-	auto *task = new TASK(this->process);
+	auto *task = new TASK(this->process, this->span_logger);
 
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
+
 	return task;
 }
 
@@ -141,6 +148,9 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
+				if (this->span_logger)
+					static_cast<TASK *>(task)->start_span();
+
 				status_code = req->decompress();
 				if (status_code == RPCStatusOK)
 					status_code = (*rpc)(static_cast<TASK *>(task)->worker);

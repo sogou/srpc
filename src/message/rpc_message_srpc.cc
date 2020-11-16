@@ -84,7 +84,8 @@ public:
 private:
 	ResolverInstance()
 	{
-		resolver_ = google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix, google::protobuf::DescriptorPool::generated_pool());
+		resolver_ = google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix,
+									google::protobuf::DescriptorPool::generated_pool());
 	}
 
 	~ResolverInstance() { delete resolver_; }
@@ -240,11 +241,34 @@ void SRPCMessage::set_data_type(int type)
 
 void SRPCMessage::set_attachment_nocopy(const char *attachment, size_t len)
 {
+	//TODO:
 }
 
 bool SRPCMessage::get_attachment(const char **attachment, size_t *len) const
 {
+	//TODO:
 	return false;
+}
+
+bool SRPCMessage::set_meta_span(const RPCSpan *span)
+{
+	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
+	meta->mutable_span()->set_trace_id(span->get_trace_id());
+	meta->mutable_span()->set_span_id(span->get_span_id());
+//	meta->mutable_span()->set_parent_span_id(span->parent_span_id);
+	return true;
+}
+
+bool SRPCMessage::get_meta_span(RPCSpan *span) const
+{
+	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
+	if (!meta->has_span())
+		return false;
+
+	span->set_trace_id(meta->mutable_span()->trace_id());
+//	span->span_id = meta->mutable_span()->span_id();
+	span->set_parent_span_id(meta->mutable_span()->span_id());
+	return true;
 }
 
 const std::string& SRPCRequest::get_service_name() const
@@ -943,6 +967,80 @@ bool SogouHttpResponse::deserialize_meta()
 		meta->set_compressed_size(body_len);
 
 	return true;
+}
+
+bool SogouHttpRequest::set_meta_span(const RPCSpan *span)
+{
+	char value[50];
+	sprintf(value, "%lld", span->get_trace_id());
+	set_header_pair("Trace-Id", value);
+	sprintf(value, "%lld", span->get_span_id());
+	set_header_pair("Span-Id", value);
+	return true;
+}
+
+bool SogouHttpRequest::get_meta_span(RPCSpan *span) const
+{
+	std::string name;
+	std::string value;
+
+	protocol::HttpHeaderCursor cursor(this);
+	bool found = false;
+
+	while (cursor.next(name, value))
+	{
+		if (!strcasecmp(name.c_str(), "Trace-Id"))
+		{
+			span->set_trace_id(strtoll(value.c_str(), NULL, 10));
+			found = true;
+			continue;
+		}
+
+		if (!strcasecmp(name.c_str(), "Span-Id"))
+		{
+			span->set_parent_span_id(strtoll(value.c_str(), NULL, 10));
+			found = true;
+			continue;
+		}
+	}
+	return found;
+}
+
+bool SogouHttpResponse::set_meta_span(const RPCSpan *span)
+{
+	char value[50];
+	sprintf(value, "%lld", span->get_trace_id());
+	set_header_pair("Trace-Id", value);
+	sprintf(value, "%lld", span->get_span_id());
+	set_header_pair("Span-Id", value);
+	return false;
+}
+
+bool SogouHttpResponse::get_meta_span(RPCSpan *span) const
+{
+	std::string name;
+	std::string value;
+
+	protocol::HttpHeaderCursor cursor(this);
+	bool found = false;
+
+	while (cursor.next(name, value))
+	{
+		if (!strcasecmp(name.c_str(), "Trace-Id"))
+		{
+			span->set_trace_id(strtoll(value.c_str(), NULL, 10));
+			found = true;
+			continue;
+		}
+
+		if (!strcasecmp(name.c_str(), "Span-Id"))
+		{
+			span->set_parent_span_id(strtoll(value.c_str(), NULL, 10));
+			found = true;
+			continue;
+		}
+	}
+	return found;
 }
 
 } // namespace srpc

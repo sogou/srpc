@@ -49,6 +49,9 @@ public:
 	int get_data_type() const override { return RPCDataProtobuf; }
 	void set_data_type(int type) override { }
 
+	bool get_meta_span(RPCSpan *span) const override { return false; }
+	bool set_meta_span(const RPCSpan *span) override { return false; }
+
 public:
 	using RPCMessage::serialize;
 	using RPCMessage::deserialize;
@@ -150,6 +153,16 @@ public:
 		return this->BRPCRequest::set_method_name(method_name);
 	}
 
+	bool set_meta_span(const RPCSpan *span) override
+	{
+		return this->BRPCMessage::set_meta_span(span);
+	}
+
+	bool get_meta_span(RPCSpan *span) const override
+	{
+		return this->BRPCMessage::get_meta_span(span);
+	}
+
 public:
 	BaiduStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -202,6 +215,16 @@ public:
 	void set_error(int error) override
 	{
 		return this->BRPCResponse::set_error(error);
+	}
+
+	bool set_meta_span(const RPCSpan *span) override
+	{
+		return this->BRPCMessage::set_meta_span(span);
+	}
+
+	bool get_meta_span(RPCSpan *span) const override
+	{
+		return this->BRPCMessage::get_meta_span(span);
 	}
 
 public:

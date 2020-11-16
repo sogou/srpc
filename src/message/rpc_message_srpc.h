@@ -56,6 +56,9 @@ public:
 	void set_attachment_nocopy(const char *attachment, size_t len);
 	bool get_attachment(const char **attachment, size_t *len) const;
 
+	bool set_meta_span(const RPCSpan *span) override;
+	bool get_meta_span(RPCSpan *span) const override;
+
 public:
 	using RPCMessage::serialize;
 	using RPCMessage::deserialize;
@@ -146,6 +149,16 @@ public:
 		return this->SRPCRequest::set_method_name(method_name);
 	}
 
+	bool set_meta_span(const RPCSpan *span) override
+	{
+		return this->SRPCMessage::set_meta_span(span);
+	}
+
+	bool get_meta_span(RPCSpan *span) const override
+	{
+		return this->SRPCMessage::get_meta_span(span);
+	}
+
 public:
 	SogouStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -200,6 +213,16 @@ public:
 		return this->SRPCResponse::set_error(error);
 	}
 
+	bool set_meta_span(const RPCSpan *span) override
+	{
+		return this->SRPCMessage::set_meta_span(span);
+	}
+
+	bool get_meta_span(RPCSpan *span) const override
+	{
+		return this->SRPCMessage::get_meta_span(span);
+	}
+
 public:
 	SogouStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -230,6 +253,9 @@ public:
 	{
 		return this->SRPCRequest::set_method_name(method_name);
 	}
+
+	bool set_meta_span(const RPCSpan *span) override;
+	bool get_meta_span(RPCSpan *span) const override;
 
 public:
 	SogouHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
@@ -266,6 +292,9 @@ public:
 	{
 		return this->SRPCResponse::set_error(error);
 	}
+
+	bool set_meta_span(const RPCSpan *span) override;
+	bool get_meta_span(RPCSpan *span) const override;
 
 public:
 	SogouHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
