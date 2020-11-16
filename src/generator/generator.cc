@@ -221,7 +221,8 @@ void Generator::thrift_replace_include(const idl_info& cur_info, std::vector<rpc
 					continue;
 
 				//printf("????%s %s\n", sub_info.file_name_prefix.c_str(), sub_info.package_name.c_str());
-				SGenUtil::replace(param.type_name, sub_info.file_name_prefix, "::" + sub_info.package_name + "::");
+				SGenUtil::replace(param.type_name, sub_info.file_name_prefix,
+								  "::" + join_package_names(sub_info.package_name) + "::");
 			}
 		}
 	}
@@ -294,20 +295,19 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 		if (this->is_thrift)
 			this->printer.print_server_class_thrift(desc.block_name, desc.rpcs);
 		else
-			this->printer.print_server_class(cur_info.package_name, desc.block_name, desc.rpcs);
+			this->printer.print_server_class(desc.block_name, desc.rpcs);
 
 		this->printer.print_client_comment();
 		for (const auto& rpc : desc.rpcs)
 		{
-			this->printer.print_client_define_done(cur_info.package_name,
-												   rpc.method_name,
+			this->printer.print_client_define_done(rpc.method_name,
 												   rpc.response_name);
 		}
 
 		this->printer.print_empty_line();
 
 		for (const auto& type : rpc_list)
-			this->printer.print_client_class(type, cur_info.package_name, desc.block_name, desc.rpcs);
+			this->printer.print_client_class(type, desc.block_name, desc.rpcs);
 
 		this->printer.print_implement_comments();
 		this->printer.print_server_constructor(desc.block_name, desc.rpcs);
@@ -317,7 +317,7 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 		for (const auto& type : rpc_list)
 		{
 			this->printer.print_client_constructor(type, desc.block_name);
-			this->printer.print_client_methods(type, cur_info.package_name, desc.block_name, desc.rpcs);
+			this->printer.print_client_methods(type, desc.block_name, desc.rpcs);
 			this->printer.print_client_create_task(type, desc.block_name, desc.rpcs);
 		}
 

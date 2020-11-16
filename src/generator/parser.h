@@ -54,10 +54,12 @@ public:
 						  std::string& block_name,
 						  std::string& block_name_value);
 	bool parse_service_pb(const std::string& block, Descriptor& desc);
-	bool parse_service_thrift(const std::string& file_name_prefix, const std::string& block, Descriptor& desc);
-	bool parse_struct_thrift(const std::string& file_name_prefix, const std::string& block, Descriptor& desc);
+	bool parse_service_thrift(const std::string& file_name_prefix,
+							  const std::string& block, Descriptor& desc);
+	bool parse_struct_thrift(const std::string& file_name_prefix,
+							 const std::string& block, Descriptor& desc);
 	bool parse_enum_thrift(const std::string& block, Descriptor& desc);
-	bool parse_package_name(const std::string& line, std::string& package_name);
+	bool parse_package_name(const std::string& line, std::vector<std::string>& package_name);
 	bool parse_include_file(const std::string& line, std::string& file_name);
 	bool check_multi_comments_begin(std::string& line);
 	bool check_multi_comments_end(std::string& line);

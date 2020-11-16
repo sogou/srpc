@@ -64,7 +64,7 @@ struct idl_info
 	std::string file_name;
 	std::string absolute_file_path;
 	std::string file_name_prefix;
-	std::string package_name;
+	std::vector<std::string> package_name;
 	std::list<Descriptor> desc_list;
 	std::list<idl_info> include_list;
 };
