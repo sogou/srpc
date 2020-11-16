@@ -45,6 +45,7 @@ public:
 	void task_init(COMPLEXTASK *task) const;
 
 	void set_keep_alive(int timeout);
+	void set_first_timeout(int timeout);
 
 protected:
 	template<class OUTPUT>
@@ -106,6 +107,13 @@ inline void RPCClient<RPCTYPE>::set_keep_alive(int timeout)
 {
 	this->params.task_params.keep_alive_timeout = timeout;
 }
+
+template<class RPCTYPE>
+inline void RPCClient<RPCTYPE>::set_first_timeout(int timeout)
+{
+	this->params.task_params.first_timeout = timeout;
+}
+
 
 template<class RPCTYPE>
 inline void RPCClient<RPCTYPE>::init(const RPCClientParams *params)

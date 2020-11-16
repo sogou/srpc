@@ -23,7 +23,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include "workflow/WFTask.h"
 #include "workflow/WFTaskFactory.h"
 #include "workflow/RedisMessage.h"
