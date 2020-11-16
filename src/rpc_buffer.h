@@ -63,7 +63,8 @@ public:
 	size_t size() const;
 
 	/**
-	 * @brief      Cut current buffer at absolutely offset, current buffer keep first part, give second part to out buffer
+	 * @brief      Cut current buffer at absolutely offset. Current buffer keeps
+	 * 				the first part and gives the second part to the out buffer.
 	 * @param[in]  offset           where to cut
 	 * @param[in]  out              points to out buffer
 	 * @return     actual give how many bytes to out

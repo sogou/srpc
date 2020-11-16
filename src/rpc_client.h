@@ -54,11 +54,13 @@ protected:
 		auto *task = new TASK(this->service_name,
 							  method_name,
 							  &this->params.task_params,
+							  this->params.span_logger,
 							  [done](int status_code, RPCWorker& worker) -> int {
 				return ClientRPCDoneImpl(status_code, worker, done);
 			});
 
 		this->task_init(task);
+
 		return task;
 	}
 
@@ -110,7 +112,7 @@ inline void RPCClient<RPCTYPE>::init(const RPCClientParams *params)
 {
 	this->params = *params;
 
-	if (this->params.task_params.data_type == INT_UNSET)
+	if (this->params.task_params.data_type == INT_MAX)
 		this->params.task_params.data_type = RPCTYPE::default_data_type;
 
 	this->has_addr_info = SRPCGlobal::get_instance()->task_init(this->params,
@@ -138,7 +140,8 @@ inline void RPCClient<RPCTYPE>::task_init(COMPLEXTASK *task) const
 	__task_init(task);
 }
 
-static inline void __set_host_by_uri(const ParsedURI *uri, bool is_ssl, std::string& header_host)
+static inline void __set_host_by_uri(const ParsedURI *uri, bool is_ssl,
+									 std::string& header_host)
 {
 	if (uri->host && uri->host[0])
 		header_host = uri->host;

@@ -42,37 +42,47 @@ struct RPCClientParams
 	bool is_ssl;
 //or URL
 	std::string url;
+//for trace_span
+	RPCSpanLogger *span_logger;
 };
 
-using RPCServerParams = WFServerParams;
-
-static constexpr RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
+struct RPCServerParams : public WFServerParams
 {
-/*	.send_timeout		=	*/	INT_UNSET,
-/*	.keep_alive_timeout	=	*/	INT_UNSET,
-/*	.retry_max			=	*/	INT_UNSET,
-/*	.compress_type		=	*/	INT_UNSET,
-/*	.data_type			=	*/	INT_UNSET
-};
-
-static const RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
-{
-/*	.task_params	=	*/	RPC_TASK_PARAMS_DEFAULT,
-/*	.host			=	*/	"",
-/*	.port			=	*/	SRPC_DEFAULT_PORT,
-/*	.is_ssl			=	*/	false,
-/*	.url			=	*/	""
-};
-
-static constexpr RPCServerParams RPC_SERVER_PARAMS_DEFAULT =
-{
+	RPCServerParams() :
+		WFServerParams({
 /*	.max_connections		=	*/	2000,
 /*	.peer_response_timeout	=	*/	10 * 1000,
 /*	.receive_timeout		=	*/	-1,
 /*	.keep_alive_timeout		=	*/	60 * 1000,
 /*	.request_size_limit		=	*/	RPC_BODY_SIZE_LIMIT,
 /*	.ssl_accept_timeout		=	*/	10 * 1000
+		}),
+		span_logger(NULL)
+	{}
+
+	RPCSpanLogger *span_logger;
 };
+
+static constexpr RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
+{
+/*	.send_timeout		=	*/	INT_MAX,
+/*	.keep_alive_timeout	=	*/	INT_MAX,
+/*	.retry_max			=	*/	INT_MAX,
+/*	.compress_type		=	*/	INT_MAX,
+/*	.data_type			=	*/	INT_MAX
+};
+
+static const RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
+{
+/*	.task_params		=	*/	RPC_TASK_PARAMS_DEFAULT,
+/*	.host				=	*/	"",
+/*	.port				=	*/	SRPC_DEFAULT_PORT,
+/*	.is_ssl				=	*/	false,
+/*	.url				=	*/	"",
+/*	.span_logger		=	*/	NULL
+};
+
+static const RPCServerParams RPC_SERVER_PARAMS_DEFAULT;
 
 } // end namespace
 

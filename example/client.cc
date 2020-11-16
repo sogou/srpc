@@ -13,7 +13,7 @@ using namespace srpc;
 using namespace example;
 
 #define PARALLEL_NUM	20
-#define GET_CURRENT_MS	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
+//#define GET_CURRENT_MS	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
 #define GET_CURRENT_NS	std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
 
 std::atomic<int> query_count(0);

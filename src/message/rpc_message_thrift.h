@@ -87,6 +87,9 @@ public:
 	int compress() override { return RPCStatusOK; }
 	int decompress() override { return RPCStatusOK; }
 
+	bool get_meta_span(RPCSpan *span) const override { return false; }
+	bool set_meta_span(const RPCSpan *span) override { return false; }
+
 public:
 	const ThriftMeta *get_meta() const { return &TBuffer_.meta; }
 	ThriftMeta *get_meta() { return &TBuffer_.meta; }
@@ -120,6 +123,8 @@ class ThriftResponse : public ThriftMessage
 public:
 	bool serialize_meta();
 	bool deserialize_meta();
+	bool get_meta_span(RPCSpan *span) const override { return false; }
+	bool set_meta_span(const RPCSpan *span) override { return false; }
 
 public:
 	int get_status_code() const { return status_code_; }
@@ -191,6 +196,16 @@ public:
 		this->ThriftRequest::set_seqid(seqid);
 	}
 
+	bool set_meta_span(const RPCSpan *span) override
+	{
+		return this->ThriftMessage::set_meta_span(span);
+	}
+
+	bool get_meta_span(RPCSpan *span) const override
+	{
+		return this->ThriftMessage::get_meta_span(span);
+	}
+
 public:
 	ThriftStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -245,6 +260,16 @@ public:
 		return this->ThriftResponse::set_error(error);
 	}
 
+	bool set_meta_span(const RPCSpan *span) override
+	{
+		return this->ThriftMessage::set_meta_span(span);
+	}
+
+	bool get_meta_span(RPCSpan *span) const override
+	{
+		return this->ThriftMessage::get_meta_span(span);
+	}
+
 public:
 	ThriftStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -281,6 +306,16 @@ public:
 		this->ThriftRequest::set_seqid(seqid);
 	}
 
+	bool set_meta_span(const RPCSpan *span) override
+	{
+		return this->ThriftMessage::set_meta_span(span);
+	}
+
+	bool get_meta_span(RPCSpan *span) const override
+	{
+		return this->ThriftMessage::get_meta_span(span);
+	}
+
 public:
 	ThriftHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -315,6 +350,16 @@ public:
 	void set_error(int error) override
 	{
 		return this->ThriftResponse::set_error(error);
+	}
+
+	bool set_meta_span(const RPCSpan *span) override
+	{
+		return this->ThriftMessage::set_meta_span(span);
+	}
+
+	bool get_meta_span(RPCSpan *span) const override
+	{
+		return this->ThriftMessage::get_meta_span(span);
 	}
 
 public:

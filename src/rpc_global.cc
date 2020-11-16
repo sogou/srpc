@@ -38,6 +38,7 @@ SRPCGlobal::SRPCGlobal()
 {
 	WFGlobal::register_scheme_port(SRPC_SCHEME, SRPC_DEFAULT_PORT);
 	WFGlobal::register_scheme_port(SRPC_SSL_SCHEME, SRPC_SSL_DEFAULT_PORT);
+	this->span_id = 0;
 }
 
 static int __get_addr_info(const std::string& host, unsigned short port,
@@ -112,6 +113,13 @@ bool SRPCGlobal::task_init(RPCClientParams& params, ParsedURI& uri,
 	}
 
 	return false;
+}
+
+long long SRPCGlobal::get_trace_id()
+{
+	long long trace_id = 0;
+	this->snowflake.get_id(0, 0, &trace_id);
+	return trace_id;
 }
 
 static const SRPCGlobal *srpc_global = SRPCGlobal::get_instance();

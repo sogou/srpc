@@ -26,7 +26,7 @@ INCLUDE(CMakeLists_Headers.txt)
 macro(makeLink src dest target)
 	add_custom_command(
 		TARGET ${target} PRE_BUILD
-		COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different ${src} ${dest}
 		DEPENDS ${dest}
 	)
 endmacro()
@@ -105,17 +105,7 @@ set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/lib64/cmake)
 
 set(PB_PACKAGE_REQUIRED "protobuf-devel")
 
-execute_process(COMMAND
-				grep VERSION /etc/os-release
-				OUTPUT_VARIABLE OS_RELEASE_CORE OUTPUT_STRIP_TRAILING_WHITESPACE)
-if (NOT ${OS_RELEASE_CORE} EQUAL "")
-	string(SUBSTRING ${OS_RELEASE_CORE} 9 1 OS_RELEASE_CORE_NUMBER)
-	if (${OS_RELEASE_CORE_NUMBER} EQUAL "7")
-		set(PB_PACKAGE_REQUIRED "protobuf3-devel")
-	endif()
-endif()
-
-set(CPACK_RPM_DEVEL_PACKAGE_REQUIRES "workflow-devel >= 0.9.0, ${PB_PACKAGE_REQUIRED}")
+set(CPACK_RPM_DEVEL_PACKAGE_REQUIRES "workflow-devel >= 0.9.2, ${PB_PACKAGE_REQUIRED}")
 
 install(
 	FILES ${INCLUDE_HEADERS}
