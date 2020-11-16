@@ -384,7 +384,7 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 		this->set_keep_alive(params->keep_alive_timeout);
 
 	if (params->first_timeout != INT_MAX)
-		this->first_timeout_ = params->first_timeout;
+		first_timeout_ = params->first_timeout;
 
 	if (params->retry_max != INT_MAX)
 		this->set_retry_max(params->retry_max);
