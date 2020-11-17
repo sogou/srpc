@@ -69,7 +69,8 @@ template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer():
 	WFServer<REQTYPE, RESPTYPE>(&RPC_SERVER_PARAMS_DEFAULT,
 								std::bind(&RPCServer::server_process,
-								this, std::placeholders::_1))
+								this, std::placeholders::_1)),
+	span_logger(NULL)
 {}
 
 template<class RPCTYPE>
