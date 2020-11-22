@@ -125,7 +125,7 @@ protected:
 	CommMessageOut *message_out() override;
 	bool finish_once() override;
 	void rpc_callback(WFNetworkTask<RPCREQ, RPCRESP> *task);
-	int first_timeout() override { return first_timeout_; }
+	int first_timeout() override { return watch_timeout_; }
 
 public:
 	RPCClientTask(const std::string& service_name,
@@ -148,7 +148,7 @@ private:
 
 	user_done_t user_done_;
 	bool init_failed_;
-	int first_timeout_;
+	int watch_timeout_;
 };
 
 template<class RPCREQ, class RPCRESP>
@@ -380,11 +380,11 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 	if (params->send_timeout != INT_MAX)
 		this->set_send_timeout(params->send_timeout);
 
+	if (params->watch_timeout != INT_MAX)
+		watch_timeout_ = params->watch_timeout;
+
 	if (params->keep_alive_timeout != INT_MAX)
 		this->set_keep_alive(params->keep_alive_timeout);
-
-	if (params->first_timeout != INT_MAX)
-		first_timeout_ = params->first_timeout;
 
 	if (params->retry_max != INT_MAX)
 		this->set_retry_max(params->retry_max);
