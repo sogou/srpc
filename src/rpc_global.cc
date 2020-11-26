@@ -30,7 +30,7 @@
 namespace srpc
 {
 
-const char *SRPC_VERSION = "SRPC Library Version: 0.9.1";
+const char *SRPC_VERSION = "SRPC Library Version: 0.9.2";
 
 const char *SRPCGlobal::get_srpc_version() const { return SRPC_VERSION; }
 
