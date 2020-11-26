@@ -27,8 +27,8 @@ namespace srpc {
 struct RPCTaskParams
 {
 	int send_timeout;
+	int watch_timeout;
 	int keep_alive_timeout;
-	int first_timeout;
 	int retry_max;
 	int compress_type;	//RPCCompressType
 	int data_type;		//RPCDataType
@@ -67,8 +67,8 @@ struct RPCServerParams : public WFServerParams
 static constexpr RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
 {
 /*	.send_timeout		=	*/	INT_MAX,
+/*	.watch_timeout		=	*/	INT_MAX,
 /*	.keep_alive_timeout	=	*/	INT_MAX,
-/*	.first_timeout		=	*/	INT_MAX,
 /*	.retry_max			=	*/	INT_MAX,
 /*	.compress_type		=	*/	INT_MAX,
 /*	.data_type			=	*/	INT_MAX
