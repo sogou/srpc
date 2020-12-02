@@ -11,6 +11,8 @@ std::atomic<long long> last_timestamp(0L);
 //volatile bool stop_flag = false;
 int max_qps = 0;
 long long total_count = 0;
+std::string remote_host;
+unsigned short remote_port;
 WFFacilities::WaitGroup wait_group(1);
 
 inline void collect_qps()
@@ -31,13 +33,20 @@ inline void collect_qps()
 	}
 }
 
+template<class CLIENT>
 class BenchmarkPBServiceImpl : public BenchmarkPB::Service
 {
 public:
 	void echo_pb(FixLengthPBMsg *request, EmptyPBMsg *response,
 				 RPCContext *ctx) override
 	{
-		collect_qps();
+		auto *task = this->client->create_echo_pb_task(
+			[](EmptyPBMsg *remote_resp, srpc::RPCContext *remote_ctx) {
+				collect_qps();
+			});
+		task->user_data = response;
+		task->serialize_input(request);
+		ctx->get_series()->push_back(task);
 	}
 
 	void slow_pb(FixLengthPBMsg *request, EmptyPBMsg *response,
@@ -46,8 +55,11 @@ public:
 		auto *task = WFTaskFactory::create_timer_task(15000, nullptr);
 		ctx->get_series()->push_back(task);
 	}
+
+	CLIENT *client;
 };
 
+template<class CLIENT>
 class BenchmarkThriftServiceImpl : public BenchmarkThrift::Service
 {
 public:
@@ -55,7 +67,14 @@ public:
 					 BenchmarkThrift::echo_thriftResponse *response,
 					 RPCContext *ctx) override
 	{
-		collect_qps();
+		auto *task = this->client->create_echo_thrift_task(
+			[](BenchmarkThrift::echo_thriftResponse *remote_resp,
+			   srpc::RPCContext *remote_ctx) {
+					collect_qps();
+		});
+		task->user_data = response;
+		task->serialize_input(request);
+		ctx->get_series()->push_back(task);
 	}
 
 	void slow_thrift(BenchmarkThrift::slow_thriftRequest *request,
@@ -65,6 +84,8 @@ public:
 		auto *task = WFTaskFactory::create_timer_task(15000, nullptr);
 		ctx->get_series()->push_back(task);
 	}
+
+	CLIENT *client;
 };
 
 static void sig_handler(int signo)
@@ -73,17 +94,57 @@ static void sig_handler(int signo)
 	wait_group.done();
 }
 
-static void run_srpc_server(unsigned short port)
+template<template<class> class SERVICE, class CLIENT>
+static void init_proxy_client(SERVICE<CLIENT>& service_impl)
+{
+	RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
+	client_params.task_params.keep_alive_timeout = -1;
+	client_params.host = remote_host;
+	client_params.port = remote_port;
+	service_impl.client = new CLIENT(&client_params);
+}
+
+static void run_srpc_proxy(unsigned short port)
 {
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
 
-	SRPCServer server(&params);
+	SRPCServer proxy_server(&params);
 
-	BenchmarkPBServiceImpl pb_impl;
-	BenchmarkThriftServiceImpl thrift_impl;
+	BenchmarkPBServiceImpl<BenchmarkPB::SRPCClient> pb_impl;
+	BenchmarkThriftServiceImpl<BenchmarkThrift::SRPCClient> thrift_impl;
+
+	init_proxy_client<BenchmarkPBServiceImpl,
+					  BenchmarkPB::SRPCClient>(pb_impl);
+	init_proxy_client<BenchmarkThriftServiceImpl,
+					  BenchmarkThrift::SRPCClient>(thrift_impl);
+
+	proxy_server.add_service(&pb_impl);
+	proxy_server.add_service(&thrift_impl);
+
+	if (proxy_server.start(port) == 0)
+	{
+		wait_group.wait();
+		proxy_server.stop();
+	}
+	else
+	{
+		perror("server start");
+		wait_group.done();
+	}
+}
+
+template<class SERVER, class CLIENT>
+static void run_pb_proxy(unsigned short port)
+{
+	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
+	params.max_connections = 2048;
+
+	SERVER server(&params);
+
+	BenchmarkPBServiceImpl<CLIENT> pb_impl;
+	init_proxy_client<BenchmarkPBServiceImpl, CLIENT>(pb_impl);
 	server.add_service(&pb_impl);
-	server.add_service(&thrift_impl);
 
 	if (server.start(port) == 0)
 	{
@@ -97,38 +158,16 @@ static void run_srpc_server(unsigned short port)
 	}
 }
 
-template<class SERVER>
-static void run_pb_server(unsigned short port)
+template<class SERVER, class CLIENT>
+static void run_thrift_proxy(unsigned short port)
 {
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
 
 	SERVER server(&params);
 
-	BenchmarkPBServiceImpl pb_impl;
-	server.add_service(&pb_impl);
-
-	if (server.start(port) == 0)
-	{
-		wait_group.wait();
-		server.stop();
-	}
-	else
-	{
-		perror("server start");
-		wait_group.done();
-	}
-}
-
-template<class SERVER>
-static void run_thrift_server(unsigned short port)
-{
-	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
-	params.max_connections = 2048;
-
-	SERVER server(&params);
-
-	BenchmarkThriftServiceImpl thrift_impl;
+	BenchmarkThriftServiceImpl<CLIENT> thrift_impl;
+	init_proxy_client<BenchmarkThriftServiceImpl, CLIENT>(thrift_impl);
 	server.add_service(&thrift_impl);
 
 	if (server.start(port) == 0)
@@ -146,9 +185,10 @@ static void run_thrift_server(unsigned short port)
 int main(int argc, char* argv[])
 {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
-	if (argc != 3)
+	if (argc != 5)
 	{
-		fprintf(stderr, "Usage: %s <PORT> <srpc|brpc|thrift>\n", argv[0]);
+		fprintf(stderr, "Usage: %s <PORT> <REMOTE_IP> <REMOTE_PORT>"
+				" <srpc|brpc|thrift>\n", argv[0]);
 		abort();
 	}
 
@@ -161,18 +201,20 @@ int main(int argc, char* argv[])
 	WORKFLOW_library_init(&my);
 
 	unsigned short port = atoi(argv[1]);
-	std::string server_type = argv[2];
+	remote_host = argv[2];
+	remote_port = atoi(argv[3]);
+	std::string server_type = argv[4];
 
 	if (server_type == "srpc")
-		run_srpc_server(port);
+		run_srpc_proxy(port);
 	else if (server_type == "brpc")
-		run_pb_server<BRPCServer>(port);
+		run_pb_proxy<BRPCServer, BenchmarkPB::BRPCClient>(port);
 	else if (server_type == "thrift")
-		run_thrift_server<ThriftServer>(port);
+		run_thrift_proxy<ThriftServer, BenchmarkThrift::ThriftClient>(port);
 	else if (server_type == "srpc_http")
-		run_pb_server<SRPCHttpServer>(port);
+		run_pb_proxy<SRPCHttpServer, BenchmarkPB::SRPCHttpClient>(port);
 	else if (server_type == "thrift_http")
-		run_thrift_server<ThriftHttpServer>(port);
+		run_thrift_proxy<ThriftHttpServer, BenchmarkThrift::ThriftHttpClient>(port);
 	else
 		abort();
 
