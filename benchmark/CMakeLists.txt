@@ -95,3 +95,7 @@ add_executable(client_cdf client_cdf.cc ${PROTO_SRCS} ${PROTO_HDRS})
 target_link_libraries(client_cdf ${SRPC_LIB})
 add_dependencies(client_cdf BENCHMARK_GEN)
 
+add_executable(proxy proxy.cc ${PROTO_SRCS} ${PROTO_HDRS})
+target_link_libraries(proxy ${SRPC_LIB})
+add_dependencies(proxy BENCHMARK_GEN)
+
