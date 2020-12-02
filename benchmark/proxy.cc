@@ -90,7 +90,6 @@ public:
 
 static void sig_handler(int signo)
 {
-	fprintf(stdout, "\nTotal query: %llu max QPS: %d\n", total_count, max_qps);
 	wait_group.done();
 }
 
@@ -218,6 +217,7 @@ int main(int argc, char* argv[])
 	else
 		abort();
 
+	fprintf(stdout, "\nTotal query: %llu max QPS: %d\n", total_count, max_qps);
 	google::protobuf::ShutdownProtobufLibrary();	
 	return 0;
 }
