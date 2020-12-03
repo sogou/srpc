@@ -18,12 +18,11 @@
 #include <workflow/WFTaskFactory.h>
 #include <workflow/WFOperator.h>
 #include "echo_pb.srpc.h"
-
-#ifndef _WIN32
-#include <unistd.h>
-#endif
+#include "workflow/WFFacilities.h"
 
 using namespace srpc;
+
+static WFFacilities::WaitGroup wait_group(1);
 
 int main()
 {
@@ -38,6 +37,8 @@ int main()
 		else
 			printf("status[%d] error[%d] errmsg:%s\n",
 					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+
+		wait_group.done();
 	});
 
 	auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0, [](WFHttpTask *task) {
@@ -57,11 +58,8 @@ int main()
 
 	rpc_task->serialize_input(&req);
 	(*http_task > rpc_task).start();
-#ifndef _WIN32
-		pause();
-#else
-		getchar();
-#endif
+	wait_group.wait();
+
 	return 0;
 }
 

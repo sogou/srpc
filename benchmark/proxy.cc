@@ -127,10 +127,7 @@ static void run_srpc_proxy(unsigned short port)
 		proxy_server.stop();
 	}
 	else
-	{
 		perror("server start");
-		wait_group.done();
-	}
 }
 
 template<class SERVER, class CLIENT>

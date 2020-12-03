@@ -90,10 +90,7 @@ static void run_srpc_server(unsigned short port)
 		server.stop();
 	}
 	else
-	{
 		perror("server start");
-		wait_group.done();
-	}
 }
 
 template<class SERVER>
