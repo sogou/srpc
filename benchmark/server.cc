@@ -110,10 +110,7 @@ static void run_pb_server(unsigned short port)
 		server.stop();
 	}
 	else
-	{
 		perror("server start");
-		wait_group.done();
-	}
 }
 
 template<class SERVER>
@@ -133,10 +130,7 @@ static void run_thrift_server(unsigned short port)
 		server.stop();
 	}
 	else
-	{
 		perror("server start");
-		wait_group.done();
-	}
 }
 
 int main(int argc, char* argv[])
