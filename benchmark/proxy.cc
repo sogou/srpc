@@ -127,10 +127,7 @@ static void run_srpc_proxy(unsigned short port)
 		proxy_server.stop();
 	}
 	else
-	{
 		perror("server start");
-		wait_group.done();
-	}
 }
 
 template<class SERVER, class CLIENT>
@@ -151,10 +148,7 @@ static void run_pb_proxy(unsigned short port)
 		server.stop();
 	}
 	else
-	{
 		perror("server start");
-		wait_group.done();
-	}
 }
 
 template<class SERVER, class CLIENT>
@@ -175,10 +169,7 @@ static void run_thrift_proxy(unsigned short port)
 		server.stop();
 	}
 	else
-	{
 		perror("server start");
-		wait_group.done();
-	}
 }
 
 int main(int argc, char* argv[])

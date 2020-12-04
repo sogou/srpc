@@ -16,12 +16,11 @@
 
 #include <signal.h>
 #include "echo_pb.srpc.h"
-
-#ifndef _WIN32
-#include <unistd.h>
-#endif
+#include "workflow/WFFacilities.h"
 
 using namespace srpc;
+
+static WFFacilities::WaitGroup wait_group(1);
 
 class ExampleServiceImpl : public Example::Service
 {
@@ -37,7 +36,10 @@ public:
 	}
 };
 
-static void sig_handler(int signo) { }
+static void sig_handler(int signo)
+{
+	wait_group.done();
+}
 
 int main()
 {
@@ -51,11 +53,7 @@ int main()
 	server.add_service(&impl);
 	if (server.start(1412) == 0)
 	{
-#ifndef _WIN32
-		pause();
-#else
-		getchar();
-#endif
+		wait_group.wait();
 		server.stop();
 	}
 	else
