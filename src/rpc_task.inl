@@ -382,6 +382,8 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 
 	if (params->watch_timeout != INT_MAX)
 		watch_timeout_ = params->watch_timeout;
+	else
+		watch_timeout_ = 0;
 
 	if (params->keep_alive_timeout != INT_MAX)
 		this->set_keep_alive(params->keep_alive_timeout);
