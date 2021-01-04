@@ -21,6 +21,8 @@
 #include <workflow/URIParser.h>
 #include "rpc_message.h"
 #include "rpc_basic.h"
+#include "rpc_span.h"
+#include "rpc_span_policies.h"
 
 namespace srpc {
 

@@ -28,7 +28,7 @@
 static inline std::string join_package_names(const std::vector<std::string>& package)
 {
 	std::string ret = package[0];
-	for (int i = 1; i < package.size(); i++)
+	for (size_t i = 1; i < package.size(); i++)
 	{
 		ret.append("::");
 		ret.append(package[i]);
@@ -234,7 +234,7 @@ public:
 			fprintf(this->out_file, "#include \"%s.h\"\n", sub_info.file_name.c_str());
 
 		//if (cur_info.package_name.length())
-		for (int i = 0; i < cur_info.package_name.size(); i++)
+		for (size_t i = 0; i < cur_info.package_name.size(); i++)
 		{
 			fprintf(this->out_file, this->namespace_package_start_format.c_str(),
 					cur_info.package_name[i].c_str());
@@ -337,7 +337,7 @@ public:
 		fprintf(this->out_file, this->srpc_include_format.c_str(), prefix.c_str(),
 				this->is_thrift ? "thrift" : "pb");
 
-		for (int i = 0; i < package.size(); i++)
+		for (size_t i = 0; i < package.size(); i++)
 			fprintf(this->out_file, this->namespace_package_start_format.c_str(),
 					package[i].c_str());
 	}
@@ -861,7 +861,7 @@ public:
 
 	void print_end(const std::vector<std::string>& package)
 	{
-		for (int i = package.size() - 1; i >= 0; i--)
+		for (size_t i = package.size() - 1; i != (size_t)-1; i--)
 			fprintf(this->out_file, namespace_package_end_format.c_str(),
 					package[i].c_str());
 //		fprintf(this->out_file, "} // namespace srpc\n");
