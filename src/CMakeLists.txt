@@ -51,6 +51,7 @@ add_subdirectory(generator)
 set(SRC
 	rpc_buffer.cc
 	rpc_global.cc
+	rpc_span_policies.cc
 )
 
 add_subdirectory(thrift)
