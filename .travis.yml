@@ -17,6 +17,6 @@ jobs:
             - g++-8
             - cmake
 install:
-  - sudo apt-get install libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev
+  - sudo apt-get install libprotobuf3-dev protobuf3-compiler libprotoc3-dev libgoogle-perftools-dev
 script:
   - make
