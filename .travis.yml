@@ -1,0 +1,22 @@
+language: cpp
+dist: trusty
+os: linux
+compiler:
+  - gcc
+
+jobs:
+  include:
+    - env: COMPILER=g++-8 BUILD=Release STANDARD=11
+      compiler: gcc
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+            - cmake
+install:
+  - sudo apt-get install libprotobuf-dev protobuf-compiler libprotoc-dev libgoogle-perftools-dev
+script:
+  - make
