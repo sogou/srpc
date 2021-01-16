@@ -334,7 +334,7 @@ bool Parser::parse_package_name(const std::string& line,
 	std::string names = line.substr(begin, pos - begin);
 
 	pos = names.find('.');
-	while (pos != -1)
+	while (pos != (size_t)-1)
 	{
 		package_name.push_back(names.substr(0, pos));
 		names = names.substr(pos + 1, names.length() - pos);
