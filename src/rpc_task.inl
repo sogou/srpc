@@ -155,9 +155,10 @@ template<class RPCREQ, class RPCRESP>
 class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 {
 public:
-	RPCServerTask(std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
+	RPCServerTask(CommService *service,
+				  std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
 				  RPCSpanLogger *span_logger) :
-		WFServerTask<RPCREQ, RPCRESP>(WFGlobal::get_scheduler(), process),
+		WFServerTask<RPCREQ, RPCRESP>(service, WFGlobal::get_scheduler(), process),
 		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp),
 		span_(NULL),
 		span_logger_(span_logger)
