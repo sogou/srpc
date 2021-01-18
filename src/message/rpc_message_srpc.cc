@@ -41,8 +41,9 @@ struct SogouHttpHeadersString
 	const std::string SRPCError			=	"SRPC-Error";
 };
 
-struct StringIgnoreCaseCmp {
-	bool operator()(const std::string &lhs, const std::string &rhs) const
+struct IgnoreCaseCmp
+{
+	bool operator()(const std::string& lhs, const std::string& rhs) const
 	{
 		size_t lhs_sz = lhs.size();
 		size_t rhs_sz = rhs.size();
@@ -58,7 +59,7 @@ struct StringIgnoreCaseCmp {
 
 static const struct SogouHttpHeadersString SogouHttpHeaders;
 
-static const std::map<const std::string, int, StringIgnoreCaseCmp> SogouHttpHeadersCode =
+static const std::map<const std::string, int, IgnoreCaseCmp> SogouHttpHeadersCode =
 {
 	{SogouHttpHeaders.RPCCompressType,		1},
 	{SogouHttpHeaders.OriginSize,			2},
