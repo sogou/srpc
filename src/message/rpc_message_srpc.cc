@@ -41,7 +41,7 @@ struct SogouHttpHeadersString
 	const std::string SRPCError			=	"SRPC-Error";
 };
 
-struct IgnoreCaseCmp
+struct CaseCmp
 {
 	bool operator()(const std::string& lhs, const std::string& rhs) const
 	{
@@ -59,7 +59,7 @@ struct IgnoreCaseCmp
 
 static const struct SogouHttpHeadersString SogouHttpHeaders;
 
-static const std::map<const std::string, int, IgnoreCaseCmp> SogouHttpHeadersCode =
+static const std::map<const std::string, int, CaseCmp> SogouHttpHeadersCode =
 {
 	{SogouHttpHeaders.RPCCompressType,		1},
 	{SogouHttpHeaders.OriginSize,			2},
