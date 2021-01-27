@@ -14,6 +14,7 @@
   limitations under the License.
 */
 
+#include <errno.h>
 #include <workflow/HttpUtil.h>
 #include "rpc_message_thrift.h"
 
@@ -47,7 +48,10 @@ static int thrift_parser_append_message(const void *buf, size_t *size, ThriftBuf
 				TBuffer->status = THRIFT_GET_DATA;
 				TBuffer->framesize = ntohl(TBuffer->framesize);
 				if (TBuffer->framesize < 0)
+				{
+					errno = EBADMSG;
 					return -1;
+				}
 
 				//TBuffer->readbuf = new char[TBuffer->framesize];
 				break;
@@ -64,6 +68,8 @@ static int thrift_parser_append_message(const void *buf, size_t *size, ThriftBuf
 				TBuffer->status = THRIFT_PARSE_END;
 				return 1;
 			}
+			else
+				return 0;
 		}
 		else
 		{
@@ -93,6 +99,7 @@ static int thrift_parser_append_message(const void *buf, size_t *size, ThriftBuf
 		}
 	}
 
+	errno = EBADMSG;
 	return -1;
 }
 
