@@ -114,9 +114,9 @@ public:
 	bool get_attachment(const char **attachment, size_t *len) const override
 	{
 		if (this->is_server_task())
-			return task_->get_req()->get_attachment(attachment, len);
+			return task_->get_req()->get_attachment_nocopy(attachment, len);
 		else
-			return task_->get_resp()->get_attachment(attachment, len);
+			return task_->get_resp()->get_attachment_nocopy(attachment, len);
 	}
 
 public:

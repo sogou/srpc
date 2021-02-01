@@ -260,7 +260,7 @@ void SRPCMessage::set_attachment_nocopy(const char *attachment, size_t len)
 	//TODO:
 }
 
-bool SRPCMessage::get_attachment(const char **attachment, size_t *len) const
+bool SRPCMessage::get_attachment_nocopy(const char **attachment, size_t *len) const
 {
 	//TODO:
 	return false;
