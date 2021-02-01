@@ -29,7 +29,7 @@ public:
 		this->buf = buf;
 	}
 
-	void Append(const char* bytes, size_t n) override
+	void Append(const char *bytes, size_t n) override
 	{
 		this->buf->append(bytes, n, BUFFER_MODE_COPY);
 	}
@@ -94,9 +94,9 @@ int SnappyManager::SnappyDecompress(const char *buf, size_t buflen,
 {
 	size_t origin_len;
 
-	if (snappy::GetUncompressedLength(buf, buflen, &origin_len)
-		&& origin_len <= msglen
-		&& snappy::RawUncompress(buf, buflen, msg))
+	if (snappy::GetUncompressedLength(buf, buflen, &origin_len) &&
+		origin_len <= msglen &&
+		snappy::RawUncompress(buf, buflen, msg))
 	{
 		return (int)origin_len;
 	}
