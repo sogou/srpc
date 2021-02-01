@@ -117,7 +117,7 @@ public:
 		return this->SRPCRequest::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->SRPCRequest::get_attachment(attachment, len);
 	}
@@ -181,7 +181,7 @@ public:
 		return this->SRPCResponse::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->SRPCResponse::get_attachment(attachment, len);
 	}
@@ -240,7 +240,7 @@ public:
 class SogouHttpRequest : public protocol::HttpRequest, public RPCRequest, public SRPCRequest
 {
 public:
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->SRPCRequest::get_attachment(attachment, len);
 	}
@@ -279,7 +279,7 @@ public:
 class SogouHttpResponse : public protocol::HttpResponse, public RPCResponse, public SRPCResponse
 {
 public:
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->SRPCResponse::get_attachment(attachment, len);
 	}

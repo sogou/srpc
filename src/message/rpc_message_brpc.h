@@ -121,7 +121,7 @@ public:
 		return this->BRPCRequest::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->BRPCRequest::get_attachment(attachment, len);
 	}
@@ -185,7 +185,7 @@ public:
 		return this->BRPCResponse::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->BRPCResponse::get_attachment(attachment, len);
 	}

@@ -159,7 +159,7 @@ public:
 		return this->ThriftRequest::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->ThriftRequest::get_attachment(attachment, len);
 	}
@@ -228,7 +228,7 @@ public:
 		return this->ThriftResponse::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->ThriftResponse::get_attachment(attachment, len);
 	}
@@ -287,7 +287,7 @@ public:
 class ThriftHttpRequest : public protocol::HttpRequest, public RPCRequest, public ThriftRequest
 {
 public:
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->ThriftRequest::get_attachment(attachment, len);
 	}
@@ -338,7 +338,7 @@ public:
 class ThriftHttpResponse : public protocol::HttpResponse, public RPCResponse, public ThriftResponse
 {
 public:
-	bool get_attachment(const char **attachment, size_t *len) const override
+	bool get_attachment(const char **attachment, size_t *len) const
 	{
 		return this->ThriftResponse::get_attachment(attachment, len);
 	}
