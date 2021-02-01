@@ -14,8 +14,8 @@
   limitations under the License.
 */
 
-#ifndef __SOGOU_RPC_H__
-#define __SOGOU_RPC_H__
+#ifndef __RPC_DEFINE_H__
+#define __RPC_DEFINE_H__
 
 #if __cplusplus < 201100
 #error CPLUSPLUS VERSION required at least C++11. Please use "-std=c++11".
@@ -24,7 +24,6 @@
 
 #include "rpc_server.h"
 #include "rpc_client.h"
-#include "rpc_span_policies.h"
 
 namespace srpc
 {

@@ -117,7 +117,8 @@ template<class RPCTYPE>
 inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq,
 													CommConnection *conn)
 {
-	auto *task = new TASK(this->process, this->span_logger);
+	/* TODO: Change to a factory function. */
+	auto *task = new TASK(this, this->process, this->span_logger);
 
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
