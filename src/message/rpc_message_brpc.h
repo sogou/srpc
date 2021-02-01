@@ -121,6 +121,11 @@ public:
 		return this->BRPCRequest::append(buf, size, this->size_limit);
 	}
 
+	bool get_attachment(const char **attachment, size_t *len) const override
+	{
+		return this->BRPCRequest::get_attachment(attachment, len);
+	}
+
 public:
 	bool serialize_meta() override
 	{
@@ -178,6 +183,11 @@ public:
 	int append(const void *buf, size_t *size) override
 	{
 		return this->BRPCResponse::append(buf, size, this->size_limit);
+	}
+
+	bool get_attachment(const char **attachment, size_t *len) const override
+	{
+		return this->BRPCResponse::get_attachment(attachment, len);
 	}
 
 public:
