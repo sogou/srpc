@@ -45,15 +45,7 @@ struct CaseCmp
 {
 	bool operator()(const std::string& lhs, const std::string& rhs) const
 	{
-		size_t lhs_sz = lhs.size();
-		size_t rhs_sz = rhs.size();
-		size_t min_sz = std::min(lhs_sz, rhs_sz);
-		for(size_t i = 0; i < min_sz; i++)
-		{
-			if(std::tolower(lhs[i]) < std::tolower(rhs[i])) return true;
-			else if(std::tolower(lhs[i]) > std::tolower(rhs[i])) return false;
-		}
-		return lhs_sz < rhs_sz;
+		return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;
 	}
 };
 
