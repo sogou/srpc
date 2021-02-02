@@ -28,7 +28,7 @@ else ()
 endif ()
 
 find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
-
+find_package(ZLIB REQUIRED)
 #if (APPLE)
 #	if (WORKFLOW_INCLUDE_DIR)
 #		set (WORKFLOW_INCLUDE_DIR ${Workflow_DIR}/_include)
@@ -87,7 +87,7 @@ set(TUTORIAL_PB_LIST
 if (APPLE)
 	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
 elseif (WIN32)
-	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto z)
+	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto protobuf::libprotobuf ZLIB::ZLIB)
 else ()
 	set(SRPC_LIB srpc)
 endif ()
