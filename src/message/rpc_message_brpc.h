@@ -43,7 +43,7 @@ public:
 	int get_compress_type() const override;
 	void set_compress_type(int type) override;
 
-	bool get_attachment(const char **attachment, size_t *len) const;
+	bool get_attachment_nocopy(const char **attachment, size_t *len) const;
 	void set_attachment_nocopy(const char *attachment, size_t len);
 
 	int get_data_type() const override { return RPCDataProtobuf; }
@@ -121,11 +121,6 @@ public:
 		return this->BRPCRequest::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const
-	{
-		return this->BRPCRequest::get_attachment(attachment, len);
-	}
-
 public:
 	bool serialize_meta() override
 	{
@@ -183,11 +178,6 @@ public:
 	int append(const void *buf, size_t *size) override
 	{
 		return this->BRPCResponse::append(buf, size, this->size_limit);
-	}
-
-	bool get_attachment(const char **attachment, size_t *len) const
-	{
-		return this->BRPCResponse::get_attachment(attachment, len);
 	}
 
 public:

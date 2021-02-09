@@ -78,7 +78,7 @@ public:
 	void set_data_type(int type) override {}
 
 	void set_attachment_nocopy(const char *attachment, size_t len) { }
-	bool get_attachment(const char **attachment, size_t *len) const { return false; }
+	bool get_attachment_nocopy(const char **attachment, size_t *len) const { return false; }
 
 public:
 	int serialize(const ThriftIDLMessage *thrift_msg) override;
@@ -159,11 +159,6 @@ public:
 		return this->ThriftRequest::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const
-	{
-		return this->ThriftRequest::get_attachment(attachment, len);
-	}
-
 public:
 	bool serialize_meta() override
 	{
@@ -228,11 +223,6 @@ public:
 		return this->ThriftResponse::append(buf, size, this->size_limit);
 	}
 
-	bool get_attachment(const char **attachment, size_t *len) const
-	{
-		return this->ThriftResponse::get_attachment(attachment, len);
-	}
-
 public:
 	bool serialize_meta() override
 	{
@@ -287,11 +277,6 @@ public:
 class ThriftHttpRequest : public protocol::HttpRequest, public RPCRequest, public ThriftRequest
 {
 public:
-	bool get_attachment(const char **attachment, size_t *len) const
-	{
-		return this->ThriftRequest::get_attachment(attachment, len);
-	}
-
 	bool serialize_meta() override;
 	bool deserialize_meta() override;
 
@@ -338,11 +323,6 @@ public:
 class ThriftHttpResponse : public protocol::HttpResponse, public RPCResponse, public ThriftResponse
 {
 public:
-	bool get_attachment(const char **attachment, size_t *len) const
-	{
-		return this->ThriftResponse::get_attachment(attachment, len);
-	}
-
 	bool serialize_meta() override;
 	bool deserialize_meta() override;
 
