@@ -49,8 +49,8 @@ public:
 	int get_data_type() const override { return RPCDataProtobuf; }
 	void set_data_type(int type) override { }
 
-	bool get_meta_span(RPCSpan *span) const override { return false; }
-	bool set_meta_span(const RPCSpan *span) override { return false; }
+	bool get_meta_module_data(RPCModuleData& data) const override { return false; }
+	bool set_meta_module_data(const RPCModuleData& data) override { return false; }
 
 public:
 	using RPCMessage::serialize;
@@ -153,14 +153,14 @@ public:
 		return this->BRPCRequest::set_method_name(method_name);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override
+	bool set_meta_module_data(const RPCModuleData& data) override
 	{
-		return this->BRPCMessage::set_meta_span(span);
+		return this->BRPCMessage::set_meta_module_data(data);
 	}
 
-	bool get_meta_span(RPCSpan *span) const override
+	bool get_meta_module_data(RPCModuleData& data) const override
 	{
-		return this->BRPCMessage::get_meta_span(span);
+		return this->BRPCMessage::get_meta_module_data(data);
 	}
 
 public:
@@ -217,14 +217,14 @@ public:
 		return this->BRPCResponse::set_error(error);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override
+	bool set_meta_module_data(const RPCModuleData& data) override
 	{
-		return this->BRPCMessage::set_meta_span(span);
+		return this->BRPCMessage::set_meta_module_data(data);
 	}
 
-	bool get_meta_span(RPCSpan *span) const override
+	bool get_meta_module_data(RPCModuleData& data) const override
 	{
-		return this->BRPCMessage::get_meta_span(span);
+		return this->BRPCMessage::get_meta_module_data(data);
 	}
 
 public:

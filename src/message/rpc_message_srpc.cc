@@ -258,24 +258,30 @@ bool SRPCMessage::get_attachment_nocopy(const char **attachment, size_t *len) co
 	return false;
 }
 
-bool SRPCMessage::set_meta_span(const RPCSpan *span)
+bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
-	meta->mutable_span()->set_trace_id(span->get_trace_id());
-	meta->mutable_span()->set_span_id(span->get_span_id());
+
+	auto iter = data.find("trace_id");
+	if (iter != data.end())
+		meta->mutable_span()->set_trace_id(atoll(iter->second.c_str()));
+
+	iter = data.find("span_id");
+	if (iter != data.end())
+		meta->mutable_span()->set_span_id(atoi(iter->second.c_str()));
 //	meta->mutable_span()->set_parent_span_id(span->parent_span_id);
 	return true;
 }
 
-bool SRPCMessage::get_meta_span(RPCSpan *span) const
+bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
 	if (!meta->has_span())
 		return false;
 
-	span->set_trace_id(meta->mutable_span()->trace_id());
+	data["trace_id"] = std::to_string(meta->mutable_span()->trace_id());
 //	span->span_id = meta->mutable_span()->span_id();
-	span->set_parent_span_id(meta->mutable_span()->span_id());
+	data["parent_span_id"] = std::to_string(meta->mutable_span()->span_id());
 	return true;
 }
 
@@ -977,17 +983,20 @@ bool SogouHttpResponse::deserialize_meta()
 	return true;
 }
 
-bool SogouHttpRequest::set_meta_span(const RPCSpan *span)
+bool SogouHttpRequest::set_meta_module_data(const RPCModuleData& data)
 {
-	char value[50];
-	sprintf(value, "%lld", span->get_trace_id());
-	set_header_pair("Trace-Id", value);
-	sprintf(value, "%lld", span->get_span_id());
-	set_header_pair("Span-Id", value);
+	auto iter = data.find("trace_id");
+	if (iter != data.end())
+		set_header_pair("Trace-Id", iter->second);
+
+	iter = data.find("trace_id");
+	if (iter != data.end())
+		set_header_pair("Span-Id", iter->second);
+
 	return true;
 }
 
-bool SogouHttpRequest::get_meta_span(RPCSpan *span) const
+bool SogouHttpRequest::get_meta_module_data(RPCModuleData& data) const
 {
 	std::string name;
 	std::string value;
@@ -999,14 +1008,16 @@ bool SogouHttpRequest::get_meta_span(RPCSpan *span) const
 	{
 		if (!strcasecmp(name.c_str(), "Trace-Id"))
 		{
-			span->set_trace_id(strtoll(value.c_str(), NULL, 10));
+			//span->set_trace_id(strtoll(value.c_str(), NULL, 10));
+			data["trace_id"] = value;
 			found = true;
 			continue;
 		}
 
 		if (!strcasecmp(name.c_str(), "Span-Id"))
 		{
-			span->set_parent_span_id(strtoll(value.c_str(), NULL, 10));
+			//span->set_parent_span_id(strtoll(value.c_str(), NULL, 10));
+			data["parent_span_id"] = value;
 			found = true;
 			continue;
 		}
@@ -1014,17 +1025,20 @@ bool SogouHttpRequest::get_meta_span(RPCSpan *span) const
 	return found;
 }
 
-bool SogouHttpResponse::set_meta_span(const RPCSpan *span)
+bool SogouHttpResponse::set_meta_module_data(const RPCModuleData& data)
 {
-	char value[50];
-	sprintf(value, "%lld", span->get_trace_id());
-	set_header_pair("Trace-Id", value);
-	sprintf(value, "%lld", span->get_span_id());
-	set_header_pair("Span-Id", value);
-	return false;
+	auto iter = data.find("trace_id");
+	if (iter != data.end())
+		set_header_pair("Trace-Id", iter->second);
+
+	iter = data.find("trace_id");
+	if (iter != data.end())
+		set_header_pair("Span-Id", iter->second);
+
+	return true;
 }
 
-bool SogouHttpResponse::get_meta_span(RPCSpan *span) const
+bool SogouHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
 	std::string name;
 	std::string value;
@@ -1036,14 +1050,16 @@ bool SogouHttpResponse::get_meta_span(RPCSpan *span) const
 	{
 		if (!strcasecmp(name.c_str(), "Trace-Id"))
 		{
-			span->set_trace_id(strtoll(value.c_str(), NULL, 10));
+			//span->set_trace_id(strtoll(value.c_str(), NULL, 10));
+			data["trace_id"] = value;
 			found = true;
 			continue;
 		}
 
 		if (!strcasecmp(name.c_str(), "Span-Id"))
 		{
-			span->set_parent_span_id(strtoll(value.c_str(), NULL, 10));
+			//span->set_parent_span_id(strtoll(value.c_str(), NULL, 10));
+			data["parent_span_id"] = value;
 			found = true;
 			continue;
 		}

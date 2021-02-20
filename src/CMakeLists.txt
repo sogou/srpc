@@ -51,13 +51,14 @@ add_subdirectory(generator)
 set(SRC
 	rpc_buffer.cc
 	rpc_global.cc
-	rpc_span_policies.cc
 )
 
+add_subdirectory(module)
 add_subdirectory(thrift)
 add_subdirectory(compress)
 add_subdirectory(message)
 
+add_dependencies(module LINK_HEADERS)
 add_dependencies(thrift LINK_HEADERS)
 add_dependencies(compress LINK_HEADERS)
 add_dependencies(message LINK_HEADERS)
@@ -65,6 +66,7 @@ add_dependencies(message LINK_HEADERS)
 add_library(
 	${PROJECT_NAME} STATIC
 	${SRC}
+	$<TARGET_OBJECTS:module>
 	$<TARGET_OBJECTS:thrift>
 	$<TARGET_OBJECTS:compress>
 	$<TARGET_OBJECTS:message>

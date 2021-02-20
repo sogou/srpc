@@ -21,6 +21,7 @@
 #include "rpc_context.h"
 #include "rpc_options.h"
 #include "rpc_global.h"
+#include "rpc_module_impl.h"
 
 namespace srpc
 {
@@ -76,6 +77,7 @@ private:
 	struct sockaddr_storage ss;
 	socklen_t ss_len;
 	bool has_addr_info;
+	std::list<RPCClientModule<RPCTYPE> *> module_list;
 };
 
 ////////

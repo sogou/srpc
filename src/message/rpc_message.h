@@ -21,7 +21,7 @@
 #include <string>
 #include <workflow/ProtocolMessage.h>
 #include "rpc_basic.h"
-#include "rpc_span.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -38,8 +38,8 @@ public:
 	virtual void set_service_name(const std::string& service_name) = 0;
 	virtual void set_method_name(const std::string& method_name) = 0;
 
-	virtual bool get_meta_span(RPCSpan *span) const = 0;
-	virtual bool set_meta_span(const RPCSpan *span) = 0;
+	virtual bool get_meta_module_data(RPCModuleData& data) const = 0;
+	virtual bool set_meta_module_data(const RPCModuleData& data) = 0;
 
 	virtual void set_seqid(long long seqid) {}
 };
@@ -70,8 +70,8 @@ public:
 	//return RPCStatus
 	virtual int compress() = 0;
 	virtual int decompress() = 0;
-	virtual bool get_meta_span(RPCSpan *span) const = 0;
-	virtual bool set_meta_span(const RPCSpan *span) = 0;
+	virtual bool get_meta_module_data(RPCModuleData& data) const = 0;
+	virtual bool set_meta_module_data(const RPCModuleData& data) = 0;
 
 public:
 	//pb

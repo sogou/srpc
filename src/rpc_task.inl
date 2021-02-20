@@ -24,6 +24,7 @@
 #include "rpc_message.h"
 #include "rpc_options.h"
 #include "rpc_global.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -105,6 +106,8 @@ template<class RPCREQ, class RPCRESP>
 class RPCClientTask : public WFComplexClientTask<RPCREQ, RPCRESP>
 {
 public:
+	using TASK = RPCClientTask<RPCREQ, RPCRESP>;
+
 	// before rpc call
 	void set_data_type(RPCDataType type);
 	void set_compress_type(RPCCompressType type);
@@ -131,43 +134,40 @@ public:
 	RPCClientTask(const std::string& service_name,
 				  const std::string& method_name,
 				  const RPCTaskParams *params,
-				  RPCSpanLogger *span_logger,
+				  std::list<const RPCModule<TASK> *>& module_list,
 				  user_done_t&& user_done);
 
 	std::string get_remote_ip() const;
+
+	RPCModuleData& get_module_data() const { return module_data_; }
 
 private:
 	template<class IDL>
 	int __serialize_input(const IDL *in);
 
-	bool start_span();
-	bool end_span();
-
-	RPCSpan *span_;
-	RPCSpanLogger *span_logger_;
-
 	user_done_t user_done_;
 	bool init_failed_;
 	int watch_timeout_;
+
+	RPCModuleData module_data_;
+	std::list<const RPCModule<TASK> *> module_list_;
 };
 
 template<class RPCREQ, class RPCRESP>
 class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 {
 public:
+	using TASK = RPCClientTask<RPCREQ, RPCRESP>;
+
 	RPCServerTask(CommService *service,
 				  std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
-				  RPCSpanLogger *span_logger) :
+				  std::list<const RPCModule<TASK> *>& module_list) :
 		WFServerTask<RPCREQ, RPCRESP>(service, WFGlobal::get_scheduler(), process),
-		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp),
-		span_(NULL),
-		span_logger_(span_logger)
+		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp)
 	{
-		if (span_logger_)
-			span_ = span_logger_->create_span();
+		for (const auto *module : module_list)
+			module_list_->push_back(module);
 	}
-
-	bool start_span();
 
 protected:
 	CommMessageOut *message_out() override;
@@ -175,13 +175,13 @@ protected:
 
 public:
 	std::string get_remote_ip() const;
+	RPCModuleData& get_module_data() const { return module_data_; }
 
 	RPCWorker worker;
 
 private:
-	bool end_span();
-	RPCSpan *span_;
-	RPCSpanLogger *span_logger_;
+	RPCModuleData module_data_;
+	std::list<const RPCModule<TASK> *> module_list_;
 };
 
 template<class OUTPUT>
@@ -255,8 +255,20 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		status_code = this->resp.compress();
 		if (status_code == RPCStatusOK)
 		{
-			if (span_logger_)
-				this->end_span();
+			RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+
+			if (!module_list_.empty())
+			{
+				const RPCModuleData *data = NULL;
+				if (series)
+					data = series_of(this)->get_module_data();
+
+				for (const auto *module : module_list_)
+					module->end(this, *data);
+			}
+
+			if (series)
+				series->clear_module_data();
 
 			if (this->resp.serialize_meta())
 				return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
@@ -335,8 +347,8 @@ inline int RPCClientTask<RPCREQ, RPCRESP>::__serialize_input(const IDL *in)
 	return -1;
 }
 
-static bool addr_to_string(const struct sockaddr *addr,
-						   char *ip_str, socklen_t len)
+static inline bool addr_to_string(const struct sockaddr *addr,
+								  char *ip_str, socklen_t len)
 {
 	const char *ret = NULL;
 
@@ -363,16 +375,14 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
 					const std::string& method_name,
 					const RPCTaskParams *params,
-					RPCSpanLogger *span_logger,
+					std::list<const RPCModule<TASK> *>& module_list,
 					user_done_t&& user_done):
 	WFComplexClientTask<RPCREQ, RPCRESP>(0, nullptr),
-	span_(NULL),
-	span_logger_(span_logger),
 	user_done_(std::move(user_done)),
 	init_failed_(false)
 {
-	if (span_logger_)
-		span_ = span_logger_->create_span();
+	for (const auto *module : module_list)
+		module_list_->push_back(module);
 
 	if (user_done_)
 		this->set_callback(std::bind(&RPCClientTask::rpc_callback,
@@ -425,8 +435,17 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 
 	if (status_code == RPCStatusOK)
 	{
-		if (span_logger_)
-			this->start_span();
+		const RPCModuleData *data = series_of(this)->get_module_data();
+		if (data != NULL)
+			this->set_module_data(data);
+
+		if (!module_list_.empty())
+		{
+			for (const auto *module : module_list_)
+				module->begin(this, *data);
+		}
+
+		this->req->set_meta_module_data(this->get_module_data());
 
 		if (this->req.serialize_meta())
 			return this->WFClientTask<RPCREQ, RPCRESP>::message_out();
@@ -451,8 +470,14 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 		if (this->resp.deserialize_meta() == false)
 			this->resp.set_status_code(RPCStatusMetaError);
 
-		if (span_logger_)
-			this->end_span();
+		if (!module_list_.empty())
+		{
+			const RPCModuleData *data = this->resp.get_meta_module_data();
+			for (const auto *module : module_list_)
+				module->end(this, *data);
+		}
+		// don`t need to feedback resp meta through all nodes
+		//const RPCModuleData *data = series->get_module_data();
 	}
 
 	return true;
@@ -544,51 +569,6 @@ std::string RPCClientTask<RPCREQ, RPCRESP>::get_remote_ip() const
 }
 
 template<class RPCREQ, class RPCRESP>
-bool RPCClientTask<RPCREQ, RPCRESP>::start_span()
-{
-	RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
-	RPCSpan *span = NULL;
-
-	if (series)
-	{
-		span = series->get_span();
-		if (span != NULL)
-		{
-			span_->set_trace_id(span->get_trace_id());
-			span_->set_parent_span_id(span->get_span_id());
-		}
-	}
-
-	if (span == NULL)
-		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
-
-	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
-
-	span_->set_service_name(this->req.get_service_name());
-	span_->set_method_name(this->req.get_method_name());
-	span_->set_data_type(this->req.get_data_type());
-	span_->set_compress_type(this->req.get_compress_type());
-	span_->set_start_time(GET_CURRENT_MS);
-
-	return this->req.set_meta_span(span_);
-}
-
-template<class RPCREQ, class RPCRESP>
-bool RPCClientTask<RPCREQ, RPCRESP>::end_span()
-{
-	span_->set_end_time(GET_CURRENT_MS);
-	span_->set_cost(span_->get_end_time() - span_->get_start_time());
-	span_->set_state(this->resp.get_status_code());
-	span_->set_error(this->resp.get_error());
-	span_->set_remote_ip(this->get_remote_ip());
-
-	SubTask *log_task_ = span_logger_->create_log_task(span_);
-	series_of(this)->push_front(log_task_);
-
-	return true;
-}
-
-template<class RPCREQ, class RPCRESP>
 std::string RPCServerTask<RPCREQ, RPCRESP>::get_remote_ip() const
 {
 	struct sockaddr_storage addr;
@@ -600,46 +580,6 @@ std::string RPCServerTask<RPCREQ, RPCRESP>::get_remote_ip() const
 		addr_to_string((struct sockaddr *)&addr, ip_str, INET6_ADDRSTRLEN + 1);
 
 	return ip_str;
-}
-
-template<class RPCREQ, class RPCRESP>
-bool RPCServerTask<RPCREQ, RPCRESP>::start_span()
-{
-	this->req.get_meta_span(span_);
-	span_->set_service_name(this->req.get_service_name());
-	span_->set_method_name(this->req.get_method_name());
-	span_->set_data_type(this->req.get_data_type());
-	span_->set_compress_type(this->req.get_compress_type());
-
-	if (span_->get_trace_id() == LLONG_MAX)
-		span_->set_trace_id(SRPCGlobal::get_instance()->get_trace_id());
-	span_->set_span_id(SRPCGlobal::get_instance()->get_span_id());
-	span_->set_start_time(GET_CURRENT_MS);
-
-	RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
-	if (series)
-		series->set_span(span_);
-
-	return true;
-}
-
-template<class RPCREQ, class RPCRESP>
-bool RPCServerTask<RPCREQ, RPCRESP>::end_span()
-{
-	span_->set_end_time(GET_CURRENT_MS);
-	span_->set_cost(span_->get_end_time() - span_->get_start_time());
-	span_->set_state(this->resp.get_status_code());
-	span_->set_error(this->resp.get_error());
-	span_->set_remote_ip(this->get_remote_ip());
-
-	RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
-	if (series)
-		series->clear_span();
-
-	SubTask *log_task_ = span_logger_->create_log_task(span_);
-	series_of(this)->push_front(log_task_);
-
-	return true;
 }
 
 } // namespace srpc

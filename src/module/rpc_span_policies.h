@@ -39,10 +39,15 @@ static constexpr const char 	*SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
 static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT		= 4 * 1024 * 1024;
 static constexpr size_t			SPANS_PER_SECOND_DEFAULT		= 1000;
 
+class RPCSpanLogger
+{
+//TODO: unfinish derived from RPCModule
+};
+
 class RPCSpanFilterLogger : public RPCSpanLogger
 {
 public:
-	SubTask* create_log_task(RPCSpan *span) override
+	SubTask* create_log_task(RPCModuleData *span)// override
 	{
 		if (this->filter(span))
 			return this->create(span);
@@ -52,9 +57,9 @@ public:
 	}
 
 private:
-	virtual SubTask *create(RPCSpan *span) = 0;
+	virtual SubTask *create(RPCModuleData *span) = 0;
 
-	virtual bool filter(RPCSpan *span) = 0;
+	virtual bool filter(RPCModuleData *span) = 0;
 };
 
 class RPCSpanFilterPolicy
@@ -84,7 +89,7 @@ public:
 		this->spans_per_interval = (this->spans_per_sec * msec + 999 ) / 1000;
 	}
 
-	bool filter(RPCSpan *span);
+	bool filter(RPCModuleData *span);
 
 private:
 	int stat_interval;
@@ -98,7 +103,7 @@ private:
 class RPCSpanLogTask : public WFGenericTask
 {
 public:
-	RPCSpanLogTask(RPCSpan *span, std::function<void (RPCSpanLogTask *)> callback) :
+	RPCSpanLogTask(RPCModuleData *span, std::function<void (RPCSpanLogTask *)> callback) :
 		span(span),
 		callback(std::move(callback))
 	{}
@@ -118,7 +123,7 @@ private:
 	}
 
 public:
-	RPCSpan *span;
+	RPCModuleData *span;
 	std::function<void (RPCSpanLogTask *)> callback;
 };
 
@@ -132,14 +137,14 @@ public:
 		filter_policy(spans_per_second) {}
 
 private:
-	SubTask *create(RPCSpan *span) override
+	SubTask *create(RPCModuleData *span) override
 	{
 		return new RPCSpanLogTask(span, [span](RPCSpanLogTask *task) {
 											delete span;
 										});
 	}
 
-	bool filter(RPCSpan *span) override
+	bool filter(RPCModuleData *span) override
 	{
 		return this->filter_policy.filter(span);
 	}
@@ -179,9 +184,9 @@ private:
 	int retry_max;
 
 private:
-	SubTask *create(RPCSpan *span) override;
+	SubTask *create(RPCModuleData *span) override;
 
-	bool filter(RPCSpan *span) override
+	bool filter(RPCModuleData *span) override
 	{
 		return this->filter_policy.filter(span);
 	}

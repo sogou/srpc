@@ -11,6 +11,10 @@ set(INCLUDE_HEADERS
 	src/thrift/rpc_thrift_enum.h
 	src/thrift/rpc_thrift_idl.h
 	src/thrift/rpc_thrift_idl.inl
+	src/module/rpc_span.h
+	src/module/rpc_span_policies.h
+	src/module/rpc_module.h
+	src/module/rpc_module_impl.h
 	src/rpc_basic.h
 	src/rpc_buffer.h
 	src/rpc_client.h
@@ -24,8 +28,6 @@ set(INCLUDE_HEADERS
 	src/rpc_types.h
 	src/rpc_zero_copy_stream.h
 	src/rpc_define.h
-	src/rpc_span.h
-	src/rpc_span_policies.h
 	third_party/snappy/snappy.h
 	third_party/snappy/snappy-c.h
 	third_party/snappy/snappy-sinksource.h

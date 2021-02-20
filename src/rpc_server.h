@@ -25,6 +25,7 @@
 #include "rpc_types.h"
 #include "rpc_service.h"
 #include "rpc_options.h"
+#include "rpc_module_impl.h"
 
 namespace srpc
 {
@@ -59,7 +60,7 @@ private:
 	void set_tracing(TASK *Task);
 
 	std::map<std::string, RPCService *> service_map;
-	RPCSpanLogger *span_logger;
+	std::list<RPCServerModule<RPCTYPE> *> module_list;
 };
 
 ////////
@@ -69,23 +70,20 @@ template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer():
 	WFServer<REQTYPE, RESPTYPE>(&RPC_SERVER_PARAMS_DEFAULT,
 								std::bind(&RPCServer::server_process,
-								this, std::placeholders::_1)),
-	span_logger(NULL)
+								this, std::placeholders::_1))
 {}
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params):
 	WFServer<REQTYPE, RESPTYPE>(params,
 								std::bind(&RPCServer::server_process,
-								this, std::placeholders::_1)),
-	span_logger(params->span_logger)
+								this, std::placeholders::_1))
 {}
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params,
 									 std::function<void (NETWORKTASK *)>&& process):
-	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process)),
-	span_logger(params->span_logger)
+	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process))
 {}
 
 template<class RPCTYPE>
@@ -150,8 +148,20 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
-				if (this->span_logger)
-					static_cast<TASK *>(task)->start_span();
+				//const RPCModuleData *data = task->get_module_data();
+				//req->get_meta_module_data(&data);
+
+				const RPCModuleData *data = req->get_meta_module_data();
+				if (data != NULL)
+					static_cast<TASK *>(task)->set_module_data(data);
+
+				if (!module_list_.empty())
+					for (const auto *module : module_list_)
+						module->begin(static_cast<TASK *>(task), *data);
+
+				RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(task));
+				if (series)
+					series->set_module_data(data);
 
 				status_code = req->decompress();
 				if (status_code == RPCStatusOK)

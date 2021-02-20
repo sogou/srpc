@@ -6,38 +6,45 @@
 namespace srpc
 {
 
-static size_t rpc_span_log_format(RPCSpan *span, char *str, size_t len)
+static size_t rpc_span_log_format(RPCModuleData *span, char *str, size_t len)
 {
-	size_t ret = snprintf(str, len, "trace_id: %lld span_id: %lld service: %s"
-						 			" method: %s start: %lld",
-					  	 span->get_trace_id(),
-						 span->get_span_id(),
-					  	 span->get_service_name().c_str(),
-						 span->get_method_name().c_str(),
-					  	 span->get_start_time());
+	RPCModuleData& data = *span;
 
-	if (span->get_parent_span_id() != LLONG_MAX)
+	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
+									" method: %s start: %s",
+						  data["trace_id"].c_str(),
+						  data["span_id"].c_str(),
+						  data["service_name"].c_str(),
+						  data["method_name"].c_str(),
+						  data["start_time"].c_str());
+
+	auto iter = data.find("parent_span_id");
+	if (iter != data.end())
 	{
-		ret += snprintf(str + ret, len - ret, " parent_span_id: %lld",
-						span->get_parent_span_id());
+		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
+						iter->second.c_str());
 	}
-	if (span->get_end_time() != LLONG_MAX)
+
+	iter = data.find("end_time");
+	if (iter != data.end())
 	{
-		ret += snprintf(str + ret, len - ret, " end_time: %lld",
-						span->get_end_time());
+		ret += snprintf(str + ret, len - ret, " end_time: %s",
+						iter->second.c_str());
 	}
-	if (span->get_cost() != LLONG_MAX)
+
+	iter = data.find("cost");
+	if (iter != data.end())
 	{
-		ret += snprintf(str + ret, len - ret, " cost: %lld remote_ip: %s"
-											  " state: %d error: %d",
-						span->get_cost(), span->get_remote_ip().c_str(),
-						span->get_state(), span->get_error());
+		ret += snprintf(str + ret, len - ret, " cost: %s remote_ip: %s"
+											  " state: %s error: %s",
+						iter->second.c_str(), data["remote_ip"].c_str(),
+						data["state"].c_str(), data["error"].c_str());
 	}
 
 	return ret;
 }
 
-bool RPCSpanFilterPolicy::filter(RPCSpan *span)
+bool RPCSpanFilterPolicy::filter(RPCModuleData *span)
 {
 	long long timestamp = GET_CURRENT_MS;
 
@@ -78,7 +85,7 @@ void RPCSpanLogTask::dispatch()
 	this->subtask_done();
 }
 
-SubTask *RPCSpanRedisLogger::create(RPCSpan *span)
+SubTask *RPCSpanRedisLogger::create(RPCModuleData *span)
 {
 	auto *task = WFTaskFactory::create_redis_task(this->redis_url,
 												  this->retry_max,
@@ -89,7 +96,7 @@ SubTask *RPCSpanRedisLogger::create(RPCSpan *span)
 	key[0] = '0';
 	value[0] = '0';
 
-	sprintf(key, "%lld", span->get_trace_id());
+	sprintf(key, "%s", (*span)["trace_id"].c_str());
 	rpc_span_log_format(span, value, SPAN_LOG_MAX_LENGTH);
 	req->set_request("SET", { key, value} );
 	delete span;
