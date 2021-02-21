@@ -49,6 +49,8 @@ public:
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 
+	void add_module(RPCModule<TASK> *module);
+
 protected:
 	RPCServer(const struct RPCServerParams *params,
 			  std::function<void (NETWORKTASK *)>&& process);
@@ -60,7 +62,7 @@ private:
 	void set_tracing(TASK *Task);
 
 	std::map<std::string, RPCService *> service_map;
-	std::list<RPCServerModule<RPCTYPE> *> module_list;
+	std::list<RPCModule<TASK> *> modules;
 };
 
 ////////
@@ -101,6 +103,12 @@ inline int RPCServer<RPCTYPE>::add_service(RPCService* service)
 }
 
 template<class RPCTYPE>
+inline void RPCServer<RPCTYPE>::add_module(RPCModule<TASK> *module)
+{
+	this->modules.push_back(module);
+}
+
+template<class RPCTYPE>
 inline const RPCService *RPCServer<RPCTYPE>::find_service(const std::string& name) const
 {
 	const auto it = this->service_map.find(name);
@@ -116,7 +124,7 @@ inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq,
 													CommConnection *conn)
 {
 	/* TODO: Change to a factory function. */
-	auto *task = new TASK(this, this->process, this->span_logger);
+	auto *task = new TASK(this, this->process, this->modules);
 
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
@@ -148,24 +156,27 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
-				//const RPCModuleData *data = task->get_module_data();
-				//req->get_meta_module_data(&data);
+				RPCModuleData req_data;
+				RPCSeriesWork *series;
+				auto *server_task = static_cast<TASK *>(task);
 
-				const RPCModuleData *data = req->get_meta_module_data();
-				if (data != NULL)
-					static_cast<TASK *>(task)->set_module_data(data);
+				req->get_meta_module_data(req_data);
 
-				if (!module_list_.empty())
-					for (const auto *module : module_list_)
-						module->begin(static_cast<TASK *>(task), *data);
+				if (!req_data.empty())
+					server_task->set_module_data(std::move(req_data));
 
-				RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(task));
-				if (series)
-					series->set_module_data(data);
+				RPCModuleData &task_data = server_task->mutable_module_data();
+
+				for (auto *module : this->modules)
+					module->begin(server_task, task_data);
+
+				series = dynamic_cast<RPCSeriesWork *>(series_of(task));
+				if (series && !task_data.empty())
+					series->set_module_data(&task_data);
 
 				status_code = req->decompress();
 				if (status_code == RPCStatusOK)
-					status_code = (*rpc)(static_cast<TASK *>(task)->worker);
+					status_code = (*rpc)(server_task->worker);
 			}
 		}
 	}

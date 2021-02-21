@@ -134,12 +134,13 @@ public:
 	RPCClientTask(const std::string& service_name,
 				  const std::string& method_name,
 				  const RPCTaskParams *params,
-				  std::list<const RPCModule<TASK> *>& module_list,
+				  std::list<RPCModule<TASK> *>& modules,
 				  user_done_t&& user_done);
 
 	std::string get_remote_ip() const;
 
-	RPCModuleData& get_module_data() const { return module_data_; }
+	RPCModuleData& mutable_module_data() { return module_data_; }
+	void set_module_data(RPCModuleData data) { module_data_ = data; }
 
 private:
 	template<class IDL>
@@ -150,23 +151,22 @@ private:
 	int watch_timeout_;
 
 	RPCModuleData module_data_;
-	std::list<const RPCModule<TASK> *> module_list_;
+	std::list<RPCModule<TASK> *> modules_;
 };
 
 template<class RPCREQ, class RPCRESP>
 class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 {
 public:
-	using TASK = RPCClientTask<RPCREQ, RPCRESP>;
+	using TASK = RPCServerTask<RPCREQ, RPCRESP>;
 
 	RPCServerTask(CommService *service,
 				  std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
-				  std::list<const RPCModule<TASK> *>& module_list) :
+				  std::list<RPCModule<TASK> *>& modules) :
 		WFServerTask<RPCREQ, RPCRESP>(service, WFGlobal::get_scheduler(), process),
-		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp)
+		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp),
+		modules_(modules)
 	{
-		for (const auto *module : module_list)
-			module_list_->push_back(module);
 	}
 
 protected:
@@ -175,13 +175,14 @@ protected:
 
 public:
 	std::string get_remote_ip() const;
-	RPCModuleData& get_module_data() const { return module_data_; }
+	RPCModuleData& mutable_module_data() { return module_data_; }
+	void set_module_data(RPCModuleData data) { module_data_ = data; }
 
 	RPCWorker worker;
 
 private:
 	RPCModuleData module_data_;
-	std::list<const RPCModule<TASK> *> module_list_;
+	std::list<RPCModule<TASK> *> modules_;
 };
 
 template<class OUTPUT>
@@ -257,15 +258,12 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		{
 			RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
 
-			if (!module_list_.empty())
-			{
-				const RPCModuleData *data = NULL;
-				if (series)
-					data = series_of(this)->get_module_data();
+			const RPCModuleData *data = NULL;
+//			if (series)
+//				data = series_of(this)->get_module_data();
 
-				for (const auto *module : module_list_)
-					module->end(this, *data);
-			}
+			for (auto *module : modules_)
+				module->end(this, *data);
 
 			if (series)
 				series->clear_module_data();
@@ -375,15 +373,13 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
 					const std::string& method_name,
 					const RPCTaskParams *params,
-					std::list<const RPCModule<TASK> *>& module_list,
+					std::list<RPCModule<TASK> *>& modules,
 					user_done_t&& user_done):
 	WFComplexClientTask<RPCREQ, RPCRESP>(0, nullptr),
 	user_done_(std::move(user_done)),
-	init_failed_(false)
+	init_failed_(false),
+	modules_(modules)
 {
-	for (const auto *module : module_list)
-		module_list_->push_back(module);
-
 	if (user_done_)
 		this->set_callback(std::bind(&RPCClientTask::rpc_callback,
 									 this, std::placeholders::_1));
@@ -435,17 +431,19 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 
 	if (status_code == RPCStatusOK)
 	{
-		const RPCModuleData *data = series_of(this)->get_module_data();
+		RPCModuleData *data = NULL;
+		RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+
+		if (series)
+			data = series->get_module_data();
+
 		if (data != NULL)
-			this->set_module_data(data);
+			this->set_module_data(*data);
 
-		if (!module_list_.empty())
-		{
-			for (const auto *module : module_list_)
-				module->begin(this, *data);
-		}
+		for (auto *module : modules_)
+			module->begin(this, *data);
 
-		this->req->set_meta_module_data(this->get_module_data());
+		this->req.set_meta_module_data(this->mutable_module_data());
 
 		if (this->req.serialize_meta())
 			return this->WFClientTask<RPCREQ, RPCRESP>::message_out();
@@ -470,14 +468,14 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 		if (this->resp.deserialize_meta() == false)
 			this->resp.set_status_code(RPCStatusMetaError);
 
-		if (!module_list_.empty())
+		if (!modules_.empty())
 		{
-			const RPCModuleData *data = this->resp.get_meta_module_data();
-			for (const auto *module : module_list_)
-				module->end(this, *data);
+			RPCModuleData resp_data;
+			this->resp.get_meta_module_data(resp_data);
+			for (auto *module : modules_)
+				module->end(this, resp_data);
 		}
-		// don`t need to feedback resp meta through all nodes
-		//const RPCModuleData *data = series->get_module_data();
+		//TODO: Feedback client resp meta through all nodes by series
 	}
 
 	return true;

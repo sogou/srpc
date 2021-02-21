@@ -29,14 +29,16 @@ using RPCModuleData = std::map<std::string, std::string>;
 template<class TASK>
 class RPCModule
 {
+public:
 	virtual int begin(TASK *task, const RPCModuleData& data) = 0;
 	virtual int end(TASK *task, const RPCModuleData& data)
 	{
 		SubTask *module_task = this->create_module_task(data);
 		series_of(task)->push_front(module_task);
+		return 0;
 	}
 
-	virtual SubTask* create_log_task(const RPCModuleData& data)
+	virtual SubTask* create_module_task(const RPCModuleData& data)
 	{
 		return WFTaskFactory::create_empty_task();
 	}
@@ -57,7 +59,7 @@ public:
 		this->set_last_task(last);
 	}
 
-	RPCModuleData *get_module_data() const { return this->module_data; }
+	RPCModuleData *get_module_data() { return this->module_data; }
 	void set_module_data(RPCModuleData *data) { this->module_data = data; }
 	bool has_module_data() const { return !!this->module_data; }
 	void clear_module_data() { this->module_data = NULL; }

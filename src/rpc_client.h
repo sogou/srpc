@@ -47,6 +47,7 @@ public:
 
 	void set_keep_alive(int timeout);
 	void set_watch_timeout(int timeout);
+	void add_module(RPCModule<TASK> *module);
 
 protected:
 	template<class OUTPUT>
@@ -56,7 +57,7 @@ protected:
 		auto *task = new TASK(this->service_name,
 							  method_name,
 							  &this->params.task_params,
-							  this->params.span_logger,
+							  this->modules,
 							  [done](int status_code, RPCWorker& worker) -> int {
 				return ClientRPCDoneImpl(status_code, worker, done);
 			});
@@ -77,7 +78,7 @@ private:
 	struct sockaddr_storage ss;
 	socklen_t ss_len;
 	bool has_addr_info;
-	std::list<RPCClientModule<RPCTYPE> *> module_list;
+	std::list<RPCModule<TASK> *> modules;
 };
 
 ////////
@@ -116,6 +117,11 @@ inline void RPCClient<RPCTYPE>::set_watch_timeout(int timeout)
 	this->params.task_params.watch_timeout = timeout;
 }
 
+template<class RPCTYPE>
+inline void RPCClient<RPCTYPE>::add_module(RPCModule<TASK> *module)
+{
+	this->modules.push_back(module);
+}
 
 template<class RPCTYPE>
 inline void RPCClient<RPCTYPE>::init(const RPCClientParams *params)
