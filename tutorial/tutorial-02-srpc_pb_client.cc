@@ -18,14 +18,17 @@
 #include "echo_pb.srpc.h"
 #include "srpc/rpc_types.h"
 #include "srpc/rpc_span.h"
+#include "test_module.h"
 
 using namespace srpc;
 
 int main()
 {
 	Example::SRPCClient client("127.0.0.1", 1412);
-	RPCClientSpan<RPCTYPESRPC> span_logger;
-	client.add_module(&span_logger);
+//	RPCClientSpan<RPCTYPESRPC> span_logger;
+//	client.add_module(&span_logger);
+	ClientTestModule<RPCTYPESRPC> test_module;
+	client.add_module(&test_module);
 
 	//async
 	EchoRequest req;

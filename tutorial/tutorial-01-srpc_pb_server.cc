@@ -20,6 +20,7 @@
 #include "srpc/rpc_module.h"
 #include "srpc/rpc_span.h"
 #include "srpc/rpc_types.h"
+#include "test_module.h"
 
 using namespace srpc;
 
@@ -55,8 +56,10 @@ int main()
 
 	server.add_service(&impl);
 
-	RPCServerSpan<RPCTYPESRPC> span_logger;
-	server.add_module(&span_logger);
+//	RPCServerSpan<RPCTYPESRPC> span_logger;
+//	server.add_module(&span_logger);
+	ServerTestModule<RPCTYPESRPC> test_module;
+	server.add_module(&test_module);
 
 	if (server.start(1412) == 0)
 	{

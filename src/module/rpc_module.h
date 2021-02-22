@@ -26,6 +26,8 @@ namespace srpc
 
 using RPCModuleData = std::map<std::string, std::string>;
 
+static RPCModuleData global_empty_map;
+
 template<class TASK>
 class RPCModule
 {

@@ -258,7 +258,7 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		{
 			RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
 
-			const RPCModuleData *data = NULL;
+			const RPCModuleData *data = &global_empty_map;
 //			if (series)
 //				data = series_of(this)->get_module_data();
 
@@ -439,6 +439,8 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 
 		if (data != NULL)
 			this->set_module_data(*data);
+		else
+			data = &global_empty_map;
 
 		for (auto *module : modules_)
 			module->begin(this, *data);
