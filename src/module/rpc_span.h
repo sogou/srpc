@@ -37,7 +37,7 @@ public:
 	int begin(TASK *task, const RPCModuleData& data) override
 	{
 		auto *req = task->get_req();
-		RPCModuleData& module_data = task->get_module_data();
+		RPCModuleData& module_data = task->mutable_module_data();
 
 		if (!data.empty())
 		{
@@ -67,7 +67,7 @@ public:
 	int end(TASK *task, const RPCModuleData& data) override
 	{
 		auto *resp = task->get_resp();
-		RPCModuleData& module_data = task->get_module_data();
+		RPCModuleData& module_data = task->mutable_module_data();
 		long long end_time = GET_CURRENT_MS;
 
 		module_data["end_time"] = std::to_string(end_time);
@@ -95,7 +95,7 @@ public:
 	int begin(TASK *task, const RPCModuleData& data) override
 	{
 		auto *req = task->get_req();
-		RPCModuleData& module_data = task->get_module_data();
+		RPCModuleData& module_data = task->mutable_module_data();
 
 		module_data["service_name"] = req->get_service_name();
 		module_data["method_name"] = req->get_method_name();
@@ -116,10 +116,10 @@ public:
 		return 0;
 	}
 
-	int end(TASK *task, const RPCModuleData *data) override
+	int end(TASK *task, const RPCModuleData& data) override
 	{
 		auto *resp = task->get_resp();
-		RPCModuleData& module_data = task->get_module_data();
+		RPCModuleData& module_data = task->mutable_module_data();
 		long long end_time = GET_CURRENT_MS;
 
 		module_data["end_time"] = std::to_string(end_time);

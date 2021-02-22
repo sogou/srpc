@@ -119,8 +119,8 @@ public:
 protected:
 	using user_done_t = std::function<int (int, RPCWorker&)>;
 
-	using WFComplexClientTask<RPCREQ, RPCRESP>::get_req;
-	using WFComplexClientTask<RPCREQ, RPCRESP>::get_resp;
+//	using WFComplexClientTask<RPCREQ, RPCRESP>::get_req;
+//	using WFComplexClientTask<RPCREQ, RPCRESP>::get_resp;
 	using WFComplexClientTask<RPCREQ, RPCRESP>::set_callback;
 
 	void init_failed() override;
