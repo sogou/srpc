@@ -23,10 +23,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <limits>
 #include "workflow/WFTask.h"
 #include "workflow/WFTaskFactory.h"
 #include "workflow/RedisMessage.h"
-#include "rpc_span.h"
+#include "rpc_module_impl.h"
 
 namespace srpc
 {
@@ -39,27 +40,133 @@ static constexpr const char 	*SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
 static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT		= 4 * 1024 * 1024;
 static constexpr size_t			SPANS_PER_SECOND_DEFAULT		= 1000;
 
-class RPCSpanLogger
-{
-//TODO: unfinish derived from RPCModule
-};
-
-class RPCSpanFilterLogger : public RPCSpanLogger
+template<class RPCTYPE>
+class RPCClientSpan : public RPCClientModule<RPCTYPE>
 {
 public:
-	SubTask* create_log_task(RPCModuleData *span)// override
+	using TASK = RPCClientTask<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
+
+	int begin(TASK *task, const RPCModuleData& data) override
+	{
+		auto *req = task->get_req();
+		RPCModuleData& module_data = task->mutable_module_data();
+
+		if (!data.empty())
+		{
+			//module_data["trace_id"] = data["trace_id"];
+			auto iter = data.find("span_id");
+			if (iter != data.end())
+				module_data["parent_span_id"] = iter->second;
+		} else {
+			module_data["trace_id"] = std::to_string(
+								SRPCGlobal::get_instance()->get_trace_id());
+		}
+
+		module_data["span_id"] = std::to_string(
+								SRPCGlobal::get_instance()->get_span_id());
+
+		module_data["service_name"] = req->get_service_name();
+		module_data["method_name"] = req->get_method_name();
+		module_data["data_type"] = std::to_string(req->get_data_type());
+		module_data["compress_type"] = std::to_string(req->get_compress_type());
+		module_data["start_time"] = std::to_string(GET_CURRENT_MS);
+
+		return 0; // always success
+	}
+
+	//outside get data from resp->meta and call end()
+	int end(TASK *task, const RPCModuleData& data) override
+	{
+		auto *resp = task->get_resp();
+		RPCModuleData& module_data = task->mutable_module_data();
+		long long end_time = GET_CURRENT_MS;
+
+		module_data["end_time"] = std::to_string(end_time);
+		module_data["cost"] = std::to_string(end_time -
+											 atoll(module_data["start_time"].c_str()));
+		module_data["state"] = std::to_string(resp->get_status_code());
+		module_data["error"] = std::to_string(resp->get_error());
+		module_data["remote_ip"] = task->get_remote_ip();
+
+		// whether create a module task is depend on you and your derived class
+		SubTask *module_task = this->create_module_task(module_data);
+		series_of(task)->push_front(module_task);
+
+		return 0;
+	}
+};
+
+template<class RPCTYPE>
+class RPCServerSpan : public RPCServerModule<RPCTYPE>
+{
+public:
+	using TASK = RPCServerTask<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
+
+	// outside will fill data from meta and call begin() and put data onto series
+	int begin(TASK *task, const RPCModuleData& data) override
+	{
+		auto *req = task->get_req();
+		RPCModuleData& module_data = task->mutable_module_data();
+
+		module_data["service_name"] = req->get_service_name();
+		module_data["method_name"] = req->get_method_name();
+		module_data["data_type"] = std::to_string(req->get_data_type());
+		module_data["compress_type"] = std::to_string(req->get_compress_type());
+
+		if (module_data["trace_id"].empty())
+			module_data["trace_id"] = std::to_string(
+								SRPCGlobal::get_instance()->get_trace_id());
+		module_data["span_id"] = std::to_string(
+								SRPCGlobal::get_instance()->get_span_id());
+		module_data["start_time"] = std::to_string(GET_CURRENT_MS);
+
+//		RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(task));
+//		if (series)
+//			series->set_data(task_data);
+
+		return 0;
+	}
+
+	int end(TASK *task, const RPCModuleData& data) override
+	{
+		auto *resp = task->get_resp();
+		RPCModuleData& module_data = task->mutable_module_data();
+		long long end_time = GET_CURRENT_MS;
+
+		module_data["end_time"] = std::to_string(end_time);
+		module_data["cost"] = std::to_string(end_time -
+											 atoll(module_data["start_time"].c_str()));
+		module_data["state"] = std::to_string(resp->get_status_code());
+		module_data["error"] = std::to_string(resp->get_error());
+		module_data["remote_ip"] = task->get_remote_ip();
+
+		// whether create a module task is depend on you and your derived class
+		SubTask *module_task = this->create_module_task(module_data);
+		series_of(task)->push_front(module_task);
+
+//		RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+//		if (series)
+//			series->clear_span();
+
+		return 0;
+	}
+};
+
+class RPCSpanFilter
+{
+public:
+	SubTask* create_span_task(RPCModuleData& span)
 	{
 		if (this->filter(span))
 			return this->create(span);
 
-		delete span;
 		return WFTaskFactory::create_empty_task();
 	}
 
 private:
-	virtual SubTask *create(RPCModuleData *span) = 0;
+	virtual SubTask *create(RPCModuleData& span) = 0;
 
-	virtual bool filter(RPCModuleData *span) = 0;
+	virtual bool filter(RPCModuleData& span) = 0;
 };
 
 class RPCSpanFilterPolicy
@@ -89,7 +196,7 @@ public:
 		this->spans_per_interval = (this->spans_per_sec * msec + 999 ) / 1000;
 	}
 
-	bool filter(RPCModuleData *span);
+	bool filter(RPCModuleData& span);
 
 private:
 	int stat_interval;
@@ -103,7 +210,8 @@ private:
 class RPCSpanLogTask : public WFGenericTask
 {
 public:
-	RPCSpanLogTask(RPCModuleData *span, std::function<void (RPCSpanLogTask *)> callback) :
+	RPCSpanLogTask(RPCModuleData& span,
+				   std::function<void (RPCSpanLogTask *)> callback) :
 		span(span),
 		callback(std::move(callback))
 	{}
@@ -123,28 +231,26 @@ private:
 	}
 
 public:
-	RPCModuleData *span;
+	RPCModuleData& span;
 	std::function<void (RPCSpanLogTask *)> callback;
 };
 
-class RPCSpanLoggerDefault : public RPCSpanFilterLogger
+class RPCSpanDefault : public RPCSpanFilter
 {
 public:
-	RPCSpanLoggerDefault() :
+	RPCSpanDefault() :
 		filter_policy(SPANS_PER_SECOND_DEFAULT) {}
 
-	RPCSpanLoggerDefault(size_t spans_per_second) :
+	RPCSpanDefault(size_t spans_per_second) :
 		filter_policy(spans_per_second) {}
 
 private:
-	SubTask *create(RPCModuleData *span) override
+	SubTask *create(RPCModuleData& span) override
 	{
-		return new RPCSpanLogTask(span, [span](RPCSpanLogTask *task) {
-											delete span;
-										});
+		return new RPCSpanLogTask(span, nullptr);
 	}
 
-	bool filter(RPCModuleData *span) override
+	bool filter(RPCModuleData& span) override
 	{
 		return this->filter_policy.filter(span);
 	}
@@ -164,15 +270,15 @@ private:
 	RPCSpanFilterPolicy filter_policy;
 };
 
-class RPCSpanRedisLogger : public RPCSpanFilterLogger
+class RPCSpanRedis : public RPCSpanFilter
 {
 public:
-	RPCSpanRedisLogger(const std::string& url) :
-		RPCSpanRedisLogger(url, SPAN_REDIS_RETRY_MAX,
+	RPCSpanRedis(const std::string& url) :
+		RPCSpanRedis(url, SPAN_REDIS_RETRY_MAX,
 						   SPANS_PER_SECOND_DEFAULT)
 	{}
 
-	RPCSpanRedisLogger(const std::string& url, int retry_max,
+	RPCSpanRedis(const std::string& url, int retry_max,
 					   size_t spans_per_second) :
 		redis_url(url),
 		retry_max(retry_max),
@@ -184,9 +290,9 @@ private:
 	int retry_max;
 
 private:
-	SubTask *create(RPCModuleData *span) override;
+	SubTask *create(RPCModuleData& span) override;
 
-	bool filter(RPCModuleData *span) override
+	bool filter(RPCModuleData& span) override
 	{
 		return this->filter_policy.filter(span);
 	}

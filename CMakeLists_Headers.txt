@@ -11,8 +11,8 @@ set(INCLUDE_HEADERS
 	src/thrift/rpc_thrift_enum.h
 	src/thrift/rpc_thrift_idl.h
 	src/thrift/rpc_thrift_idl.inl
-	src/module/rpc_span.h
 	src/module/rpc_span_policies.h
+	src/module/rpc_module_span.h
 	src/module/rpc_module.h
 	src/module/rpc_module_impl.h
 	src/rpc_basic.h

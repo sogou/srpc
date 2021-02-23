@@ -6,10 +6,8 @@
 namespace srpc
 {
 
-static size_t rpc_span_log_format(RPCModuleData *span, char *str, size_t len)
+static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 {
-	RPCModuleData& data = *span;
-
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
 									" method: %s start: %s",
 						  data["trace_id"].c_str(),
@@ -44,7 +42,7 @@ static size_t rpc_span_log_format(RPCModuleData *span, char *str, size_t len)
 	return ret;
 }
 
-bool RPCSpanFilterPolicy::filter(RPCModuleData *span)
+bool RPCSpanFilterPolicy::filter(RPCModuleData& span)
 {
 	long long timestamp = GET_CURRENT_MS;
 
@@ -79,27 +77,23 @@ bool RPCSpanFilterPolicy::filter(RPCModuleData *span)
 void RPCSpanLogTask::dispatch()
 {
 	char str[SPAN_LOG_MAX_LENGTH];
-	rpc_span_log_format(span, str, SPAN_LOG_MAX_LENGTH);
+	rpc_span_log_format(this->span, str, SPAN_LOG_MAX_LENGTH);
 	fprintf(stderr, "[SPAN_LOG] %s\n", str);
 
 	this->subtask_done();
 }
 
-SubTask *RPCSpanRedisLogger::create(RPCModuleData *span)
+SubTask *RPCSpanRedis::create(RPCModuleData& span)
 {
 	auto *task = WFTaskFactory::create_redis_task(this->redis_url,
 												  this->retry_max,
 												  nullptr);
 	protocol::RedisRequest *req = task->get_req();
-	char key[UINT64_STRING_LENGTH];
 	char value[SPAN_LOG_MAX_LENGTH];
-	key[0] = '0';
 	value[0] = '0';
 
-	sprintf(key, "%s", (*span)["trace_id"].c_str());
 	rpc_span_log_format(span, value, SPAN_LOG_MAX_LENGTH);
-	req->set_request("SET", { key, value} );
-	delete span;
+	req->set_request("SET", { span["trace_id"], value} );
 
 	return task;
 }
