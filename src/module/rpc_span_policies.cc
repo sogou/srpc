@@ -10,33 +10,35 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 {
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
 									" method: %s start: %s",
-						  data["trace_id"].c_str(),
-						  data["span_id"].c_str(),
-						  data["service_name"].c_str(),
-						  data["method_name"].c_str(),
-						  data["start_time"].c_str());
+						  data[SRPC_MODULE_TRACE_ID].c_str(),
+						  data[SRPC_MODULE_SPAN_ID].c_str(),
+						  data[SRPC_MODULE_SERVICE_NAME].c_str(),
+						  data[SRPC_MODULE_METHOD_NAME].c_str(),
+						  data[SRPC_MODULE_START_TIME].c_str());
 
-	auto iter = data.find("parent_span_id");
+	auto iter = data.find(SRPC_MODULE_PARENT_SPAN_ID);
 	if (iter != data.end())
 	{
 		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
 						iter->second.c_str());
 	}
 
-	iter = data.find("end_time");
+	iter = data.find(SRPC_MODULE_END_TIME);
 	if (iter != data.end())
 	{
 		ret += snprintf(str + ret, len - ret, " end_time: %s",
 						iter->second.c_str());
 	}
 
-	iter = data.find("cost");
+	iter = data.find(SRPC_MODULE_COST);
 	if (iter != data.end())
 	{
 		ret += snprintf(str + ret, len - ret, " cost: %s remote_ip: %s"
 											  " state: %s error: %s",
-						iter->second.c_str(), data["remote_ip"].c_str(),
-						data["state"].c_str(), data["error"].c_str());
+						iter->second.c_str(),
+						data[SRPC_MODULE_REMOTE_IP].c_str(),
+						data[SRPC_MODULE_STATE].c_str(),
+						data[SRPC_MODULE_ERROR].c_str());
 	}
 
 	return ret;
@@ -86,6 +88,10 @@ void RPCSpanLogTask::dispatch()
 template<class RPCTYPE>
 SubTask *RPCSpanRedis<RPCTYPE>::create(RPCModuleData& span)
 {
+	auto iter = span.find(SRPC_MODULE_TRACE_ID);
+	if (iter == span.end())
+		return WFTaskFactory::create_empty_task();
+
 	auto *task = WFTaskFactory::create_redis_task(this->redis_url,
 												  this->retry_max,
 												  nullptr);
@@ -94,9 +100,10 @@ SubTask *RPCSpanRedis<RPCTYPE>::create(RPCModuleData& span)
 	value[0] = '0';
 
 	rpc_span_log_format(span, value, SPAN_LOG_MAX_LENGTH);
-	req->set_request("SET", { span["trace_id"], value} );
+	req->set_request("SET", { span[SRPC_MODULE_TRACE_ID], value} );
 
 	return task;
 }
 
 }
+

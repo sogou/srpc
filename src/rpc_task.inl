@@ -137,7 +137,7 @@ public:
 
 	std::string get_remote_ip() const;
 
-	RPCModuleData& mutable_module_data() { return module_data_; }
+	RPCModuleData *mutable_module_data() { return &module_data_; }
 	void set_module_data(RPCModuleData data) { module_data_ = data; }
 
 private:
@@ -189,7 +189,7 @@ protected:
 
 public:
 	std::string get_remote_ip() const;
-	RPCModuleData& mutable_module_data() { return module_data_; }
+	RPCModuleData *mutable_module_data() { return &module_data_; }
 	void set_module_data(RPCModuleData data) { module_data_ = data; }
 
 	RPCWorker worker;
@@ -459,7 +459,7 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 		for (auto *module : modules_)
 			module->client_begin(this, *data);
 
-		this->req.set_meta_module_data(this->mutable_module_data());
+		this->req.set_meta_module_data(*this->mutable_module_data());
 
 		if (this->req.serialize_meta())
 			return this->WFClientTask<RPCREQ, RPCRESP>::message_out();

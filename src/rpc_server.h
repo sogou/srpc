@@ -166,14 +166,14 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				if (!req_data.empty())
 					server_task->set_module_data(std::move(req_data));
 
-				RPCModuleData &task_data = server_task->mutable_module_data();
+				RPCModuleData *task_data = server_task->mutable_module_data();
 
 				for (auto *module : this->modules)
-					module->server_begin(server_task, task_data);
+					module->server_begin(server_task, *task_data);
 
 				series = static_cast<SERIES *>(series_of(task));
-				if (!task_data.empty())
-					series->set_module_data(&task_data);
+				if (!task_data->empty())
+					series->set_module_data(task_data);
 
 				status_code = req->decompress();
 				if (status_code == RPCStatusOK)

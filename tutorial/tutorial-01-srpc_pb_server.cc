@@ -18,9 +18,8 @@
 #include "echo_pb.srpc.h"
 #include "workflow/WFFacilities.h"
 #include "srpc/rpc_module.h"
-#include "srpc/rpc_span.h"
+#include "srpc/rpc_span_policies.h"
 #include "srpc/rpc_types.h"
-#include "test_module.h"
 
 using namespace srpc;
 
@@ -56,10 +55,8 @@ int main()
 
 	server.add_service(&impl);
 
-//	RPCServerSpan<RPCTYPESRPC> span_logger;
-//	server.add_module(&span_logger);
-	ServerTestModule<RPCTYPESRPC> test_module;
-	server.add_module(&test_module);
+	RPCSpanDefault<RPCTYPESRPC>	span_module;
+	server.add_module(&span_module);
 
 	if (server.start(1412) == 0)
 	{

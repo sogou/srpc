@@ -44,10 +44,10 @@ template<class RPCTYPE>
 class RPCSpanFilter : public RPCSpanModule<RPCTYPE>
 {
 public:
-	SubTask* create_module_task(RPCModuleData& span) override
+	SubTask* create_module_task(const RPCModuleData& span) override
 	{
-		if (this->filter(span))
-			return this->create(span);
+		if (this->filter(const_cast<RPCModuleData&>(span)))
+			return this->create(const_cast<RPCModuleData&>(span));
 
 		return WFTaskFactory::create_empty_task();
 	}
@@ -120,7 +120,7 @@ private:
 	}
 
 public:
-	RPCModuleData& span;
+	RPCModuleData span;
 	std::function<void (RPCSpanLogTask *)> callback;
 };
 
@@ -166,11 +166,11 @@ class RPCSpanRedis : public RPCSpanFilter<RPCTYPE>
 public:
 	RPCSpanRedis(const std::string& url) :
 		RPCSpanRedis(url, SPAN_REDIS_RETRY_MAX,
-						   SPANS_PER_SECOND_DEFAULT)
+					 SPANS_PER_SECOND_DEFAULT)
 	{}
 
 	RPCSpanRedis(const std::string& url, int retry_max,
-					   size_t spans_per_second) :
+				 size_t spans_per_second) :
 		redis_url(url),
 		retry_max(retry_max),
 		filter_policy(spans_per_second)

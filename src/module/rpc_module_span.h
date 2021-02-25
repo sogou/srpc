@@ -28,6 +28,20 @@
 namespace srpc
 {
 
+const char *const SRPC_MODULE_SPAN_ID			= "srpc_module_span_id";
+const char *const SRPC_MODULE_TRACE_ID			= "srpc_module_trace_id";
+const char *const SRPC_MODULE_PARENT_SPAN_ID	= "srpc_module_parent_span_id";
+const char *const SRPC_MODULE_SERVICE_NAME		= "srpc_module_service_name";
+const char *const SRPC_MODULE_METHOD_NAME		= "srpc_module_method_name";
+const char *const SRPC_MODULE_DATA_TYPE			= "srpc_module_data_type";
+const char *const SRPC_MODULE_COMPRESS_TYPE		= "srpc_module_compress_type";
+const char *const SRPC_MODULE_START_TIME		= "srpc_module_start_time";
+const char *const SRPC_MODULE_END_TIME			= "srpc_module_end_time";
+const char *const SRPC_MODULE_COST				= "srpc_module_cost";
+const char *const SRPC_MODULE_STATE				= "srpc_module_state";
+const char *const SRPC_MODULE_ERROR				= "srpc_module_error";
+const char *const SRPC_MODULE_REMOTE_IP			= "srpc_module_remote_ip";
+
 template<class RPCTYPE>
 class RPCSpanModule : public RPCModule
 {
@@ -41,75 +55,70 @@ public:
 	{
 		auto *client_task = static_cast<CLIENT_TASK *>(task);
 		auto *req = client_task->get_req();
-		RPCModuleData& module_data = client_task->mutable_module_data();
+		RPCModuleData& module_data = *(client_task->mutable_module_data());
 
 		if (!data.empty())
 		{
 			//module_data["trace_id"] = data["trace_id"];
-			auto iter = data.find("span_id");
+			auto iter = data.find(SRPC_MODULE_SPAN_ID);
 			if (iter != data.end())
-				module_data["parent_span_id"] = iter->second;
+				module_data[SRPC_MODULE_PARENT_SPAN_ID] = iter->second;
 		} else {
-			module_data["trace_id"] = std::to_string(
+			module_data[SRPC_MODULE_TRACE_ID] = std::to_string(
 								SRPCGlobal::get_instance()->get_trace_id());
 		}
 
-		module_data["span_id"] = std::to_string(
+		module_data[SRPC_MODULE_SPAN_ID] = std::to_string(
 								SRPCGlobal::get_instance()->get_span_id());
 
-		module_data["service_name"] = req->get_service_name();
-		module_data["method_name"] = req->get_method_name();
-		module_data["data_type"] = std::to_string(req->get_data_type());
-		module_data["compress_type"] = std::to_string(req->get_compress_type());
-		module_data["start_time"] = std::to_string(GET_CURRENT_MS);
+		module_data[SRPC_MODULE_SERVICE_NAME] = req->get_service_name();
+		module_data[SRPC_MODULE_METHOD_NAME] = req->get_method_name();
+		module_data[SRPC_MODULE_DATA_TYPE] = std::to_string(req->get_data_type());
+		module_data[SRPC_MODULE_COMPRESS_TYPE] =
+										std::to_string(req->get_compress_type());
+		module_data[SRPC_MODULE_START_TIME] = std::to_string(GET_CURRENT_MS);
 
 		return 0; // always success
 	}
 
-	//outside get data from resp->meta and call end()
 	int client_end(SubTask *task, const RPCModuleData& data) override
 	{
 		auto *client_task = static_cast<CLIENT_TASK *>(task);
 		auto *resp = client_task->get_resp();
-		RPCModuleData& module_data = client_task->mutable_module_data();
+		RPCModuleData& module_data = *(client_task->mutable_module_data());
 		long long end_time = GET_CURRENT_MS;
 
-		module_data["end_time"] = std::to_string(end_time);
-		module_data["cost"] = std::to_string(end_time -
-											 atoll(module_data["start_time"].c_str()));
-		module_data["state"] = std::to_string(resp->get_status_code());
-		module_data["error"] = std::to_string(resp->get_error());
-		module_data["remote_ip"] = client_task->get_remote_ip();
+		module_data[SRPC_MODULE_END_TIME] = std::to_string(end_time);
+		module_data[SRPC_MODULE_COST] = std::to_string(end_time -
+							atoll(module_data[SRPC_MODULE_START_TIME].c_str()));
+		module_data[SRPC_MODULE_STATE] = std::to_string(resp->get_status_code());
+		module_data[SRPC_MODULE_ERROR] = std::to_string(resp->get_error());
+		module_data[SRPC_MODULE_REMOTE_IP] = client_task->get_remote_ip();
 
-		// whether create a module task is depend on you and your derived class
 		SubTask *module_task = this->create_module_task(module_data);
 		series_of(task)->push_front(module_task);
 
 		return 0;
 	}
 
-	// outside will fill data from meta and call begin() and put data onto series
 	int server_begin(SubTask *task, const RPCModuleData& data) override
 	{
 		auto *server_task = static_cast<SERVER_TASK *>(task);
 		auto *req = server_task->get_req();
-		RPCModuleData& module_data = server_task->mutable_module_data();
+		RPCModuleData& module_data = *(server_task->mutable_module_data());
 
-		module_data["service_name"] = req->get_service_name();
-		module_data["method_name"] = req->get_method_name();
-		module_data["data_type"] = std::to_string(req->get_data_type());
-		module_data["compress_type"] = std::to_string(req->get_compress_type());
+		module_data[SRPC_MODULE_SERVICE_NAME] = req->get_service_name();
+		module_data[SRPC_MODULE_METHOD_NAME] = req->get_method_name();
+		module_data[SRPC_MODULE_DATA_TYPE] = std::to_string(req->get_data_type());
+		module_data[SRPC_MODULE_COMPRESS_TYPE] =
+										std::to_string(req->get_compress_type());
 
-		if (module_data["trace_id"].empty())
-			module_data["trace_id"] = std::to_string(
+		if (module_data[SRPC_MODULE_TRACE_ID].empty())
+			module_data[SRPC_MODULE_TRACE_ID] = std::to_string(
 								SRPCGlobal::get_instance()->get_trace_id());
-		module_data["span_id"] = std::to_string(
+		module_data[SRPC_MODULE_SPAN_ID] = std::to_string(
 								SRPCGlobal::get_instance()->get_span_id());
-		module_data["start_time"] = std::to_string(GET_CURRENT_MS);
-
-//		RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(task));
-//		if (series)
-//			series->set_data(task_data);
+		module_data[SRPC_MODULE_START_TIME] = std::to_string(GET_CURRENT_MS);
 
 		return 0;
 	}
@@ -118,23 +127,18 @@ public:
 	{
 		auto *server_task = static_cast<SERVER_TASK *>(task);
 		auto *resp = server_task->get_resp();
-		RPCModuleData& module_data = server_task->mutable_module_data();
+		RPCModuleData& module_data = *(server_task->mutable_module_data());
 		long long end_time = GET_CURRENT_MS;
 
-		module_data["end_time"] = std::to_string(end_time);
-		module_data["cost"] = std::to_string(end_time -
-											 atoll(module_data["start_time"].c_str()));
-		module_data["state"] = std::to_string(resp->get_status_code());
-		module_data["error"] = std::to_string(resp->get_error());
-		module_data["remote_ip"] = server_task->get_remote_ip();
+		module_data[SRPC_MODULE_END_TIME] = std::to_string(end_time);
+		module_data[SRPC_MODULE_COST] = std::to_string(end_time -
+							atoll(module_data[SRPC_MODULE_START_TIME].c_str()));
+		module_data[SRPC_MODULE_STATE] = std::to_string(resp->get_status_code());
+		module_data[SRPC_MODULE_ERROR] = std::to_string(resp->get_error());
+		module_data[SRPC_MODULE_REMOTE_IP] = server_task->get_remote_ip();
 
-		// whether create a module task is depend on you and your derived class
 		SubTask *module_task = this->create_module_task(module_data);
 		series_of(task)->push_front(module_task);
-
-//		RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
-//		if (series)
-//			series->clear_span();
 
 		return 0;
 	}
