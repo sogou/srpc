@@ -25,7 +25,7 @@
 #include "rpc_types.h"
 #include "rpc_service.h"
 #include "rpc_options.h"
-#include "rpc_module_impl.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -49,7 +49,7 @@ public:
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 
-	void add_module(RPCModule<TASK> *module);
+	void add_module(RPCModule *module);
 
 protected:
 	RPCServer(const struct RPCServerParams *params,
@@ -62,7 +62,7 @@ private:
 	void set_tracing(TASK *Task);
 
 	std::map<std::string, RPCService *> service_map;
-	std::list<RPCModule<TASK> *> modules;
+	std::list<RPCModule *> modules;
 };
 
 ////////
@@ -103,7 +103,7 @@ inline int RPCServer<RPCTYPE>::add_service(RPCService* service)
 }
 
 template<class RPCTYPE>
-inline void RPCServer<RPCTYPE>::add_module(RPCModule<TASK> *module)
+inline void RPCServer<RPCTYPE>::add_module(RPCModule *module)
 {
 	this->modules.push_back(module);
 }
@@ -168,7 +168,7 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				RPCModuleData &task_data = server_task->mutable_module_data();
 
 				for (auto *module : this->modules)
-					module->begin(server_task, task_data);
+					module->server_begin(server_task, task_data);
 
 				series = dynamic_cast<RPCSeriesWork *>(series_of(task));
 				if (series && !task_data.empty())

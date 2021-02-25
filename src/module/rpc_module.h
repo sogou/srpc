@@ -28,12 +28,20 @@ using RPCModuleData = std::map<std::string, std::string>;
 
 static RPCModuleData global_empty_map;
 
-template<class TASK>
 class RPCModule
 {
 public:
-	virtual int begin(TASK *task, const RPCModuleData& data) = 0;
-	virtual int end(TASK *task, const RPCModuleData& data)
+	virtual int client_begin(SubTask *task, const RPCModuleData& data) = 0;
+	virtual int server_begin(SubTask *task, const RPCModuleData& data) = 0;
+
+	virtual int client_end(SubTask *task, const RPCModuleData& data)
+	{
+		SubTask *module_task = this->create_module_task(data);
+		series_of(task)->push_front(module_task);
+		return 0;
+	}
+
+	virtual int server_end(SubTask *task, const RPCModuleData& data)
 	{
 		SubTask *module_task = this->create_module_task(data);
 		series_of(task)->push_front(module_task);

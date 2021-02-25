@@ -22,47 +22,121 @@
 #include <limits>
 #include "workflow/WFTask.h"
 #include "rpc_basic.h"
-#include "rpc_span_policies.h"
+#include "rpc_module.h"
+#include "rpc_context.h"
 
 namespace srpc
 {
-template<class RPCTYPE>
-class RPCClientSpanDefault : public RPCSpanDefault, public RPCClientSpan<RPCTYPE>
-{
-public:
-	SubTask* create_module_task(const RPCModuleData& data) override
-	{
-		return this->create_span_task(const_cast<RPCModuleData&>(data));
-	}
-};
 
 template<class RPCTYPE>
-class RPCServerSpanDefault : public RPCSpanDefault, public RPCServerSpan<RPCTYPE>
+class RPCSpanModule : public RPCModule
 {
 public:
-	SubTask* create_module_task(const RPCModuleData& data) override
-	{
-		return this->create_span_task(const_cast<RPCModuleData&>(data));
-	}
-};
+	using CLIENT_TASK = RPCClientTask<typename RPCTYPE::REQ,
+									  typename RPCTYPE::RESP>;
+	using SERVER_TASK = RPCServerTask<typename RPCTYPE::REQ,
+									  typename RPCTYPE::RESP>;
 
-template<class RPCTYPE>
-class RPCClientSpanRedis : public RPCSpanRedis, public RPCClientSpan<RPCTYPE>
-{
-public:
-	SubTask* create_module_task(const RPCModuleData& data) override
+	int client_begin(SubTask *task, const RPCModuleData& data) override
 	{
-		return this->create_span_task(const_cast<RPCModuleData&>(data));
-	}
-};
+		auto *client_task = static_cast<CLIENT_TASK *>(task);
+		auto *req = client_task->get_req();
+		RPCModuleData& module_data = client_task->mutable_module_data();
 
-template<class RPCTYPE>
-class RPCServerSpanRedis : public RPCSpanRedis, public RPCServerSpan<RPCTYPE>
-{
-public:
-	SubTask* create_module_task(const RPCModuleData& data) override
+		if (!data.empty())
+		{
+			//module_data["trace_id"] = data["trace_id"];
+			auto iter = data.find("span_id");
+			if (iter != data.end())
+				module_data["parent_span_id"] = iter->second;
+		} else {
+			module_data["trace_id"] = std::to_string(
+								SRPCGlobal::get_instance()->get_trace_id());
+		}
+
+		module_data["span_id"] = std::to_string(
+								SRPCGlobal::get_instance()->get_span_id());
+
+		module_data["service_name"] = req->get_service_name();
+		module_data["method_name"] = req->get_method_name();
+		module_data["data_type"] = std::to_string(req->get_data_type());
+		module_data["compress_type"] = std::to_string(req->get_compress_type());
+		module_data["start_time"] = std::to_string(GET_CURRENT_MS);
+
+		return 0; // always success
+	}
+
+	//outside get data from resp->meta and call end()
+	int client_end(SubTask *task, const RPCModuleData& data) override
 	{
-		return this->create_span_task(const_cast<RPCModuleData&>(data));
+		auto *client_task = static_cast<CLIENT_TASK *>(task);
+		auto *resp = client_task->get_resp();
+		RPCModuleData& module_data = client_task->mutable_module_data();
+		long long end_time = GET_CURRENT_MS;
+
+		module_data["end_time"] = std::to_string(end_time);
+		module_data["cost"] = std::to_string(end_time -
+											 atoll(module_data["start_time"].c_str()));
+		module_data["state"] = std::to_string(resp->get_status_code());
+		module_data["error"] = std::to_string(resp->get_error());
+		module_data["remote_ip"] = client_task->get_remote_ip();
+
+		// whether create a module task is depend on you and your derived class
+		SubTask *module_task = this->create_module_task(module_data);
+		series_of(task)->push_front(module_task);
+
+		return 0;
+	}
+
+	// outside will fill data from meta and call begin() and put data onto series
+	int server_begin(SubTask *task, const RPCModuleData& data) override
+	{
+		auto *server_task = static_cast<SERVER_TASK *>(task);
+		auto *req = server_task->get_req();
+		RPCModuleData& module_data = server_task->mutable_module_data();
+
+		module_data["service_name"] = req->get_service_name();
+		module_data["method_name"] = req->get_method_name();
+		module_data["data_type"] = std::to_string(req->get_data_type());
+		module_data["compress_type"] = std::to_string(req->get_compress_type());
+
+		if (module_data["trace_id"].empty())
+			module_data["trace_id"] = std::to_string(
+								SRPCGlobal::get_instance()->get_trace_id());
+		module_data["span_id"] = std::to_string(
+								SRPCGlobal::get_instance()->get_span_id());
+		module_data["start_time"] = std::to_string(GET_CURRENT_MS);
+
+//		RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(task));
+//		if (series)
+//			series->set_data(task_data);
+
+		return 0;
+	}
+
+	int server_end(SubTask *task, const RPCModuleData& data) override
+	{
+		auto *server_task = static_cast<SERVER_TASK *>(task);
+		auto *resp = server_task->get_resp();
+		RPCModuleData& module_data = server_task->mutable_module_data();
+		long long end_time = GET_CURRENT_MS;
+
+		module_data["end_time"] = std::to_string(end_time);
+		module_data["cost"] = std::to_string(end_time -
+											 atoll(module_data["start_time"].c_str()));
+		module_data["state"] = std::to_string(resp->get_status_code());
+		module_data["error"] = std::to_string(resp->get_error());
+		module_data["remote_ip"] = server_task->get_remote_ip();
+
+		// whether create a module task is depend on you and your derived class
+		SubTask *module_task = this->create_module_task(module_data);
+		series_of(task)->push_front(module_task);
+
+//		RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+//		if (series)
+//			series->clear_span();
+
+		return 0;
 	}
 };
 

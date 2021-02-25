@@ -21,7 +21,7 @@
 #include "rpc_context.h"
 #include "rpc_options.h"
 #include "rpc_global.h"
-#include "rpc_module_impl.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -47,7 +47,7 @@ public:
 
 	void set_keep_alive(int timeout);
 	void set_watch_timeout(int timeout);
-	void add_module(RPCModule<TASK> *module);
+	void add_module(RPCModule *module);
 
 protected:
 	template<class OUTPUT>
@@ -78,7 +78,7 @@ private:
 	struct sockaddr_storage ss;
 	socklen_t ss_len;
 	bool has_addr_info;
-	std::list<RPCModule<TASK> *> modules;
+	std::list<RPCModule *> modules;
 };
 
 ////////
@@ -118,7 +118,7 @@ inline void RPCClient<RPCTYPE>::set_watch_timeout(int timeout)
 }
 
 template<class RPCTYPE>
-inline void RPCClient<RPCTYPE>::add_module(RPCModule<TASK> *module)
+inline void RPCClient<RPCTYPE>::add_module(RPCModule *module)
 {
 	this->modules.push_back(module);
 }

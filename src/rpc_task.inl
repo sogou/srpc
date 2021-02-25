@@ -106,8 +106,6 @@ template<class RPCREQ, class RPCRESP>
 class RPCClientTask : public WFComplexClientTask<RPCREQ, RPCRESP>
 {
 public:
-	using TASK = RPCClientTask<RPCREQ, RPCRESP>;
-
 	// before rpc call
 	void set_data_type(RPCDataType type);
 	void set_compress_type(RPCCompressType type);
@@ -134,7 +132,7 @@ public:
 	RPCClientTask(const std::string& service_name,
 				  const std::string& method_name,
 				  const RPCTaskParams *params,
-				  std::list<RPCModule<TASK> *>& modules,
+				  std::list<RPCModule *>& modules,
 				  user_done_t&& user_done);
 
 	std::string get_remote_ip() const;
@@ -151,18 +149,16 @@ private:
 	int watch_timeout_;
 
 	RPCModuleData module_data_;
-	std::list<RPCModule<TASK> *> modules_;
+	std::list<RPCModule *> modules_;
 };
 
 template<class RPCREQ, class RPCRESP>
 class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 {
 public:
-	using TASK = RPCServerTask<RPCREQ, RPCRESP>;
-
 	RPCServerTask(CommService *service,
 				  std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
-				  std::list<RPCModule<TASK> *>& modules) :
+				  std::list<RPCModule *>& modules) :
 		WFServerTask<RPCREQ, RPCRESP>(service, WFGlobal::get_scheduler(), process),
 		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp),
 		modules_(modules)
@@ -182,7 +178,7 @@ public:
 
 private:
 	RPCModuleData module_data_;
-	std::list<RPCModule<TASK> *> modules_;
+	std::list<RPCModule *> modules_;
 };
 
 template<class OUTPUT>
@@ -263,7 +259,7 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 //				data = series_of(this)->get_module_data();
 
 			for (auto *module : modules_)
-				module->end(this, *data);
+				module->server_end(this, *data);
 
 			if (series)
 				series->clear_module_data();
@@ -373,7 +369,7 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
 					const std::string& method_name,
 					const RPCTaskParams *params,
-					std::list<RPCModule<TASK> *>& modules,
+					std::list<RPCModule *>& modules,
 					user_done_t&& user_done):
 	WFComplexClientTask<RPCREQ, RPCRESP>(0, nullptr),
 	user_done_(std::move(user_done)),
@@ -443,7 +439,7 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 			data = &global_empty_map;
 
 		for (auto *module : modules_)
-			module->begin(this, *data);
+			module->client_begin(this, *data);
 
 		this->req.set_meta_module_data(this->mutable_module_data());
 
@@ -475,7 +471,7 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 			RPCModuleData resp_data;
 			this->resp.get_meta_module_data(resp_data);
 			for (auto *module : modules_)
-				module->end(this, resp_data);
+				module->client_end(this, resp_data);
 		}
 		//TODO: Feedback client resp meta through all nodes by series
 	}

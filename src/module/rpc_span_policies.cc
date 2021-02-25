@@ -83,7 +83,8 @@ void RPCSpanLogTask::dispatch()
 	this->subtask_done();
 }
 
-SubTask *RPCSpanRedis::create(RPCModuleData& span)
+template<class RPCTYPE>
+SubTask *RPCSpanRedis<RPCTYPE>::create(RPCModuleData& span)
 {
 	auto *task = WFTaskFactory::create_redis_task(this->redis_url,
 												  this->retry_max,
