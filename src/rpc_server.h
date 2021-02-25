@@ -37,6 +37,7 @@ public:
 	using REQTYPE = typename RPCTYPE::REQ;
 	using RESPTYPE = typename RPCTYPE::RESP;
 	using TASK = RPCServerTask<REQTYPE, RESPTYPE>;
+	using SERIES = typename TASK::RPCSeries;
 
 protected:
 	using NETWORKTASK = WFNetworkTask<REQTYPE, RESPTYPE>;
@@ -157,7 +158,7 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 			else
 			{
 				RPCModuleData req_data;
-				RPCSeriesWork *series;
+				SERIES *series;
 				auto *server_task = static_cast<TASK *>(task);
 
 				req->get_meta_module_data(req_data);
@@ -170,8 +171,8 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				for (auto *module : this->modules)
 					module->server_begin(server_task, task_data);
 
-				series = dynamic_cast<RPCSeriesWork *>(series_of(task));
-				if (series && !task_data.empty())
+				series = static_cast<SERIES *>(series_of(task));
+				if (!task_data.empty())
 					series->set_module_data(&task_data);
 
 				status_code = req->decompress();

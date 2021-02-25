@@ -165,6 +165,24 @@ public:
 	{
 	}
 
+public:
+	class RPCSeries : public WFServerTask<RPCREQ, RPCRESP>::Series
+	{
+	public:
+		RPCSeries(WFServerTask<RPCREQ, RPCRESP> *task) :
+			WFServerTask<RPCREQ, RPCRESP>::Series(task),
+			module_data(NULL)
+		{}
+
+		RPCModuleData *get_module_data() { return this->module_data; }
+		void set_module_data(RPCModuleData *data) { this->module_data = data; }
+		bool has_module_data() const { return !!this->module_data; }
+		void clear_module_data() { this->module_data = NULL; }
+
+	private:
+		RPCModuleData *module_data;
+	};
+
 protected:
 	CommMessageOut *message_out() override;
 	void handle(int state, int error) override;
@@ -252,7 +270,7 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		status_code = this->resp.compress();
 		if (status_code == RPCStatusOK)
 		{
-			RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+			RPCSeries *series = static_cast<RPCSeries *>(series_of(this));
 
 			const RPCModuleData *data = &global_empty_map;
 //			if (series)
@@ -261,8 +279,7 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 			for (auto *module : modules_)
 				module->server_end(this, *data);
 
-			if (series)
-				series->clear_module_data();
+			series->clear_module_data();
 
 			if (this->resp.serialize_meta())
 				return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
@@ -284,7 +301,7 @@ void RPCServerTask<RPCREQ, RPCRESP>::handle(int state, int error)
 
 	this->state = WFT_STATE_TOREPLY;
 	this->target = this->get_target();
-	RPCSeriesWork *series = new RPCSeriesWork(&this->processor, this, nullptr);
+	RPCSeries *series = new RPCSeries(this);
 	series->start();
 }
 
@@ -421,6 +438,7 @@ bool RPCClientTask<RPCREQ, RPCRESP>::check_request()
 template<class RPCREQ, class RPCRESP>
 CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 {
+	using SERIES = typename RPCServerTask<RPCREQ, RPCRESP>::RPCSeries;
 	this->req.set_seqid(this->get_task_seq());
 
 	int status_code = this->req.compress();
@@ -428,7 +446,7 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 	if (status_code == RPCStatusOK)
 	{
 		RPCModuleData *data = NULL;
-		RPCSeriesWork *series = dynamic_cast<RPCSeriesWork *>(series_of(this));
+		SERIES *series = dynamic_cast<SERIES *>(series_of(this));
 
 		if (series)
 			data = series->get_module_data();

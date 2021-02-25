@@ -54,30 +54,6 @@ public:
 	}
 };
 
-class RPCSeriesWork : public SeriesWork
-{
-public:
-	RPCSeriesWork(SubTask *first, series_callback_t&& callback) :
-		SeriesWork(first, std::move(callback)),
-		module_data(NULL)
-	{}
-
-	RPCSeriesWork(SubTask *first, SubTask *last, series_callback_t&& callback) :
-		SeriesWork(first, std::move(callback)),
-		module_data(NULL)
-	{
-		this->set_last_task(last);
-	}
-
-	RPCModuleData *get_module_data() { return this->module_data; }
-	void set_module_data(RPCModuleData *data) { this->module_data = data; }
-	bool has_module_data() const { return !!this->module_data; }
-	void clear_module_data() { this->module_data = NULL; }
-
-private:
-	RPCModuleData *module_data;
-};
-
 class SnowFlake
 {
 public:
