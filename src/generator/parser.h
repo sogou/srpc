@@ -48,6 +48,7 @@ public:
 
 	int find_valid(const std::string& line);
 	bool check_block_begin(FILE *in, std::string& line);
+	bool check_block_begin(const std::string& line);
 	bool check_block_end(const std::string& line);
 	void check_single_comments(std::string& line);
 	bool parse_block_name(const std::string& line,

@@ -115,12 +115,13 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 		}
 
 		flag_append = false;
+
 		if ((state & PARSER_ST_BLOCK_MASK) == PARSER_ST_OUTSIDE_BLOCK)
 		{
 			if (this->check_block_begin(in, line) == true)
 			{
 				state |= PARSER_ST_INSIDE_BLOCK;
-				stack_count++;
+//				stack_count++;
 				block.clear();
 				block = line;
 				if (this->parse_block_name(line, block_type,
@@ -139,12 +140,15 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 		if ((state & PARSER_ST_BLOCK_MASK) == PARSER_ST_INSIDE_BLOCK)
 		{
 			if (flag_append == true)
-//			if (this->check_block_begin(line) == false)
 				block.append(line);
+
+			if (this->check_block_begin(line) == true)
+				++stack_count;
 
 			if (this->check_block_end(line) == true)
 			{
-				if (--stack_count == 0)
+				--stack_count;
+				if (stack_count == 0)
 				{
 					state = PARSER_ST_OUTSIDE_BLOCK;
 					//state &= PARSER_ST_OUTSIDE_BLOCK_MASK;
@@ -734,7 +738,9 @@ bool Parser::parse_service_pb(const std::string& block, Descriptor& desc)
 			fprintf(stderr, "no method_name in service block [%s]\n", block.c_str());
 			return false;
 		}
+
 		rpc_desc.method_name = std::string(&block[pos], &block[method_name_pos]);
+		rpc_desc.method_name.erase(rpc_desc.method_name.find_last_not_of(" ") + 1);
 
 		pos = method_name_pos;
 		while (block[pos] == ' ' && pos < block.length())
@@ -837,6 +843,13 @@ bool Parser::check_block_begin(FILE *in, std::string& line)
 		}
 	}
 	return false;
+}
+
+bool Parser::check_block_begin(const std::string& line)
+{
+	if (line.find("{") == std::string::npos)
+		return false;
+	return true;
 }
 
 bool Parser::check_block_end(const std::string& line)
