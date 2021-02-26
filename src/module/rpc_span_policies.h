@@ -23,10 +23,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <limits>
 #include "workflow/WFTask.h"
 #include "workflow/WFTaskFactory.h"
 #include "workflow/RedisMessage.h"
-#include "rpc_span.h"
+#include "rpc_module_span.h"
 
 namespace srpc
 {
@@ -39,22 +40,22 @@ static constexpr const char 	*SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
 static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT		= 4 * 1024 * 1024;
 static constexpr size_t			SPANS_PER_SECOND_DEFAULT		= 1000;
 
-class RPCSpanFilterLogger : public RPCSpanLogger
+template<class RPCTYPE>
+class RPCSpanFilter : public RPCSpanModule<RPCTYPE>
 {
 public:
-	SubTask* create_log_task(RPCSpan *span) override
+	SubTask* create_module_task(const RPCModuleData& span) override
 	{
-		if (this->filter(span))
-			return this->create(span);
+		if (this->filter(const_cast<RPCModuleData&>(span)))
+			return this->create(const_cast<RPCModuleData&>(span));
 
-		delete span;
 		return WFTaskFactory::create_empty_task();
 	}
 
 private:
-	virtual SubTask *create(RPCSpan *span) = 0;
+	virtual SubTask *create(RPCModuleData& span) = 0;
 
-	virtual bool filter(RPCSpan *span) = 0;
+	virtual bool filter(RPCModuleData& span) = 0;
 };
 
 class RPCSpanFilterPolicy
@@ -84,7 +85,7 @@ public:
 		this->spans_per_interval = (this->spans_per_sec * msec + 999 ) / 1000;
 	}
 
-	bool filter(RPCSpan *span);
+	bool filter(RPCModuleData& span);
 
 private:
 	int stat_interval;
@@ -98,7 +99,8 @@ private:
 class RPCSpanLogTask : public WFGenericTask
 {
 public:
-	RPCSpanLogTask(RPCSpan *span, std::function<void (RPCSpanLogTask *)> callback) :
+	RPCSpanLogTask(RPCModuleData& span,
+				   std::function<void (RPCSpanLogTask *)> callback) :
 		span(span),
 		callback(std::move(callback))
 	{}
@@ -118,28 +120,27 @@ private:
 	}
 
 public:
-	RPCSpan *span;
+	RPCModuleData span;
 	std::function<void (RPCSpanLogTask *)> callback;
 };
 
-class RPCSpanLoggerDefault : public RPCSpanFilterLogger
+template<class RPCTYPE>
+class RPCSpanDefault : public RPCSpanFilter<RPCTYPE>
 {
 public:
-	RPCSpanLoggerDefault() :
+	RPCSpanDefault() :
 		filter_policy(SPANS_PER_SECOND_DEFAULT) {}
 
-	RPCSpanLoggerDefault(size_t spans_per_second) :
+	RPCSpanDefault(size_t spans_per_second) :
 		filter_policy(spans_per_second) {}
 
 private:
-	SubTask *create(RPCSpan *span) override
+	SubTask *create(RPCModuleData& span) override
 	{
-		return new RPCSpanLogTask(span, [span](RPCSpanLogTask *task) {
-											delete span;
-										});
+		return new RPCSpanLogTask(span, nullptr);
 	}
 
-	bool filter(RPCSpan *span) override
+	bool filter(RPCModuleData& span) override
 	{
 		return this->filter_policy.filter(span);
 	}
@@ -159,16 +160,17 @@ private:
 	RPCSpanFilterPolicy filter_policy;
 };
 
-class RPCSpanRedisLogger : public RPCSpanFilterLogger
+template<class RPCTYPE>
+class RPCSpanRedis : public RPCSpanFilter<RPCTYPE>
 {
 public:
-	RPCSpanRedisLogger(const std::string& url) :
-		RPCSpanRedisLogger(url, SPAN_REDIS_RETRY_MAX,
-						   SPANS_PER_SECOND_DEFAULT)
+	RPCSpanRedis(const std::string& url) :
+		RPCSpanRedis(url, SPAN_REDIS_RETRY_MAX,
+					 SPANS_PER_SECOND_DEFAULT)
 	{}
 
-	RPCSpanRedisLogger(const std::string& url, int retry_max,
-					   size_t spans_per_second) :
+	RPCSpanRedis(const std::string& url, int retry_max,
+				 size_t spans_per_second) :
 		redis_url(url),
 		retry_max(retry_max),
 		filter_policy(spans_per_second)
@@ -179,9 +181,9 @@ private:
 	int retry_max;
 
 private:
-	SubTask *create(RPCSpan *span) override;
+	SubTask *create(RPCModuleData& span) override;
 
-	bool filter(RPCSpan *span) override
+	bool filter(RPCModuleData& span) override
 	{
 		return this->filter_policy.filter(span);
 	}

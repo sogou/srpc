@@ -56,8 +56,8 @@ public:
 	void set_attachment_nocopy(const char *attachment, size_t len);
 	bool get_attachment_nocopy(const char **attachment, size_t *len) const;
 
-	bool set_meta_span(const RPCSpan *span) override;
-	bool get_meta_span(RPCSpan *span) const override;
+	bool set_meta_module_data(const RPCModuleData& data) override;
+	bool get_meta_module_data(RPCModuleData& data) const override;
 
 public:
 	using RPCMessage::serialize;
@@ -149,14 +149,14 @@ public:
 		return this->SRPCRequest::set_method_name(method_name);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override
+	bool set_meta_module_data(const RPCModuleData& data) override
 	{
-		return this->SRPCMessage::set_meta_span(span);
+		return this->SRPCMessage::set_meta_module_data(data);
 	}
 
-	bool get_meta_span(RPCSpan *span) const override
+	bool get_meta_module_data(RPCModuleData& data) const override
 	{
-		return this->SRPCMessage::get_meta_span(span);
+		return this->SRPCMessage::get_meta_module_data(data);
 	}
 
 public:
@@ -213,14 +213,14 @@ public:
 		return this->SRPCResponse::set_error(error);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override
+	bool set_meta_module_data(const RPCModuleData& data) override
 	{
-		return this->SRPCMessage::set_meta_span(span);
+		return this->SRPCMessage::set_meta_module_data(data);
 	}
 
-	bool get_meta_span(RPCSpan *span) const override
+	bool get_meta_module_data(RPCModuleData& data) const override
 	{
-		return this->SRPCMessage::get_meta_span(span);
+		return this->SRPCMessage::get_meta_module_data(data);
 	}
 
 public:
@@ -254,8 +254,8 @@ public:
 		return this->SRPCRequest::set_method_name(method_name);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override;
-	bool get_meta_span(RPCSpan *span) const override;
+	bool set_meta_module_data(const RPCModuleData& data) override;
+	bool get_meta_module_data(RPCModuleData& data) const override;
 
 public:
 	SogouHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
@@ -293,8 +293,8 @@ public:
 		return this->SRPCResponse::set_error(error);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override;
-	bool get_meta_span(RPCSpan *span) const override;
+	bool set_meta_module_data(const RPCModuleData& data) override;
+	bool get_meta_module_data(RPCModuleData& data) const override;
 
 public:
 	SogouHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }

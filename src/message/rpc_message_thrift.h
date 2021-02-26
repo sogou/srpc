@@ -87,8 +87,8 @@ public:
 	int compress() override { return RPCStatusOK; }
 	int decompress() override { return RPCStatusOK; }
 
-	bool get_meta_span(RPCSpan *span) const override { return false; }
-	bool set_meta_span(const RPCSpan *span) override { return false; }
+	bool get_meta_module_data(RPCModuleData& data) const override { return false; }
+	bool set_meta_module_data(const RPCModuleData& data) override { return false; }
 
 public:
 	const ThriftMeta *get_meta() const { return &TBuffer_.meta; }
@@ -123,8 +123,8 @@ class ThriftResponse : public ThriftMessage
 public:
 	bool serialize_meta();
 	bool deserialize_meta();
-	bool get_meta_span(RPCSpan *span) const override { return false; }
-	bool set_meta_span(const RPCSpan *span) override { return false; }
+	bool get_meta_module_data(RPCModuleData& data) const override { return false; }
+	bool set_meta_module_data(const RPCModuleData& data) override { return false; }
 
 public:
 	int get_status_code() const { return status_code_; }
@@ -196,14 +196,14 @@ public:
 		this->ThriftRequest::set_seqid(seqid);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override
+	bool set_meta_module_data(const RPCModuleData& data) override
 	{
-		return this->ThriftMessage::set_meta_span(span);
+		return this->ThriftMessage::set_meta_module_data(data);
 	}
 
-	bool get_meta_span(RPCSpan *span) const override
+	bool get_meta_module_data(RPCModuleData& data) const override
 	{
-		return this->ThriftMessage::get_meta_span(span);
+		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
 public:
@@ -260,14 +260,14 @@ public:
 		return this->ThriftResponse::set_error(error);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override
+	bool set_meta_module_data(const RPCModuleData& data) override
 	{
-		return this->ThriftMessage::set_meta_span(span);
+		return this->ThriftMessage::set_meta_module_data(data);
 	}
 
-	bool get_meta_span(RPCSpan *span) const override
+	bool get_meta_module_data(RPCModuleData& data) const override
 	{
-		return this->ThriftMessage::get_meta_span(span);
+		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
 public:
@@ -306,14 +306,14 @@ public:
 		this->ThriftRequest::set_seqid(seqid);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override
+	bool set_meta_module_data(const RPCModuleData& data) override
 	{
-		return this->ThriftMessage::set_meta_span(span);
+		return this->ThriftMessage::set_meta_module_data(data);
 	}
 
-	bool get_meta_span(RPCSpan *span) const override
+	bool get_meta_module_data(RPCModuleData& data) const override
 	{
-		return this->ThriftMessage::get_meta_span(span);
+		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
 public:
@@ -352,14 +352,14 @@ public:
 		return this->ThriftResponse::set_error(error);
 	}
 
-	bool set_meta_span(const RPCSpan *span) override
+	bool set_meta_module_data(const RPCModuleData& data) override
 	{
-		return this->ThriftMessage::set_meta_span(span);
+		return this->ThriftMessage::set_meta_module_data(data);
 	}
 
-	bool get_meta_span(RPCSpan *span) const override
+	bool get_meta_module_data(RPCModuleData& data) const override
 	{
-		return this->ThriftMessage::get_meta_span(span);
+		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
 public:

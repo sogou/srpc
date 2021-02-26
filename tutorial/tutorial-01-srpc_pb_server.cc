@@ -17,6 +17,9 @@
 #include <signal.h>
 #include "echo_pb.srpc.h"
 #include "workflow/WFFacilities.h"
+#include "srpc/rpc_module.h"
+#include "srpc/rpc_span_policies.h"
+#include "srpc/rpc_types.h"
 
 using namespace srpc;
 
@@ -51,6 +54,10 @@ int main()
 	ExampleServiceImpl impl;
 
 	server.add_service(&impl);
+
+	RPCSpanDefault<RPCTYPESRPC>	span_module;
+	server.add_module(&span_module);
+
 	if (server.start(1412) == 0)
 	{
 		wait_group.wait();

@@ -17,12 +17,11 @@
 #ifndef __RPC_OPTIONS_H__
 #define __RPC_OPTIONS_H__
 
+#include <list>
+#include <string>
 #include <workflow/WFServer.h>
 #include <workflow/URIParser.h>
-#include "rpc_message.h"
-#include "rpc_basic.h"
-#include "rpc_span.h"
-#include "rpc_span_policies.h"
+//#include "rpc_span_policies.h"
 
 namespace srpc {
 
@@ -45,8 +44,6 @@ struct RPCClientParams
 	bool is_ssl;
 //or URL
 	std::string url;
-//for trace_span
-	RPCSpanLogger *span_logger;
 };
 
 struct RPCServerParams : public WFServerParams
@@ -59,11 +56,8 @@ struct RPCServerParams : public WFServerParams
 /*	.keep_alive_timeout		=	*/	60 * 1000,
 /*	.request_size_limit		=	*/	RPC_BODY_SIZE_LIMIT,
 /*	.ssl_accept_timeout		=	*/	10 * 1000
-		}),
-		span_logger(NULL)
+		})
 	{}
-
-	RPCSpanLogger *span_logger;
 };
 
 static constexpr RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
@@ -82,8 +76,7 @@ static const RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
 /*	.host				=	*/	"",
 /*	.port				=	*/	SRPC_DEFAULT_PORT,
 /*	.is_ssl				=	*/	false,
-/*	.url				=	*/	"",
-/*	.span_logger		=	*/	NULL
+/*	.url				=	*/	""
 };
 
 static const RPCServerParams RPC_SERVER_PARAMS_DEFAULT;

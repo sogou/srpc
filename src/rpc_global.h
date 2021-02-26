@@ -19,6 +19,7 @@
 
 #include <workflow/URIParser.h>
 #include "rpc_options.h"
+#include "rpc_module.h"
 
 namespace srpc
 {

@@ -25,6 +25,7 @@
 #include "rpc_types.h"
 #include "rpc_service.h"
 #include "rpc_options.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -36,6 +37,7 @@ public:
 	using REQTYPE = typename RPCTYPE::REQ;
 	using RESPTYPE = typename RPCTYPE::RESP;
 	using TASK = RPCServerTask<REQTYPE, RESPTYPE>;
+	using SERIES = typename TASK::RPCSeries;
 
 protected:
 	using NETWORKTASK = WFNetworkTask<REQTYPE, RESPTYPE>;
@@ -48,6 +50,8 @@ public:
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 
+	void add_module(RPCModule *module);
+
 protected:
 	RPCServer(const struct RPCServerParams *params,
 			  std::function<void (NETWORKTASK *)>&& process);
@@ -59,7 +63,7 @@ private:
 	void set_tracing(TASK *Task);
 
 	std::map<std::string, RPCService *> service_map;
-	RPCSpanLogger *span_logger;
+	std::list<RPCModule *> modules;
 };
 
 ////////
@@ -69,23 +73,20 @@ template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer():
 	WFServer<REQTYPE, RESPTYPE>(&RPC_SERVER_PARAMS_DEFAULT,
 								std::bind(&RPCServer::server_process,
-								this, std::placeholders::_1)),
-	span_logger(NULL)
+								this, std::placeholders::_1))
 {}
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params):
 	WFServer<REQTYPE, RESPTYPE>(params,
 								std::bind(&RPCServer::server_process,
-								this, std::placeholders::_1)),
-	span_logger(params->span_logger)
+								this, std::placeholders::_1))
 {}
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params,
 									 std::function<void (NETWORKTASK *)>&& process):
-	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process)),
-	span_logger(params->span_logger)
+	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process))
 {}
 
 template<class RPCTYPE>
@@ -100,6 +101,12 @@ inline int RPCServer<RPCTYPE>::add_service(RPCService* service)
 	}
 
 	return 0;
+}
+
+template<class RPCTYPE>
+inline void RPCServer<RPCTYPE>::add_module(RPCModule *module)
+{
+	this->modules.push_back(module);
 }
 
 template<class RPCTYPE>
@@ -118,7 +125,7 @@ inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq,
 													CommConnection *conn)
 {
 	/* TODO: Change to a factory function. */
-	auto *task = new TASK(this, this->process, this->span_logger);
+	auto *task = new TASK(this, this->process, this->modules);
 
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
@@ -150,12 +157,27 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
-				if (this->span_logger)
-					static_cast<TASK *>(task)->start_span();
+				RPCModuleData req_data;
+				SERIES *series;
+				auto *server_task = static_cast<TASK *>(task);
+
+				req->get_meta_module_data(req_data);
+
+				if (!req_data.empty())
+					server_task->set_module_data(std::move(req_data));
+
+				RPCModuleData *task_data = server_task->mutable_module_data();
+
+				for (auto *module : this->modules)
+					module->server_begin(server_task, *task_data);
+
+				series = static_cast<SERIES *>(series_of(task));
+				if (!task_data->empty())
+					series->set_module_data(task_data);
 
 				status_code = req->decompress();
 				if (status_code == RPCStatusOK)
-					status_code = (*rpc)(static_cast<TASK *>(task)->worker);
+					status_code = (*rpc)(server_task->worker);
 			}
 		}
 	}
