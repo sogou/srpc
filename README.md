@@ -2,6 +2,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE)
 [![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)
+[![Wiki](https://img.shields.io/badge/Wiki-documentation-forestgreen)](https://github.com/sogou/srpc/wiki)
 
 ## Introduction
 #### 这是搜狗自研的RPC系统，主要功能和特点：
@@ -41,7 +42,6 @@
     * 可以把rpc任务放到任务流图中，回调函数里也可以拿到当前的任务流
     * workflow所支持的其他功能，包括upstream、计算调度、异步文件IO等
   * [更多功能和层次介绍](docs/rpc.md)
-  * [架构介绍WIKI](https://github.com/sogou/srpc/wiki/SRPC架构介绍)
 
 ## Installation
   * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
