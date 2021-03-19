@@ -87,10 +87,16 @@ static inline std::string make_trpc_service_prefix(const std::vector<std::string
 	return package_prefix + service;
 }
 
-static inline std::string make_trpc_method_prefix(const std::string& service,
+static inline std::string make_trpc_method_prefix(const std::vector<std::string>& package,
+												  const std::string& service,
 												  const std::string& method)
 {
-	return "/package." + service + "/" + method;
+	std::string method_prefix = "/";
+
+	for (size_t i = 0; i < package.size(); i++)
+		method_prefix = method_prefix + package[i] + ".";
+
+	return method_prefix + service + "/" + method;
 }
 
 static inline bool is_simple_type(int8_t data_type)
@@ -668,7 +674,8 @@ public:
 
 	void print_client_methods(const std::string& type,
 							  const std::string& service,
-							  const std::vector<rpc_descriptor>& rpcs)
+							  const std::vector<rpc_descriptor>& rpcs,
+							  const std::vector<std::string>& package)
 	{
 		for (const auto& rpc : rpcs)
 		{
@@ -677,7 +684,7 @@ public:
 
 			std::string full_method = rpc.method_name;
 			if (type == "TRPC")
-				full_method = make_trpc_method_prefix(service, rpc.method_name);
+				full_method = make_trpc_method_prefix(package, service, rpc.method_name);
 
 			fprintf(this->out_file, this->client_method_format.c_str(),
 					type.c_str(), rpc.method_name.c_str(),
@@ -759,13 +766,14 @@ public:
 	}
 
 	void print_client_create_task(const std::string& type, const std::string& service,
-								  const std::vector<rpc_descriptor>& rpcs)
+								  const std::vector<rpc_descriptor>& rpcs,
+								  const std::vector<std::string>& package)
 	{
 		for (const auto& rpc : rpcs)
 		{
 			std::string full_method = rpc.method_name;
 			if (type == "TRPC")
-				full_method = make_trpc_method_prefix(service, rpc.method_name);
+				full_method = make_trpc_method_prefix(package, service, rpc.method_name);
 
 			fprintf(this->out_file, this->client_create_task_format.c_str(),
 					type.c_str(), type.c_str(), rpc.method_name.c_str(),
