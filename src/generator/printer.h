@@ -73,6 +73,26 @@ static inline std::string make_package_prefix(const std::vector<std::string>& pa
 	return "::" + package_str + "::" + param;
 }
 
+static inline std::string make_trpc_service_prefix(const std::vector<std::string>& package,
+												   const std::string& service)
+{
+	if (package.size() == 0)
+		return service;
+
+	std::string package_prefix = package[0] + ".";
+
+	for (size_t i = 1; i < package.size(); i++)
+		package_prefix = package_prefix + package[i] + ".";
+
+	return package_prefix + service;
+}
+
+static inline std::string make_trpc_method_prefix(const std::string& service,
+												  const std::string& method)
+{
+	return "/package." + service + "/" + method;
+}
+
 static inline bool is_simple_type(int8_t data_type)
 {
 	return data_type == srpc::TDT_BOOL
@@ -624,19 +644,25 @@ public:
 		fprintf(this->out_file, "}");
 	}
 
-	void print_client_constructor(const std::string& type, const std::string& service)
+	void print_client_constructor(const std::string& type, const std::string& service,
+								  const std::vector<std::string>& package)
 	{
 		bool is_srpc_thrift = (this->is_thrift && (type == "SRPC" || type == "SRPCHttp"));
 		const char *method_ip = is_srpc_thrift ? client_constructor_methods_ip_srpc_thrift_format.c_str() : "";
 		const char *method_params = is_srpc_thrift ? client_constructor_methods_params_srpc_thrift_format.c_str() : "";
 
+		std::string full_service = service;
+
+		if (type == "TRPC")
+			full_service = make_trpc_service_prefix(package, service);
+
 		fprintf(this->out_file, this->client_constructor_methods_format.c_str(),
 				type.c_str(), type.c_str(),
-				type.c_str(), service.c_str(),
+				type.c_str(), full_service.c_str(),
 				method_ip, type.c_str(),
 
 				type.c_str(), type.c_str(),
-				type.c_str(), service.c_str(),
+				type.c_str(), full_service.c_str(),
 				method_params, type.c_str());
 	}
 
@@ -649,17 +675,21 @@ public:
 			std::string req = change_include_prefix(rpc.request_name);
 			std::string resp = change_include_prefix(rpc.response_name);
 
+			std::string full_method = rpc.method_name;
+			if (type == "TRPC")
+				full_method = make_trpc_method_prefix(service, rpc.method_name);
+
 			fprintf(this->out_file, this->client_method_format.c_str(),
 					type.c_str(), rpc.method_name.c_str(),
 					req.c_str(), rpc.method_name.c_str(),
-					rpc.method_name.c_str(),
+					full_method.c_str(),
 
 					type.c_str(), rpc.method_name.c_str(),
 					req.c_str(), resp.c_str(), rpc.method_name.c_str(),
 
 					resp.c_str(), type.c_str(),
 					rpc.method_name.c_str(), req.c_str(),
-					resp.c_str(), resp.c_str(), rpc.method_name.c_str(), resp.c_str());
+					resp.c_str(), resp.c_str(), full_method.c_str(), resp.c_str());
 		}
 
 		if (this->is_thrift)
@@ -733,9 +763,13 @@ public:
 	{
 		for (const auto& rpc : rpcs)
 		{
+			std::string full_method = rpc.method_name;
+			if (type == "TRPC")
+				full_method = make_trpc_method_prefix(service, rpc.method_name);
+
 			fprintf(this->out_file, this->client_create_task_format.c_str(),
 					type.c_str(), type.c_str(), rpc.method_name.c_str(),
-					rpc.method_name.c_str(), rpc.method_name.c_str());
+					rpc.method_name.c_str(), full_method.c_str());
 /*
 					type.c_str(), service.c_str(),
 					type.c_str(), rpc.method_name.c_str(),

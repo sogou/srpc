@@ -22,6 +22,7 @@
 #include "rpc_message_srpc.h"
 #include "rpc_message_thrift.h"
 #include "rpc_message_brpc.h"
+#include "rpc_message_trpc.h"
 
 namespace srpc
 {
@@ -102,6 +103,20 @@ struct RPCTYPEThriftHttp
 		resp_meta->is_strict = req_meta->is_strict;
 		resp_meta->seqid = req_meta->seqid;
 		resp_meta->method_name = req_meta->method_name;
+	}
+};
+
+struct RPCTYPETRPC
+{
+	using REQ = TRPCStdRequest;
+	using RESP = TRPCStdResponse;
+	static constexpr RPCDataType default_data_type = RPCDataProtobuf;
+
+	static inline void server_reply_init(const REQ *req, RESP *resp)
+	{
+		const_cast<REQ *>(req)->trim_service_prefix();
+		const_cast<REQ *>(req)->trim_method_prefix();
+		resp->set_request_id(req->get_request_id());
 	}
 };
 
