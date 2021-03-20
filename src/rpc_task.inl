@@ -274,12 +274,15 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 
 			const RPCModuleData *data = series->get_module_data();
 
-			if (data == NULL)
+			if (data != NULL)
+				this->set_module_data(std::move(*data));
+			else
 				data = &global_empty_map;
 
 			for (auto *module : modules_)
 				module->server_end(this, *data);
 
+			this->resp.set_meta_module_data(*this->mutable_module_data());
 			series->clear_module_data();
 
 			if (this->resp.serialize_meta())
