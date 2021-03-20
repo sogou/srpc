@@ -272,9 +272,10 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		{
 			RPCSeries *series = static_cast<RPCSeries *>(series_of(this));
 
-			const RPCModuleData *data = &global_empty_map;
-//			if (series)
-//				data = series_of(this)->get_module_data();
+			const RPCModuleData *data = series->get_module_data();
+
+			if (data == NULL)
+				data = &global_empty_map;
 
 			for (auto *module : modules_)
 				module->server_end(this, *data);
