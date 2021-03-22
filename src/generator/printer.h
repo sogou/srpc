@@ -438,10 +438,15 @@ public:
 
 	void print_server_main_begin()
 	{
+		fprintf(this->out_file, this->server_main_begin_format.c_str());
+
 		if (this->is_thrift)
-			fprintf(this->out_file, this->server_main_begin_format.c_str(), "Thrift");
+			fprintf(this->out_file, this->server_main_ip_port_format.c_str(), "Thrift");
 		else
-			fprintf(this->out_file, this->server_main_begin_format.c_str(), "SRPC");
+		{
+			fprintf(this->out_file, this->main_PB_VERSION_format.c_str());
+			fprintf(this->out_file, this->server_main_ip_port_format.c_str(), "SRPC");
+		}
 	}
 
 	void print_server_main_method(const std::string& service)
@@ -457,6 +462,9 @@ public:
 	void print_server_main_end()
 	{
 		fprintf(this->out_file, this->server_main_end_format.c_str());
+		if (!this->is_thrift)
+			fprintf(this->out_file, this->main_PB_shutdown_format.c_str());
+		fprintf(this->out_file, this->main_end_return_format.c_str());
 	}
 
 	void print_server_class_thrift(const std::string& service, const std::vector<rpc_descriptor>& rpcs)
@@ -803,6 +811,9 @@ public:
 	void print_client_main_begin()
 	{
 		fprintf(this->out_file, this->client_main_begin_format.c_str());
+		if (!this->is_thrift)
+			fprintf(this->out_file, this->main_PB_VERSION_format.c_str());
+		fprintf(this->out_file, this->client_main_ip_port_format.c_str());
 	}
 
 	void print_client_main_service(const std::string& type,
@@ -860,6 +871,9 @@ public:
 	void print_client_main_end()
 	{
 		fprintf(this->out_file, this->client_main_end_format.c_str());
+		if (!this->is_thrift)
+			fprintf(this->out_file, this->main_PB_shutdown_format.c_str());
+		fprintf(this->out_file, this->main_end_return_format.c_str());
 	}
 
 	void print_end(const std::vector<std::string>& package)
@@ -1385,8 +1399,8 @@ public:
 	std::string server_main_begin_format = R"(
 
 int main()
-{
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
+{)";
+	std::string server_main_ip_port_format = R"(
 	unsigned short port = 1412;
 	%sServer server;
 )";
@@ -1399,11 +1413,7 @@ int main()
 	std::string server_main_end_format = R"(
 	server.start(port);
 	wait_group.wait();
-	server.stop();
-	google::protobuf::ShutdownProtobufLibrary();
-	return 0;
-}
-)";
+	server.stop();)";
 
 	std::string client_done_format = R"(
 static void %s_done(%s *response, srpc::RPCContext *context)
@@ -1411,10 +1421,13 @@ static void %s_done(%s *response, srpc::RPCContext *context)
 }
 )";
 
+	std::string main_PB_VERSION_format = R"(
+	GOOGLE_PROTOBUF_VERIFY_VERSION;)";
+
 	std::string client_main_begin_format = R"(
 int main()
-{
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
+{)";
+	std::string client_main_ip_port_format = R"(
 	const char *ip = "127.0.0.1";
 	unsigned short port = 1412;
 )";
@@ -1441,8 +1454,10 @@ int main()
 */
 
 	std::string client_main_end_format = R"(
-	wait_group.wait();
-	google::protobuf::ShutdownProtobufLibrary();
+	wait_group.wait();)";
+	std::string main_PB_shutdown_format = R"(
+	google::protobuf::ShutdownProtobufLibrary();)";
+	std::string main_end_return_format = R"(
 	return 0;
 }
 )";
