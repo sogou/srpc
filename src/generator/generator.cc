@@ -393,7 +393,12 @@ void Generator::generate_client_cpp_file(const idl_info& cur_info, const std::st
 		if (desc.block_type != "service")
 			continue;
 
-		this->printer.print_client_main_service("SRPC", cur_info.package_name, desc.block_name);
+		if (this->is_thrift)
+			this->printer.print_client_main_service("Thrift",
+										cur_info.package_name, desc.block_name);
+		else
+			this->printer.print_client_main_service("SRPC",
+										cur_info.package_name, desc.block_name);
 		auto rpc_it = desc.rpcs.cbegin();
 		if (rpc_it != desc.rpcs.cend())
 		{
