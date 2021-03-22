@@ -438,7 +438,10 @@ public:
 
 	void print_server_main_begin()
 	{
-		fprintf(this->out_file, this->server_main_begin_format.c_str());
+		if (this->is_thrift)
+			fprintf(this->out_file, this->server_main_begin_format.c_str(), "Thrift");
+		else
+			fprintf(this->out_file, this->server_main_begin_format.c_str(), "SRPC");
 	}
 
 	void print_server_main_method(const std::string& service)
@@ -1385,7 +1388,7 @@ int main()
 {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 	unsigned short port = 1412;
-	SRPCServer server;
+	%sServer server;
 )";
 
 	std::string server_main_method_format = R"(
