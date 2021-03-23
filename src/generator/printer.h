@@ -229,7 +229,7 @@ public:
 
 	void print_thrift_include(const idl_info& cur_info)
 	{
-		fprintf(this->out_file, this->thrift_include_format.c_str());
+		fprintf(this->out_file, "%s", this->thrift_include_format.c_str());
 		for (const auto& sub_info : cur_info.include_list)
 			fprintf(this->out_file, "#include \"%s.h\"\n", sub_info.file_name.c_str());
 
@@ -257,7 +257,7 @@ public:
 		for (const auto& ele : class_params)
 			fprintf(this->out_file, "\t%s %s;\n", ele.type_name.c_str(), ele.var_name.c_str());
 
-		fprintf(this->out_file, thrift_struct_class_isset_begin_format.c_str());
+		fprintf(this->out_file, "%s", thrift_struct_class_isset_begin_format.c_str());
 
 		for (const auto& ele : class_params)
 		{
@@ -294,7 +294,7 @@ public:
 						ele.var_name.c_str(), ele.var_name.c_str());
 		}
 
-		fprintf(this->out_file, thrift_struct_class_operator_equal_end_format.c_str());
+		fprintf(this->out_file, "%s", thrift_struct_class_operator_equal_end_format.c_str());
 
 		fprintf(this->out_file, thrift_struct_class_elements_start_format.c_str(),
 				class_name.c_str(), class_name.c_str(),
@@ -345,25 +345,25 @@ public:
 	void print_server_file_include(const std::string& prefix)
 	{
 		fprintf(this->out_file, this->srpc_file_include_format.c_str(), prefix.c_str());
-		fprintf(this->out_file, this->using_namespace_sogou_format.c_str());
-		fprintf(this->out_file, this->wait_group_declaration_format.c_str());
+		fprintf(this->out_file, "%s", this->using_namespace_sogou_format.c_str());
+		fprintf(this->out_file, "%s", this->wait_group_declaration_format.c_str());
 	}
 
 	void print_client_file_include(const std::string& prefix)
 	{
 		fprintf(this->out_file, this->srpc_file_include_format.c_str(), prefix.c_str());
-		fprintf(this->out_file, this->using_namespace_sogou_format.c_str());
-		fprintf(this->out_file, this->wait_group_declaration_format.c_str());
+		fprintf(this->out_file, "%s", this->using_namespace_sogou_format.c_str());
+		fprintf(this->out_file, "%s", this->wait_group_declaration_format.c_str());
 	}
 
 	void print_server_comment()
 	{
-		fprintf(this->out_file, this->server_comment_format.c_str());
+		fprintf(this->out_file, "%s", this->server_comment_format.c_str());
 	}
 
 	void print_client_comment()
 	{
-		fprintf(this->out_file, this->client_comment_format.c_str());
+		fprintf(this->out_file, "%s", this->client_comment_format.c_str());
 	}
 
 	void print_client_define_done(const std::string& method,
@@ -438,13 +438,13 @@ public:
 
 	void print_server_main_begin()
 	{
-		fprintf(this->out_file, this->server_main_begin_format.c_str());
+		fprintf(this->out_file, "%s", this->server_main_begin_format.c_str());
 
 		if (this->is_thrift)
 			fprintf(this->out_file, this->server_main_ip_port_format.c_str(), "Thrift");
 		else
 		{
-			fprintf(this->out_file, this->main_PB_VERSION_format.c_str());
+			fprintf(this->out_file, "%s", this->main_pb_version_format.c_str());
 			fprintf(this->out_file, this->server_main_ip_port_format.c_str(), "SRPC");
 		}
 	}
@@ -461,10 +461,10 @@ public:
 
 	void print_server_main_end()
 	{
-		fprintf(this->out_file, this->server_main_end_format.c_str());
+		fprintf(this->out_file, "%s", this->server_main_end_format.c_str());
 		if (!this->is_thrift)
-			fprintf(this->out_file, this->main_PB_shutdown_format.c_str());
-		fprintf(this->out_file, this->main_end_return_format.c_str());
+			fprintf(this->out_file, "%s", this->main_pb_shutdown_format.c_str());
+		fprintf(this->out_file, "%s", this->main_end_return_format.c_str());
 	}
 
 	void print_server_class_thrift(const std::string& service, const std::vector<rpc_descriptor>& rpcs)
@@ -472,7 +472,7 @@ public:
 		std::string return_type;
 		std::string handler_params;
 		std::string send_params;
-		fprintf(this->out_file, this->server_class_constructor_format.c_str());
+		fprintf(this->out_file, "%s", this->server_class_constructor_format.c_str());
 
 		for (const auto& rpc : rpcs)
 		{
@@ -489,7 +489,7 @@ public:
 					rpc.method_name.c_str(), rpc.request_name.c_str(), rpc.response_name.c_str());
 		}
 
-		fprintf(this->out_file, this->server_class_end_format.c_str());
+		fprintf(this->out_file, "%s", this->server_class_end_format.c_str());
 	}
 
 	void print_server_methods_thrift(const std::string& service, const std::vector<rpc_descriptor>& rpcs)
@@ -517,7 +517,7 @@ public:
 	void print_server_class(const std::string& service,
 							const std::vector<rpc_descriptor>& rpcs)
 	{
-		fprintf(this->out_file, this->server_class_constructor_format.c_str());
+		fprintf(this->out_file, "%s", this->server_class_constructor_format.c_str());
 
 		for (const auto& rpc : rpcs)
 		{
@@ -529,7 +529,7 @@ public:
 					resp.c_str());
 		}
 
-		fprintf(this->out_file, this->server_class_end_format.c_str());
+		fprintf(this->out_file, "%s", this->server_class_end_format.c_str());
 	}
 
 	void print_server_methods(const std::string& service, const std::vector<rpc_descriptor>& rpcs)
@@ -573,7 +573,7 @@ public:
 						return_type.c_str(), rpc.method_name.c_str(), recv_params.c_str());
 			}
 
-			fprintf(this->out_file, this->client_class_get_last_thrift_format.c_str());
+			fprintf(this->out_file, "%s", this->client_class_get_last_thrift_format.c_str());
 
 			fprintf(this->out_file, "public:\n");
 		}
@@ -603,7 +603,7 @@ public:
 
 		if (this->is_thrift)
 		{
-			fprintf(this->out_file, client_class_private_get_thrift_format.c_str());
+			fprintf(this->out_file, "%s", client_class_private_get_thrift_format.c_str());
 			for (const auto& rpc : rpcs)
 			{
 				std::string resp = change_include_prefix(rpc.response_name);
@@ -810,10 +810,10 @@ public:
 
 	void print_client_main_begin()
 	{
-		fprintf(this->out_file, this->client_main_begin_format.c_str());
+		fprintf(this->out_file, "%s", this->client_main_begin_format.c_str());
 		if (!this->is_thrift)
-			fprintf(this->out_file, this->main_PB_VERSION_format.c_str());
-		fprintf(this->out_file, this->client_main_ip_port_format.c_str());
+			fprintf(this->out_file, "%s", this->main_pb_version_format.c_str());
+		fprintf(this->out_file, "%s", this->client_main_ip_port_format.c_str());
 	}
 
 	void print_client_main_service(const std::string& type,
@@ -870,10 +870,10 @@ public:
 
 	void print_client_main_end()
 	{
-		fprintf(this->out_file, this->client_main_end_format.c_str());
+		fprintf(this->out_file, "%s", this->client_main_end_format.c_str());
 		if (!this->is_thrift)
-			fprintf(this->out_file, this->main_PB_shutdown_format.c_str());
-		fprintf(this->out_file, this->main_end_return_format.c_str());
+			fprintf(this->out_file, "%s", this->main_pb_shutdown_format.c_str());
+		fprintf(this->out_file, "%s", this->main_end_return_format.c_str());
 	}
 
 	void print_end(const std::vector<std::string>& package)
@@ -1421,7 +1421,7 @@ static void %s_done(%s *response, srpc::RPCContext *context)
 }
 )";
 
-	std::string main_PB_VERSION_format = R"(
+	std::string main_pb_version_format = R"(
 	GOOGLE_PROTOBUF_VERIFY_VERSION;)";
 
 	std::string client_main_begin_format = R"(
@@ -1455,7 +1455,7 @@ int main()
 
 	std::string client_main_end_format = R"(
 	wait_group.wait();)";
-	std::string main_PB_shutdown_format = R"(
+	std::string main_pb_shutdown_format = R"(
 	google::protobuf::ShutdownProtobufLibrary();)";
 	std::string main_end_return_format = R"(
 	return 0;
