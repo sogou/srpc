@@ -282,6 +282,7 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 		rpc_list.push_back("SRPC");
 		rpc_list.push_back("SRPCHttp");
 		rpc_list.push_back("BRPC");
+		rpc_list.push_back("TRPC");
 	}
 
 	for (const auto& desc : cur_info.desc_list)
@@ -316,7 +317,8 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 
 		for (const auto& type : rpc_list)
 		{
-			this->printer.print_client_constructor(type, desc.block_name);
+			this->printer.print_client_constructor(type, desc.block_name,
+												   cur_info.package_name);
 			this->printer.print_client_methods(type, desc.block_name, desc.rpcs);
 			this->printer.print_client_create_task(type, desc.block_name, desc.rpcs);
 		}
