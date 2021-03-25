@@ -18,7 +18,7 @@
     * Protobuf
     * Thrift
   * 支持多种数据布局，使用上完全透明，包括：
-    * Protobuffer serialize
+    * Protobuf serialize
     * Thrift Binary serialize
     * json serialize
   * 支持多种压缩，使用上完全透明，包括：
@@ -36,7 +36,8 @@
     * 如果自己是server提供方，用任何语言的http server接受post请求，解析若干http header即可
     * 如果自己是client调用方，用任何语言的http client发送post请求，添加若干http header即可
   * 内置了可以与其他RPC框架的server/client无缝互通的client/server，包括：
-    * BPRC
+    * BRPC
+    * TRPC
     * ~~GRPC~~
     * Thrift Framed Binary
     * Thrift Http Binary
