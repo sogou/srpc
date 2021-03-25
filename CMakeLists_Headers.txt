@@ -7,6 +7,7 @@ set(INCLUDE_HEADERS
 	src/message/rpc_message_srpc.h
 	src/message/rpc_message_thrift.h
 	src/message/rpc_message_brpc.h
+	src/message/rpc_message_trpc.h
 	src/thrift/rpc_thrift_buffer.h
 	src/thrift/rpc_thrift_enum.h
 	src/thrift/rpc_thrift_idl.h

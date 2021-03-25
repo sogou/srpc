@@ -3,6 +3,10 @@
 [![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)
 
+[Wiki：SRPC架构介绍](https://github.com/sogou/srpc/wiki)
+
+
+
 ## Introduction
 #### 这是搜狗自研的RPC系统，主要功能和特点：
   * 这是一个基于[Sogou C++ Workflow](https://github.com/sogou/workflow)的项目，兼具：

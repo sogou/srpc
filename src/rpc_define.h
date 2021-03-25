@@ -48,6 +48,10 @@ using ThriftHttpServer = RPCServer<RPCTYPEThriftHttp>;
 using ThriftHttpClient = RPCClient<RPCTYPEThriftHttp>;
 using ThriftHttpClientTask = ThriftHttpClient::TASK;
 
+using TRPCServer = RPCServer<RPCTYPETRPC>;
+using TRPCClient = RPCClient<RPCTYPETRPC>;
+using TRPCClientTask = TRPCClient::TASK;
+
 } // namespace srpc
 
 #endif

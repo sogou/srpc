@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+enum TrpcMagic {
+  TRPC_DEFAULT_NONE = 0x00;
+  TRPC_MAGIC_VALUE = 0x930;
+}
+
+enum TrpcDataFrameType {
+  TRPC_UNARY_FRAME = 0x00;
+  TRPC_STREAM_FRAME = 0x01;
+}
+
+enum TrpcDataFrameState {
+  TRPC_NO_STATE = 0x00;
+  TRPC_STREAM_FINISH = 0x01;
+}
+
+enum TrpcProtoVersion {
+  TRPC_PROTO_V1  = 0;
+}
+
+enum TrpcCallType {
+  TRPC_UNARY_CALL = 0;
+  TRPC_ONEWAY_CALL = 1;
+  TRPC_CLIENT_STREAM_CALL = 2;
+  TRPC_SERVER_STREAM_CALL = 3;
+  TRPC_BIDI_STREAM_CALL = 4;
+}
+enum TrpcMessageType {
+  TRPC_DEFAULT = 0x00;
+  TRPC_DYEING_MESSAGE = 0x01;
+  TRPC_TRACE_MESSAGE = 0x02;
+  TRPC_MULTI_ENV_MESSAGE = 0x04;
+  TRPC_GRID_MESSAGE = 0x08;
+  TRPC_SETNAME_MESSAGE = 0x10;
+}
+
+enum TrpcContentEncodeType {
+  TRPC_PROTO_ENCODE = 0;
+  TRPC_JCE_ENCODE = 1;
+  TRPC_JSON_ENCODE = 2;
+  TRPC_FLATBUFFER_ENCODE = 3;
+  TRPC_NOOP_ENCODE = 4;
+}
+
+enum TrpcCompressType {
+  TRPC_DEFAULT_COMPRESS = 0;
+  TRPC_GZIP_COMPRESS = 1;
+  TRPC_SNAPPY_COMPRESS = 2;
+  // srpc framework support zlib and lz4
+  TRPC_ZLIB_COMPRESS = 3;
+  TRPC_LZ4_COMPRESS = 4;
+}
+
+enum TrpcRetCode {
+  TRPC_INVOKE_SUCCESS = 0;
+  TRPC_SERVER_DECODE_ERR = 1;
+  TRPC_SERVER_ENCODE_ERR = 2;
+
+  TRPC_SERVER_NOSERVICE_ERR = 11;
+  TRPC_SERVER_NOFUNC_ERR = 12;
+
+  TRPC_SERVER_TIMEOUT_ERR = 21;
+  TRPC_SERVER_OVERLOAD_ERR = 22;
+
+  TRPC_SERVER_SYSTEM_ERR = 31;
+
+  TRPC_SERVER_AUTH_ERR = 41;
+
+  TRPC_CLIENT_INVOKE_TIMEOUT_ERR = 101;
+
+  TRPC_CLIENT_CONNECT_ERR = 111;
+
+  TRPC_CLIENT_ENCODE_ERR = 121;
+  TRPC_CLIENT_DECODE_ERR = 122;
+
+  TRPC_CLIENT_ROUTER_ERR = 131;
+
+  TRPC_CLINET_NETWORK_ERR = 141;
+
+  TRPC_INVOKE_UNKNOWN_ERR = 999;
+}
+
+message RequestProtocol {
+  uint32    version                     = 1;
+  uint32    call_type                   = 2;
+  uint32    request_id                  = 3;
+  uint32    timeout                     = 4;
+  bytes     caller                      = 5;
+  bytes     callee                      = 6;
+  bytes     func                        = 7;
+  uint32    message_type                = 8;
+  map<string, bytes> trans_info         = 9;
+  uint32    content_type                = 10;
+  uint32    content_encoding            = 11;
+}
+
+message ResponseProtocol {
+  uint32    version                     = 1;
+  uint32    call_type                   = 2;
+  uint32    request_id                  = 3;
+  int32     ret                         = 4;
+  int32     func_ret                    = 5;
+  bytes    error_msg                    = 6;
+  uint32    message_type                = 7;
+  map<string, bytes> trans_info         = 8;
+  uint32    content_type                = 9;
+  uint32    content_encoding            = 10;
+}
