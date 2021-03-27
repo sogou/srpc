@@ -319,8 +319,10 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 		{
 			this->printer.print_client_constructor(type, desc.block_name,
 												   cur_info.package_name);
-			this->printer.print_client_methods(type, desc.block_name, desc.rpcs);
-			this->printer.print_client_create_task(type, desc.block_name, desc.rpcs);
+			this->printer.print_client_methods(type, desc.block_name, desc.rpcs,
+											   cur_info.package_name);
+			this->printer.print_client_create_task(type, desc.block_name,
+												   desc.rpcs, cur_info.package_name);
 		}
 
 		this->printer.print_service_namespace_end(desc.block_name);
