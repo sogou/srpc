@@ -29,11 +29,11 @@ TRPCMessage::TRPCMessage()
 	this->meta_buf = NULL;
 	this->meta_len = 0;
 	this->message_len = 0;
-	memset(this->header, 0, sizeof (this->header));
+	memset(this->header, 0, TRPC_HEADER_SIZE);
 	this->message = new RPCBuffer();
 }
 
-inline TRPCMessage::~TRPCMessage()
+TRPCMessage::~TRPCMessage()
 {
 	delete this->message;
 	delete []this->meta_buf;
