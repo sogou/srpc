@@ -146,7 +146,7 @@ inline void RPCClient<RPCTYPE>::__task_init(COMPLEXTASK *task) const
 	else
 	{
 		task->init(this->uri);
-		task->set_type(this->params.is_ssl ? TT_TCP_SSL : TT_TCP);
+		task->set_transport_type(this->params.is_ssl ? TT_TCP_SSL : TT_TCP);
 	}
 }
 
