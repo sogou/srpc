@@ -21,13 +21,14 @@
 #include <string>
 #include <workflow/WFServer.h>
 #include <workflow/URIParser.h>
-//#include "rpc_span_policies.h"
+#include "rpc_basic.h"
 
 namespace srpc {
 
 struct RPCTaskParams
 {
 	int send_timeout;
+	int receive_timeout;
 	int watch_timeout;
 	int keep_alive_timeout;
 	int retry_max;
@@ -60,17 +61,18 @@ struct RPCServerParams : public WFServerParams
 	{}
 };
 
-static constexpr RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
+static constexpr struct RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
 {
-/*	.send_timeout		=	*/	INT_MAX,
-/*	.watch_timeout		=	*/	INT_MAX,
-/*	.keep_alive_timeout	=	*/	INT_MAX,
-/*	.retry_max			=	*/	INT_MAX,
-/*	.compress_type		=	*/	INT_MAX,
-/*	.data_type			=	*/	INT_MAX
+/*	.send_timeout		=	*/	10 * 1000,
+/*	.receive_timeout	=	*/	10 * 1000,
+/*	.watch_timeout		=	*/	0,
+/*	.keep_alive_timeout	=	*/	30 * 1000,
+/*	.retry_max			=	*/	0,
+/*	.compress_type		=	*/	RPCCompressNone,
+/*	.data_type			=	*/	RPCDataUndefined
 };
 
-static const RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
+static const struct RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
 {
 /*	.task_params		=	*/	RPC_TASK_PARAMS_DEFAULT,
 /*	.host				=	*/	"",

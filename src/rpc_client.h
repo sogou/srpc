@@ -128,7 +128,7 @@ inline void RPCClient<RPCTYPE>::init(const RPCClientParams *params)
 {
 	this->params = *params;
 
-	if (this->params.task_params.data_type == INT_MAX)
+	if (this->params.task_params.data_type == RPCDataUndefined)
 		this->params.task_params.data_type = RPCTYPE::default_data_type;
 
 	this->has_addr_info = SRPCGlobal::get_instance()->task_init(this->params,

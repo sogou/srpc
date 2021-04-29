@@ -401,25 +401,13 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 		this->set_callback(std::bind(&RPCClientTask::rpc_callback,
 									 this, std::placeholders::_1));
 
-	if (params->send_timeout != INT_MAX)
-		this->set_send_timeout(params->send_timeout);
-
-	if (params->watch_timeout != INT_MAX)
-		watch_timeout_ = params->watch_timeout;
-	else
-		watch_timeout_ = 0;
-
-	if (params->keep_alive_timeout != INT_MAX)
-		this->set_keep_alive(params->keep_alive_timeout);
-
-	if (params->retry_max != INT_MAX)
-		this->set_retry_max(params->retry_max);
-
-	if (params->compress_type != INT_MAX)
-		this->req.set_compress_type(params->compress_type);
-
-	if (params->data_type != INT_MAX)
-		this->req.set_data_type(params->data_type);
+	this->set_send_timeout(params->send_timeout);
+	this->set_send_timeout(params->receive_timeout);
+	watch_timeout_ = params->watch_timeout;
+	this->set_keep_alive(params->keep_alive_timeout);
+	this->set_retry_max(params->retry_max);
+	this->req.set_compress_type(params->compress_type);
+	this->req.set_data_type(params->data_type);
 
 	this->req.set_service_name(service_name);
 	this->req.set_method_name(method_name);
