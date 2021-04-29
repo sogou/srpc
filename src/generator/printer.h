@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unordered_map>
-
 #include "descriptor.h"
 #include "thrift/rpc_thrift_enum.h"
 
@@ -944,9 +943,8 @@ private:
 	std::string srpc_include_format = R"(#pragma once
 #include <stdio.h>
 #include <string>
-
-#include "%s.%s.h"
 #include "srpc/rpc_define.h"
+#include "%s.%s.h"
 )";
 
 	std::string thrift_include_package_format = R"(
@@ -1168,7 +1166,7 @@ inline %sClient::%sClient(const struct srpc::RPCClientParams *params):
 )";
 
 	std::string client_constructor_methods_params_srpc_thrift_format = R"(
-	if (params->task_params.data_type == INT_MAX)
+	if (params->task_params.data_type == srpc::RPCDataUndefined)
 	{
 		temp_params = *temp;
 		temp_params.task_params.data_type = srpc::RPCDataThrift;
