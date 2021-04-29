@@ -406,8 +406,12 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 	watch_timeout_ = params->watch_timeout;
 	this->set_keep_alive(params->keep_alive_timeout);
 	this->set_retry_max(params->retry_max);
-	this->req.set_compress_type(params->compress_type);
-	this->req.set_data_type(params->data_type);
+
+	if (params->compress_type != RPCCompressNone)
+		this->req.set_compress_type(params->compress_type);
+
+	if (params->data_type != RPCDataUndefined)
+		this->req.set_data_type(params->data_type);
 
 	this->req.set_service_name(service_name);
 	this->req.set_method_name(method_name);
