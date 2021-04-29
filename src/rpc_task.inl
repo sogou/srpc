@@ -402,7 +402,7 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 									 this, std::placeholders::_1));
 
 	this->set_send_timeout(params->send_timeout);
-	this->set_send_timeout(params->receive_timeout);
+	this->set_receive_timeout(params->receive_timeout);
 	watch_timeout_ = params->watch_timeout;
 	this->set_keep_alive(params->keep_alive_timeout);
 	this->set_retry_max(params->retry_max);
