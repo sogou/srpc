@@ -40,9 +40,10 @@ using ProtobufIDLMessage = google::protobuf::Message;
 
 enum RPCDataType
 {
+	RPCDataUndefined	=	-1,
 	RPCDataProtobuf		=	0,
 	RPCDataThrift		=	1,
-	RPCDataJson			=	2
+	RPCDataJson			=	2,
 };
 
 enum RPCStatusCode

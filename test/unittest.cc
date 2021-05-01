@@ -94,20 +94,30 @@ void test_pb(SERVER& server)
 	req1.set_b(456);
 	client.Add(&req1, [&](AddResponse *response, RPCContext *ctx) {
 		EXPECT_EQ(ctx->success(), true);
-		EXPECT_EQ(response->c(), 123 + 456);
+		if (ctx->success())
+		{
+			EXPECT_EQ(response->c(), 123 + 456);
 
-		SubstrRequest req2;
+			SubstrRequest req2;
 
-		req2.set_str("hello world!");
-		req2.set_idx(6);
-		client.Substr(&req2, [&](SubstrResponse *response, RPCContext *ctx) {
-			EXPECT_EQ(ctx->success(), true);
-			EXPECT_TRUE(response->str() == "world!");
+			req2.set_str("hello world!");
+			req2.set_idx(6);
+			client.Substr(&req2, [&](SubstrResponse *response, RPCContext *ctx) {
+				EXPECT_EQ(ctx->success(), true);
+				EXPECT_TRUE(response->str() == "world!");
+				mutex.lock();
+				done = true;
+				mutex.unlock();
+				cond.notify_one();
+			});
+		}
+		else
+		{
 			mutex.lock();
 			done = true;
 			mutex.unlock();
 			cond.notify_one();
-		});
+		}
 	});
 
 	std::unique_lock<std::mutex> lock(mutex);
@@ -141,10 +151,10 @@ void test_thrift(SERVER& server)
 	TestThriftServiceImpl impl;
 
 	server.add_service(&impl);
-	EXPECT_TRUE(server.start("127.0.0.1", 9964) == 0) << "server start failed";
+	EXPECT_TRUE(server.start("127.0.0.1", 9965) == 0) << "server start failed";
 
 	client_params.host = "127.0.0.1";
-	client_params.port = 9964;
+	client_params.port = 9965;
 	CLIENT client(&client_params);
 
 	TestThrift::addRequest req1;
@@ -153,21 +163,31 @@ void test_thrift(SERVER& server)
 	req1.b = 456;
 	client.add(&req1, [&](TestThrift::addResponse *response, RPCContext *ctx) {
 		EXPECT_EQ(ctx->success(), true);
-		EXPECT_EQ(response->result, 123 + 456);
+		if (ctx->success())
+		{
+			EXPECT_EQ(response->result, 123 + 456);
 
-		TestThrift::substrRequest req2;
+			TestThrift::substrRequest req2;
 
-		req2.str = "hello world!";
-		req2.idx = 6;
-		req2.length = -1;
-		client.substr(&req2, [&](TestThrift::substrResponse *response, RPCContext *ctx) {
-			EXPECT_EQ(ctx->success(), true);
-			EXPECT_TRUE(response->result == "world!");
+			req2.str = "hello world!";
+			req2.idx = 6;
+			req2.length = -1;
+			client.substr(&req2, [&](TestThrift::substrResponse *response, RPCContext *ctx) {
+				EXPECT_EQ(ctx->success(), true);
+				EXPECT_TRUE(response->result == "world!");
+				mutex.lock();
+				done = true;
+				mutex.unlock();
+				cond.notify_one();
+			});
+		}
+		else
+		{
 			mutex.lock();
 			done = true;
 			mutex.unlock();
 			cond.notify_one();
-		});
+		}
 	});
 
 	std::unique_lock<std::mutex> lock(mutex);
