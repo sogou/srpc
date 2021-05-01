@@ -1,16 +1,17 @@
 ## 基础功能对比
-|RPC                        |IDL        |通信  | 网络数据      |压缩              |Attachement|  半同步  |  异步  |  Streaming |
-|---------------------------|-----------|------|------------|------------------|------------|---------|--------|------------|
-|Thrift Binary Framed       | Thrift    | tcp  | 二进制      |不支持              | 不支持   |  支持    | 不支持 |  不支持     |
-|Thrift Binary HttpTransport| Thrift    | http | 二进制      |不支持              | 不支持   |  支持    | 不支持 |  不支持     |
-|GRPC                       | PB        | http2| 二进制      |gzip/zlib/lz4/snappy| 支持     |  不支持   | 支持  |  支持       |
-|BRPC Std                   | PB        | tcp  | 二进制      |gzip/zlib/lz4/snappy| 支持     |  不支持   | 支持  |  支持       |
-|SogouRPC Std               | PB/Thrift | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持     |  支持    | 支持   |  不支持     |
-|SogouRPC Std Http          | PB/Thrift | http | 二进制/JSON |gzip/zlib/lz4/snappy| 支持     |  支持    | 支持   |  不支持     |
+|RPC                        |IDL        |通信  | 网络数据     |压缩                | Attachement |  半同步  |  异步  |  Streaming  |
+|---------------------------|-----------|------|------------|--------------------|------------|---------|--------|-------------|
+|Thrift Binary Framed       | Thrift    | tcp  | 二进制      |不支持               | 不支持      |  支持    | 不支持  |  不支持      |
+|Thrift Binary HttpTransport| Thrift    | http | 二进制      |不支持               | 不支持      |  支持    | 不支持  |  不支持      |
+|GRPC                       | PB        | http2| 二进制      |gzip/zlib/lz4/snappy| 支持        |  不支持  | 支持    |  支持       |
+|BRPC Std                   | PB        | tcp  | 二进制      |gzip/zlib/lz4/snappy| 支持        |  不支持  | 支持    |  支持       |
+|SogouRPC Std               | PB/Thrift | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
+|SogouRPC Std Http          | PB/Thrift | http | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
+|tRPC Std                   | PB        | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
 
 ## 基础概念
 - 通信层：TCP/TPC_SSL/HTTP/HTTPS/HTTP2
-- 协议层：Thrift-binary/BRPC-std/SogouRPC-std
+- 协议层：Thrift-binary/BRPC-std/SogouRPC-std/tRPC-std
 - 压缩层：不压缩/gzip/zlib/lz4/snappy
 - 数据层：PB binary/Thrift binary/Json string
 - IDL序列化层：PB/Thrift serialization
@@ -292,12 +293,13 @@ Server专用。设置连接保活时间，单位毫秒。-1代表无限。
 ### Task Params
 |name                       |默认                      |含义                             |
 |---------------------------|--------------------------|--------------------------------|
-|send_timeout               | NaN                      | 发送写超时，默认无限             |
-|watch_timeout              | NaN                      | 对方第一次回复的超时，默认0不设置 |
-|keep_alive_timeout         | NaN                      | 空闲连接保活，-1代表永远不断开，默认0短连接 |
-|retry_max                  | NaN                      | 最大重试次数，默认0不重试        |
-|compress_type              | NaN                      | 压缩类型，默认不压缩             |
-|data_type                  | NaN                      | 网络包数据类型，默认与RPC默认值一致，SRPC-Http协议为json，其余为对应IDL的类型 |
+|send_timeout               | -1                       | 发送写超时，默认无限             |
+|receive_timeout            | -1                       | 回复超时，默认无限             |
+|watch_timeout              | 0                        | 对方第一次回复的超时，默认0不设置 |
+|keep_alive_timeout         | 30 * 1000                | 空闲连接保活，-1代表永远不断开，默认30s |
+|retry_max                  | 0                        | 最大重试次数，默认0不重试        |
+|compress_type              | RPCCompressNone          | 压缩类型，默认不压缩             |
+|data_type                  | RPCDataUndefined         | 网络包数据类型，默认与RPC默认值一致，SRPC-Http协议为json，其余为对应IDL的类型 |
 
 ## 与workflow异步框架的结合
 ### Server
