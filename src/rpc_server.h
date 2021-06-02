@@ -50,7 +50,7 @@ public:
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 
-	void add_module(RPCModule *module);
+	void add_module(RPCModule<REQTYPE, RESPTYPE> *module);
 
 protected:
 	RPCServer(const struct RPCServerParams *params,
@@ -63,7 +63,7 @@ private:
 	void set_tracing(TASK *Task);
 
 	std::map<std::string, RPCService *> service_map;
-	std::list<RPCModule *> modules;
+	std::list<RPCModule<REQTYPE, RESPTYPE> *> modules;
 };
 
 ////////
@@ -104,7 +104,7 @@ inline int RPCServer<RPCTYPE>::add_service(RPCService* service)
 }
 
 template<class RPCTYPE>
-inline void RPCServer<RPCTYPE>::add_module(RPCModule *module)
+inline void RPCServer<RPCTYPE>::add_module(RPCModule<REQTYPE, RESPTYPE> *module)
 {
 	this->modules.push_back(module);
 }
