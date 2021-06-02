@@ -263,36 +263,45 @@ ClientRPCDoneImpl(int status_code,
 template<class RPCREQ, class RPCRESP>
 CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 {
-	int status_code = this->worker.server_serialize();
+	int status_code = this->resp.get_status_code();
 
 	if (status_code == RPCStatusOK)
 	{
-		status_code = this->resp.compress();
+		status_code = this->worker.server_serialize();
+
 		if (status_code == RPCStatusOK)
 		{
-			RPCSeries *series = static_cast<RPCSeries *>(series_of(this));
+			status_code = this->resp.compress();
+			if (status_code == RPCStatusOK)
+			{
+				RPCSeries *series = static_cast<RPCSeries *>(series_of(this));
 
-			const RPCModuleData *data = series->get_module_data();
+				const RPCModuleData *data = series->get_module_data();
 
-			if (data != NULL)
-				this->set_module_data(std::move(*data));
-			else
-				data = &global_empty_map;
+				if (data != NULL)
+					this->set_module_data(std::move(*data));
+				else
+					data = &global_empty_map;
 
-			for (auto *module : modules_)
-				module->server_end(this, *data);
+				for (auto *module : modules_)
+					module->server_end(this, *data);
 
-			this->resp.set_meta_module_data(*this->mutable_module_data());
-			series->clear_module_data();
+				this->resp.set_meta_module_data(*this->mutable_module_data());
+				series->clear_module_data();
 
-			if (this->resp.serialize_meta())
-				return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
+				if (this->resp.serialize_meta())
+					return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
 
-			status_code = RPCStatusMetaError;
+				status_code = RPCStatusMetaError;
+			}
 		}
 	}
 
 	this->resp.set_status_code(status_code);
+
+	if (this->resp.serialize_meta())
+		return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
+	
 	errno = EBADMSG;
 	return NULL;
 }
