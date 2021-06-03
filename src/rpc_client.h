@@ -31,6 +31,7 @@ class RPCClient
 {
 public:
 	using TASK = RPCClientTask<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
+	using MODULE = RPCModule<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
 
 protected:
 	using COMPLEXTASK = WFComplexClientTask<typename RPCTYPE::REQ,
@@ -47,7 +48,7 @@ public:
 
 	void set_keep_alive(int timeout);
 	void set_watch_timeout(int timeout);
-	void add_module(RPCModule *module);
+	void add_module(MODULE *module);
 
 protected:
 	template<class OUTPUT>
@@ -78,7 +79,7 @@ private:
 	struct sockaddr_storage ss;
 	socklen_t ss_len;
 	bool has_addr_info;
-	std::list<RPCModule *> modules;
+	std::list<MODULE *> modules;
 };
 
 ////////
@@ -118,7 +119,7 @@ inline void RPCClient<RPCTYPE>::set_watch_timeout(int timeout)
 }
 
 template<class RPCTYPE>
-inline void RPCClient<RPCTYPE>::add_module(RPCModule *module)
+inline void RPCClient<RPCTYPE>::add_module(MODULE *module)
 {
 	this->modules.push_back(module);
 }

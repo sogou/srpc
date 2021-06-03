@@ -28,6 +28,7 @@ using RPCModuleData = std::map<std::string, std::string>;
 
 static RPCModuleData global_empty_map;
 
+template<class REQ, class RESP>
 class RPCModule
 {
 public:

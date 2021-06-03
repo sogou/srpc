@@ -132,7 +132,7 @@ public:
 	RPCClientTask(const std::string& service_name,
 				  const std::string& method_name,
 				  const RPCTaskParams *params,
-				  std::list<RPCModule *>& modules,
+				  std::list<RPCModule<RPCREQ, RPCRESP> *>& modules,
 				  user_done_t&& user_done);
 
 	std::string get_remote_ip() const;
@@ -149,7 +149,7 @@ private:
 	int watch_timeout_;
 
 	RPCModuleData module_data_;
-	std::list<RPCModule *> modules_;
+	std::list<RPCModule<RPCREQ, RPCRESP> *> modules_;
 };
 
 template<class RPCREQ, class RPCRESP>
@@ -158,7 +158,7 @@ class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 public:
 	RPCServerTask(CommService *service,
 				  std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
-				  std::list<RPCModule *>& modules) :
+				  std::list<RPCModule<RPCREQ, RPCRESP> *>& modules) :
 		WFServerTask<RPCREQ, RPCRESP>(service, WFGlobal::get_scheduler(), process),
 		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp),
 		modules_(modules)
@@ -196,7 +196,7 @@ public:
 
 private:
 	RPCModuleData module_data_;
-	std::list<RPCModule *> modules_;
+	std::list<RPCModule<RPCREQ, RPCRESP> *> modules_;
 };
 
 template<class OUTPUT>
@@ -390,7 +390,7 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
 					const std::string& method_name,
 					const RPCTaskParams *params,
-					std::list<RPCModule *>& modules,
+					std::list<RPCModule<RPCREQ, RPCRESP> *>& modules,
 					user_done_t&& user_done):
 	WFComplexClientTask<RPCREQ, RPCRESP>(0, nullptr),
 	user_done_(std::move(user_done)),

@@ -43,7 +43,8 @@ const char *const SRPC_MODULE_ERROR				= "srpc_module_error";
 const char *const SRPC_MODULE_REMOTE_IP			= "srpc_module_remote_ip";
 
 template<class RPCTYPE>
-class RPCSpanModule : public RPCModule
+class RPCSpanModule : public RPCModule<typename RPCTYPE::REQ,
+									   typename RPCTYPE::RESP>
 {
 public:
 	using CLIENT_TASK = RPCClientTask<typename RPCTYPE::REQ,
