@@ -1,10 +1,12 @@
+[English version](README.md)
+
 # SRPC
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE)
 [![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)
-[![Build Status](https://travis-ci.org/sogou/srpc.svg?branch=master)](https://travis-ci.org/sogou/srpc)
+[![Build Status](https://travis-ci.com/sogou/srpc.svg?branch=master)](https://travis-ci.com/sogou/srpc)
 
-[Wiki：SRPC架构介绍](https://github.com/sogou/srpc/wiki)
+[Wiki：SRPC架构介绍](https://github.com/sogou/srpc/docs/wiki.md)
 
 
 
@@ -14,7 +16,7 @@
     * 高性能
     * 低开发和接入门槛
     * 完美兼容workflow的串并联任务流
-    * 对于已有pb/thrift描述文件的项目，可以做到一键迁移
+    * 对于已有protobuf/thrift描述文件的项目，可以做到一键迁移
   * 支持多种IDL格式，包括：
     * Protobuf
     * Thrift
@@ -61,6 +63,13 @@ cd srpc
 make
 sudo make install
 ~~~
+
+多种使用示例可以通过tutorial编译：
+
+~~~sh
+ cd tutorial
+ make
+ ~~~
 
 ## Quick Start
 #### 1. example.proto
@@ -165,6 +174,7 @@ int main()
 ~~~
 
 #### 5. make
+在Linux系统下的编译示例如下，其他平台建议到[tutorial](/tutorial)目录下使用完整的cmake文件协助解决编译依赖问题。
 ~~~sh
 g++ -o server server.cc example.pb.cc -std=c++11 -lsrpc
 g++ -o client client.cc example.pb.cc -std=c++11 -lsrpc
@@ -302,7 +312,7 @@ Outiler = 1%
 
 ![IMG](/docs/images/benchmark6.png)
 
-## Authors
-
-* **Li Yingxin** - *[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)* - *main author*
-
+## 与我们联系
+ * **Email** - **[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)** - 主要作者
+ * **Issue** - 使用中的任何问题都欢迎到[issues](https://github.com/sogou/srpc/issues)进行交流。
+ * **QQ** - 群号: ``618773193``
