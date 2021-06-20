@@ -1,3 +1,5 @@
+[中文版入口](README_cn.md)
+
 # SRPC
 
 [![Language](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE "License") [![Build Status](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/ "Platform") [![](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg) [![](https://travis-ci.com/sogou/srpc.svg?branch=master)](https://travis-ci.com/sogou/srpc)
@@ -61,7 +63,16 @@ make
 sudo make install
 ~~~
 
-You may also check and make tutorial codes with these commands:
+## Tutorial
+
+* [Step 1: Design IDL description file](/docs/en/tutorial-01-idl.md)
+* [Step 2: Implement ServiceIMPL](/docs/en/tutorial-02-service.md)
+* [Step 3: Start the Server](/docs/en/tutorial-03-server.md)
+* [Step 4: Use the Client](/docs/en/tutorial-04-client.md)
+* [Step 5: Understand asynchrous Context](/docs/en/tutorial-05-context.md)
+* [Step 6: Use it together with the Workflow](/docs/en/tutorial-06-workflow.md)
+
+Easy to compile tutorial with these commands:
 
 ~~~sh
 cd tutorial
@@ -177,7 +188,7 @@ int main()
 
 #### 5\. make
 
-These compile commands are only for Linux system. On other system, complete cmake in (tutorial)[/tutorial] is recommanded.
+These compile commands are only for Linux system. On other system, complete cmake in [tutorial](/tutorial) is recommanded.
 
 ~~~sh
 g++ -o server server.cc example.pb.cc -std=c++11 -lsrpc
@@ -224,15 +235,6 @@ Output of Terminal 2
 message: "Hi, workflow"
 {"message":"Hi, CURL"}
 ~~~
-
-## Tutorial
-
-* [Step 1: Design IDL description file](/docs/en/tutorial-01-idl.md)
-* [Step 2: Implement ServiceIMPL](/docs/en/tutorial-02-service.md)
-* [Step 3: Start the Server](docs/tutorial-03-server.md)
-* [Step 4: Use the Client](docs/tutorial-04-client.md)
-* [Step 5: Understand asynchrous Context](docs/tutorial-05-context.md)
-* [Step 6: Use it together with the Workflow](docs/tutorial-06-workflow.md)
 
 ## Benchmark
 
