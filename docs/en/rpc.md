@@ -1,4 +1,4 @@
-[中文版入口](/docs/rpc.md)
+[中文版](/docs/rpc.md)
 
 ## Comparison of basic features
 
@@ -446,3 +446,4 @@ int main()
     return 0;
 }
 ~~~
+

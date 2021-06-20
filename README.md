@@ -38,7 +38,7 @@
   * As a client, you can send POST requests with HTTP client developed in any language and add the required HTTP headers.
 * Built-in client/server which can seamlessly communicate with a server/client in other RPC frameworks, including:
   * BRPC
-  * TRPC
+  * TRPC (the only open-source implementation of TRPC protocol so far)
   * ~~GRPC~~
   * Thrift Framed Binary
   * Thrift Http Binary

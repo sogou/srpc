@@ -6,8 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)
 [![Build Status](https://travis-ci.com/sogou/srpc.svg?branch=master)](https://travis-ci.com/sogou/srpc)
 
-[Wiki：SRPC架构介绍](https://github.com/sogou/srpc/docs/wiki.md)
-
+[Wiki：SRPC架构介绍](/docs/wiki.md)
 
 
 ## Introduction
@@ -40,7 +39,7 @@
     * 如果自己是client调用方，用任何语言的http client发送post请求，添加若干http header即可
   * 内置了可以与其他RPC框架的server/client无缝互通的client/server，包括：
     * BRPC
-    * TRPC
+    * TRPC (目前唯一的TRPC协议开源实现)
     * ~~GRPC~~
     * Thrift Framed Binary
     * Thrift Http Binary
@@ -64,12 +63,21 @@ make
 sudo make install
 ~~~
 
-多种使用示例可以通过tutorial编译：
+## Tutorial
+
+* [第1步：设计IDL描述文件](docs/tutorial-01-idl.md)
+* [第2步：实现ServiceIMPL](docs/tutorial-02-service.md)
+* [第3步：启动Server](docs/tutorial-03-server.md)
+* [第4步：使用Client](docs/tutorial-04-client.md)
+* [第5步：了解异步Context](docs/tutorial-05-context.md)
+* [第6步：与workflow的结合使用](docs/tutorial-06-workflow.md)
+
+简单的命令即可编译示例：
 
 ~~~sh
  cd tutorial
  make
- ~~~
+~~~
 
 ## Quick Start
 #### 1. example.proto
@@ -213,15 +221,6 @@ message: "Hi, CURL"
 message: "Hi, workflow"
 {"message":"Hi, CURL"}
 ~~~
-
-## Tutorial
-
-* [第1步：设计IDL描述文件](docs/tutorial-01-idl.md)
-* [第2步：实现ServiceIMPL](docs/tutorial-02-service.md)
-* [第3步：启动Server](docs/tutorial-03-server.md)
-* [第4步：使用Client](docs/tutorial-04-client.md)
-* [第5步：了解异步Context](docs/tutorial-05-context.md)
-* [第6步：与workflow的结合使用](docs/tutorial-06-workflow.md)
 
 ## Benchmark
 

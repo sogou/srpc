@@ -1,14 +1,17 @@
-[English version](/docs/en/tutorial-06-workflow.md)
+[中文版](/docs/tutorial-06-workflow.md)
 
-## 与workflow异步框架的结合
+## Integrating with the asynchronous Workflow framework
+
 ### Server
-下面我们通过一个具体例子来呈现
-- Echo RPC在接收到请求时，向下游发起一次http请求
-- 对下游请求完成后，我们将http response的body信息填充到response的message里，回复给客户端
-- 我们不希望阻塞/占据着Handler的线程，所以对下游的请求一定是一次异步请求
-- 首先，我们通过Workflow框架的工厂``WFTaskFactory::create_http_task``创建一个异步任务http_task
-- 然后，我们利用RPCContext的``ctx->get_series()``获取到ServerTask所在的SeriesWork
-- 最后，我们使用SeriesWork的``push_back``接口将http_task放到SeriesWork的后面
+
+You can follow the detailed example below:
+
+- Echo RPC sends an HTTP request to the upstream modules when it receives the request.
+- After the request to the upstream modules is completed, the server populates the body of HTTP response into the message of the response and send a reply to the client.
+- We don't want to block/occupy the handler thread, so the request to the upstream must be asynchronous.
+- First, we can use `WFTaskFactory::create_http_task()` of the factory of Workflow to create an asynchronous http_task.
+- Then, we use `ctx->get_series()` of the RPCContext to get the SeriesWork of the current ServerTask.
+- Finally, we use the `push_back()` interface of the SeriesWork to append the http\_task to the SeriesWork.
 
 ~~~cpp
 class ExampleServiceImpl : public Example::Service
@@ -39,12 +42,14 @@ public:
 ~~~
 
 ### Client
-下面我们通过一个具体例子来呈现
-- 我们并行发出两个请求，1个是rpc请求，1个是http请求
-- 两个请求都结束后，我们再发起一次计算任务，计算两个数的平方和
-- 首先，我们通过RPC Client的``create_Echo_task``创建一个rpc异步请求的网络任务rpc_task
-- 然后，我们通过Workflow框架的工厂``WFTaskFactory::create_http_task``和``WFTaskFactory::create_go_task``分别创建异步网络任务http_task，和异步计算任务calc_task
-- 最后，我们利用串并联流程图，乘号代表并行、大于号代表串行，将3个异步任务组合起来执行start
+
+You can follow the detailed example below:
+
+- We send two requests in parallel. One is an RPC request and the other is an HTTP request.
+- After both requests are finished, we initiate a calculation task again to calculate the sum of the squares of the two numbers.
+- First, use `create_Echo_task()` of the RPC Client to create an rpc\_task, which is an asynchronous RPC network request.
+- Then, use `WFTaskFactory::create_http_task` and `WFTaskFactory::create_go_task` in the the factory of Workflow to create an asynchronous network task http\_task and an asynchronous computing task calc\_task respectively.
+- Finally, use the serial-parallel graph to organize three asynchronous tasks, in which the multiplication sign indicates parallel tasks and the greater than sign indicates serial tasks and then execute ``start()``.
 
 ~~~cpp
 void calc(int x, int y)
