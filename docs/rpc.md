@@ -1,3 +1,5 @@
+[English version](/docs/en/rpc.md)
+
 ## 基础功能对比
 |RPC                        |IDL        |通信  | 网络数据     |压缩                | Attachement |  半同步  |  异步  |  Streaming  |
 |---------------------------|-----------|------|------------|--------------------|------------|---------|--------|-------------|
@@ -85,7 +87,7 @@ service Example {
 ## RPC Service
 - 组成sogouRPC服务的基本单元
 - 每一个Service一定由某一种IDL生成
-- Service只与IDL有关，与网络通信具体协议无关
+- Service由IDL决定，与网络通信具体协议无关
 
 ### 示例
 下面我们通过一个具体例子来呈现
@@ -113,21 +115,22 @@ public:
 ## RPC Server
 - 每一个Server对应一个端口
 - 每一个Server对应一个确定的网络通信协议
-- 每一个Service可以添加到任意的Server里
-- 每一个Server可以拥有任意的Service，但在当前Server里ServiceName必须唯一
+- 一个Service可以添加到任意的Server里
+- 一个Server可以拥有任意多个Service，但在当前Server里ServiceName必须唯一
 - 不同IDL的Service是可以放进同一个Server中的
 
 ### 示例
 下面我们通过一个具体例子来呈现
 - 沿用上面的``ExampleServiceImpl``Service
-- 首先，我们创建1个RPC Server、需要确定协议
-- 然后，我们可以创建任意个数的Service实例、任意不同proto形成的Service，把这些Service通过``add_service()``接口添加到Server里
-- 最后，通过Server的``start``或者``serve``开启服务，处理即将到来的rpc请求
-- 想像一下，我们也可以从``Example::Service``派生更多的功能的rpc``Echo``不同实现的Service
-- 想像一下，我们可以在N个不同的端口创建N个不同的RPC Server、代表着不同的协议
-- 想像一下，我们可以把同一个ServiceIMPL实例``add_service``到不同的Server上，我们也可以把不同的ServiceIMPL实例``add_service``到同一个Server上
+- 首先，我们创建1个RPC Server，并确定proto文件的内容
+- 然后，我们可以创建任意个数的Service实例、任意不同IDL proto形成的Service，把这些Service通过``add_service()``接口添加到Server里
+- 最后，通过Server的``start()``或者``serve()``开启服务，处理即将到来的rpc请求
+
+- 想像一下，我们也可以从``Example::Service``派生出多个Service，而它们的rpc``Echo``实现的功能可以不同
+- 想像一下，我们可以在N个不同的端口创建N个不同的RPC Server，代表着不同的协议
+- 想像一下，我们可以把同一个ServiceIMPL实例``add_service()``到不同的Server上，我们也可以把不同的ServiceIMPL实例``add_service``到同一个Server上
 - 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BPRC-STD、SogouRPC-STD、SogouRPC-Http
-- 甚至，我们可以将1个PB的``ExampleServiceImpl``和1个Thrift的``AnotherThriftServiceImpl``，``add_service``到同一个SogouRPC-STD Server，两种IDL在同一个端口上完美工作！
+- 甚至，我们可以将1个Protobuf IDL相关的``ExampleServiceImpl``和1个Thrift IDL相关的``AnotherThriftServiceImpl``，``add_service``到同一个SogouRPC-STD Server，两种IDL在同一个端口上完美工作！
 
 ~~~cpp
 int main()
@@ -171,7 +174,7 @@ int main()
 - 沿用上面的例子，client相对简单，直接调用即可
 - 通过``Example::XXXClient``创建某种RPC的client实例，需要目标的ip+port或url
 - 利用client实例直接调用rpc函数``Echo``即可，这是一次异步请求，请求完成后会进入回调函数
-- 具体的RPC Context用法请看下一个段落
+- 具体的RPC Context用法请看下一个段落: [RPC Context](/docs/rpc.md#rpc-context))
 
 ~~~cpp
 #include <stdio.h>
@@ -203,7 +206,7 @@ int main()
 - RPCContext专门用来辅助异步接口，Service和Client通用
 - 每一个异步接口都会提供Context，用来给用户提供更高级的功能，比如获取对方ip、获取连接seqid等
 - Context上一些功能是Server或Client独有的，比如Server可以设置回复数据的压缩方式，Client可以获取请求成功或失败
-- Context上可以通过get_series获得所在的series，与workflow的异步模式无缝结合
+- Context上可以通过g``et_series()``获得所在的series，与workflow的异步模式无缝结合
 
 ### RPCContext API - Common
 #### ``long long get_seqid() const;``
@@ -238,7 +241,7 @@ client专用。这次请求的错误信息
 client专用。这次请求的错误码
 
 #### ``void *get_user_data() const;``
-client专用。获取ClientTask的user_data。如果用户通过create_xxx_task接口产生task，则可以通过user_data域记录上下文，在创建task时设置，在回调函数中拿回。
+client专用。获取ClientTask的user_data。如果用户通过``create_xxx_task()``接口产生task，则可以通过user_data域记录上下文，在创建task时设置，在回调函数中拿回。
 
 ### RPCContext API - Only for server process
 #### ``void set_data_type(RPCDataType type);``
@@ -345,7 +348,7 @@ public:
 - 两个请求都结束后，我们再发起一次计算任务，计算两个数的平方和
 - 首先，我们通过RPC Client的``create_Echo_task``创建一个rpc异步请求的网络任务rpc_task
 - 然后，我们通过Workflow框架的工厂``WFTaskFactory::create_http_task``和``WFTaskFactory::create_go_task``分别创建异步网络任务http_task，和异步计算任务calc_task
-- 最后，我们利用串并联流程图，乘号代表并行、大于号代表串行，将3个异步任务组合起来执行start
+- 最后，我们利用串并联流程图，乘号代表并行、大于号代表串行，将3个异步任务组合起来执行``start()``
 
 ~~~cpp
 void calc(int x, int y)
