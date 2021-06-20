@@ -8,11 +8,11 @@
 
 #### SRPC is an RPC system developed by Sogou. Its main features include:
 
-* It is based on [Sogou C++ Workflow](https://github.com/sogou/workflow), with the following features:
+* Base on [Sogou C++ Workflow](https://github.com/sogou/workflow), with the following features:
   * High performance
   * Low development and access cost
-  * Compatible with SeriesWork and ParallelWork in the Workflow
-  * One-button migration for existing projects in pb/thrift
+  * Compatible with SeriesWork and ParallelWork in Workflow
+  * One-click migration for existing projects with protobuf/thrift
 * Support several IDL formats, including:
   * Protobuf
   * Thrift
@@ -32,33 +32,40 @@
   * ssl
   * https
 * With HTTP+JSON, you can use any language:
-  * For a server provider, you can accept POST requests with the HTTP server developed in any language and parse the HTTP headers.
-  * For a client, you can send POST requests with the HTTP client developed in any language and add the required HTTP headers.
-* It also provides a built-in client/server which can seamlessly communicate with a server/client in other RPC frameworks, including:
+  * As a server, you can accept POST requests with HTTP server developed in any language and parse the HTTP headers.
+  * As a client, you can send POST requests with HTTP client developed in any language and add the required HTTP headers.
+* Built-in client/server which can seamlessly communicate with a server/client in other RPC frameworks, including:
   * BRPC
   * TRPC
   * ~~GRPC~~
   * Thrift Framed Binary
   * Thrift Http Binary
-* How to use it together with the Workflow:
+* How to use it together with Workflow:
   * You can use the interface to create an RPC task
-  * You can put the RPC task into the task workflow, and you can also get the current task workflow in the callback.
-  * You can also use the other features supported by the Workflow, including upstream, calculation scheduling, asynchronous file IO.
-* [More features and layers](docs/rpc.md)
+  * You can put the RPC task into SeriesWork or ParallelWork, and you can also get the current SeriesWork in the callback.
+  * You can also use other features supported by Workflow, including upstream, calculation scheduling, asynchronous file IO, etc.
+* [More features and layers](/docs/en/rpc.md)
 
 ## Installation
 
-* srpc is a static library libsrpc.a. You only need to add the libsrpc as a dependency in the development environment, and it is not required in the compiled binary release.
-* srpc depends on the Workflow and protobuf3.
+* srpc is a static library, libsrpc.a. You only need to add the libsrpc as a dependency in the development environment, and it is not required in the compiled binary release.
+* srpc depends on Workflow and protobuf3.
   * For protobuf, you must install protobuf v3.0.0 or above by yourself.
-  * For the Workflow, you can add the dependency via git submodule.
-  * For snappy and lz4, you can also use their source codes as the third\_party via git submodule.
+  * For Workflow, it\`s added as dependency automatically via git submodule.
+  * For snappy and lz4, source codes are also included as third\_party via git submodule.
 
 ~~~sh
 git clone --recursive https://github.com/sogou/srpc.git
 cd srpc
 make
 sudo make install
+~~~
+
+You may also check and make tutorial codes with these commands:
+
+~~~sh
+cd tutorial
+make
 ~~~
 
 ## Quick Start
@@ -170,6 +177,8 @@ int main()
 
 #### 5\. make
 
+These compile commands are only for Linux system. On other system, complete cmake in (tutorial)[/tutorial] is recommanded.
+
 ~~~sh
 g++ -o server server.cc example.pb.cc -std=c++11 -lsrpc
 g++ -o client client.cc example.pb.cc -std=c++11 -lsrpc
@@ -218,8 +227,8 @@ message: "Hi, workflow"
 
 ## Tutorial
 
-* [Step 1: Design IDL description file](docs/tutorial-01-idl.md)
-* [Step 2: Implement ServiceIMPL](docs/tutorial-02-service.md)
+* [Step 1: Design IDL description file](/docs/en/tutorial-01-idl.md)
+* [Step 2: Implement ServiceIMPL](/docs/en/tutorial-02-service.md)
 * [Step 3: Start the Server](docs/tutorial-03-server.md)
 * [Step 4: Use the Client](docs/tutorial-04-client.md)
 * [Step 5: Understand asynchrous Context](docs/tutorial-05-context.md)
@@ -320,6 +329,8 @@ Outiler = 1%
 
 ![IMG](/docs/images/benchmark6.png)
 
-## Authors
+## Contact
 
-* **Li Yingxin** - *[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)* - *main author*
+* **Email** - **[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)** - main author
+* **Issue** - You are very welcome to post questions to [issues](https://github.com/sogou/srpc/issues) list.
+* **QQ** - Group number: ``618773193``
