@@ -1,59 +1,60 @@
+[中文版入口](README_cn.md)
+
 # SRPC
-[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE)
-[![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
-[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)
-[![Build Status](https://travis-ci.org/sogou/srpc.svg?branch=master)](https://travis-ci.org/sogou/srpc)
 
-[Wiki：SRPC架构介绍](https://github.com/sogou/srpc/wiki)
+[![Language](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE "License") [![Build Status](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/ "Platform") [![](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg) [![](https://travis-ci.com/sogou/srpc.svg?branch=master)](https://travis-ci.com/sogou/srpc)
 
-
+[Wiki: SRPC Architecture](https://github.com/sogou/srpc/wiki)
 
 ## Introduction
-#### 这是搜狗自研的RPC系统，主要功能和特点：
-  * 这是一个基于[Sogou C++ Workflow](https://github.com/sogou/workflow)的项目，兼具：
-    * 高性能
-    * 低开发和接入门槛
-    * 完美兼容workflow的串并联任务流
-    * 对于已有pb/thrift描述文件的项目，可以做到一键迁移
-  * 支持多种IDL格式，包括：
-    * Protobuf
-    * Thrift
-  * 支持多种数据布局，使用上完全透明，包括：
-    * Protobuf serialize
-    * Thrift Binary serialize
-    * json serialize
-  * 支持多种压缩，使用上完全透明，包括：
-    * gzip
-    * zlib
-    * snappy
-    * lz4
-  * 支持多种通信协议，使用上完全透明，包括：
-    * tcp
-    * http
-	* sctp
-	* ssl
-	* https
-  * 用户可以通过http+json实现跨语言：
-    * 如果自己是server提供方，用任何语言的http server接受post请求，解析若干http header即可
-    * 如果自己是client调用方，用任何语言的http client发送post请求，添加若干http header即可
-  * 内置了可以与其他RPC框架的server/client无缝互通的client/server，包括：
-    * BRPC
-    * TRPC
-    * ~~GRPC~~
-    * Thrift Framed Binary
-    * Thrift Http Binary
-  * 兼容workflow的使用方式：
-    * 提供创建任务的接口来创建一个rpc任务
-    * 可以把rpc任务放到任务流图中，回调函数里也可以拿到当前的任务流
-    * workflow所支持的其他功能，包括upstream、计算调度、异步文件IO等
-  * [更多功能和层次介绍](docs/rpc.md)
+
+#### SRPC is an RPC system developed by Sogou. Its main features include:
+
+* Base on [Sogou C++ Workflow](https://github.com/sogou/workflow), with the following features:
+  * High performance
+  * Low development and access cost
+  * Compatible with SeriesWork and ParallelWork in Workflow
+  * One-click migration for existing projects with protobuf/thrift
+* Support several IDL formats, including:
+  * Protobuf
+  * Thrift
+* Support several data formats, including:
+  * Protobuf serialize
+  * Thrift Binary serialize
+  * JSON serialize
+* Support several compression formats transparently, including:
+  * gzip
+  * zlib
+  * snappy
+  * lz4
+* Support several communication protocols transparently, including:
+  * tcp
+  * http
+  * sctp
+  * ssl
+  * https
+* With HTTP+JSON, you can use any language:
+  * As a server, you can accept POST requests with HTTP server developed in any language and parse the HTTP headers.
+  * As a client, you can send POST requests with HTTP client developed in any language and add the required HTTP headers.
+* Built-in client/server which can seamlessly communicate with a server/client in other RPC frameworks, including:
+  * BRPC
+  * TRPC (the only open-source implementation of TRPC protocol so far)
+  * ~~GRPC~~
+  * Thrift Framed Binary
+  * Thrift Http Binary
+* How to use it together with Workflow:
+  * You can use the interface to create an RPC task
+  * You can put the RPC task into SeriesWork or ParallelWork, and you can also get the current SeriesWork in the callback.
+  * You can also use other features supported by Workflow, including upstream, calculation scheduling, asynchronous file IO, etc.
+* [More features and layers](/docs/en/rpc.md)
 
 ## Installation
-  * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
-  * srpc依赖workflow和protobuf3
-  	* protobuf需要用户自行安装v3.0.0以上的版本
-    * workflow可以通过git的submodule形式进行依赖
-	* 压缩库snappy和lz4也以submodule的形式在third_party/中作源码依赖
+
+* srpc is a static library, libsrpc.a. You only need to add the libsrpc as a dependency in the development environment, and it is not required in the compiled binary release.
+* srpc depends on Workflow and protobuf3.
+  * For protobuf, you must install protobuf v3.0.0 or above by yourself.
+  * For Workflow, it\`s added as dependency automatically via git submodule.
+  * For snappy and lz4, source codes are also included as third\_party via git submodule.
 
 ~~~sh
 git clone --recursive https://github.com/sogou/srpc.git
@@ -62,10 +63,28 @@ make
 sudo make install
 ~~~
 
+## Tutorial
+
+* [Step 1: Design IDL description file](/docs/en/tutorial-01-idl.md)
+* [Step 2: Implement ServiceIMPL](/docs/en/tutorial-02-service.md)
+* [Step 3: Start the Server](/docs/en/tutorial-03-server.md)
+* [Step 4: Use the Client](/docs/en/tutorial-04-client.md)
+* [Step 5: Understand asynchrous Context](/docs/en/tutorial-05-context.md)
+* [Step 6: Use it together with the Workflow](/docs/en/tutorial-06-workflow.md)
+
+Easy to compile tutorial with these commands:
+
+~~~sh
+cd tutorial
+make
+~~~
+
 ## Quick Start
-#### 1. example.proto
+
+#### 1\. example.proto
+
 ~~~proto
-syntax = "proto2";//这里proto2和proto3都可以，srpc都支持
+syntax = "proto2";// You can use either proto2 or proto3. Both are supported by srpc
 
 message EchoRequest {
     optional string message = 1;
@@ -81,13 +100,15 @@ service Example {
 };
 ~~~
 
-#### 2. generate code
+#### 2\. generate code
+
 ~~~sh
 protoc example.proto --cpp_out=./ --proto_path=./
 srpc_generator protobuf ./example.proto ./
 ~~~
 
-#### 3. server.cc
+#### 3\. server.cc
+
 ~~~cpp
 #include <stdio.h>
 #include <signal.h>
@@ -137,7 +158,8 @@ int main()
 }
 ~~~
 
-#### 4. client.cc
+#### 4\. client.cc
+
 ~~~cpp
 #include <stdio.h>
 #include "example.srpc.h"
@@ -164,24 +186,32 @@ int main()
 }
 ~~~
 
-#### 5. make
+#### 5\. make
+
+These compile commands are only for Linux system. On other system, complete cmake in [tutorial](/tutorial) is recommanded.
+
 ~~~sh
 g++ -o server server.cc example.pb.cc -std=c++11 -lsrpc
 g++ -o client client.cc example.pb.cc -std=c++11 -lsrpc
 ~~~
 
-#### 6. run
-终端1
+#### 6\. run
+
+Terminal 1
+
 ~~~sh
 ./server
 ~~~
-终端2
+
+Terminal 2
+
 ~~~sh
 ./client
 curl 127.0.0.1:8811/Example/Echo -H 'Content-Type: application/json' -d '{message:"from curl",name:"CURL"}'
 ~~~
 
-终端1输出
+Output of Terminal 1
+
 ~~~sh
 get_req:
 message: "Hello, srpc!"
@@ -198,29 +228,23 @@ set_resp:
 message: "Hi, CURL"
 
 ~~~
-终端2输出
+
+Output of Terminal 2
+
 ~~~sh
 message: "Hi, workflow"
 {"message":"Hi, CURL"}
 ~~~
-
-## Tutorial
-
-* [第1步：设计IDL描述文件](docs/tutorial-01-idl.md)
-* [第2步：实现ServiceIMPL](docs/tutorial-02-service.md)
-* [第3步：启动Server](docs/tutorial-03-server.md)
-* [第4步：使用Client](docs/tutorial-04-client.md)
-* [第5步：了解异步Context](docs/tutorial-05-context.md)
-* [第6步：与workflow的结合使用](docs/tutorial-06-workflow.md)
 
 ## Benchmark
 
 * CPU 2-chip/8-core/32-processor Intel(R) Xeon(R) CPU E5-2630 v3 @2.40GHz
 * Memory all 128G
 * 10 Gigabit Ethernet
-* BAIDU brpc-client使用连接池pooled模式
+* BAIDU brpc-client in pooled (connection pool) mode
 
-#### 跨机单client→单server在不同并发的QPS
+#### QPS at cross-machine single client→ single server under different concurrency
+
 ~~~
 Client = 1
 ClientThread = 64, 128, 256, 512, 1024
@@ -233,7 +257,8 @@ ServerHandlerThread = 16
 
 ![IMG](/docs/images/benchmark2.png)
 
-#### 跨机多client→单server在不同client进程数的QPS
+#### QPS at cross-machine multi-client→ single server under different client processes
+
 ~~~
 Client = 1, 2, 4, 8, 16
 ClientThread = 32
@@ -246,7 +271,8 @@ ServerHandlerThread = 16
 
 ![IMG](/docs/images/benchmark4.png)
 
-#### 同机单client→单server在不同并发下的QPS
+#### QPS at same-machine single client→ single server under different concurrency
+
 ~~~
 Client = 1
 ClientThread = 1, 2, 4, 8, 16, 32, 64, 128, 256
@@ -259,7 +285,8 @@ ServerHandlerThread = 16
 
 ![IMG](/docs/images/benchmark3.png)
 
-#### 同机单client→单server在不同请求大小下的QPS
+#### QPS at same-machine single client→ single server under different request sizes
+
 ~~~
 Client = 1
 ClientThread = 100
@@ -272,7 +299,8 @@ ServerHandlerThread = 16
 
 ![IMG](/docs/images/benchmark1.png)
 
-#### 同机单client→单server在固定QPS下的延时CDF
+#### Latency CDF for fixed QPS at same-machine single client→ single server 
+
 ~~~
 Client = 1
 ClientThread = 50
@@ -287,7 +315,8 @@ Outiler = 1%
 
 ![IMG](/docs/images/benchmark5.png)
 
-#### 跨机多client→单server在固定QPS下的延时CDF
+#### Latency CDF for fixed QPS at cross-machine multi-client→ single server 
+
 ~~~
 Client = 32
 ClientThread = 16
@@ -302,7 +331,8 @@ Outiler = 1%
 
 ![IMG](/docs/images/benchmark6.png)
 
-## Authors
+## Contact
 
-* **Li Yingxin** - *[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)* - *main author*
-
+* **Email** - **[liyingxin@sogou-inc.com](mailto:liyingxin@sogou-inc.com)** - main author
+* **Issue** - You are very welcome to post questions to [issues](https://github.com/sogou/srpc/issues) list.
+* **QQ** - Group number: ``618773193``
