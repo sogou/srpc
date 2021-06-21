@@ -150,7 +150,7 @@ int main()
 
     server_tcp.start(1412);
     server_http.start(8811);
-    pause();
+    getchar(); // press "Enter" to end.
     server_http.stop();
     server_tcp.stop();
 
@@ -181,7 +181,7 @@ int main()
                     ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
     });
 
-    pause();
+    getchar(); // press "Enter" to end.
     return 0;
 }
 ~~~
