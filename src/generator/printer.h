@@ -686,7 +686,7 @@ public:
 
 		if (type == "TRPC")
 			full_service = make_trpc_service_prefix(package, service);
-		else if (type == "SRPC")
+		else if (type == "SRPC" || type == "BRPC")
 			full_service = make_srpc_service_prefix(package, service, '.');
 		else if (type == "SRPCHttp")
 			full_service = make_srpc_service_prefix(package, service, '/');
