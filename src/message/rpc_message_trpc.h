@@ -94,7 +94,6 @@ public:
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
-	bool trim_service_prefix();
 	bool trim_method_prefix();
 };
 

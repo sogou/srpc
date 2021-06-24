@@ -612,11 +612,6 @@ bool TRPCRequest::get_meta_module_data(RPCModuleData& data) const
 	return true;
 }
 
-bool TRPCRequest::trim_service_prefix()
-{
-	return true;
-}
-
 bool TRPCRequest::trim_method_prefix()
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
