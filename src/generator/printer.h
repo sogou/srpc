@@ -72,6 +72,21 @@ static inline std::string make_package_prefix(const std::vector<std::string>& pa
 	return "::" + package_str + "::" + param;
 }
 
+static inline std::string make_srpc_service_prefix(const std::vector<std::string>& package,
+												   const std::string& service, char sp)
+{
+	std::string name;
+
+	for (const std::string& p : package)
+	{
+		name.append(p);
+		name.push_back(sp);
+	}
+	name.append(service);
+
+	return name;
+}
+
 static inline std::string make_trpc_service_prefix(const std::vector<std::string>& package,
 												   const std::string& service)
 {
@@ -671,6 +686,10 @@ public:
 
 		if (type == "TRPC")
 			full_service = make_trpc_service_prefix(package, service);
+		else if (type == "SRPC")
+			full_service = make_srpc_service_prefix(package, service, '.');
+		else if (type == "SRPCHttp")
+			full_service = make_srpc_service_prefix(package, service, '/');
 
 		fprintf(this->out_file, this->client_constructor_methods_format.c_str(),
 				type.c_str(), type.c_str(),

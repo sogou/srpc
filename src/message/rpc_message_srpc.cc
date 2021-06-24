@@ -767,39 +767,26 @@ bool SogouHttpRequest::deserialize_meta()
 
 	const char *uri = get_request_uri();
 
-	if (uri[0] == '/')
+	if (uri && uri[0] == '/')
 	{
-		int pos1, pos2;
+		std::string str = uri + 1;
+		auto pos = str.find_first_of("?#");
 
-		pos1 = pos2 = 0;
-		int i = 1;
+		if (pos != std::string::npos)
+			str.erase(pos);
 
-		while (uri[i])
+		if (!str.empty() && str.back() == '/')
+			str.pop_back();
+
+		for (char& c : str)
+			if (c == '/')
+				c = '.';
+
+		pos = str.find_last_of('.');
+		if (pos != std::string::npos)
 		{
-			if (pos1 == 0)
-			{
-				if (uri[i] == '/')
-					pos1 = i;
-			}
-			else if (uri[i] == '/' || uri[i] == '?' || uri[i] == '#')
-			{
-				pos2 = i;
-				break;
-			}
-
-			i++;
-		}
-
-		if (pos1)
-		{
-			if (!uri[i])
-				pos2 = i;
-
-			if (pos2)
-			{
-				meta->mutable_request()->set_service_name(uri + 1, pos1 - 1);
-				meta->mutable_request()->set_method_name(uri + pos1 + 1, pos2 - pos1 - 1);
-			}
+			meta->mutable_request()->set_service_name(str.substr(0, pos));
+			meta->mutable_request()->set_method_name(str.substr(pos + 1));
 		}
 	}
 
