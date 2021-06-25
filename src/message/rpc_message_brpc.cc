@@ -54,15 +54,6 @@ bool BRPCRequest::deserialize_meta()
 			this->message->cut(this->message_len, this->attachment);
 		}
 
-		if (meta->has_request())
-		{
-			BrpcRequestMeta *meta_req = meta->mutable_request();
-			std::string::size_type pos = meta_req->service_name().find(".");
-
-			if (pos != std::string::npos)
-				meta_req->set_service_name(meta_req->service_name().c_str() + pos + 1);
-		}
-
 		return true;
 	}
 
