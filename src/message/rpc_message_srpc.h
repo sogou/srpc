@@ -70,6 +70,11 @@ public:
 	int compress() override;
 	int decompress() override;
 
+public:
+	RPCBuffer *get_buffer() const { return this->buf; }
+	size_t get_message_len() const { return this->message_len; }
+	void set_message_len(size_t len) { this->message_len = len; }
+
 protected:
 	void init_meta();
 
