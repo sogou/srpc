@@ -674,6 +674,120 @@ int SRPCMessage::decompress()
 	return status_code;
 }
 
+static bool __deserialize_meta_http(const char *request_uri,
+									protocol::HttpMessage *http_msg,
+									SRPCMessage *srpc_msg,
+									ProtobufIDLMessage *pb_msg)
+{
+	RPCMeta *meta = static_cast<RPCMeta *>(pb_msg);
+	protocol::HttpHeaderCursor header_cursor(http_msg);
+	std::string key, value;
+
+	while (header_cursor.next(key, value))
+	{
+		const auto it = SogouHttpHeadersCode.find(key);
+
+		if (it != SogouHttpHeadersCode.cend())
+		{
+			switch (it->second)
+			{
+			case 1:
+				for (size_t i = 0; i < RPCRPCCompressTypeString.size(); i++)
+				{
+					if (strcasecmp(RPCRPCCompressTypeString[i].c_str(),
+								   value.c_str()) == 0)
+					{
+						meta->set_compress_type(i);
+						break;
+					}
+				}
+
+				break;
+			case 2:
+				meta->set_origin_size(atoi(value.c_str()));
+				break;
+			case 4:
+				for (size_t i = 0; i < RPCDataTypeString.size(); i++)
+				{
+					if (strcasecmp(RPCDataTypeString[i].c_str(),
+								   value.c_str()) == 0)
+					{
+						meta->set_data_type(i);
+						break;
+					}
+				}
+
+				break;
+			default:
+				continue;
+			}
+		}
+	}
+
+	if (request_uri && request_uri[0] == '/')
+	{
+		std::string str = request_uri + 1;
+		auto pos = str.find_first_of("?#");
+
+		if (pos != std::string::npos)
+			str.erase(pos);
+
+		if (!str.empty() && str.back() == '/')
+			str.pop_back();
+
+		for (char& c : str)
+		{
+			if (c == '/')
+				c = '.';
+		}
+
+		pos = str.find_last_of('.');
+		if (pos != std::string::npos)
+		{
+			meta->mutable_request()->set_service_name(str.substr(0, pos));
+			meta->mutable_request()->set_method_name(str.substr(pos + 1));
+		}
+	}
+
+	const void *ptr;
+	size_t len;
+
+	http_msg->get_parsed_body(&ptr, &len);
+	if (len > 0x7FFFFFFF)
+		return false;
+
+	protocol::HttpChunkCursor chunk_cursor(http_msg);
+	RPCBuffer *buf = srpc_msg->get_buffer();
+	size_t msg_len = 0;
+
+	while (chunk_cursor.next(&ptr, &len))
+	{
+		buf->append((const char *)ptr, len, BUFFER_MODE_NOCOPY);
+		msg_len += len;
+	}
+
+	srpc_msg->set_message_len(msg_len);
+
+	if (!meta->has_data_type())
+		meta->set_data_type(RPCDataJson);
+
+	if (!meta->has_compress_type())
+		meta->set_compress_type(RPCCompressNone);
+
+	if (meta->compress_type() == RPCCompressNone)
+	{
+		if (msg_len == 0 && meta->data_type() == RPCDataJson)
+		{
+			buf->append("{}", 2, BUFFER_MODE_NOCOPY);
+			srpc_msg->set_message_len(msg_len);
+		}
+	}
+	else
+		meta->set_compressed_size(msg_len);
+
+	return true;
+}
+
 bool SogouHttpRequest::serialize_meta()
 {
 	if (this->buf->size() > 0x7FFFFFFF)
@@ -720,104 +834,8 @@ bool SogouHttpRequest::serialize_meta()
 
 bool SogouHttpRequest::deserialize_meta()
 {
-	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
-	protocol::HttpHeaderCursor cursor(this);
-	std::string key, value;
-
-	while (cursor.next(key, value))
-	{
-		const auto it = SogouHttpHeadersCode.find(key);
-
-		if (it != SogouHttpHeadersCode.cend())
-		{
-			switch (it->second)
-			{
-			case 1:
-				for (size_t i = 0; i < RPCRPCCompressTypeString.size(); i++)
-				{
-					if (strcasecmp(RPCRPCCompressTypeString[i].c_str(),
-								   value.c_str()) == 0)
-					{
-						meta->set_compress_type(i);
-						break;
-					}
-				}
-
-				break;
-			case 2:
-				meta->set_origin_size(atoi(value.c_str()));
-				break;
-			case 4:
-				for (size_t i = 0; i < RPCDataTypeString.size(); i++)
-				{
-					if (strcasecmp(RPCDataTypeString[i].c_str(),
-								   value.c_str()) == 0)
-					{
-						meta->set_data_type(i);
-						break;
-					}
-				}
-
-				break;
-			default:
-				continue;
-			}
-		}
-	}
-
-	const char *uri = get_request_uri();
-
-	if (uri && uri[0] == '/')
-	{
-		std::string str = uri + 1;
-		auto pos = str.find_first_of("?#");
-
-		if (pos != std::string::npos)
-			str.erase(pos);
-
-		if (!str.empty() && str.back() == '/')
-			str.pop_back();
-
-		for (char& c : str)
-			if (c == '/')
-				c = '.';
-
-		pos = str.find_last_of('.');
-		if (pos != std::string::npos)
-		{
-			meta->mutable_request()->set_service_name(str.substr(0, pos));
-			meta->mutable_request()->set_method_name(str.substr(pos + 1));
-		}
-	}
-
-	const void *body;
-	size_t body_len;
-
-	get_parsed_body(&body, &body_len);
-	if (body_len > 0x7FFFFFFF)
-		return false;
-
-	this->SRPCRequest::buf->append((const char *)body, body_len, BUFFER_MODE_NOCOPY);
-	this->SRPCRequest::message_len = body_len;
-
-	if (!meta->has_data_type())
-		meta->set_data_type(RPCDataJson);
-
-	if (!meta->has_compress_type())
-		meta->set_compress_type(RPCCompressNone);
-
-	if (meta->compress_type() == RPCCompressNone)
-	{
-		if (body_len == 0 && meta->data_type() == RPCDataJson)
-		{
-			this->SRPCRequest::buf->append("{}", 2, BUFFER_MODE_NOCOPY);
-			this->SRPCRequest::message_len = 2;
-		}
-	}
-	else
-		meta->set_compressed_size(body_len);
-
-	return true;
+	const char *request_uri = this->get_request_uri();
+	return __deserialize_meta_http(request_uri, this, this, this->meta);
 }
 
 bool SogouHttpResponse::serialize_meta()
@@ -890,84 +908,7 @@ bool SogouHttpResponse::serialize_meta()
 
 bool SogouHttpResponse::deserialize_meta()
 {
-	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
-	protocol::HttpHeaderCursor cursor(this);
-	std::string key, value;
-
-	while (cursor.next(key, value))
-	{
-		const auto it = SogouHttpHeadersCode.find(key);
-
-		if (it != SogouHttpHeadersCode.cend())
-		{
-			switch (it->second)
-			{
-			case 1:
-				for (size_t i = 0; i < RPCRPCCompressTypeString.size(); i++)
-				{
-					if (strcasecmp(RPCRPCCompressTypeString[i].c_str(),
-								   value.c_str()) == 0)
-					{
-						meta->set_compress_type(i);
-						break;
-					}
-				}
-
-				break;
-			case 2:
-				meta->set_origin_size(atoi(value.c_str()));
-				break;
-			case 4:
-				for (size_t i = 0; i < RPCDataTypeString.size(); i++)
-				{
-					if (strcasecmp(RPCDataTypeString[i].c_str(), value.c_str()) == 0)
-					{
-						meta->set_data_type(i);
-						break;
-					}
-				}
-
-				break;
-			case 5:
-				meta->mutable_response()->set_status_code(atoi(value.c_str()));
-				break;
-			case 6:
-				meta->mutable_response()->set_error(atoi(value.c_str()));
-				break;
-			default:
-				continue;
-			}
-		}
-	}
-
-	const void *body;
-	size_t body_len;
-
-	get_parsed_body(&body, &body_len);
-	if (body_len > 0x7FFFFFFF)
-		return false;
-
-	this->SRPCResponse::buf->append((const char *)body, body_len, BUFFER_MODE_NOCOPY);
-	this->SRPCResponse::message_len = body_len;
-
-	if (!meta->has_data_type())
-		meta->set_data_type(RPCDataJson);
-
-	if (!meta->has_compress_type())
-		meta->set_compress_type(RPCCompressNone);
-
-	if (meta->compress_type() == RPCCompressNone)
-	{
-		if (body_len == 0 && meta->data_type() == RPCDataJson)
-		{
-			this->SRPCResponse::buf->append("{}", 2, BUFFER_MODE_NOCOPY);
-			this->SRPCResponse::message_len = 2;
-		}
-	}
-	else
-		meta->set_compressed_size(body_len);
-
-	return true;
+	return __deserialize_meta_http(NULL, this, this, this->meta);
 }
 
 bool SogouHttpRequest::set_meta_module_data(const RPCModuleData& data)
