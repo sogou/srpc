@@ -779,7 +779,7 @@ static bool __deserialize_meta_http(const char *request_uri,
 		if (msg_len == 0 && meta->data_type() == RPCDataJson)
 		{
 			buf->append("{}", 2, BUFFER_MODE_NOCOPY);
-			srpc_msg->set_message_len(msg_len);
+			srpc_msg->set_message_len(2);
 		}
 	}
 	else
