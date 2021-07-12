@@ -114,7 +114,6 @@ struct RPCTYPETRPC
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
 	{
-		const_cast<REQ *>(req)->trim_service_prefix();
 		const_cast<REQ *>(req)->trim_method_prefix();
 		resp->set_request_id(req->get_request_id());
 	}

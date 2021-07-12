@@ -103,6 +103,44 @@ inline int RPCServer<RPCTYPE>::add_service(RPCService* service)
 	return 0;
 }
 
+template<>
+inline int RPCServer<RPCTYPESRPC>::add_service(RPCService* service)
+{
+	const std::string &name = service->get_name();
+	const auto it = this->service_map.emplace(name, service);
+
+	if (!it.second)
+	{
+		errno = EEXIST;
+		return -1;
+	}
+
+	auto pos = name.find_last_of('.');
+	if (pos != std::string::npos)
+		this->service_map.emplace(name.substr(pos + 1), service);
+
+	return 0;
+}
+
+template<>
+inline int RPCServer<RPCTYPESRPCHttp>::add_service(RPCService* service)
+{
+	const std::string &name = service->get_name();
+	const auto it = this->service_map.emplace(name, service);
+
+	if (!it.second)
+	{
+		errno = EEXIST;
+		return -1;
+	}
+
+	auto pos = name.find_last_of('.');
+	if (pos != std::string::npos)
+		this->service_map.emplace(name.substr(pos + 1), service);
+
+	return 0;
+}
+
 template<class RPCTYPE>
 inline void RPCServer<RPCTYPE>::add_module(RPCModule<REQTYPE, RESPTYPE> *module)
 {

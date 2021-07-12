@@ -4,8 +4,6 @@
 
 [![Language](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE "License") [![Build Status](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/ "Platform") [![](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg) [![](https://travis-ci.com/sogou/srpc.svg?branch=master)](https://travis-ci.com/sogou/srpc)
 
-[Wiki: SRPC Architecture](https://github.com/sogou/srpc/wiki)
-
 ## Introduction
 
 #### SRPC is an RPC system developed by Sogou. Its main features include:

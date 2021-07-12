@@ -269,6 +269,7 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 	this->printer.print_srpc_include(this->prefix, cur_info.package_name);
 
 	std::vector<std::string> rpc_list;
+	std::string package;
 
 	if (this->is_thrift)
 	{
@@ -283,6 +284,12 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 		rpc_list.push_back("SRPCHttp");
 		rpc_list.push_back("BRPC");
 		rpc_list.push_back("TRPC");
+	}
+
+	for (const std::string& p : cur_info.package_name)
+	{
+		package.append(p);
+		package.push_back('.');
 	}
 
 	for (const auto& desc : cur_info.desc_list)
@@ -311,7 +318,7 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 			this->printer.print_client_class(type, desc.block_name, desc.rpcs);
 
 		this->printer.print_implement_comments();
-		this->printer.print_server_constructor(desc.block_name, desc.rpcs);
+		this->printer.print_server_constructor(package + desc.block_name, desc.rpcs);
 		if (this->is_thrift)
 			this->printer.print_server_methods_thrift(desc.block_name, desc.rpcs);
 

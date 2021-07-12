@@ -612,19 +612,6 @@ bool TRPCRequest::get_meta_module_data(RPCModuleData& data) const
 	return true;
 }
 
-bool TRPCRequest::trim_service_prefix()
-{
-	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
-	std::string *service = meta->mutable_callee();
-
-	auto pos = service->find_last_of('.');
-	if (pos == std::string::npos)
-		return false;
-
-	meta->set_callee(service->substr(pos + 1 , service->length()));
-	return true;
-}
-
 bool TRPCRequest::trim_method_prefix()
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
