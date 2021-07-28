@@ -109,7 +109,7 @@ public:
 	void set_error(int error);
 };
 
-class SogouStdRequest : public protocol::ProtocolMessage, public RPCRequest, public SRPCRequest
+class SRPCStdRequest : public protocol::ProtocolMessage, public RPCRequest, public SRPCRequest
 {
 public:
 	int encode(struct iovec vectors[], int max) override
@@ -165,10 +165,10 @@ public:
 	}
 
 public:
-	SogouStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
+	SRPCStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class SogouStdResponse : public protocol::ProtocolMessage, public RPCResponse, public SRPCResponse
+class SRPCStdResponse : public protocol::ProtocolMessage, public RPCResponse, public SRPCResponse
 {
 public:
 	int encode(struct iovec vectors[], int max) override
@@ -229,10 +229,10 @@ public:
 	}
 
 public:
-	SogouStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
+	SRPCStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class SogouHttpRequest : public protocol::HttpRequest, public RPCRequest, public SRPCRequest
+class SRPCHttpRequest : public protocol::HttpRequest, public RPCRequest, public SRPCRequest
 {
 public:
 	bool serialize_meta() override;
@@ -263,10 +263,10 @@ public:
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
 public:
-	SogouHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
+	SRPCHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class SogouHttpResponse : public protocol::HttpResponse, public RPCResponse, public SRPCResponse
+class SRPCHttpResponse : public protocol::HttpResponse, public RPCResponse, public SRPCResponse
 {
 public:
 	bool serialize_meta() override;
@@ -302,7 +302,7 @@ public:
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
 public:
-	SogouHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
+	SRPCHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
 ////////

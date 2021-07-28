@@ -29,8 +29,8 @@ namespace srpc
 
 struct RPCTYPESRPC
 {
-	using REQ = SogouStdRequest;
-	using RESP = SogouStdResponse;
+	using REQ = SRPCStdRequest;
+	using RESP = SRPCStdResponse;
 	static constexpr RPCDataType default_data_type = RPCDataProtobuf;
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
@@ -41,8 +41,8 @@ struct RPCTYPESRPC
 
 struct RPCTYPESRPCHttp
 {
-	using REQ = SogouHttpRequest;
-	using RESP = SogouHttpResponse;
+	using REQ = SRPCHttpRequest;
+	using RESP = SRPCHttpResponse;
 	static constexpr RPCDataType default_data_type = RPCDataJson;
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
@@ -60,8 +60,8 @@ struct RPCTYPEGRPC
 
 struct RPCTYPEBRPC
 {
-	using REQ = BaiduStdRequest;
-	using RESP = BaiduStdResponse;
+	using REQ = BRPCStdRequest;
+	using RESP = BRPCStdResponse;
 	static constexpr RPCDataType default_data_type = RPCDataProtobuf;
 
 	static inline void server_reply_init(const REQ *req, RESP *resp)
