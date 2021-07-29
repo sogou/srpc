@@ -14,6 +14,14 @@
   limitations under the License.
 */
 
+#include <errno.h>
+#include <vector>
+#include <string>
+#include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/type_resolver_util.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+#include <workflow/HttpUtil.h>
+#include <workflow/StringUtil.h>
 #include "rpc_message_trpc.h"
 #include "rpc_meta_trpc.pb.h"
 #include "rpc_basic.h"
@@ -22,6 +30,170 @@
 
 namespace srpc
 {
+
+namespace TRPCHttpHeaders
+{
+	const std::string CompressType		=	"Content-Encoding";
+	const std::string DataType			=	"Content-Type";
+	const std::string CallType			=	"trpc-call-type";
+	const std::string RequestId			=	"trpc-request-id";
+	const std::string Timeout			=	"trpc-timeout";
+	const std::string Caller			=	"trpc-caller";
+	const std::string Callee			=	"trpc-callee";
+	const std::string Func				=	"trpc-func";
+	const std::string Ret				=	"trpc-ret";
+	const std::string FuncRet			=	"trpc-func-ret";
+	const std::string ErrorMsg			=	"trpc-error-msg";
+	const std::string MessageType		=	"trpc-message-type";
+	const std::string TransInfo			=	"trpc-trans-info";
+	const std::string SRPCStatus		=	"SRPC-Status";
+	const std::string SRPCError			=	"SRPC-Error";
+}
+
+namespace TRPCHttpHeadersCode
+{
+	enum
+	{
+		Unknown = 0,
+		CompressType,
+		DataType,
+		CallType,
+		RequestId,
+		Timeout,
+		Caller,
+		Callee,
+		Func,
+		Ret,
+		FuncRet,
+		ErrorMsg,
+		MessageType,
+		TransInfo,
+		SRPCStatus,
+		SRPCError
+	};
+}
+
+struct CaseCmp
+{
+	bool operator()(const std::string& lhs, const std::string& rhs) const
+	{
+		return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;
+	}
+};
+
+static int GetHttpHeadersCode(const std::string& header)
+{
+	static const std::map<std::string, int, CaseCmp> M =
+	{
+		{TRPCHttpHeaders::CompressType,	TRPCHttpHeadersCode::CompressType},
+		{TRPCHttpHeaders::DataType,		TRPCHttpHeadersCode::DataType},
+		{TRPCHttpHeaders::CallType,		TRPCHttpHeadersCode::CallType},
+		{TRPCHttpHeaders::RequestId,	TRPCHttpHeadersCode::RequestId},
+		{TRPCHttpHeaders::Timeout,		TRPCHttpHeadersCode::Timeout},
+		{TRPCHttpHeaders::Caller,		TRPCHttpHeadersCode::Caller},
+		{TRPCHttpHeaders::Callee,		TRPCHttpHeadersCode::Callee},
+		{TRPCHttpHeaders::Func,			TRPCHttpHeadersCode::Func},
+		{TRPCHttpHeaders::Ret,			TRPCHttpHeadersCode::Ret},
+		{TRPCHttpHeaders::FuncRet,		TRPCHttpHeadersCode::FuncRet},
+		{TRPCHttpHeaders::ErrorMsg,		TRPCHttpHeadersCode::ErrorMsg},
+		{TRPCHttpHeaders::MessageType,	TRPCHttpHeadersCode::MessageType},
+		{TRPCHttpHeaders::TransInfo,	TRPCHttpHeadersCode::TransInfo},
+		{TRPCHttpHeaders::SRPCStatus,	TRPCHttpHeadersCode::SRPCStatus},
+		{TRPCHttpHeaders::SRPCError,	TRPCHttpHeadersCode::SRPCError}
+	};
+
+	auto it = M.find(header);
+	return it == M.end() ? TRPCHttpHeadersCode::Unknown : it->second;
+}
+
+static int GetHttpDataType(const std::string &type)
+{
+	static const std::unordered_map<std::string, int> M =
+	{
+		{"application/json",		RPCDataJson},
+		{"application/x-protobuf",	RPCDataProtobuf},
+		{"application/protobuf",	RPCDataProtobuf},
+		{"application/pb",			RPCDataProtobuf},
+		{"application/proto",		RPCDataProtobuf}
+	};
+
+	auto it = M.find(type);
+	return it == M.end() ? RPCDataUndefined : it->second;
+}
+
+static std::string GetHttpDataTypeStr(int type)
+{
+	switch (type)
+	{
+	case RPCDataJson:
+		return "application/json";
+	case RPCDataProtobuf:
+		return "application/proto";
+	}
+
+	return "";
+}
+
+static int GetHttpCompressType(const std::string &type)
+{
+	static const std::unordered_map<std::string, int> M =
+	{
+		{"identity",	RPCCompressNone},
+		{"x-snappy",	RPCCompressSnappy},
+		{"gzip",		RPCCompressGzip},
+		{"deflate",		RPCCompressZlib},
+		{"x-lz4",		RPCCompressLz4}
+	};
+	auto it = M.find(type);
+	return it == M.end() ? RPCCompressNone : it->second;
+}
+
+static std::string GetHttpCompressTypeStr(int type)
+{
+	switch (type)
+	{
+		case RPCCompressNone:
+			return "identity";
+		case RPCCompressSnappy:
+			return "x-snappy";
+		case RPCCompressGzip:
+			return "gzip";
+		case RPCCompressZlib:
+			return "deflate";
+		case RPCCompressLz4:
+			return "x-lz4";
+	}
+
+	return "";
+}
+
+static constexpr const char* kTypeUrlPrefix = "type.googleapis.com";
+
+class ResolverInstance
+{
+public:
+	static google::protobuf::util::TypeResolver* get_resolver()
+	{
+		static ResolverInstance kInstance;
+		return kInstance.resolver_;
+	}
+
+private:
+	ResolverInstance()
+	{
+		resolver_ = google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix,
+									google::protobuf::DescriptorPool::generated_pool());
+	}
+
+	~ResolverInstance() { delete resolver_; }
+
+	google::protobuf::util::TypeResolver* resolver_;
+};
+
+static inline std::string GetTypeUrl(const ProtobufIDLMessage *pb_msg)
+{
+	return std::string(kTypeUrlPrefix) + "/" + pb_msg->GetDescriptor()->full_name();
+}
 
 TRPCMessage::TRPCMessage()
 {
@@ -488,14 +660,33 @@ int TRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 	ResponseProtocol *meta = dynamic_cast<ResponseProtocol *>(this->meta);
 	bool is_resp = (meta != NULL);
 
-	int msg_len = pb_msg->ByteSize();
-	RPCOutputStream stream(this->message, pb_msg->ByteSize());
-	int ret = pb_msg->SerializeToZeroCopyStream(&stream) ? 0 : -1;
+	int data_type = this->get_data_type();
+	RPCOutputStream output_stream(this->message, pb_msg->ByteSize());
+	int ret;
+
+	if (data_type == RPCDataProtobuf)
+		ret = pb_msg->SerializeToZeroCopyStream(&output_stream) ? 0 : -1;
+	else if (data_type == RPCDataJson)
+	{
+		std::string binary_input = pb_msg->SerializeAsString();
+		google::protobuf::io::ArrayInputStream input_stream(binary_input.data(), (int)binary_input.size());
+		const auto* pool = pb_msg->GetDescriptor()->file()->pool();
+		auto* resolver = (pool == google::protobuf::DescriptorPool::generated_pool()
+							? ResolverInstance::get_resolver()
+							: google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix, pool));
+
+		ret = BinaryToJsonStream(resolver, GetTypeUrl(pb_msg), &input_stream, &output_stream).ok() ? 0 : -1;
+		if (pool != google::protobuf::DescriptorPool::generated_pool())
+			delete resolver;
+	}
+	else
+		ret = -1;
+
+	this->message_len = this->message->size();
 
 	if (ret < 0)
 		return is_resp ? RPCStatusRespSerializeError : RPCStatusReqSerializeError;
 
-	this->message_len = msg_len;
 	return RPCStatusOK;
 }
 
@@ -503,10 +694,34 @@ int TRPCMessage::deserialize(ProtobufIDLMessage *pb_msg)
 {
 	ResponseProtocol *meta = dynamic_cast<ResponseProtocol *>(this->meta);
 	bool is_resp = (meta != NULL);
+	int data_type = this->get_data_type();
+	int ret;
 
-	RPCInputStream stream(this->message);
+	RPCInputStream input_stream(this->message);
 
-	if (pb_msg->ParseFromZeroCopyStream(&stream) == false)
+	if (data_type == RPCDataProtobuf)
+		ret = pb_msg->ParseFromZeroCopyStream(&input_stream) ? 0 : -1;
+	else if (data_type == RPCDataJson)
+	{
+		std::string binary_output;
+		google::protobuf::io::StringOutputStream output_stream(&binary_output);
+		const auto* pool = pb_msg->GetDescriptor()->file()->pool();
+		auto* resolver = (pool == google::protobuf::DescriptorPool::generated_pool()
+							? ResolverInstance::get_resolver()
+							: google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix, pool));
+
+		if (JsonToBinaryStream(resolver, GetTypeUrl(pb_msg), &input_stream, &output_stream).ok())
+			ret = pb_msg->ParseFromString(binary_output) ? 0 : -1;
+		else
+			ret = -1;
+
+		if (pool != google::protobuf::DescriptorPool::generated_pool())
+			delete resolver;
+	}
+	else
+		ret = -1;
+
+	if (ret < 0)
 		return is_resp ? RPCStatusRespDeserializeError : RPCStatusReqDeserializeError;
 
 	return RPCStatusOK;
@@ -642,6 +857,306 @@ bool TRPCResponse::get_meta_module_data(RPCModuleData& data) const
 	for (auto & pair : meta->trans_info())
 		data.insert(pair);
 
+	return true;
+}
+
+bool TRPCHttpRequest::serialize_meta()
+{
+	if (this->message->size() > 0x7FFFFFFF)
+		return false;
+
+	int data_type = this->get_data_type();
+	int compress_type = this->get_compress_type();
+	auto *meta = (RequestProtocol *)this->meta;
+
+	std::string uri("/");
+	uri += this->get_service_name();
+	uri += "/";
+	uri += this->get_method_name();
+
+	set_http_version("HTTP/1.1");
+	set_method("POST");
+	set_request_uri(uri);
+
+	//set header
+	set_header_pair(TRPCHttpHeaders::DataType,
+					GetHttpDataTypeStr(data_type));
+
+	set_header_pair(TRPCHttpHeaders::CompressType,
+					GetHttpCompressTypeStr(compress_type));
+
+	set_header_pair("Connection", "Keep-Alive");
+	set_header_pair("Content-Length", std::to_string(this->message_len));
+
+	set_header_pair(TRPCHttpHeaders::CallType, "0");
+	set_header_pair(TRPCHttpHeaders::RequestId, std::to_string(this->get_request_id()));
+	set_header_pair(TRPCHttpHeaders::Callee, this->get_method_name());
+	set_header_pair(TRPCHttpHeaders::Func, this->get_service_name());
+
+	const void *buffer;
+	size_t buflen;
+
+	while (buflen = this->message->fetch(&buffer), buffer && buflen > 0)
+		this->append_output_body_nocopy(buffer, buflen);
+
+	return true;
+}
+
+bool TRPCHttpRequest::deserialize_meta()
+{
+	const char *request_uri = this->get_request_uri();
+	protocol::HttpHeaderCursor header_cursor(this);
+	auto *meta = (RequestProtocol *)this->meta;
+	std::string key, value;
+
+	this->set_data_type(RPCDataJson);
+	this->set_compress_type(RPCCompressNone);
+
+	while (header_cursor.next(key, value))
+	{
+		switch (GetHttpHeadersCode(key))
+		{
+		case TRPCHttpHeadersCode::DataType:
+			this->set_data_type(GetHttpDataType(value));
+			break;
+		case TRPCHttpHeadersCode::CompressType:
+			this->set_compress_type(GetHttpCompressType(value));
+			break;
+		case TRPCHttpHeadersCode::CallType:
+			meta->set_call_type(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::RequestId:
+			meta->set_request_id(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::Timeout:
+			meta->set_timeout(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::Caller:
+			meta->set_caller(value);
+			break;
+		case TRPCHttpHeadersCode::Callee:
+			meta->set_callee(value);
+			break;
+		case TRPCHttpHeadersCode::MessageType:
+			meta->set_message_type(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::TransInfo:
+			// TODO decode json
+			break;
+		default:
+			break;
+		}
+	}
+
+	if (request_uri && request_uri[0] == '/')
+	{
+		std::string str = request_uri + 1;
+		auto pos = str.find_first_of("?#");
+
+		if (pos != std::string::npos)
+			str.erase(pos);
+
+		if (!str.empty() && str.back() == '/')
+			str.pop_back();
+
+		pos = str.find_last_of('/');
+		if (pos != std::string::npos)
+		{
+			this->set_service_name(str.substr(0, pos));
+			this->set_method_name(str.substr(pos + 1));
+		}
+	}
+
+	const void *ptr;
+	size_t len;
+
+	this->get_parsed_body(&ptr, &len);
+	if (len > 0x7FFFFFFF)
+		return false;
+
+	protocol::HttpChunkCursor chunk_cursor(this);
+	RPCBuffer *buf = this->get_buffer();
+	size_t msg_len = 0;
+
+	while (chunk_cursor.next(&ptr, &len))
+	{
+		msg_len += len;
+		buf->append((const char *)ptr, len, BUFFER_MODE_NOCOPY);
+	}
+
+	if (this->get_compress_type() == RPCCompressNone &&
+		msg_len == 0 && this->get_data_type() == RPCDataJson)
+	{
+		buf->append("{}", 2, BUFFER_MODE_NOCOPY);
+		msg_len = 2;
+	}
+
+	this->message_len = msg_len;
+
+	return true;
+}
+
+bool TRPCHttpResponse::serialize_meta()
+{
+	if (this->message->size() > 0x7FFFFFFF)
+		return false;
+
+	auto *meta = (ResponseProtocol *)this->meta;
+	int data_type = this->get_data_type();
+	int compress_type = this->get_compress_type();
+	int rpc_status_code = this->get_status_code();
+	int rpc_error = this->get_error();
+
+	set_http_version("HTTP/1.1");
+	if (rpc_status_code == RPCStatusOK)
+		protocol::HttpUtil::set_response_status(this, HttpStatusOK);
+	else if (rpc_status_code == RPCStatusServiceNotFound
+			|| rpc_status_code == RPCStatusMethodNotFound
+			|| rpc_status_code == RPCStatusMetaError
+			|| rpc_status_code == RPCStatusURIInvalid)
+	{
+		protocol::HttpUtil::set_response_status(this, HttpStatusBadRequest);
+	}
+	else if (rpc_status_code == RPCStatusRespCompressNotSupported
+			|| rpc_status_code == RPCStatusRespDecompressNotSupported
+			|| rpc_status_code == RPCStatusIDLSerializeNotSupported
+			|| rpc_status_code == RPCStatusIDLDeserializeNotSupported)
+	{
+		protocol::HttpUtil::set_response_status(this, HttpStatusNotImplemented);
+	}
+	else if (rpc_status_code == RPCStatusUpstreamFailed)
+		protocol::HttpUtil::set_response_status(this, HttpStatusServiceUnavailable);
+	else
+		protocol::HttpUtil::set_response_status(this, HttpStatusInternalServerError);
+
+	//set header
+	set_header_pair(TRPCHttpHeaders::SRPCStatus,
+					std::to_string(rpc_status_code));
+
+	set_header_pair(TRPCHttpHeaders::SRPCError,
+					std::to_string(rpc_error));
+
+	set_header_pair(TRPCHttpHeaders::DataType,
+					GetHttpDataTypeStr(data_type));
+
+	set_header_pair(TRPCHttpHeaders::CompressType,
+					GetHttpCompressTypeStr(compress_type));
+
+	set_header_pair(TRPCHttpHeaders::CallType,
+					std::to_string(meta->call_type()));
+
+	set_header_pair(TRPCHttpHeaders::RequestId,
+					std::to_string(meta->request_id()));
+
+	set_header_pair(TRPCHttpHeaders::Ret,
+					std::to_string(meta->ret()));
+
+	set_header_pair(TRPCHttpHeaders::FuncRet,
+					std::to_string(meta->func_ret()));
+
+	set_header_pair(TRPCHttpHeaders::ErrorMsg,
+					meta->error_msg());
+
+	set_header_pair(TRPCHttpHeaders::MessageType,
+					std::to_string(meta->message_type()));
+
+	set_header_pair("Content-Length", std::to_string(this->message_len));
+
+	set_header_pair("Connection", "Keep-Alive");
+
+	const void *buffer;
+	size_t buflen;
+
+	while (buflen = this->message->fetch(&buffer), buffer && buflen > 0)
+		this->append_output_body_nocopy(buffer, buflen);
+
+	return true;
+}
+
+bool TRPCHttpResponse::deserialize_meta()
+{
+	protocol::HttpHeaderCursor header_cursor(this);
+	auto *meta = (ResponseProtocol *)this->meta;
+	std::string key, value;
+
+	this->set_data_type(RPCDataJson);
+	this->set_compress_type(RPCCompressNone);
+
+	while (header_cursor.next(key, value))
+	{
+		switch (GetHttpHeadersCode(key))
+		{
+		case TRPCHttpHeadersCode::DataType:
+			this->set_data_type(GetHttpDataType(value));
+			break;
+		case TRPCHttpHeadersCode::CompressType:
+			this->set_compress_type(GetHttpCompressType(value));
+			break;
+		case TRPCHttpHeadersCode::CallType:
+			meta->set_call_type(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::RequestId:
+			meta->set_request_id(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::Ret:
+			meta->set_ret(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::FuncRet:
+			meta->set_func_ret(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::ErrorMsg:
+			meta->set_error_msg(value);
+			break;
+		case TRPCHttpHeadersCode::MessageType:
+			meta->set_message_type(std::atoi(value.c_str()));
+			break;
+		case TRPCHttpHeadersCode::TransInfo:
+			// TODO decode json
+			break;
+		default:
+			break;
+		}
+	}
+
+	const void *ptr;
+	size_t len;
+
+	this->get_parsed_body(&ptr, &len);
+	if (len > 0x7FFFFFFF)
+		return false;
+
+	protocol::HttpChunkCursor chunk_cursor(this);
+	RPCBuffer *buf = this->get_buffer();
+	size_t msg_len = 0;
+
+	while (chunk_cursor.next(&ptr, &len))
+	{
+		buf->append((const char *)ptr, len, BUFFER_MODE_NOCOPY);
+		msg_len += len;
+	}
+
+	this->message_len = msg_len;
+
+	return true;
+}
+
+bool TRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
+{
+	return true;
+}
+
+bool TRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
+{
+	return true;
+}
+
+bool TRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
+{
+	return true;
+}
+
+bool TRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
+{
 	return true;
 }
 

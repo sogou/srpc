@@ -119,6 +119,20 @@ struct RPCTYPETRPC
 	}
 };
 
+struct RPCTYPETRPCHttp
+{
+	using REQ = TRPCHttpRequest;
+	using RESP = TRPCHttpResponse;
+	static constexpr RPCDataType default_data_type = RPCDataJson;
+
+	static inline void server_reply_init(const REQ *req, RESP *resp)
+	{
+		resp->set_data_type(req->get_data_type());
+		const_cast<REQ *>(req)->trim_method_prefix();
+		resp->set_request_id(req->get_request_id());
+	}
+};
+
 } // end namespace srpc
 
 #endif

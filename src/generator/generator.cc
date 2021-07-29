@@ -284,6 +284,7 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 		rpc_list.push_back("SRPCHttp");
 		rpc_list.push_back("BRPC");
 		rpc_list.push_back("TRPC");
+		rpc_list.push_back("TRPCHttp");
 	}
 
 	for (const std::string& p : cur_info.package_name)
