@@ -134,7 +134,7 @@ static std::string GetHttpDataTypeStr(int type)
 	return "";
 }
 
-static int GetHttpCompressType(const std::string type)
+static int GetHttpCompressType(const std::string &type)
 {
 	static const std::unordered_map<std::string, int> M =
 	{
@@ -884,7 +884,6 @@ bool TRPCHttpRequest::serialize_meta()
 
 	set_header_pair(TRPCHttpHeaders::CompressType,
 					GetHttpCompressTypeStr(compress_type));
-
 
 	set_header_pair("Connection", "Keep-Alive");
 	set_header_pair("Content-Length", std::to_string(this->message_len));
