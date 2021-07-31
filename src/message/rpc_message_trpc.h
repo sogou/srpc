@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 #endif
 
+#include <workflow/HttpMessage.h>
 #include "rpc_message.h"
 #include "rpc_basic.h"
 
@@ -66,6 +67,8 @@ protected:
 	int data_type_srpc_trpc(int srpc_data_type) const;
 	int status_code_srpc_trpc(int srpc_status_code) const;
 	const char *error_msg_srpc_trpc(int srpc_status_code) const;
+
+	RPCBuffer *get_buffer() const { return this->message; }
 };
 
 class TRPCRequest : public TRPCMessage
@@ -250,6 +253,79 @@ public:
 
 public:
 	TRPCStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
+};
+
+class TRPCHttpRequest : public protocol::HttpRequest, public RPCRequest, public TRPCRequest
+{
+public:
+	bool serialize_meta() override;
+	bool deserialize_meta() override;
+
+public:
+	const std::string& get_service_name() const override
+	{
+		return this->TRPCRequest::get_service_name();
+	}
+
+	const std::string& get_method_name() const override
+	{
+		return this->TRPCRequest::get_method_name();
+	}
+
+	void set_service_name(const std::string& service_name) override
+	{
+		return this->TRPCRequest::set_service_name(service_name);
+	}
+
+	void set_method_name(const std::string& method_name) override
+	{
+		return this->TRPCRequest::set_method_name(method_name);
+	}
+
+	bool set_meta_module_data(const RPCModuleData& data) override;
+	bool get_meta_module_data(RPCModuleData& data) const override;
+
+public:
+	TRPCHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
+};
+
+class TRPCHttpResponse : public protocol::HttpResponse, public RPCResponse, public TRPCResponse
+{
+public:
+	bool serialize_meta() override;
+	bool deserialize_meta() override;
+
+public:
+	int get_status_code() const override
+	{
+		return this->TRPCResponse::get_status_code();
+	}
+
+	int get_error() const override
+	{
+		return this->TRPCResponse::get_error();
+	}
+
+	const char *get_errmsg() const override
+	{
+		return this->TRPCResponse::get_errmsg();
+	}
+
+	void set_status_code(int code) override
+	{
+		return this->TRPCResponse::set_status_code(code);
+	}
+
+	void set_error(int error) override
+	{
+		return this->TRPCResponse::set_error(error);
+	}
+
+	bool set_meta_module_data(const RPCModuleData& data) override;
+	bool get_meta_module_data(RPCModuleData& data) const override;
+
+public:
+	TRPCHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
 } // namespace srpc

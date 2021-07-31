@@ -108,7 +108,7 @@ protected:
 	std::string srpc_error_msg;
 };
 
-class BaiduStdRequest : public protocol::ProtocolMessage, public RPCRequest, public BRPCRequest
+class BRPCStdRequest : public protocol::ProtocolMessage, public RPCRequest, public BRPCRequest
 {
 public:
 	int encode(struct iovec vectors[], int max) override
@@ -164,10 +164,10 @@ public:
 	}
 
 public:
-	BaiduStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
+	BRPCStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class BaiduStdResponse : public protocol::ProtocolMessage, public RPCResponse, public BRPCResponse
+class BRPCStdResponse : public protocol::ProtocolMessage, public RPCResponse, public BRPCResponse
 {
 public:
 	int encode(struct iovec vectors[], int max) override
@@ -228,7 +228,7 @@ public:
 	}
 
 public:
-	BaiduStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
+	BRPCStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
 ////////

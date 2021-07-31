@@ -31,7 +31,7 @@
 namespace srpc
 {
 
-struct SogouHttpHeadersString
+struct SRPCHttpHeadersString
 {
 	const std::string RPCCompressType	=	"Content-Encoding";
 	const std::string OriginSize		=	"Origin-Size";
@@ -49,16 +49,16 @@ struct CaseCmp
 	}
 };
 
-static const struct SogouHttpHeadersString SogouHttpHeaders;
+static const struct SRPCHttpHeadersString SRPCHttpHeaders;
 
-static const std::map<const std::string, int, CaseCmp> SogouHttpHeadersCode =
+static const std::map<const std::string, int, CaseCmp> SRPCHttpHeadersCode =
 {
-	{SogouHttpHeaders.RPCCompressType,		1},
-	{SogouHttpHeaders.OriginSize,			2},
-	{SogouHttpHeaders.CompressdSize,		3},
-	{SogouHttpHeaders.DataType,				4},
-	{SogouHttpHeaders.SRPCStatus,			5},
-	{SogouHttpHeaders.SRPCError,			6}
+	{SRPCHttpHeaders.RPCCompressType,		1},
+	{SRPCHttpHeaders.OriginSize,			2},
+	{SRPCHttpHeaders.CompressdSize,		3},
+	{SRPCHttpHeaders.DataType,				4},
+	{SRPCHttpHeaders.SRPCStatus,			5},
+	{SRPCHttpHeaders.SRPCError,			6}
 };
 
 static const std::vector<std::string> RPCDataTypeString =
@@ -685,9 +685,9 @@ static bool __deserialize_meta_http(const char *request_uri,
 
 	while (header_cursor.next(key, value))
 	{
-		const auto it = SogouHttpHeadersCode.find(key);
+		const auto it = SRPCHttpHeadersCode.find(key);
 
-		if (it != SogouHttpHeadersCode.cend())
+		if (it != SRPCHttpHeadersCode.cend())
 		{
 			switch (it->second)
 			{
@@ -788,7 +788,7 @@ static bool __deserialize_meta_http(const char *request_uri,
 	return true;
 }
 
-bool SogouHttpRequest::serialize_meta()
+bool SRPCHttpRequest::serialize_meta()
 {
 	if (this->buf->size() > 0x7FFFFFFF)
 		return false;
@@ -803,18 +803,18 @@ bool SogouHttpRequest::serialize_meta()
 					"/" + meta->mutable_request()->method_name());
 
 	//set header
-	set_header_pair(SogouHttpHeaders.DataType,
+	set_header_pair(SRPCHttpHeaders.DataType,
 					RPCDataTypeString[data_type]);
 
-	set_header_pair(SogouHttpHeaders.RPCCompressType,
+	set_header_pair(SRPCHttpHeaders.RPCCompressType,
 					RPCRPCCompressTypeString[compress_type]);
 
 	if (compress_type != RPCCompressNone)
 	{
-		set_header_pair(SogouHttpHeaders.CompressdSize,
+		set_header_pair(SRPCHttpHeaders.CompressdSize,
 						std::to_string(meta->compressed_size()));
 
-		set_header_pair(SogouHttpHeaders.OriginSize,
+		set_header_pair(SRPCHttpHeaders.OriginSize,
 						std::to_string(meta->origin_size()));
 	} else {
 		set_header_pair("Content-Length", std::to_string(this->message_len));
@@ -832,13 +832,13 @@ bool SogouHttpRequest::serialize_meta()
 	return true;
 }
 
-bool SogouHttpRequest::deserialize_meta()
+bool SRPCHttpRequest::deserialize_meta()
 {
 	const char *request_uri = this->get_request_uri();
 	return __deserialize_meta_http(request_uri, this, this, this->meta);
 }
 
-bool SogouHttpResponse::serialize_meta()
+bool SRPCHttpResponse::serialize_meta()
 {
 	if (this->buf->size() > 0x7FFFFFFF)
 		return false;
@@ -871,24 +871,24 @@ bool SogouHttpResponse::serialize_meta()
 		protocol::HttpUtil::set_response_status(this, HttpStatusInternalServerError);
 
 	//set header
-	set_header_pair(SogouHttpHeaders.SRPCStatus,
+	set_header_pair(SRPCHttpHeaders.SRPCStatus,
 					std::to_string(meta->mutable_response()->status_code()));
 
-	set_header_pair(SogouHttpHeaders.SRPCError,
+	set_header_pair(SRPCHttpHeaders.SRPCError,
 					std::to_string(meta->mutable_response()->error()));
 
-	set_header_pair(SogouHttpHeaders.DataType,
+	set_header_pair(SRPCHttpHeaders.DataType,
 					RPCDataTypeString[data_type]);
 
-	set_header_pair(SogouHttpHeaders.RPCCompressType,
+	set_header_pair(SRPCHttpHeaders.RPCCompressType,
 					RPCRPCCompressTypeString[compress_type]);
 
 	if (compress_type != RPCCompressNone)
 	{
-		set_header_pair(SogouHttpHeaders.CompressdSize,
+		set_header_pair(SRPCHttpHeaders.CompressdSize,
 						std::to_string(meta->compressed_size()));
 
-		set_header_pair(SogouHttpHeaders.OriginSize,
+		set_header_pair(SRPCHttpHeaders.OriginSize,
 						std::to_string(meta->origin_size()));
 	} else {
 		set_header_pair("Content-Length", std::to_string(this->message_len));
@@ -906,12 +906,12 @@ bool SogouHttpResponse::serialize_meta()
 	return true;
 }
 
-bool SogouHttpResponse::deserialize_meta()
+bool SRPCHttpResponse::deserialize_meta()
 {
 	return __deserialize_meta_http(NULL, this, this, this->meta);
 }
 
-bool SogouHttpRequest::set_meta_module_data(const RPCModuleData& data)
+bool SRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
 {
 	auto iter = data.find("trace_id");
 	if (iter != data.end())
@@ -924,7 +924,7 @@ bool SogouHttpRequest::set_meta_module_data(const RPCModuleData& data)
 	return true;
 }
 
-bool SogouHttpRequest::get_meta_module_data(RPCModuleData& data) const
+bool SRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 {
 	std::string name;
 	std::string value;
@@ -953,7 +953,7 @@ bool SogouHttpRequest::get_meta_module_data(RPCModuleData& data) const
 	return found;
 }
 
-bool SogouHttpResponse::set_meta_module_data(const RPCModuleData& data)
+bool SRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 {
 	auto iter = data.find("trace_id");
 	if (iter != data.end())
@@ -966,7 +966,7 @@ bool SogouHttpResponse::set_meta_module_data(const RPCModuleData& data)
 	return true;
 }
 
-bool SogouHttpResponse::get_meta_module_data(RPCModuleData& data) const
+bool SRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
 	std::string name;
 	std::string value;

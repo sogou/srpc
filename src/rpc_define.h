@@ -52,6 +52,10 @@ using TRPCServer = RPCServer<RPCTYPETRPC>;
 using TRPCClient = RPCClient<RPCTYPETRPC>;
 using TRPCClientTask = TRPCClient::TASK;
 
+using TRPCHttpServer = RPCServer<RPCTYPETRPCHttp>;
+using TRPCHttpClient = RPCClient<RPCTYPETRPCHttp>;
+using TRPCHttpClientTask = TRPCHttpClient::TASK;
+
 } // namespace srpc
 
 #endif
