@@ -9,7 +9,7 @@ namespace srpc
 static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 {
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
-									" method: %s start: %s",
+									" method: %s start_time: %s",
 						  data[SRPC_MODULE_TRACE_ID].c_str(),
 						  data[SRPC_MODULE_SPAN_ID].c_str(),
 						  data[SRPC_MODULE_SERVICE_NAME].c_str(),
