@@ -82,15 +82,15 @@ sudo make install
 ## Quick Start
 #### 1. example.proto
 ~~~proto
-syntax = "proto2";//这里proto2和proto3都可以，srpc都支持
+syntax = "proto3";//这里proto2和proto3都可以，srpc都支持
 
 message EchoRequest {
-    optional string message = 1;
-    optional string name = 2;
+    string message = 1;
+    string name = 2;
 };
 
 message EchoResponse {
-    optional string message = 1;
+    string message = 1;
 };
 
 service Example {

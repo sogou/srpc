@@ -82,15 +82,15 @@ make
 #### 1\. example.proto
 
 ~~~proto
-syntax = "proto2";// You can use either proto2 or proto3. Both are supported by srpc
+syntax = "proto3";// You can use either proto2 or proto3. Both are supported by srpc
 
 message EchoRequest {
-    optional string message = 1;
-    optional string name = 2;
+    string message = 1;
+    string name = 2;
 };
 
 message EchoResponse {
-    optional string message = 1;
+    string message = 1;
 };
 
 service Example {
