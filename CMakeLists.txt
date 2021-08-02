@@ -50,7 +50,12 @@ add_subdirectory(src)
 include(CMakePackageConfigHelpers)
 set(CONFIG_INC_DIR ${INC_DIR})
 set(CONFIG_LIB_DIR ${LIB_DIR})
-set(CONFIG_BIN_DIR ${BIN_DIR})
+if(NOT VCPKG_TOOLCHAIN)
+	set(CONFIG_BIN_DIR ${BIN_DIR})	
+else()
+	set(CONFIG_BIN_DIR ${CMAKE_INSTALL_PREFIX}/tools/srpc)
+endif()
+
 configure_package_config_file(
 	${PROJECT_NAME}-config.cmake.in
 	${PROJECT_SOURCE_DIR}/${PROJECT_NAME}-config.cmake

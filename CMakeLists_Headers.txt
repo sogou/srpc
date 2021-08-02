@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
 
-set(INCLUDE_HEADERS
+set(SRC_HEADERS
 	src/compress/rpc_compress.h
 	src/compress/rpc_compress_gzip.h
 	src/message/rpc_message.h
@@ -28,6 +28,9 @@ set(INCLUDE_HEADERS
 	src/rpc_types.h
 	src/rpc_zero_copy_stream.h
 	src/rpc_define.h
+)
+
+set(COMPRESS_HEADERS
 	third_party/snappy/snappy.h
 	third_party/snappy/snappy-c.h
 	third_party/snappy/snappy-sinksource.h
@@ -35,4 +38,16 @@ set(INCLUDE_HEADERS
 	third_party/lz4/lib/lz4.h
 	third_party/lz4/lib/lz4frame.h
 )
+
+if(NOT VCPKG_TOOLCHAIN)
+	set(INCLUDE_HEADERS
+		${SRC_HEADERS}
+		${COMPRESS_HEADERS}
+	)
+else()
+	set(INCLUDE_HEADERS
+		${SRC_HEADERS}
+	)
+endif()
+
 
