@@ -84,6 +84,7 @@ set(TUTORIAL_PB_LIST
 	tutorial-10-server_async
 	tutorial-11-trpc_pb_server
 	tutorial-12-trpc_pb_client
+	tutorial-13-srpc_http_server
 )
 
 if (APPLE)
