@@ -59,11 +59,13 @@ else ()
 endif ()
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS echo_pb.proto)
+protobuf_generate_cpp(HELLOWORLD_SRCS HELLOWORLD_HDRS helloworld.proto)
 
 add_custom_target(
 	TURORIAL_GEN ALL
 	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/echo_pb.proto  ${PROJECT_SOURCE_DIR}
 	COMMAND ${SRPC_GEN_PROGRAM} thrift   ${PROJECT_SOURCE_DIR}/echo_thrift.thrift ${PROJECT_SOURCE_DIR}
+	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/helloworld.proto  ${PROJECT_SOURCE_DIR}
 	COMMENT "sprc generator..."
 )
 
@@ -114,6 +116,19 @@ foreach(src ${TUTORIAL_THRIFT_LIST})
 	string(REPLACE "-" ";" arr ${src})
 	list(GET arr -1 bin_name)
 	add_executable(${bin_name} ${src}.cc)
+	target_link_libraries(${bin_name} ${SRPC_LIB})
+	add_dependencies(${bin_name} TURORIAL_GEN)
+endforeach()
+
+set(TUTORIAL_HELLOWORLD_LIST
+	tutorial-14-trpc_http_server
+	tutorial-15-trpc_http_client
+)
+
+foreach(src ${TUTORIAL_HELLOWORLD_LIST})
+	string(REPLACE "-" ";" arr ${src})
+	list(GET arr -1 bin_name)
+	add_executable(${bin_name} ${src}.cc ${HELLOWORLD_SRCS} ${HELLOWORLD_HDRS})
 	target_link_libraries(${bin_name} ${SRPC_LIB})
 	add_dependencies(${bin_name} TURORIAL_GEN)
 endforeach()
