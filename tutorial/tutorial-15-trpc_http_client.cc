@@ -23,7 +23,7 @@ using namespace trpc::test::helloworld;
 
 int main()
 {
-	Greeter::TRPCClient client("127.0.0.1", 1412);
+	Greeter::TRPCHttpClient client("127.0.0.1", 1412);
 
 	//async
 	HelloRequest req;
