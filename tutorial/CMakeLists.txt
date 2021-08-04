@@ -84,9 +84,6 @@ set(TUTORIAL_PB_LIST
 	tutorial-06-brpc_pb_client
 	tutorial-09-client_task
 	tutorial-10-server_async
-	tutorial-11-trpc_pb_server
-	tutorial-12-trpc_pb_client
-	tutorial-13-srpc_http_server
 )
 
 if (APPLE)
@@ -121,8 +118,10 @@ foreach(src ${TUTORIAL_THRIFT_LIST})
 endforeach()
 
 set(TUTORIAL_HELLOWORLD_LIST
-	tutorial-14-trpc_http_server
-	tutorial-15-trpc_http_client
+	tutorial-11-trpc_pb_server
+	tutorial-12-trpc_pb_client
+	tutorial-13-trpc_http_server
+	tutorial-14-trpc_http_client
 )
 
 foreach(src ${TUTORIAL_HELLOWORLD_LIST})

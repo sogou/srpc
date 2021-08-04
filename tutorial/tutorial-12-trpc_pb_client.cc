@@ -15,21 +15,21 @@
 */
 
 #include <stdio.h>
-#include "echo_pb.srpc.h"
+#include "helloworld.srpc.h"
 #include "srpc/rpc_types.h"
 
 using namespace srpc;
+using namespace trpc::test::helloworld;
 
 int main()
 {
-	Example::TRPCClient client("127.0.0.1", 1412);
+	Greeter::TRPCClient client("127.0.0.1", 1412);
 
 	//async
-	EchoRequest req;
-	req.set_message("Hello, sogou rpc!");
-	req.set_name("1412");
+	HelloRequest req;
+	req.set_msg("Hello, trpc server. This is srpc framework trpc client!");
 
-	client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
+	client.SayHello(&req, [](HelloReply *response, RPCContext *ctx) {
 		if (ctx->success())
 			printf("%s\n", response->DebugString().c_str());
 		else
@@ -38,13 +38,12 @@ int main()
 	});
 
 	//sync
-	EchoRequest sync_req;
-	EchoResponse sync_resp;
+	HelloRequest sync_req;
+	HelloReply sync_resp;
 	RPCSyncContext sync_ctx;
 
-	sync_req.set_message("Hello, sogou rpc!");
-	sync_req.set_name("Sync");
-	client.Echo(&sync_req, &sync_resp, &sync_ctx);
+	sync_req.set_msg("Hello, trpc server. This is srpc framework trpc client!");
+	client.SayHello(&sync_req, &sync_resp, &sync_ctx);
 	if (sync_ctx.success)
 		printf("%s\n", sync_resp.DebugString().c_str());
 	else

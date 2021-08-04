@@ -15,23 +15,24 @@
 */
 
 #include <signal.h>
-#include "echo_pb.srpc.h"
+#include "helloworld.srpc.h"
 #include "workflow/WFFacilities.h"
 #include "srpc/rpc_types.h"
 
 using namespace srpc;
+using namespace trpc::test::helloworld;
 
 static WFFacilities::WaitGroup wait_group(1);
 
-class ExampleServiceImpl : public Example::Service
+class GreeterServiceImpl : public Greeter::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+	void SayHello(HelloRequest *request, HelloReply *response, RPCContext *ctx) override
 	{
 //		ctx->set_compress_type(RPCCompressGzip);
-		response->set_message("This is SRPC framework TRPC protocol. Hi back.");
+		response->set_msg("This is SRPC framework TRPC protocol. Hi back.");
 
-		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
+		printf("Server SayHello()\nget_req:\n%s\nset_resp:\n%s\n",
 									request->DebugString().c_str(),
 									response->DebugString().c_str());
 	}
@@ -49,7 +50,7 @@ int main()
 	signal(SIGTERM, sig_handler);
 
 	TRPCServer server;
-	ExampleServiceImpl impl;
+	GreeterServiceImpl impl;
 
 	server.add_service(&impl);
 

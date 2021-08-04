@@ -19,7 +19,7 @@
 #include "srpc/rpc_types.h"
 
 using namespace srpc;
-using namespace trpc::test::helloworld; 
+using namespace trpc::test::helloworld;
 
 int main()
 {
