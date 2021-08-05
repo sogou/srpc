@@ -867,7 +867,6 @@ bool TRPCHttpRequest::serialize_meta()
 
 	int data_type = this->get_data_type();
 	int compress_type = this->get_compress_type();
-	auto *meta = (RequestProtocol *)this->meta;
 
 	std::string uri("/");
 	uri += this->get_service_name();

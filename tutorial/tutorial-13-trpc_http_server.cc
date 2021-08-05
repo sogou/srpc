@@ -30,7 +30,7 @@ public:
 	void SayHello(HelloRequest *request, HelloReply *response, RPCContext *ctx) override
 	{
 //		ctx->set_compress_type(RPCCompressGzip);
-		response->set_msg("This is SRPC framework TRPC protocol. Hi back.");
+		response->set_msg("This is SRPC framework TRPCHttp protocol. Hi back.");
 
 		printf("Server SayHello()\nget_req:\n%s\nset_resp:\n%s\n",
 									request->DebugString().c_str(),
@@ -49,7 +49,7 @@ int main()
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
 
-	TRPCServer server;
+	TRPCHttpServer server;
 	GreeterServiceImpl impl;
 
 	server.add_service(&impl);

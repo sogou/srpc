@@ -1498,7 +1498,7 @@ int main()
 	std::string client_main_method_call_format = R"(
 	// example for RPC method call
 	%s %s_req;
-	//%s_req.set_message("Hello, sogou rpc!");
+	//%s_req.set_message("Hello, srpc!");
 	client.%s(&%s_req, %s_done);
 )";
 

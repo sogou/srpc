@@ -23,11 +23,11 @@ using namespace trpc::test::helloworld;
 
 int main()
 {
-	Greeter::TRPCClient client("127.0.0.1", 1412);
+	Greeter::TRPCHttpClient client("127.0.0.1", 1412);
 
 	//async
 	HelloRequest req;
-	req.set_msg("Hello, trpc server. This is srpc framework trpc client!");
+	req.set_msg("Hello, trpc-http server. This is srpc framework trpc-http client!");
 
 	client.SayHello(&req, [](HelloReply *response, RPCContext *ctx) {
 		if (ctx->success())
@@ -42,7 +42,7 @@ int main()
 	HelloReply sync_resp;
 	RPCSyncContext sync_ctx;
 
-	sync_req.set_msg("Hello, trpc server. This is srpc framework trpc client!");
+	sync_req.set_msg("Hello, trpc-http server. This is srpc framework trpc-http client!");
 	client.SayHello(&sync_req, &sync_resp, &sync_ctx);
 	if (sync_ctx.success)
 		printf("%s\n", sync_resp.DebugString().c_str());
