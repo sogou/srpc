@@ -24,11 +24,18 @@ if (WIN32)
 else ()
 	set (HAVE_SYS_UIO_H_01 true)
 endif ()
-set(SNAPPY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy)
-configure_file(${SNAPPY_DIR}/cmake/config.h.in ${SNAPPY_DIR}/config.h)
-configure_file(${SNAPPY_DIR}/snappy-stubs-public.h.in ${SNAPPY_DIR}/snappy-stubs-public.h)
-#find_package(Workflow REQUIRED CONFIG HINTS /usr/lib64/cmake/workflow)
-find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+
+if(NOT VCPKG_TOOLCHAIN)
+	set(SNAPPY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy)
+	configure_file(${SNAPPY_DIR}/cmake/config.h.in ${SNAPPY_DIR}/config.h)
+	configure_file(${SNAPPY_DIR}/snappy-stubs-public.h.in ${SNAPPY_DIR}/snappy-stubs-public.h)
+	#find_package(Workflow REQUIRED CONFIG HINTS /usr/lib64/cmake/workflow)
+	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+else()
+	find_package(Workflow REQUIRED CONFIG)
+endif()
+
+
 
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
