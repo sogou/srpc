@@ -40,3 +40,4 @@ SRCVERSION
 CMakeCache.txt
 Makefile
 
+bazel-*
