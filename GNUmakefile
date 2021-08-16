@@ -2,7 +2,7 @@ ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 ALL_TARGETS := all base check install preinstall package rpm clean tutorial example
 MAKE_FILE := Makefile
 
-DEFAULT_BUILD_DIR := build
+DEFAULT_BUILD_DIR := build.cmake
 BUILD_DIR := $(shell if [ -f $(MAKE_FILE) ]; then echo "."; else echo $(DEFAULT_BUILD_DIR); fi)
 CMAKE3 := $(shell if which cmake3>/dev/null ; then echo cmake3; else echo cmake; fi;)
 
@@ -25,9 +25,6 @@ endif
 tutorial: all
 	make -C tutorial
 
-example: all
-	make -C example
-
 check: all
 	make -C test check
 
@@ -42,13 +39,8 @@ ifneq ($(BUILD_DIR),.)
 endif
 
 clean:
-ifeq (build, $(wildcard build))
-	-make -C build clean
-endif
 	-make -C workflow clean
 	-make -C test clean
-	-make -C benchmark clean
-	-make -C example clean
 	-make -C tutorial clean
 	rm -rf $(DEFAULT_BUILD_DIR)
 	rm -rf _include
