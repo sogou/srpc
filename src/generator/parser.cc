@@ -72,9 +72,12 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 		if ((state & PARSER_ST_COMMENT_MASK) == PARSER_ST_INSIDE_COMMENT)
 		{
-			if (this->check_multi_comments_end(line))
+			if (this->check_multi_comments_end(line)) 
+			{
 				state -= PARSER_ST_INSIDE_COMMENT;
-			//	state |= PARSER_ST_OUTSIDE_COMMENT_MASK;
+				//	state |= PARSER_ST_OUTSIDE_COMMENT_MASK;
+				if (line.empty()) continue;
+			}
 			else
 				continue;
 
