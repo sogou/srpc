@@ -10,35 +10,46 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 {
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
 									" method: %s start_time: %s",
-						  data[SRPC_MODULE_TRACE_ID].c_str(),
-						  data[SRPC_MODULE_SPAN_ID].c_str(),
-						  data[SRPC_MODULE_SERVICE_NAME].c_str(),
-						  data[SRPC_MODULE_METHOD_NAME].c_str(),
-						  data[SRPC_MODULE_START_TIME].c_str());
+						  data[SRPC_TRACE_ID].c_str(),
+						  data[SRPC_SPAN_ID].c_str(),
+						  data[SRPC_SERVICE_NAME].c_str(),
+						  data[SRPC_METHOD_NAME].c_str(),
+						  data[SRPC_START_TIMESTAMP].c_str());
 
-	auto iter = data.find(SRPC_MODULE_PARENT_SPAN_ID);
+	auto iter = data.find(SRPC_PARENT_SPAN_ID);
 	if (iter != data.end())
 	{
 		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
 						iter->second.c_str());
 	}
 
-	iter = data.find(SRPC_MODULE_END_TIME);
+	iter = data.find(SRPC_FINISH_TIMESTAMP);
 	if (iter != data.end())
 	{
-		ret += snprintf(str + ret, len - ret, " end_time: %s",
+		ret += snprintf(str + ret, len - ret, " finish_time: %s",
 						iter->second.c_str());
 	}
 
-	iter = data.find(SRPC_MODULE_COST);
+	iter = data.find(SRPC_DURATION);
 	if (iter != data.end())
 	{
-		ret += snprintf(str + ret, len - ret, " cost: %s remote_ip: %s"
+		ret += snprintf(str + ret, len - ret, " duration: %s"
+											  " remote_ip: %s port: %s"
 											  " state: %s error: %s",
 						iter->second.c_str(),
-						data[SRPC_MODULE_REMOTE_IP].c_str(),
-						data[SRPC_MODULE_STATE].c_str(),
-						data[SRPC_MODULE_ERROR].c_str());
+						data[SRPC_REMOTE_IP].c_str(),
+						data[SRPC_REMOTE_PORT].c_str(),
+						data[SRPC_STATE].c_str(),
+						data[SRPC_ERROR].c_str());
+	}
+
+	for (auto &it : data)
+	{
+		if (strncmp(it.first.c_str(), SRPC_SPAN_LOG, 3) == 0)
+			ret += snprintf(str + ret, len - ret, "\n%s [%s] %s",
+							"[APPLICATION_LOG]",
+							it.first.c_str() + 4,
+							it.second.c_str());
 	}
 
 	return ret;
@@ -88,7 +99,7 @@ void RPCSpanLogTask::dispatch()
 template<class RPCTYPE>
 SubTask *RPCSpanRedis<RPCTYPE>::create(RPCModuleData& span)
 {
-	auto iter = span.find(SRPC_MODULE_TRACE_ID);
+	auto iter = span.find(SRPC_TRACE_ID);
 	if (iter == span.end())
 		return WFTaskFactory::create_empty_task();
 
@@ -100,7 +111,7 @@ SubTask *RPCSpanRedis<RPCTYPE>::create(RPCModuleData& span)
 	value[0] = '0';
 
 	rpc_span_log_format(span, value, SPAN_LOG_MAX_LENGTH);
-	req->set_request("SET", { span[SRPC_MODULE_TRACE_ID], value} );
+	req->set_request("SET", { span[SRPC_TRACE_ID], value} );
 
 	return task;
 }

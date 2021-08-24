@@ -18,6 +18,8 @@
 #define __RPC_MODULE_H__
 
 #include <map>
+#include <vector>
+#include <string>
 #include "workflow/WFTask.h" 
 #include "workflow/WFTaskFactory.h"
 
@@ -27,6 +29,11 @@ namespace srpc
 using RPCModuleData = std::map<std::string, std::string>;
 
 static RPCModuleData global_empty_map;
+
+const char *const SRPC_SPAN_LOG			= "log";
+const char *const SRPC_SPAN_EVENT		= "event";
+const char *const SRPC_SPAN_MESSAGE		= "message";
+using LogVector = std::vector<std::pair<std::string, std::string>>;
 
 template<class REQ, class RESP>
 class RPCModule
