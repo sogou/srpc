@@ -126,7 +126,7 @@ bool ThriftResponse::serialize_meta()
 	return TBuffer_.writeMessageBegin();
 }
 
-const char * thrift_error2errmsg(int error) 
+const char *thrift_error2errmsg(int error) 
 {
 	switch (error)
 	{
@@ -156,7 +156,6 @@ const char * thrift_error2errmsg(int error)
 		return "TApplicationException: (Invalid exception type)";
 	};
 }
-
 
 bool ThriftResponse::deserialize_meta()
 {
@@ -189,9 +188,8 @@ bool ThriftResponse::deserialize_meta()
 
 const char *ThriftResponse::get_errmsg() const
 {
-	if (! errmsg_.empty()) {
+	if (!errmsg_.empty())
 		return errmsg_.c_str();
-	}
 	return thrift_error2errmsg(error_);
 }
 
