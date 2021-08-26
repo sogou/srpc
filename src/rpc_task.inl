@@ -114,6 +114,12 @@ public:
 	int serialize_input(const ProtobufIDLMessage *in);
 	int serialize_input(const ThriftIDLMessage *in);
 
+	// similar to opentracing: log({{"event", "error"}, {"message", "application log"}});
+	void log(const RPCLogVector& fields);
+
+	// Baggage Items, which are just key:value pairs that cross process boundaries
+	void baggage(const std::string& key, const std::string& value);
+
 protected:
 	using user_done_t = std::function<int (int, RPCWorker&)>;
 
@@ -135,10 +141,10 @@ public:
 				  std::list<RPCModule<RPCREQ, RPCRESP> *>& modules,
 				  user_done_t&& user_done);
 
-	std::string get_remote_ip() const;
+	bool get_remote(std::string& ip, unsigned short *port) const;
 
 	RPCModuleData *mutable_module_data() { return &module_data_; }
-	void set_module_data(RPCModuleData data) { module_data_ = data; }
+	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
 
 private:
 	template<class IDL>
@@ -188,10 +194,13 @@ protected:
 	void handle(int state, int error) override;
 
 public:
-	std::string get_remote_ip() const;
+	bool get_remote(std::string& ip, unsigned short *port) const;
 	RPCModuleData *mutable_module_data() { return &module_data_; }
-	void set_module_data(RPCModuleData data) { module_data_ = data; }
+	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
+	void log(const RPCLogVector& fields);
+	void baggage(const std::string& key, const std::string& value);
 
+public:
 	RPCWorker worker;
 
 private:
@@ -363,7 +372,8 @@ inline int RPCClientTask<RPCREQ, RPCRESP>::__serialize_input(const IDL *in)
 }
 
 static inline bool addr_to_string(const struct sockaddr *addr,
-								  char *ip_str, socklen_t len)
+								  char *ip_str, socklen_t len,
+								  unsigned short *port)
 {
 	const char *ret = NULL;
 
@@ -372,12 +382,14 @@ static inline bool addr_to_string(const struct sockaddr *addr,
 		struct sockaddr_in *sin = (struct sockaddr_in *)addr;
 
 		ret = inet_ntop(AF_INET, &sin->sin_addr, ip_str, len);
+		*port = ntohs(sin->sin_port);
 	}
 	else if (addr->sa_family == AF_INET6)
 	{
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)addr;
 
 		ret = inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, len);
+		*port = ntohs(sin6->sin6_port);
 	}
 	else
 		errno = EINVAL;
@@ -565,31 +577,86 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 }
 
 template<class RPCREQ, class RPCRESP>
-std::string RPCClientTask<RPCREQ, RPCRESP>::get_remote_ip() const
+bool RPCClientTask<RPCREQ, RPCRESP>::get_remote(std::string& ip,
+												unsigned short *port) const
 {
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof (addr);
-	char ip_str[INET6_ADDRSTRLEN + 1];
-	ip_str[0] = '0';
+
+	ip.resize(INET6_ADDRSTRLEN + 1);
 
 	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
-		addr_to_string((struct sockaddr *)&addr, ip_str, INET6_ADDRSTRLEN + 1);
+		return addr_to_string((struct sockaddr *)&addr, (char *)ip.c_str(),
+							  INET6_ADDRSTRLEN + 1, port);
 
-	return ip_str;
+	return false;
 }
 
 template<class RPCREQ, class RPCRESP>
-std::string RPCServerTask<RPCREQ, RPCRESP>::get_remote_ip() const
+bool RPCServerTask<RPCREQ, RPCRESP>::get_remote(std::string& ip,
+												unsigned short *port) const
 {
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof (addr);
-	char ip_str[INET6_ADDRSTRLEN + 1];
-	ip_str[0] = '0';
+
+	ip.resize(INET6_ADDRSTRLEN + 1);
 
 	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
-		addr_to_string((struct sockaddr *)&addr, ip_str, INET6_ADDRSTRLEN + 1);
+		return addr_to_string((struct sockaddr *)&addr, (char *)ip.c_str(),
+							  INET6_ADDRSTRLEN + 1, port);
 
-	return ip_str;
+	return false;
+}
+static inline void log_format(std::string& key, std::string& value,
+							  const RPCLogVector& fields)
+{
+	if (fields.size() == 0)
+		return;
+
+	char buffer[100];
+	snprintf(buffer, 100, "%s%c%lu", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS);
+	key = std::move(buffer);
+	value = "{\"";
+
+	for (auto& field : fields)
+	{
+		value = value + std::move(field.first) + "\":\""
+			  + std::move(field.second) + "\",";
+	}
+	value[value.length() - 1] = '}';
+
+}
+
+template<class RPCREQ, class RPCRESP>
+void RPCClientTask<RPCREQ, RPCRESP>::log(const RPCLogVector& fields)
+{
+	std::string key;
+	std::string value;
+	log_format(key, value, fields);
+	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
+}
+
+template<class RPCREQ, class RPCRESP>
+void RPCClientTask<RPCREQ, RPCRESP>::baggage(const std::string& key,
+											 const std::string& value)
+{
+	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
+}
+
+template<class RPCREQ, class RPCRESP>
+void RPCServerTask<RPCREQ, RPCRESP>::log(const RPCLogVector& fields)
+{
+	std::string key;
+	std::string value;
+	log_format(key, value, fields);
+	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
+}
+
+template<class RPCREQ, class RPCRESP>
+void RPCServerTask<RPCREQ, RPCRESP>::baggage(const std::string& key,
+											 const std::string& value)
+{
+	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
 }
 
 } // namespace srpc

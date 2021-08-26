@@ -36,6 +36,7 @@ public:
 		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
 									request->DebugString().c_str(),
 									response->DebugString().c_str());
+		ctx->log({{"event", "info"}, {"message", "rpc server echo() end()"}});
 	}
 };
 

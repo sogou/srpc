@@ -163,6 +163,11 @@ public:
 				task_->set_callback(nullptr);
 		}
 	}
+
+	void log(const RPCLogVector& fields) override { }
+
+	void baggage(const std::string& key, const std::string& value) override { }
+
 	//void noreply() override;
 	//WFConnection *get_connection() override;
 
@@ -175,7 +180,7 @@ protected:
 			|| task_->get_state() == WFT_STATE_NOREPLY;
 	}
 
-private:
+protected:
 	WFNetworkTask<RPCREQ, RPCRESP> *task_;
 };
 
