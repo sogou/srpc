@@ -613,9 +613,8 @@ static inline void log_format(std::string& key, std::string& value,
 	if (fields.size() == 0)
 		return;
 
-	// TODO: timestamp must fall between the start/finish timestamps, inclusive
 	char buffer[100];
-	snprintf(buffer, 100, "%s%c%llu", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS);
+	snprintf(buffer, 100, "%s%c%lu", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS);
 	key = std::move(buffer);
 	value = "{\"";
 
