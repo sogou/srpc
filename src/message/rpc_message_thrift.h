@@ -134,8 +134,6 @@ public:
 	void set_status_code(int code)
 	{
 		status_code_ = code;
-		if (code != RPCStatusOK)
-			errmsg_ = this->get_errmsg();
 	}
 
 	void set_error(int error) { error_ = error; }
