@@ -114,9 +114,8 @@ public:
 	int serialize_input(const ProtobufIDLMessage *in);
 	int serialize_input(const ThriftIDLMessage *in);
 
-	// similar to opentracing: log({"event", "error"}, {"message", "application log"});
-	void log(const LogVector& fields);
-	//void log(const std::initializer_list<std::pair<std::string, std::string>> fields);
+	// similar to opentracing: log({{"event", "error"}, {"message", "application log"}});
+	void log(const RPCLogVector& fields);
 
 	// Baggage Items, which are just key:value pairs that cross process boundaries
 	void baggage(const std::string& key, const std::string& value);
@@ -145,7 +144,7 @@ public:
 	bool get_remote(std::string& ip, unsigned short *port) const;
 
 	RPCModuleData *mutable_module_data() { return &module_data_; }
-	void set_module_data(RPCModuleData data) { module_data_ = data; }
+	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
 
 private:
 	template<class IDL>
@@ -197,8 +196,8 @@ protected:
 public:
 	bool get_remote(std::string& ip, unsigned short *port) const;
 	RPCModuleData *mutable_module_data() { return &module_data_; }
-	void set_module_data(RPCModuleData data) { module_data_ = data; }
-	void log(const LogVector& fields);
+	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
+	void log(const RPCLogVector& fields);
 	void baggage(const std::string& key, const std::string& value);
 
 public:
@@ -609,7 +608,7 @@ bool RPCServerTask<RPCREQ, RPCRESP>::get_remote(std::string& ip,
 	return false;
 }
 static inline void log_format(std::string& key, std::string& value,
-							  const LogVector& fields)
+							  const RPCLogVector& fields)
 {
 	if (fields.size() == 0)
 		return;
@@ -630,7 +629,7 @@ static inline void log_format(std::string& key, std::string& value,
 }
 
 template<class RPCREQ, class RPCRESP>
-void RPCClientTask<RPCREQ, RPCRESP>::log(const LogVector& fields)
+void RPCClientTask<RPCREQ, RPCRESP>::log(const RPCLogVector& fields)
 {
 	std::string key;
 	std::string value;
@@ -646,7 +645,7 @@ void RPCClientTask<RPCREQ, RPCRESP>::baggage(const std::string& key,
 }
 
 template<class RPCREQ, class RPCRESP>
-void RPCServerTask<RPCREQ, RPCRESP>::log(const LogVector& fields)
+void RPCServerTask<RPCREQ, RPCRESP>::log(const RPCLogVector& fields)
 {
 	std::string key;
 	std::string value;

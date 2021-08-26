@@ -46,8 +46,11 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	for (auto &it : data)
 	{
 		if (strncmp(it.first.c_str(), SRPC_SPAN_LOG, 3) == 0)
-			ret += snprintf(str + ret, len - ret, "\n%s [%s] %s",
-							"[APPLICATION_LOG]",
+			ret += snprintf(str + ret, len - ret, "\n%s trace_id: %s span_id: %s"
+												  " timestamp: %s %s",
+							"[ANNOTATION]",
+							data[SRPC_TRACE_ID].c_str(),
+							data[SRPC_SPAN_ID].c_str(),
 							it.first.c_str() + 4,
 							it.second.c_str());
 	}

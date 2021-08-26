@@ -54,6 +54,28 @@ const char *const SRPC_SAMPLING_PRIO	= "sampling.priority";
 const char *const SRPC_DATA_TYPE		= "data.type";
 const char *const SRPC_COMPRESS_TYPE	= "compress.type";
 
+template<class RPCREQ, class RPCRESP>
+class RPCSpanContext : public RPCContextImpl<RPCREQ, RPCRESP>
+{
+public:
+	void log(const RPCLogVector& fields) override
+	{
+		auto *task = static_cast<RPCServerTask<RPCREQ, RPCRESP> *>(this->task_);
+		task->log(fields);
+	}
+
+	void baggage(const std::string& key, const std::string& value) override
+	{
+		auto *task = static_cast<RPCServerTask<RPCREQ, RPCRESP> *>(this->task_);
+		task->baggage(key, value);
+	}
+
+	RPCSpanContext(RPCServerTask<RPCREQ, RPCRESP> *task) :
+		RPCContextImpl<RPCREQ, RPCRESP>(task)
+	{
+	}
+};
+
 template<class RPCTYPE>
 class RPCSpanModule : public RPCModule<typename RPCTYPE::REQ,
 									   typename RPCTYPE::RESP>
@@ -63,6 +85,8 @@ public:
 									  typename RPCTYPE::RESP>;
 	using SERVER_TASK = RPCServerTask<typename RPCTYPE::REQ,
 									  typename RPCTYPE::RESP>;
+	using SPAN_CONTEXT = RPCSpanContext<typename RPCTYPE::REQ,
+										typename RPCTYPE::RESP>;
 
 	int client_begin(SubTask *task, const RPCModuleData& data) override
 	{
@@ -152,6 +176,10 @@ public:
 			module_data[SRPC_REMOTE_IP] = std::move(ip);
 			module_data[SRPC_REMOTE_PORT] = std::to_string(port);
 		}
+
+		SPAN_CONTEXT *span_ctx = new SPAN_CONTEXT(server_task);
+		delete server_task->worker.ctx;
+		server_task->worker.ctx = span_ctx;
 
 		return 0;
 	}
