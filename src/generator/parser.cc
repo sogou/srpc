@@ -365,9 +365,6 @@ static std::string gen_param_var(const std::string& type_name, size_t& cur)
 
 	auto idl_type = SGenUtil::strip(type_name.substr(st, cur - st));
 
-	if (type_name[cur] == ',' || type_name[cur] == '>')
-		cur++;
-
 	if (idl_type == "bool")
 		return "bool";
 	else if (idl_type == "i8" || idl_type == "byte")

@@ -126,38 +126,9 @@ bool ThriftResponse::serialize_meta()
 	return TBuffer_.writeMessageBegin();
 }
 
-bool ThriftResponse::deserialize_meta()
+const char *thrift_error2errmsg(int error) 
 {
-	if (TBuffer_.readMessageBegin())
-	{
-		if (TBuffer_.meta.message_type == TMT_EXCEPTION)
-		{
-			ThriftException ex;
-
-			if (ex.descriptor->reader(&TBuffer_, &ex))
-			{
-				status_code_ = (ex.type == TET_UNKNOWN_METHOD ? RPCStatusMethodNotFound
-															  : RPCStatusMetaError);
-				error_ = ex.type;
-				errmsg_ = ex.message;
-			}
-			else
-			{
-				status_code_ = RPCStatusMetaError;
-				error_ = TET_INTERNAL_ERROR;
-				errmsg_ = this->get_errmsg();
-			}
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-const char *ThriftResponse::get_errmsg() const
-{
-	switch (status_code_)
+	switch (error)
 	{
 	case TET_UNKNOWN:
 		return "TApplicationException: Unknown application exception";
@@ -184,6 +155,42 @@ const char *ThriftResponse::get_errmsg() const
 	default:
 		return "TApplicationException: (Invalid exception type)";
 	};
+}
+
+bool ThriftResponse::deserialize_meta()
+{
+	if (TBuffer_.readMessageBegin())
+	{
+		if (TBuffer_.meta.message_type == TMT_EXCEPTION)
+		{
+			ThriftException ex;
+
+			if (ex.descriptor->reader(&TBuffer_, &ex))
+			{
+				status_code_ = (ex.type == TET_UNKNOWN_METHOD ? RPCStatusMethodNotFound
+															  : RPCStatusMetaError);
+				error_ = ex.type;
+				errmsg_ = ex.message;
+			}
+			else
+			{
+				status_code_ = RPCStatusMetaError;
+				error_ = TET_INTERNAL_ERROR;
+				errmsg_ = thrift_error2errmsg(error_);
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+const char *ThriftResponse::get_errmsg() const
+{
+	if (!errmsg_.empty())
+		return errmsg_.c_str();
+	return thrift_error2errmsg(error_);
 }
 
 bool ThriftHttpRequest::serialize_meta()
