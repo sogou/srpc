@@ -123,7 +123,7 @@ bool Generator::generate_header(idl_info& cur_info, struct GeneratorParams param
 		//[prefix].thrift.h
 		if (!this->generate_thrift_type_file(cur_info))
 		{
-			fprintf(stderr, "[Generator Error] generate thrift type file failed\n");
+			fprintf(stderr, "[Generator Error] generate thrift type file failed.\n");
 			return false;
 		}
 	}
@@ -241,7 +241,7 @@ bool Generator::generate_thrift_type_file(idl_info& cur_info)
 
 	if (!this->printer.open(this->thrift_type_file))
 	{
-		fprintf(stderr, "[Generator Error] can't write to thirft_type_file: %s\n",
+		fprintf(stderr, "[Generator Error] can't write to thirft_type_file: %s.\n",
 				this->thrift_type_file.c_str());
 		return false;
 	}
