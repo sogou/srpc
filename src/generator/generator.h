@@ -55,7 +55,7 @@ private:
 	void generate_skeleton(const std::string& idl_file);
 
 	void generate_srpc_file(const idl_info& cur_info);
-	void generate_thrift_type_file(idl_info& cur_info);
+	bool generate_thrift_type_file(idl_info& cur_info);
 	void generate_server_cpp_file(const idl_info& cur_info, const std::string& idle_file_name);
 	void generate_client_cpp_file(const idl_info& cur_info, const std::string& idle_file_name);
 	void thrift_replace_include(const idl_info& cur_info, std::vector<rpc_param>& params);

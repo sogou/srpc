@@ -105,20 +105,28 @@ bool Generator::generate_header(idl_info& cur_info, struct GeneratorParams param
 	{
 		fprintf(stdout, "[Generator] auto generate include file [%s]\n",
 				sub_info.absolute_file_path.c_str());
-		this->generate_header(sub_info, params);
+		if (!this->generate_header(sub_info, params))
+			return false;
 	}
 
 	// for protobuf: if no [rpc], don`t need to generate xxx.srpc.h
 	if (this->init_file_names(cur_info.absolute_file_path, params.out_dir) == false)
 	{
 		fprintf(stderr, "[Generator Error] parse proto output dir failed. %s %s\n",
-				cur_info.absolute_file_path.c_str(), params.out_dir);	
+				cur_info.absolute_file_path.c_str(), params.out_dir);
 		return false;
 	}
 
 	// will generate skeleton file only once
 	if (this->is_thrift)
-		this->generate_thrift_type_file(cur_info);//[prefix].thrift.h
+	{
+		//[prefix].thrift.h
+		if (!this->generate_thrift_type_file(cur_info))
+		{
+			fprintf(stderr, "[Generator Error] generate thrift type file failed.\n");
+			return false;
+		}
+	}
 
 	for (const auto& desc : this->info.desc_list)
 	{
@@ -228,9 +236,16 @@ void Generator::thrift_replace_include(const idl_info& cur_info, std::vector<rpc
 	}
 }
 
-void Generator::generate_thrift_type_file(idl_info& cur_info)
+bool Generator::generate_thrift_type_file(idl_info& cur_info)
 {
-	this->printer.open(this->thrift_type_file);
+
+	if (!this->printer.open(this->thrift_type_file))
+	{
+		fprintf(stderr, "[Generator Error] can't write to thirft_type_file: %s.\n",
+				this->thrift_type_file.c_str());
+		return false;
+	}
+
 	this->printer.print_thrift_include(cur_info);
 
 	for (auto& desc : cur_info.desc_list)
@@ -261,6 +276,7 @@ void Generator::generate_thrift_type_file(idl_info& cur_info)
 
 	this->printer.print_end(cur_info.package_name);
 	this->printer.close();
+	return true;
 }
 
 void Generator::generate_srpc_file(const idl_info& cur_info)
