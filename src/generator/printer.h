@@ -269,7 +269,7 @@ public:
 	bool open(std::string out_file)
 	{
 		this->out_file = fopen(out_file.c_str(), "w");
-		return !this->out_file;
+		return this->out_file;
 	}
 
 	void close()
