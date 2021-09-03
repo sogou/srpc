@@ -315,27 +315,7 @@ std::string Parser::find_typedef_mapping_type(std::string& type_name,size_t& cur
 		real_type_name = idl_type.substr(pos+2);
 		type_namespace = idl_type.substr(0,pos);
 	}
-/*
-	if (type_namespace != "") 
-	{
-		idl_info *include_info = search_namespace(info,type_namespace);
-		if (include_info == NULL) 
-		{
-			fprintf(stderr,"namespace of type %s not found\n",idl_type.c_str());
-			return idl_type; 
-		}
-		for (auto& t : include_info->typedef_list)
-		{
-			if (real_type_name  == t.new_type_name)
-			{
-				size_t offset = 0;
-				include_info->typedef_mapping[real_type_name] = find_typedef_mapping_type(t.old_type_name,offset,*include_info);
-				return include_info->typedef_mapping[real_type_name];
-			}
-		}
-		return idl_type; 
-	}
-*/
+
 	for (auto& include : info.include_list)
 	{
 		if ( (type_namespace != "" && include.package_name.size() > 0 && include.package_name[0] == type_namespace)
@@ -352,25 +332,6 @@ std::string Parser::find_typedef_mapping_type(std::string& type_name,size_t& cur
 			}
 		}
 	}
-
-	/*
-	//include_file has no namespace
-	if (pos == 0)
-	{
-		for (auto& include : info.include_list)
-		{
-			for (auto& t : include.typedef_list)
-			{
-				if (real_type_name  == t.new_type_name)
-				{
-					size_t offset = 0;
-					include.typedef_mapping[real_type_name] = find_typedef_mapping_type(t.old_type_name,offset,include);
-					return include.typedef_mapping[real_type_name];
-				}
-			}
-		}
-	}
-	*/
 
 	for (auto& t : info.typedef_list)
 	{
