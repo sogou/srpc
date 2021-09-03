@@ -232,6 +232,8 @@ void Generator::generate_thrift_type_file(idl_info& cur_info)
 {
 	this->printer.open(this->thrift_type_file);
 	this->printer.print_thrift_include(cur_info);
+	this->printer.print_thrift_typedef(cur_info);
+	this->printer.print_thrift_struct_declaration(cur_info);
 
 	for (auto& desc : cur_info.desc_list)
 	{
@@ -241,9 +243,9 @@ void Generator::generate_thrift_type_file(idl_info& cur_info)
 			for (auto& rpc : desc.rpcs)
 			{
 				this->thrift_replace_include(cur_info, rpc.req_params);
-				this->printer.print_rpc_thrift_struct_class(rpc.request_name, rpc.req_params);
+				this->printer.print_rpc_thrift_struct_class(rpc.request_name, rpc.req_params,cur_info);
 				this->thrift_replace_include(cur_info, rpc.resp_params);
-				this->printer.print_rpc_thrift_struct_class(rpc.response_name, rpc.resp_params);
+				this->printer.print_rpc_thrift_struct_class(rpc.response_name, rpc.resp_params,cur_info);
 			}
 
 			this->printer.print_service_namespace_end(desc.block_name);
@@ -251,7 +253,7 @@ void Generator::generate_thrift_type_file(idl_info& cur_info)
 		else if (desc.block_type == "struct")
 		{
 			this->thrift_replace_include(cur_info, desc.st.params);
-			this->printer.print_rpc_thrift_struct_class(desc.block_name, desc.st.params);
+			this->printer.print_rpc_thrift_struct_class(desc.block_name, desc.st.params,cur_info);
 		}
 		else if (desc.block_type == "enum")
 		{

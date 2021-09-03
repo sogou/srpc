@@ -45,7 +45,9 @@ class Parser
 {
 public:
 	bool parse(const std::string& proto_file, idl_info& info);
-
+	std::string find_typedef_mapping_type(std::string& type_name,
+											size_t& cur, idl_info& info);
+	void build_typedef_mapping(idl_info& info);
 	int find_valid(const std::string& line);
 	bool check_block_begin(FILE *in, std::string& line);
 	bool check_block_begin(const std::string& line);
@@ -53,12 +55,25 @@ public:
 	void check_single_comments(std::string& line);
 	bool parse_block_name(const std::string& line,
 						  std::string& block_name,
-						  std::string& block_name_value);
+						  std::string& block_name_value,
+						  std::string& extend_type);
 	bool parse_service_pb(const std::string& block, Descriptor& desc);
+	std::vector<std::string> split_thrift_rpc(const std::string &str);
+	bool parse_thrift_typedef(const std::string& line, 
+							std::string& old_type_name,
+							std::string& new_type_name,
+							idl_info& info);
+	bool parse_rpc_param_thrift(const std::string& file_name_prefix,
+								const std::string &str, 
+								std::vector<rpc_param> &params,
+								idl_info& info);
 	bool parse_service_thrift(const std::string& file_name_prefix,
-							  const std::string& block, Descriptor& desc);
+							  const std::string& block, 
+							  Descriptor& desc,
+							  idl_info& info);
 	bool parse_struct_thrift(const std::string& file_name_prefix,
-							 const std::string& block, Descriptor& desc);
+							 const std::string& block,
+							 Descriptor& desc, idl_info& info);
 	bool parse_enum_thrift(const std::string& block, Descriptor& desc);
 	bool parse_package_name(const std::string& line, std::vector<std::string>& package_name);
 	bool parse_include_file(const std::string& line, std::string& file_name);
@@ -66,7 +81,6 @@ public:
 	bool check_multi_comments_end(std::string& line);
 	bool parse_dir_prefix(const std::string& file_name, char *dir_prefix);
 	int parse_pb_rpc_option(const std::string& line);
-
 	Parser(bool is_thrift) { this->is_thrift = is_thrift; }
 
 private:
