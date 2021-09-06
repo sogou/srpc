@@ -44,10 +44,18 @@ struct struct_descriptor
 	std::vector<rpc_param> params;
 };
 
+struct typedef_descriptor
+{
+	std::string old_type_name;
+	std::string new_type_name;
+};
+
 struct Descriptor
 {
 	std::string block_name;
 	std::string block_type;
+	//service extends
+	std::string extends_type;
 	// serivce
 	std::vector<rpc_descriptor> rpcs;
 	// struct
@@ -67,6 +75,9 @@ struct idl_info
 	std::vector<std::string> package_name;
 	std::list<Descriptor> desc_list;
 	std::list<idl_info> include_list;
+	std::list<typedef_descriptor> typedef_list;
+	//typedef name -> real cpptype
+	std::map<std::string,std::string> typedef_mapping;
 };
 
 class SGenUtil
@@ -92,6 +103,30 @@ public:
 			res.emplace_back(start, next);
 
 		return res;
+	}
+
+	static std::vector<std::string> split_by_space(const std::string& str)
+	{
+		std::vector<std::string> elems;
+		size_t offset = 0;
+		size_t start = 0;
+		size_t end = 0;
+		while(offset < str.size())
+		{
+			start = SGenUtil::find_next_nonspace(str,offset);
+			if (start == std::string::npos)
+				break;
+			
+			end = SGenUtil::find_next_space(str,start+1);
+			if (end == std::string::npos)
+			{
+				elems.push_back(str.substr(start));
+				break;	
+			}
+			elems.push_back(str.substr(start,end-start));
+			offset = end+1;
+		}
+		return elems;
 	}
 
 	static std::string strip(const std::string& str)
@@ -176,6 +211,26 @@ public:
 			else
 				break;
 		}
+	}
+
+	static size_t find_next_nonspace(const std::string& str, size_t pos)
+	{
+		for(size_t i = pos; i < str.size(); i++)
+		{
+			if (!std::isspace(str[i]))
+				return i;
+		}
+		return std::string::npos;
+	}
+
+	static size_t find_next_space(const std::string& str, size_t pos)
+	{
+		for(size_t i = pos; i < str.size(); i++)
+		{
+			if (std::isspace(str[i]))
+				return i;
+		}
+		return std::string::npos;
 	}
 
 	static std::set<std::string> *get_enum_set()

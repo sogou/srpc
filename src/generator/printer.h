@@ -132,13 +132,15 @@ static inline void fill_thrift_sync_params(const rpc_descriptor& rpc, std::strin
 	if (!rpc.resp_params.empty())
 	{
 		const auto &param = rpc.resp_params[0];
-
-		if (is_simple_type(param.data_type))
-			return_type = param.type_name;
-		else
+		if (param.field_id == 0) 
 		{
-			handler_params += param.type_name;
-			handler_params += "& _return";
+			if (is_simple_type(param.data_type))
+			  return_type = param.type_name;
+			else
+			{
+				handler_params += param.type_name;
+				handler_params += "& _return";
+			}
 		}
 	}
 
@@ -174,11 +176,13 @@ static inline void fill_thrift_async_params(const rpc_descriptor& rpc, std::stri
 	if (!rpc.resp_params.empty())
 	{
 		const auto &param = rpc.resp_params[0];
-
-		if (is_simple_type(param.data_type))
-			return_type += "response->result = ";
-		else
-			handler_params += "response->result";
+		if (param.field_id == 0)
+		{
+			if (is_simple_type(param.data_type))
+			  return_type += "response->result = ";
+			else
+			  handler_params += "response->result";
+		}
 	}
 
 	for (const auto &param : rpc.req_params)
@@ -191,7 +195,7 @@ static inline void fill_thrift_async_params(const rpc_descriptor& rpc, std::stri
 	}
 }
 
-static void output_descriptor(int& i, FILE *f, const std::string& type_name, size_t& cur)
+static void output_descriptor(int& i, FILE *f, const std::string& type_name, size_t& cur, const idl_info& info)
 {
 	int8_t data_type;
 	size_t st = cur;
@@ -205,6 +209,12 @@ static void output_descriptor(int& i, FILE *f, const std::string& type_name, siz
 	}
 
 	auto cpptype = SGenUtil::strip(type_name.substr(st, cur - st));
+	if (info.typedef_mapping.find(cpptype) != info.typedef_mapping.end())
+	{
+		size_t offset = 0;
+		output_descriptor(i,f,info.typedef_mapping.at(cpptype),offset,info);
+		return;
+	}
 
 	std::string ret;
 	if (cpptype == "bool")
@@ -226,23 +236,23 @@ static void output_descriptor(int& i, FILE *f, const std::string& type_name, siz
 	else if (cpptype == "std::map" && cur < type_name.size() && type_name[cur] == '<')
 	{
 		data_type = srpc::TDT_MAP;
-		output_descriptor(i, f, type_name, ++cur);
+		output_descriptor(i, f, type_name, ++cur, info);
 		key_arg = "subtype_" + std::to_string(i);
-		output_descriptor(i, f, type_name, ++cur);
+		output_descriptor(i, f, type_name, ++cur, info);
 		val_arg = "subtype_" + std::to_string(i);
 		cpptype = SGenUtil::strip(type_name.substr(st, ++cur - st));
 	}
 	else if (cpptype == "std::set" && cur < type_name.size() && type_name[cur] == '<')
 	{
 		data_type = srpc::TDT_SET;
-		output_descriptor(i, f, type_name, ++cur);
+		output_descriptor(i, f, type_name, ++cur, info);
 		val_arg = "subtype_" + std::to_string(i);
 		cpptype = SGenUtil::strip(type_name.substr(st, ++cur - st));
 	}
 	else if (cpptype == "std::vector" && cur < type_name.size() && type_name[cur] == '<')
 	{
 		data_type = srpc::TDT_LIST;
-		output_descriptor(i, f, type_name, ++cur);
+		output_descriptor(i, f, type_name, ++cur, info);
 		val_arg = "subtype_" + std::to_string(i);
 		cpptype = SGenUtil::strip(type_name.substr(st, ++cur - st));
 	}
@@ -281,6 +291,27 @@ public:
 		}
 	}
 
+	void print_thrift_struct_declaration(const idl_info& cur_info)
+	{
+		fprintf(this->out_file,"\n");
+		for (const auto& desc : cur_info.desc_list)
+		{
+			if (desc.block_type == "struct")
+				fprintf(this->out_file,"class %s;\n",desc.block_name.c_str());
+		}
+		fprintf(this->out_file,"\n");
+	}
+
+	void print_thrift_typedef(const idl_info& cur_info)
+	{
+		fprintf(this->out_file,"\n");
+		for (const auto& t : cur_info.typedef_list)
+		{
+			fprintf(this->out_file,"typedef %s %s;\n",t.old_type_name.c_str(),t.new_type_name.c_str());	
+		}
+		fprintf(this->out_file,"\n");
+	}
+
 	void print_thrift_include_enum(const std::string& name, const std::vector<std::string>& enum_lines)
 	{
 		fprintf(this->out_file, "\nenum %s {\n", name.c_str());
@@ -290,7 +321,7 @@ public:
 		fprintf(this->out_file, "};\n");
 	}
 
-	void print_rpc_thrift_struct_class(const std::string& class_name, const std::vector<rpc_param>& class_params)
+	void print_rpc_thrift_struct_class(const std::string& class_name, const std::vector<rpc_param>& class_params,const idl_info& info)
 	{
 		fprintf(this->out_file, thrift_struct_class_begin_format.c_str(), class_name.c_str());
 
@@ -359,7 +390,7 @@ public:
 		for (const auto& ele : class_params)
 		{
 			size_t cur = 0;
-			output_descriptor(i, this->out_file, ele.type_name, cur);
+			output_descriptor(i, this->out_file, ele.type_name, cur, info);
 
 			std::string p_isset = "0";
 			if (ele.required_state != srpc::THRIFT_STRUCT_FIELD_REQUIRED)
@@ -601,7 +632,7 @@ public:
 				fill_thrift_sync_params(rpc, return_type, handler_params, send_params);
 				if (return_type != "void")
 					recv_params.clear();
-				else if (!rpc.resp_params.empty())
+				else if (!rpc.resp_params.empty() && rpc.resp_params[0].field_id == 0)
 					recv_params = rpc.resp_params[0].type_name + "& _return";
 				else
 					recv_params.clear();
@@ -743,7 +774,7 @@ public:
 				fill_thrift_sync_params(rpc, return_type, handler_params, send_params);
 				if (return_type != "void")
 					last_return = "return __thrift__sync__resp.result";
-				else if (!rpc.resp_params.empty())
+				else if (!rpc.resp_params.empty() && rpc.resp_params[0].field_id == 0)
 					last_return = "_return = std::move(__thrift__sync__resp.result)";
 				else
 					last_return = "(void)__thrift__sync__resp";
@@ -770,7 +801,7 @@ public:
 					last_return = "return std::move(res.result);";
 					recv_params.clear();
 				}
-				else if (!rpc.resp_params.empty())
+				else if (!rpc.resp_params.empty() && rpc.resp_params[0].field_id == 0)
 				{
 					last_return = "_return = std::move(res.result)";
 					recv_params = rpc.resp_params[0].type_name + "& _return";
