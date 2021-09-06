@@ -28,35 +28,20 @@
 #include "workflow/WFTaskFactory.h"
 #include "workflow/RedisMessage.h"
 #include "rpc_module_span.h"
+#include "rpc_basic.h"
 
 namespace srpc
 {
 
-static constexpr unsigned int	SPAN_LIMIT_DEFAULT				= 1;
-static constexpr size_t			SPAN_LOG_MAX_LENGTH				= 1024;
-static constexpr size_t			UINT64_STRING_LENGTH			= 20;
-static constexpr unsigned int	SPAN_REDIS_RETRY_MAX			= 0;
-static constexpr const char 	*SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
-static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT		= 4 * 1024 * 1024;
-static constexpr size_t			SPANS_PER_SECOND_DEFAULT		= 1000;
-
-template<class RPCTYPE>
-class RPCSpanFilter : public RPCSpanModule<RPCTYPE>
-{
-public:
-	SubTask* create_module_task(const RPCModuleData& span) override
-	{
-		if (this->filter(const_cast<RPCModuleData&>(span)))
-			return this->create(const_cast<RPCModuleData&>(span));
-
-		return WFTaskFactory::create_empty_task();
-	}
-
-private:
-	virtual SubTask *create(RPCModuleData& span) = 0;
-
-	virtual bool filter(RPCModuleData& span) = 0;
-};
+static const unsigned int	SPAN_LIMIT_DEFAULT			= 1;
+static const size_t			SPAN_LOG_MAX_LENGTH			= 1024;
+static const size_t			UINT64_STRING_LENGTH		= 20;
+static const unsigned int	SPAN_REDIS_RETRY_MAX		= 0;
+static const char		   *SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
+static const size_t			SPAN_BATCH_LOG_SIZE_DEFAULT	= 4 * 1024 * 1024;
+static const size_t			SPANS_PER_SECOND_DEFAULT	= 1000;
+static const char		   *SRPC_FILTER_SPAN_DEFAULT	= "FilterSpanDefault";
+static const char		   *SRPC_FILTER_SPAN_REDIS		= "FilterSpanRedis";
 
 class RPCSpanFilterPolicy
 {
@@ -124,14 +109,15 @@ public:
 	std::function<void (RPCSpanLogTask *)> callback;
 };
 
-template<class RPCTYPE>
-class RPCSpanDefault : public RPCSpanFilter<RPCTYPE>
+class RPCSpanDefault : public RPCFilter
 {
 public:
 	RPCSpanDefault() :
+		RPCFilter(RPCModuleSpan, SRPC_FILTER_SPAN_DEFAULT),
 		filter_policy(SPANS_PER_SECOND_DEFAULT) {}
 
 	RPCSpanDefault(size_t spans_per_second) :
+		RPCFilter(RPCModuleSpan, SRPC_FILTER_SPAN_DEFAULT),
 		filter_policy(spans_per_second) {}
 
 private:
@@ -160,17 +146,18 @@ private:
 	RPCSpanFilterPolicy filter_policy;
 };
 
-template<class RPCTYPE>
-class RPCSpanRedis : public RPCSpanFilter<RPCTYPE>
+class RPCSpanRedis : public RPCFilter
 {
 public:
 	RPCSpanRedis(const std::string& url) :
-		RPCSpanRedis(url, SPAN_REDIS_RETRY_MAX,
-					 SPANS_PER_SECOND_DEFAULT)
+		RPCFilter(RPCModuleSpan, SRPC_FILTER_SPAN_REDIS),
+		retry_max(SPAN_REDIS_RETRY_MAX),
+		filter_policy(SPANS_PER_SECOND_DEFAULT)
 	{}
 
 	RPCSpanRedis(const std::string& url, int retry_max,
 				 size_t spans_per_second) :
+		RPCFilter(RPCModuleSpan, SRPC_FILTER_SPAN_REDIS),
 		redis_url(url),
 		retry_max(retry_max),
 		filter_policy(spans_per_second)
