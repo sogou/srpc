@@ -82,17 +82,6 @@ private:
 	int module_type;
 };
 
-/*
-class RPCMonitorPrometheus : public RPCFilter
-{
-public:
-	bool filter_finish()
-	{
-		SRPCGlobal->get_instance()->get_prometheus()->write();
-	}
-};
-*/
-
 } // end namespace srpc
 
 #endif

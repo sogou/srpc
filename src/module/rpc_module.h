@@ -101,8 +101,8 @@ public:
 		this->mutex.unlock();
 		return iter == this->filters.end();
 	}
-
-	bool remove_filter(std::string name)
+/*
+	bool remove_filter(const std::string& name)
 	{
 		this->mutex.lock();
 		auto iter = this->filters.find(name);
@@ -113,10 +113,11 @@ public:
 		this->mutex.unlock();
 		return iter != this->filters.end();
 	}
-
+*/
 	size_t get_filters_size() const { return this->filters.size(); }
 	RPCModuleType get_module_type() const { return this->module_type; }
 	RPCModule(RPCModuleType module_type) { this->module_type = module_type; }
+	virtual ~RPCModule() {}
 
 private:
 	RPCModuleType module_type;

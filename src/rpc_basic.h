@@ -24,15 +24,15 @@
 namespace srpc
 {
 
-static const char		   *SRPC_SCHEME				= "srpc";
-static const unsigned short	SRPC_DEFAULT_PORT		= 1412;
+static constexpr const char	   *SRPC_SCHEME				= "srpc";
+static constexpr unsigned short	SRPC_DEFAULT_PORT		= 1412;
 
-static const char		   *SRPC_SSL_SCHEME			= "srpcs";
-static const unsigned short	SRPC_SSL_DEFAULT_PORT	= 6462;
+static constexpr const char	   *SRPC_SSL_SCHEME			= "srpcs";
+static constexpr unsigned short	SRPC_SSL_DEFAULT_PORT	= 6462;
 
-static const int	SRPC_COMPRESS_TYPE_MAX	= 10;
-static const size_t	RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
-static const int	SRPC_MODULE_MAX			= 5;
+static constexpr int			SRPC_COMPRESS_TYPE_MAX	= 10;
+static constexpr size_t			RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
+static constexpr int			SRPC_MODULE_MAX			= 5;
 
 using ProtobufIDLMessage = google::protobuf::Message;
 

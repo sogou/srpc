@@ -173,7 +173,7 @@ bool RPCClient<RPCTYPE>::remove_filter(RPCFilter *filter)
 	this->mutex.lock();
 	if (type < SRPC_MODULE_MAX && type >= 0 && this->modules[type])
 	{
-		this->modules[type]->remove_filter(filter);
+		this->modules[type]->remove_filter(filter->get_name());
 		if (this->modules[type]->get_filters_size() == 0)
 		{
 			delete this->modules[type];

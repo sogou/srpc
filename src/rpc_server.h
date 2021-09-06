@@ -51,7 +51,7 @@ public:
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 	bool add_filter(RPCFilter *filter);
-	bool remove_filter(RPCFilter *filter);
+//	bool remove_filter(RPCFilter *filter);
 
 protected:
 	RPCServer(const struct RPCServerParams *params,
@@ -181,6 +181,7 @@ bool RPCServer<RPCTYPE>::add_filter(RPCFilter *filter)
 	return ret;
 }
 
+/*
 template<class RPCTYPE>
 bool RPCServer<RPCTYPE>::remove_filter(RPCFilter *filter)
 {
@@ -190,7 +191,7 @@ bool RPCServer<RPCTYPE>::remove_filter(RPCFilter *filter)
 	this->mutex.lock();
 	if (type < SRPC_MODULE_MAX && type >= 0 && this->modules[type])
 	{
-		this->modules[type]->remove_filter(filter);
+		this->modules[type]->remove_filter(filter->get_name());
 		if (this->modules[type]->get_filters_size() == 0)
 		{
 			delete this->modules[type];
@@ -203,6 +204,7 @@ bool RPCServer<RPCTYPE>::remove_filter(RPCFilter *filter)
 	this->mutex.unlock();
 	return ret;
 }
+*/
 
 template<class RPCTYPE>
 inline const RPCService *
@@ -272,7 +274,10 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				RPCModuleData *task_data = server_task->mutable_module_data();
 
 				for (auto *module : this->modules)
-					module->server_task_begin(server_task, *task_data);
+				{
+					if (module)
+						module->server_task_begin(server_task, *task_data);
+				}
 
 				series = static_cast<SERIES *>(series_of(task));
 				if (!task_data->empty())
