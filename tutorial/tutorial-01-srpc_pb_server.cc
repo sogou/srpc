@@ -17,9 +17,8 @@
 #include <signal.h>
 #include "echo_pb.srpc.h"
 #include "workflow/WFFacilities.h"
-#include "srpc/rpc_module.h"
-#include "srpc/rpc_span_policies.h"
 #include "srpc/rpc_types.h"
+#include "srpc/rpc_span_policies.h"
 
 using namespace srpc;
 

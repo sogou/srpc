@@ -47,8 +47,7 @@ public:
 
 	void set_keep_alive(int timeout);
 	void set_watch_timeout(int timeout);
-	bool add_filter(RPCFilter *filter);
-	bool remove_filter(RPCFilter *filter);
+	void add_filter(RPCFilter *filter);
 
 protected:
 	template<class OUTPUT>
@@ -127,10 +126,9 @@ inline void RPCClient<RPCTYPE>::set_watch_timeout(int timeout)
 }
 
 template<class RPCTYPE>
-bool RPCClient<RPCTYPE>::add_filter(RPCFilter *filter)
+void RPCClient<RPCTYPE>::add_filter(RPCFilter *filter)
 {
 	int type = filter->get_module_type();
-	bool ret = false;
 
 	this->mutex.lock();
 	if (type < SRPC_MODULE_MAX && type >= 0)
@@ -157,34 +155,11 @@ bool RPCClient<RPCTYPE>::add_filter(RPCFilter *filter)
 		}
 
 		if (module)
-			ret = module->add_filter(filter);
+			module->add_filter(filter);
 	}
 
 	this->mutex.unlock();
-	return ret;
-}
-
-template<class RPCTYPE>
-bool RPCClient<RPCTYPE>::remove_filter(RPCFilter *filter)
-{
-	bool ret = true;
-	int type = filter->get_module_type();
-
-	this->mutex.lock();
-	if (type < SRPC_MODULE_MAX && type >= 0 && this->modules[type])
-	{
-		this->modules[type]->remove_filter(filter->get_name());
-		if (this->modules[type]->get_filters_size() == 0)
-		{
-			delete this->modules[type];
-			this->modules[type] = NULL;
-		}
-	}
-	else
-		ret = false;
-
-	this->mutex.unlock();
-	return ret;
+	return;
 }
 
 template<class RPCTYPE>

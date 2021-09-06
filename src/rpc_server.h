@@ -50,8 +50,7 @@ public:
 
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
-	bool add_filter(RPCFilter *filter);
-//	bool remove_filter(RPCFilter *filter);
+	void add_filter(RPCFilter *filter);
 
 protected:
 	RPCServer(const struct RPCServerParams *params,
@@ -144,10 +143,9 @@ inline int RPCServer<RPCTYPESRPCHttp>::add_service(RPCService* service)
 }
 
 template<class RPCTYPE>
-bool RPCServer<RPCTYPE>::add_filter(RPCFilter *filter)
+void RPCServer<RPCTYPE>::add_filter(RPCFilter *filter)
 {
 	int type = filter->get_module_type();
-	bool ret = false;
 
 	this->mutex.lock();
 	if (type < SRPC_MODULE_MAX && type >= 0)
@@ -174,37 +172,12 @@ bool RPCServer<RPCTYPE>::add_filter(RPCFilter *filter)
 		}
 
 		if (module)
-			ret = module->add_filter(filter);
+			module->add_filter(filter);
 	}
 
 	this->mutex.unlock();
-	return ret;
+	return;
 }
-
-/*
-template<class RPCTYPE>
-bool RPCServer<RPCTYPE>::remove_filter(RPCFilter *filter)
-{
-	bool ret = true;
-	int type = filter->get_module_type();
-
-	this->mutex.lock();
-	if (type < SRPC_MODULE_MAX && type >= 0 && this->modules[type])
-	{
-		this->modules[type]->remove_filter(filter->get_name());
-		if (this->modules[type]->get_filters_size() == 0)
-		{
-			delete this->modules[type];
-			this->modules[type] = NULL;
-		}
-	}
-	else
-		ret = false;
-
-	this->mutex.unlock();
-	return ret;
-}
-*/
 
 template<class RPCTYPE>
 inline const RPCService *

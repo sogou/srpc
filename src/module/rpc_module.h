@@ -19,7 +19,7 @@
 
 #include <mutex>
 #include <string>
-#include <unordered_map>
+#include <list>
 #include "workflow/WFTask.h" 
 #include "workflow/WFTaskFactory.h"
 #include "rpc_filter.h"
@@ -27,9 +27,9 @@
 namespace srpc
 {
 
-const char *const SRPC_SPAN_LOG			= "log";
-const char *const SRPC_SPAN_EVENT		= "event";
-const char *const SRPC_SPAN_MESSAGE		= "message";
+static constexpr char const *SRPC_SPAN_LOG		= "log";
+static constexpr char const *SRPC_SPAN_EVENT	= "event";
+static constexpr char const *SRPC_SPAN_MESSAGE	= "message";
 
 class RPCModule
 {
@@ -44,8 +44,8 @@ public:
 	{
 		bool ret = this->client_begin(task, data);
 
-		for (const auto& filter_pair : this->filters)
-			ret &= filter_pair.second->client_begin(task, data);
+		for (const auto filter : this->filters)
+			ret &= filter->client_begin(task, data);
 
 		return ret;
 	}
@@ -54,8 +54,8 @@ public:
 	{
 		bool ret = this->server_begin(task, data);
 
-		for (const auto& filter_pair : this->filters)
-			ret &= filter_pair.second->server_begin(task, data);
+		for (const auto filter : this->filters)
+			ret &= filter->server_begin(task, data);
 
 		return ret;
 	}
@@ -65,10 +65,10 @@ public:
 		SubTask *filter_task;
 		bool ret = this->client_end(task, data);
 
-		for (const auto& filter_pair : this->filters)
+		for (const auto filter : this->filters)
 		{
-			ret &= filter_pair.second->client_end(task, data);
-			filter_task = filter_pair.second->create_filter_task(data);
+			ret &= filter->client_end(task, data);
+			filter_task = filter->create_filter_task(data);
 			series_of(task)->push_front(filter_task);
 		}
 
@@ -80,26 +80,21 @@ public:
 		SubTask *filter_task;
 		bool ret = this->server_end(task, data);
 
-		for (const auto& filter_pair : this->filters)
+		for (const auto filter : this->filters)
 		{
-			ret &= filter_pair.second->server_end(task, data);
-			filter_task = filter_pair.second->create_filter_task(data);
+			ret &= filter->server_end(task, data);
+			filter_task = filter->create_filter_task(data);
 			series_of(task)->push_front(filter_task);
 		}
 
 		return ret;
 	}
 
-	bool add_filter(RPCFilter *filter)
+	void add_filter(RPCFilter *filter)
 	{
 		this->mutex.lock();
-		auto iter = this->filters.find(filter->get_name());
-
-		if (iter == this->filters.end())
-			this->filters.insert(std::make_pair(filter->get_name(), filter));
-
+		this->filters.push_back(filter);
 		this->mutex.unlock();
-		return iter == this->filters.end();
 	}
 /*
 	bool remove_filter(const std::string& name)
@@ -122,7 +117,7 @@ public:
 private:
 	RPCModuleType module_type;
 	std::mutex mutex;
-	std::unordered_map<std::string, RPCFilter *> filters;
+	std::list<RPCFilter *> filters;
 };
 
 class SnowFlake

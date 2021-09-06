@@ -48,13 +48,11 @@ private:
 	virtual bool filter(RPCModuleData& data) = 0;
 
 public:
-	RPCFilter(int module_type, const std::string name) :
-		name(std::move(name))
+	RPCFilter(int module_type)
 	{
 		this->module_type = module_type;
 	}
 
-	const std::string& get_name() const { return this->name; }
 	int get_module_type() const { return this->module_type; }
 
 	virtual bool client_begin(SubTask *task, const RPCModuleData& data)
@@ -78,7 +76,6 @@ public:
 	}
 
 private:
-	std::string name;
 	int module_type;
 };
 

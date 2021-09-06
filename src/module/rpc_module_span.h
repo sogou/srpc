@@ -247,7 +247,7 @@ public:
 	}
 
 public:
-	RPCEmptyModule() : RPCModule(RPCModuleMonitor) { }
+	RPCEmptyModule() : RPCModule(RPCModuleEmpty) { }
 };
 
 } // end namespace srpc
