@@ -99,8 +99,7 @@ void RPCSpanLogTask::dispatch()
 	this->subtask_done();
 }
 
-template<class RPCTYPE>
-SubTask *RPCSpanRedis<RPCTYPE>::create(RPCModuleData& span)
+SubTask *RPCSpanRedis::create(RPCModuleData& span)
 {
 	auto iter = span.find(SRPC_TRACE_ID);
 	if (iter == span.end())

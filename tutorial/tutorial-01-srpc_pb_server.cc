@@ -56,8 +56,8 @@ int main()
 
 	server.add_service(&impl);
 
-	RPCSpanDefault<RPCTYPESRPC>	span_module;
-	server.add_module(&span_module);
+	RPCSpanDefault span_log;
+	server.add_filter(&span_log);
 
 	if (server.start(1412) == 0)
 	{

@@ -15,6 +15,7 @@ set(SRC_HEADERS
 	src/module/rpc_span_policies.h
 	src/module/rpc_module_span.h
 	src/module/rpc_module.h
+	src/module/rpc_filter.h
 	src/rpc_basic.h
 	src/rpc_buffer.h
 	src/rpc_client.h

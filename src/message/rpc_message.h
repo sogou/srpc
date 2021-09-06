@@ -21,7 +21,7 @@
 #include <string>
 #include <workflow/ProtocolMessage.h>
 #include "rpc_basic.h"
-#include "rpc_module.h"
+#include "rpc_filter.h"
 
 namespace srpc
 {

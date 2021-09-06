@@ -17,49 +17,111 @@
 #ifndef __RPC_MODULE_H__
 #define __RPC_MODULE_H__
 
-#include <map>
-#include <vector>
+#include <mutex>
 #include <string>
+#include <unordered_map>
 #include "workflow/WFTask.h" 
 #include "workflow/WFTaskFactory.h"
+#include "rpc_filter.h"
 
 namespace srpc
 {
-
-using RPCModuleData = std::map<std::string, std::string>;
-using RPCLogVector = std::vector<std::pair<std::string, std::string>>;
-
-static RPCModuleData global_empty_map;
 
 const char *const SRPC_SPAN_LOG			= "log";
 const char *const SRPC_SPAN_EVENT		= "event";
 const char *const SRPC_SPAN_MESSAGE		= "message";
 
-template<class REQ, class RESP>
 class RPCModule
 {
+protected:
+	virtual bool client_begin(SubTask *task, const RPCModuleData& data) = 0;
+	virtual bool server_begin(SubTask *task, const RPCModuleData& data) = 0;
+	virtual bool client_end(SubTask *task, const RPCModuleData& data) = 0;
+	virtual bool server_end(SubTask *task, const RPCModuleData& data) = 0;
+
 public:
-	virtual int client_begin(SubTask *task, const RPCModuleData& data) = 0;
-	virtual int server_begin(SubTask *task, const RPCModuleData& data) = 0;
-
-	virtual int client_end(SubTask *task, const RPCModuleData& data)
+	bool client_task_begin(SubTask *task, const RPCModuleData& data)
 	{
-		SubTask *module_task = this->create_module_task(data);
-		series_of(task)->push_front(module_task);
-		return 0;
+		bool ret = this->client_begin(task, data);
+
+		for (const auto& filter_pair : this->filters)
+			ret &= filter_pair.second->client_begin(task, data);
+
+		return ret;
 	}
 
-	virtual int server_end(SubTask *task, const RPCModuleData& data)
+	bool server_task_begin(SubTask *task, const RPCModuleData& data)
 	{
-		SubTask *module_task = this->create_module_task(data);
-		series_of(task)->push_front(module_task);
-		return 0;
+		bool ret = this->server_begin(task, data);
+
+		for (const auto& filter_pair : this->filters)
+			ret &= filter_pair.second->server_begin(task, data);
+
+		return ret;
 	}
 
-	virtual SubTask* create_module_task(const RPCModuleData& data)
+	bool client_task_end(SubTask *task, const RPCModuleData& data)
 	{
-		return WFTaskFactory::create_empty_task();
+		SubTask *filter_task;
+		bool ret = this->client_end(task, data);
+
+		for (const auto& filter_pair : this->filters)
+		{
+			ret &= filter_pair.second->client_end(task, data);
+			filter_task = filter_pair.second->create_filter_task(data);
+			series_of(task)->push_front(filter_task);
+		}
+
+		return ret;
 	}
+
+	bool server_task_end(SubTask *task, const RPCModuleData& data)
+	{
+		SubTask *filter_task;
+		bool ret = this->server_end(task, data);
+
+		for (const auto& filter_pair : this->filters)
+		{
+			ret &= filter_pair.second->server_end(task, data);
+			filter_task = filter_pair.second->create_filter_task(data);
+			series_of(task)->push_front(filter_task);
+		}
+
+		return ret;
+	}
+
+	bool add_filter(RPCFilter *filter)
+	{
+		this->mutex.lock();
+		auto iter = this->filters.find(filter->get_name());
+
+		if (iter == this->filters.end())
+			this->filters.insert(std::make_pair(filter->get_name(), filter));
+
+		this->mutex.unlock();
+		return iter == this->filters.end();
+	}
+
+	bool remove_filter(std::string name)
+	{
+		this->mutex.lock();
+		auto iter = this->filters.find(name);
+
+		if (iter != this->filters.end())
+			this->filters.erase(iter);
+
+		this->mutex.unlock();
+		return iter != this->filters.end();
+	}
+
+	size_t get_filters_size() const { return this->filters.size(); }
+	RPCModuleType get_module_type() const { return this->module_type; }
+	RPCModule(RPCModuleType module_type) { this->module_type = module_type; }
+
+private:
+	RPCModuleType module_type;
+	std::mutex mutex;
+	std::unordered_map<std::string, RPCFilter *> filters;
 };
 
 class SnowFlake

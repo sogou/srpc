@@ -77,8 +77,7 @@ public:
 };
 
 template<class RPCTYPE>
-class RPCSpanModule : public RPCModule<typename RPCTYPE::REQ,
-									   typename RPCTYPE::RESP>
+class RPCSpanModule : public RPCModule
 {
 public:
 	using CLIENT_TASK = RPCClientTask<typename RPCTYPE::REQ,
@@ -88,7 +87,7 @@ public:
 	using SPAN_CONTEXT = RPCSpanContext<typename RPCTYPE::REQ,
 										typename RPCTYPE::RESP>;
 
-	int client_begin(SubTask *task, const RPCModuleData& data) override
+	bool client_begin(SubTask *task, const RPCModuleData& data) override
 	{
 		auto *client_task = static_cast<CLIENT_TASK *>(task);
 		auto *req = client_task->get_req();
@@ -115,13 +114,13 @@ public:
 		module_data[SRPC_METHOD_NAME] = req->get_method_name();
 		module_data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 		module_data[SRPC_COMPRESS_TYPE] =
-										std::to_string(req->get_compress_type());
+								std::to_string(req->get_compress_type());
 		module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS);
 
-		return 0; // always success
+		return true; // always success
 	}
 
-	int client_end(SubTask *task, const RPCModuleData& data) override
+	bool client_end(SubTask *task, const RPCModuleData& data) override
 	{
 		std::string ip;
 		unsigned short port;
@@ -141,13 +140,10 @@ public:
 			module_data[SRPC_REMOTE_PORT] = std::to_string(port);
 		}
 
-		SubTask *module_task = this->create_module_task(module_data);
-		series_of(task)->push_front(module_task);
-
-		return 0;
+		return true;
 	}
 
-	int server_begin(SubTask *task, const RPCModuleData& data) override
+	bool server_begin(SubTask *task, const RPCModuleData& data) override
 	{
 		std::string ip;
 		unsigned short port;
@@ -159,7 +155,7 @@ public:
 		module_data[SRPC_METHOD_NAME] = req->get_method_name();
 		module_data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 		module_data[SRPC_COMPRESS_TYPE] =
-										std::to_string(req->get_compress_type());
+								std::to_string(req->get_compress_type());
 
 		if (module_data[SRPC_TRACE_ID].empty())
 			module_data[SRPC_TRACE_ID] = std::to_string(
@@ -181,10 +177,10 @@ public:
 		delete server_task->worker.ctx;
 		server_task->worker.ctx = span_ctx;
 
-		return 0;
+		return true;
 	}
 
-	int server_end(SubTask *task, const RPCModuleData& data) override
+	bool server_end(SubTask *task, const RPCModuleData& data) override
 	{
 		auto *server_task = static_cast<SERVER_TASK *>(task);
 		auto *resp = server_task->get_resp();
@@ -197,13 +193,64 @@ public:
 		module_data[SRPC_STATE] = std::to_string(resp->get_status_code());
 		module_data[SRPC_ERROR] = std::to_string(resp->get_error());
 
-		SubTask *module_task = this->create_module_task(module_data);
-		series_of(task)->push_front(module_task);
-
-		return 0;
+		return true;
 	}
+
+public:
+	RPCSpanModule() : RPCModule(RPCModuleSpan) { }
+};
+
+template<class RPCTYPE>
+class RPCMonitorModule : public RPCModule
+{
+public:
+	bool client_begin(SubTask *task, const RPCModuleData& data) override
+	{
+		return true;
+	}
+	bool client_end(SubTask *task, const RPCModuleData& data) override
+	{
+		return true;
+	}
+	bool server_begin(SubTask *task, const RPCModuleData& data) override
+	{
+		return true;
+	}
+	bool server_end(SubTask *task, const RPCModuleData& data) override
+	{
+		return true;
+	}
+
+public:
+	RPCMonitorModule() : RPCModule(RPCModuleMonitor) { }
+};
+
+template<class RPCTYPE>
+class RPCEmptyModule : public RPCModule
+{
+public:
+	bool client_begin(SubTask *task, const RPCModuleData& data) override
+	{
+		return true;
+	}
+	bool client_end(SubTask *task, const RPCModuleData& data) override
+	{
+		return true;
+	}
+	bool server_begin(SubTask *task, const RPCModuleData& data) override
+	{
+		return true;
+	}
+	bool server_end(SubTask *task, const RPCModuleData& data) override
+	{
+		return true;
+	}
+
+public:
+	RPCEmptyModule() : RPCModule(RPCModuleMonitor) { }
 };
 
 } // end namespace srpc
 
 #endif
+
