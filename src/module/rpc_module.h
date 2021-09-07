@@ -21,7 +21,7 @@
 #include <string>
 #include <list>
 #include "workflow/WFTask.h" 
-#include "workflow/WFTaskFactory.h"
+#include "rpc_basic.h"
 #include "rpc_filter.h"
 
 namespace srpc
@@ -40,78 +40,22 @@ protected:
 	virtual bool server_end(SubTask *task, const RPCModuleData& data) = 0;
 
 public:
-	bool client_task_begin(SubTask *task, const RPCModuleData& data)
-	{
-		bool ret = this->client_begin(task, data);
-
-		for (const auto filter : this->filters)
-			ret &= filter->client_begin(task, data);
-
-		return ret;
-	}
-
-	bool server_task_begin(SubTask *task, const RPCModuleData& data)
-	{
-		bool ret = this->server_begin(task, data);
-
-		for (const auto filter : this->filters)
-			ret &= filter->server_begin(task, data);
-
-		return ret;
-	}
-
-	bool client_task_end(SubTask *task, const RPCModuleData& data)
-	{
-		SubTask *filter_task;
-		bool ret = this->client_end(task, data);
-
-		for (const auto filter : this->filters)
-		{
-			ret &= filter->client_end(task, data);
-			filter_task = filter->create_filter_task(data);
-			series_of(task)->push_front(filter_task);
-		}
-
-		return ret;
-	}
-
-	bool server_task_end(SubTask *task, const RPCModuleData& data)
-	{
-		SubTask *filter_task;
-		bool ret = this->server_end(task, data);
-
-		for (const auto filter : this->filters)
-		{
-			ret &= filter->server_end(task, data);
-			filter_task = filter->create_filter_task(data);
-			series_of(task)->push_front(filter_task);
-		}
-
-		return ret;
-	}
-
 	void add_filter(RPCFilter *filter)
 	{
 		this->mutex.lock();
 		this->filters.push_back(filter);
 		this->mutex.unlock();
 	}
-/*
-	bool remove_filter(const std::string& name)
-	{
-		this->mutex.lock();
-		auto iter = this->filters.find(name);
 
-		if (iter != this->filters.end())
-			this->filters.erase(iter);
-
-		this->mutex.unlock();
-		return iter != this->filters.end();
-	}
-*/
 	size_t get_filters_size() const { return this->filters.size(); }
 	RPCModuleType get_module_type() const { return this->module_type; }
 	RPCModule(RPCModuleType module_type) { this->module_type = module_type; }
+
+	bool client_task_begin(SubTask *task, const RPCModuleData& data);
+	bool server_task_begin(SubTask *task, const RPCModuleData& data);
+	bool client_task_end(SubTask *task, const RPCModuleData& data);
+	bool server_task_end(SubTask *task, const RPCModuleData& data);
+
 	virtual ~RPCModule() {}
 
 private:
@@ -123,61 +67,14 @@ private:
 class SnowFlake
 {
 public:
+	SnowFlake(int timestamp_bits, int group_bits, int machine_bits);
+
 	SnowFlake() :
 		SnowFlake(TIMESTAMP_BITS, GROUP_BITS, MACHINE_BITS)
 	{
 	}
 
-	SnowFlake(int timestamp_bits,
-			  int group_bits,
-			  int machine_bits)
-	{
-		this->timestamp_bits = timestamp_bits;
-		this->group_bits = group_bits;
-		this->machine_bits = machine_bits;
-		this->sequence_bits = TOTAL_BITS - timestamp_bits - group_bits - machine_bits;
-
-		this->last_timestamp = 1L;
-		this->sequence = 0L;
-
-		this->group_id_max = 1 << this->group_bits;
-		this->machine_id_max = 1 << this->machine_bits;
-		this->sequence_max = 1 << this->sequence_bits;
-
-		this->machine_shift = this->sequence_bits;
-		this->group_shift = this->machine_shift + this->machine_bits;
-		this->timestamp_shift = this->group_shift + this->group_bits;
-	}
-
-	bool get_id(long long group_id, long long machine_id, long long *uid)
-	{
-		if (group_id > this->group_id_max || machine_id > this->machine_id_max)
-			return false;
-
-		long long timestamp = GET_CURRENT_MS_STEADY;
-		long long seq_id;
-
-		if (timestamp < this->last_timestamp)
-			return false;
-
-		if (timestamp == this->last_timestamp)
-		{
-			if (++this->sequence > this->sequence_max)
-				return false; // too many sequence_id in one millie second
-		} else {
-			this->sequence = 0L;
-		}
-		seq_id = this->sequence++;
-
-		this->last_timestamp = timestamp;
-
-		*uid = (timestamp << this->timestamp_shift) |
-				(group_id << this->group_shift) |
-				(machine_id << this->machine_shift) |
-				seq_id;
-
-		return true;
-	}
+	bool get_id(long long group_id, long long machine_id, long long *uid);
 
 private:
 	std::atomic<long long> last_timestamp; // -1L;

@@ -44,7 +44,6 @@ public:
 
 private:
 	virtual SubTask *create(RPCModuleData& data) = 0;
-
 	virtual bool filter(RPCModuleData& data) = 0;
 
 public:
@@ -59,17 +58,14 @@ public:
 	{
 		return true;
 	}
-
 	virtual bool server_begin(SubTask *task, const RPCModuleData& data)
 	{
 		return true;
 	}
-
 	virtual bool client_end(SubTask *task, const RPCModuleData& data)
 	{
 		return true;
 	}
-
 	virtual bool server_end(SubTask *task, const RPCModuleData& data)
 	{
 		return true;
