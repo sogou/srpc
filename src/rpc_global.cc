@@ -109,7 +109,6 @@ bool SRPCGlobal::task_init(RPCClientParams& params, ParsedURI& uri,
 		params.is_ssl = (uri.scheme &&
 								(strcasecmp(uri.scheme, "https") == 0 ||
 								 strcasecmp(uri.scheme, "srpcs") == 0));
-
 	}
 
 	return false;

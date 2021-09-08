@@ -21,7 +21,7 @@
 #include "rpc_context.h"
 #include "rpc_options.h"
 #include "rpc_global.h"
-#include "rpc_module.h"
+#include "rpc_module_span.h"
 
 namespace srpc
 {
@@ -31,7 +31,6 @@ class RPCClient
 {
 public:
 	using TASK = RPCClientTask<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
-	using MODULE = RPCModule<typename RPCTYPE::REQ, typename RPCTYPE::RESP>;
 
 protected:
 	using COMPLEXTASK = WFComplexClientTask<typename RPCTYPE::REQ,
@@ -48,17 +47,24 @@ public:
 
 	void set_keep_alive(int timeout);
 	void set_watch_timeout(int timeout);
-	void add_module(MODULE *module);
+	void add_filter(RPCFilter *filter);
 
 protected:
 	template<class OUTPUT>
 	TASK *create_rpc_client_task(const std::string& method_name,
 								 std::function<void (OUTPUT *, RPCContext *)>&& done)
 	{
+		std::list<RPCModule *> module;
+		for (int i = 0; i < SRPC_MODULE_MAX; i++)
+		{
+			if (this->modules[i])
+				module.push_back(this->modules[i]);
+		}
+
 		auto *task = new TASK(this->service_name,
 							  method_name,
 							  &this->params.task_params,
-							  this->modules,
+							  std::move(module),
 							  [done](int status_code, RPCWorker& worker) -> int {
 				return ClientRPCDoneImpl(status_code, worker, done);
 			});
@@ -79,7 +85,8 @@ private:
 	struct sockaddr_storage ss;
 	socklen_t ss_len;
 	bool has_addr_info;
-	std::list<MODULE *> modules;
+	std::mutex mutex;
+	RPCModule *modules[SRPC_MODULE_MAX] = { 0 };
 };
 
 ////////
@@ -119,9 +126,40 @@ inline void RPCClient<RPCTYPE>::set_watch_timeout(int timeout)
 }
 
 template<class RPCTYPE>
-inline void RPCClient<RPCTYPE>::add_module(MODULE *module)
+void RPCClient<RPCTYPE>::add_filter(RPCFilter *filter)
 {
-	this->modules.push_back(module);
+	int type = filter->get_module_type();
+
+	this->mutex.lock();
+	if (type < SRPC_MODULE_MAX && type >= 0)
+	{
+		RPCModule *module = this->modules[type];
+
+		if (!module)
+		{
+			switch (type)
+			{
+			case RPCModuleSpan:
+				module = new RPCSpanModule<RPCTYPE>();
+				break;
+			case RPCModuleMonitor:
+				module = new RPCMonitorModule<RPCTYPE>();
+				break;
+			case RPCModuleEmpty:
+				module = new RPCEmptyModule<RPCTYPE>();
+				break;
+			default:
+				break;
+			}
+			this->modules[type] = module;
+		}
+
+		if (module)
+			module->add_filter(filter);
+	}
+
+	this->mutex.unlock();
+	return;
 }
 
 template<class RPCTYPE>

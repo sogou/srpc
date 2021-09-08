@@ -17,21 +17,22 @@
 #ifndef __RPC_SERVER_H__
 #define __RPC_SERVER_H__
 
-#include <string>
 #include <map>
+#include <string>
 #include <errno.h>
 #include <workflow/WFServer.h>
 #include <workflow/WFHttpServer.h>
 #include "rpc_types.h"
 #include "rpc_service.h"
 #include "rpc_options.h"
-#include "rpc_module.h"
+#include "rpc_module_span.h"
 
 namespace srpc
 {
 
 template<class RPCTYPE>
-class RPCServer : public WFServer<typename RPCTYPE::REQ, typename RPCTYPE::RESP>
+class RPCServer : public WFServer<typename RPCTYPE::REQ,
+								  typename RPCTYPE::RESP>
 {
 public:
 	using REQTYPE = typename RPCTYPE::REQ;
@@ -49,8 +50,7 @@ public:
 
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
-
-	void add_module(RPCModule<REQTYPE, RESPTYPE> *module);
+	void add_filter(RPCFilter *filter);
 
 protected:
 	RPCServer(const struct RPCServerParams *params,
@@ -62,8 +62,9 @@ protected:
 private:
 	void set_tracing(TASK *Task);
 
+	std::mutex mutex;
 	std::map<std::string, RPCService *> service_map;
-	std::list<RPCModule<REQTYPE, RESPTYPE> *> modules;
+	RPCModule *modules[SRPC_MODULE_MAX] = { NULL };
 };
 
 ////////
@@ -85,7 +86,7 @@ inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params):
 
 template<class RPCTYPE>
 inline RPCServer<RPCTYPE>::RPCServer(const struct RPCServerParams *params,
-									 std::function<void (NETWORKTASK *)>&& process):
+							std::function<void (NETWORKTASK *)>&& process):
 	WFServer<REQTYPE, RESPTYPE>(&params, std::move(process))
 {}
 
@@ -142,13 +143,45 @@ inline int RPCServer<RPCTYPESRPCHttp>::add_service(RPCService* service)
 }
 
 template<class RPCTYPE>
-inline void RPCServer<RPCTYPE>::add_module(RPCModule<REQTYPE, RESPTYPE> *module)
+void RPCServer<RPCTYPE>::add_filter(RPCFilter *filter)
 {
-	this->modules.push_back(module);
+	int type = filter->get_module_type();
+
+	this->mutex.lock();
+	if (type < SRPC_MODULE_MAX && type >= 0)
+	{
+		RPCModule *module = this->modules[type];
+
+		if (!module)
+		{
+			switch (type)
+			{
+			case RPCModuleSpan:
+				module = new RPCSpanModule<RPCTYPE>();
+				break;
+			case RPCModuleMonitor:
+				module = new RPCMonitorModule<RPCTYPE>();
+				break;
+			case RPCModuleEmpty:
+				module = new RPCEmptyModule<RPCTYPE>();
+				break;
+			default:
+				break;
+			}
+			this->modules[type] = module;
+		}
+
+		if (module)
+			module->add_filter(filter);
+	}
+
+	this->mutex.unlock();
+	return;
 }
 
 template<class RPCTYPE>
-inline const RPCService *RPCServer<RPCTYPE>::find_service(const std::string& name) const
+inline const RPCService *
+RPCServer<RPCTYPE>::find_service(const std::string& name) const
 {
 	const auto it = this->service_map.find(name);
 
@@ -163,7 +196,14 @@ inline CommSession *RPCServer<RPCTYPE>::new_session(long long seq,
 													CommConnection *conn)
 {
 	/* TODO: Change to a factory function. */
-	auto *task = new TASK(this, this->process, this->modules);
+	std::list<RPCModule *> module;
+	for (int i = 0; i < SRPC_MODULE_MAX; i++)
+	{
+		if (this->modules[i])
+			module.push_back(this->modules[i]);
+	}
+
+	auto *task = new TASK(this, this->process, std::move(module));
 
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
@@ -207,7 +247,10 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				RPCModuleData *task_data = server_task->mutable_module_data();
 
 				for (auto *module : this->modules)
-					module->server_begin(server_task, *task_data);
+				{
+					if (module)
+						module->server_task_begin(server_task, *task_data);
+				}
 
 				series = static_cast<SERIES *>(series_of(task));
 				if (!task_data->empty())
@@ -224,7 +267,8 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 }
 
 template<>
-inline const RPCService *RPCServer<RPCTYPEThrift>::find_service(const std::string& name) const
+inline const RPCService *
+RPCServer<RPCTYPEThrift>::find_service(const std::string& name) const
 {
 	if (this->service_map.empty())
 		return NULL;
@@ -233,7 +277,8 @@ inline const RPCService *RPCServer<RPCTYPEThrift>::find_service(const std::strin
 }
 
 template<>
-inline const RPCService *RPCServer<RPCTYPEThriftHttp>::find_service(const std::string& name) const
+inline const RPCService *
+RPCServer<RPCTYPEThriftHttp>::find_service(const std::string& name) const
 {
 	if (this->service_map.empty())
 		return NULL;

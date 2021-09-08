@@ -27,6 +27,7 @@ static WFFacilities::WaitGroup wait_group(1);
 int main()
 {
 	Example::SRPCClient client("127.0.0.1", 1412);
+
 	EchoRequest req;
 	req.set_message("Hello, sogou rpc!");
 	req.set_name("1412");
@@ -58,6 +59,7 @@ int main()
 
 	rpc_task->serialize_input(&req);
 	(*http_task > rpc_task).start();
+	rpc_task->log({{"event", "info"}, {"message", "rpc client task testing log."}});
 	wait_group.wait();
 
 	return 0;

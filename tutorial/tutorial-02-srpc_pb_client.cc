@@ -24,8 +24,9 @@ using namespace srpc;
 int main()
 {
 	Example::SRPCClient client("127.0.0.1", 1412);
-	RPCSpanDefault<RPCTYPESRPC> span_module;
-	client.add_module(&span_module);
+
+	RPCSpanDefault span_log;
+	client.add_filter(&span_log);
 
 	//async
 	EchoRequest req;
