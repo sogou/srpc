@@ -26,8 +26,8 @@ bool RPCModule::client_task_begin(SubTask *task, const RPCModuleData& data)
 {
 	bool ret = this->client_begin(task, data);
 
-	for (const auto filter : this->filters)
-		ret &= filter->client_begin(task, data);
+	for (RPCFilter *filter : this->filters)
+		ret = ret && filter->client_begin(task, data);
 
 	return ret;
 }
@@ -36,8 +36,8 @@ bool RPCModule::server_task_begin(SubTask *task, const RPCModuleData& data)
 {
 	bool ret = this->server_begin(task, data);
 
-	for (const auto filter : this->filters)
-		ret &= filter->server_begin(task, data);
+	for (RPCFilter *filter : this->filters)
+		ret = ret && filter->server_begin(task, data);
 
 	return ret;
 }
@@ -47,9 +47,9 @@ bool RPCModule::client_task_end(SubTask *task, const RPCModuleData& data)
 	SubTask *filter_task;
 	bool ret = this->client_end(task, data);
 
-	for (const auto filter : this->filters)
+	for (RPCFilter *filter : this->filters)
 	{
-		ret &= filter->client_end(task, data);
+		ret = ret && filter->client_end(task, data);
 		filter_task = filter->create_filter_task(data);
 		series_of(task)->push_front(filter_task);
 	}
@@ -62,9 +62,9 @@ bool RPCModule::server_task_end(SubTask *task, const RPCModuleData& data)
 	SubTask *filter_task;
 	bool ret = this->server_end(task, data);
 
-	for (const auto filter : this->filters)
+	for (RPCFilter *filter : this->filters)
 	{
-		ret &= filter->server_end(task, data);
+		ret = ret && filter->server_end(task, data);
 		filter_task = filter->create_filter_task(data);
 		series_of(task)->push_front(filter_task);
 	}
