@@ -83,7 +83,8 @@ struct idl_info
 class SGenUtil
 {
 public:
-	static std::vector<std::string> split_filter_empty(const std::string& str, char sep)
+	static std::vector<std::string> split_filter_empty(const std::string& str,
+													   char sep)
 	{
 		std::vector<std::string> res;
 		std::string::const_iterator start = str.begin();
@@ -116,12 +117,12 @@ public:
 			start = SGenUtil::find_next_nonspace(str,offset);
 			if (start == std::string::npos)
 				break;
-			
+
 			end = SGenUtil::find_next_space(str,start+1);
 			if (end == std::string::npos)
 			{
 				elems.push_back(str.substr(start));
-				break;	
+				break;
 			}
 			elems.push_back(str.substr(start,end-start));
 			offset = end+1;
@@ -201,7 +202,8 @@ public:
 		return true;
 	}
 
-	static void replace(std::string& str, const std::string& before, const std::string& after)
+	static void replace(std::string& str, const std::string& before,
+						const std::string& after)
 	{
 		for (size_t pos = 0; pos < str.size(); pos += after.length())
 		{
