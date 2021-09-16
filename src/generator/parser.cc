@@ -20,22 +20,22 @@
 
 #define LINE_MAX 2048
 
-
-static std::string gen_param_var(const std::string& type_name, size_t& cur, idl_info& info);
-std::string type_prefix_to_namespace(const std::string& type_name, idl_info& info);
-Descriptor * search_cur_file_descriptor( idl_info& info,
-										const std::string& block_type, 
-										const std::string& block_name);
-Descriptor * search_include_file_descriptor( idl_info& info,
-											const std::string include_file_name,
-											const std::string& block_type,
-											const std::string& block_name);
-idl_info * search_include_file( idl_info& info, const std::string file_name);
-idl_info * search_namespace( idl_info& info, const std::string name_space);
+static std::string gen_param_var(const std::string& type_name, size_t& cur,
+								 idl_info& info);
+std::string type_prefix_to_namespace(const std::string& type_name,
+									 idl_info& info);
+Descriptor *search_cur_file_descriptor(idl_info& info,
+									   const std::string& block_type,
+									   const std::string& block_name);
+Descriptor *search_include_file_descriptor(idl_info& info,
+										   const std::string include_file_name,
+										   const std::string& block_type,
+										   const std::string& block_name);
+idl_info *search_include_file(idl_info& info, const std::string file_name);
+idl_info *search_namespace(idl_info& info, const std::string name_space);
 void parse_thrift_type_name(const std::string& type_name,
 									std::string& type_prefix,
 									std::string& real_type_name);
-
 
 bool Parser::parse(const std::string& proto_file, idl_info& info)
 {
@@ -60,7 +60,8 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 	FILE *in = fopen(proto_file.c_str(), "r");
 	if (!in)
 	{
-		fprintf(stderr, "[Parser] proto file: [%s] not exists.\n", proto_file.c_str());
+		fprintf(stderr, "[Parser] proto file: [%s] not exists.\n",
+				proto_file.c_str());
 		return false;
 	}
 
@@ -95,7 +96,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 		this->check_single_comments(line);
 		if ((state & PARSER_ST_COMMENT_MASK) == PARSER_ST_INSIDE_COMMENT)
 		{
-			if (this->check_multi_comments_end(line)) 
+			if (this->check_multi_comments_end(line))
 			{
 				state -= PARSER_ST_INSIDE_COMMENT;
 				//	state |= PARSER_ST_OUTSIDE_COMMENT_MASK;
@@ -105,9 +106,9 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 			else
 				continue;
 
-		} else if (this->check_multi_comments_begin(line)) {
-			state = (state & PARSER_ST_OUTSIDE_COMMENT_MASK) + PARSER_ST_INSIDE_COMMENT;
 		}
+		else if (this->check_multi_comments_begin(line))
+			state = (state & PARSER_ST_OUTSIDE_COMMENT_MASK) + PARSER_ST_INSIDE_COMMENT;
 
 		if (this->is_thrift == false)
 		{
@@ -117,7 +118,8 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 			else if (rpc_option == 2)
 			{
 				fprintf(stderr, "[Parser ERROR] %s must not set "
-						"\"option cc_generic_services = true\" for srpc.\n", proto_file.c_str());
+						"\"option cc_generic_services = true\" for srpc.\n",
+						proto_file.c_str());
 				return false;
 			}
 		}
@@ -141,9 +143,13 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 			continue;
 		}
 
-		if (this->is_thrift && this->parse_thrift_typedef(line,old_type_name,new_type_name,info) == true)
+		if (this->is_thrift &&
+			this->parse_thrift_typedef(line,
+									   old_type_name,
+									   new_type_name,info) == true)
 		{
-			info.typedef_list.push_back(typedef_descriptor{old_type_name,new_type_name});
+			info.typedef_list.push_back(typedef_descriptor{old_type_name,
+														   new_type_name});
 			continue;
 		}
 
@@ -158,16 +164,17 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 				block.clear();
 				block = line;
 				if (this->parse_block_name(line, block_type,
-										   block_name,extends_type) == false)
+										   block_name, extends_type) == false)
 				{
-					fprintf(stderr, "Invalid proto file line: %s\n", line.c_str());
+					fprintf(stderr, "Invalid proto file line: %s\n",
+							line.c_str());
 					fprintf(stderr, "Failed to parse block name or value.\n");
 					return false;
 				}
 			}
-		} else {
-			flag_append = true;
 		}
+		else
+			flag_append = true;
 
 		// not else, because { }; can in the same line
 		if ((state & PARSER_ST_BLOCK_MASK) == PARSER_ST_INSIDE_BLOCK)
@@ -185,11 +192,12 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 				{
 					state = PARSER_ST_OUTSIDE_BLOCK;
 					//state &= PARSER_ST_OUTSIDE_BLOCK_MASK;
+					Descriptor desc;
 					if (block_type == "service")
 					{
-						Descriptor desc;
 						if (this->is_thrift)
-							succ = this->parse_service_thrift(info.file_name_prefix, block, desc, info);
+							succ = this->parse_service_thrift(info.file_name_prefix,
+															  block, desc, info);
 						else
 							succ = this->parse_service_pb(block, desc);
 
@@ -201,29 +209,38 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 						desc.extends_type = extends_type;
 						if (desc.extends_type != "" && this->is_thrift)
 						{
-							Descriptor *extended_desc = NULL; 			
+							Descriptor *extended_desc = NULL;
 							parse_thrift_type_name(desc.extends_type,
-													thrift_type_prefix,thrift_type_name);
+												   thrift_type_prefix,
+												   thrift_type_name);
+
 							if (thrift_type_prefix == "")
 								extended_desc = search_cur_file_descriptor(info,
-													"service",thrift_type_name);
-							else 
-								extended_desc = search_include_file_descriptor(info,
-													thrift_type_prefix+".thrift","service",thrift_type_name);
-							if (!extended_desc)
-								fprintf(stderr,"service %s extends type %s not found\n",
-											desc.block_name.c_str(),desc.extends_type.c_str());
+													"service", thrift_type_name);
 							else
+								extended_desc = search_include_file_descriptor(info,
+													thrift_type_prefix+".thrift",
+													"service", thrift_type_name);
+							if (!extended_desc)
+							{
+								fprintf(stderr,"service %s extends type %s not found\n",
+										desc.block_name.c_str(),
+										desc.extends_type.c_str());
+							}
+							else
+							{
 								desc.rpcs.insert(desc.rpcs.begin(),
-											extended_desc->rpcs.begin(),extended_desc->rpcs.end());
+												 extended_desc->rpcs.begin(),
+												 extended_desc->rpcs.end());
+							}
 						}
 
 						info.desc_list.emplace_back(std::move(desc));
 					}
 					else if (block_type == "struct" && this->is_thrift)
 					{
-						Descriptor desc;
-						succ = this->parse_struct_thrift(info.file_name_prefix, block, desc, info);
+						succ = this->parse_struct_thrift(info.file_name_prefix,
+														 block, desc, info);
 						if (!succ)
 							return false;
 
@@ -234,8 +251,8 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 					}
 					else if (block_type == "exception" && this->is_thrift)
 					{
-						Descriptor desc;
-						succ = this->parse_struct_thrift(info.file_name_prefix, block, desc, info);
+						succ = this->parse_struct_thrift(info.file_name_prefix,
+														 block, desc, info);
 						if (!succ)
 							return false;
 
@@ -245,7 +262,6 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 					}
 					else if (block_type == "enum" && this->is_thrift)
 					{
-						Descriptor desc;
 						succ = this->parse_enum_thrift(block, desc);
 						if (!succ)
 							return false;
@@ -259,18 +275,22 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 			}
 		}
 	}
+
 	build_typedef_mapping(info);
 	fclose(in);
 	return true;
 }
 
-std::string Parser::find_typedef_mapping_type(std::string& type_name,size_t& cur, idl_info& info)
+std::string Parser::find_typedef_mapping_type(std::string& type_name,
+											  size_t& cur, idl_info& info)
 {
 	size_t st = cur;
 	cur = SGenUtil::find_next_nonspace(type_name,cur);
+
 	for (; cur < type_name.size(); cur++)
 	{
-		if (type_name[cur] == ',' || type_name[cur] == '>' || type_name[cur] == '<')
+		if (type_name[cur] == ',' || type_name[cur] == '>' ||
+			type_name[cur] == '<')
 			break;
 	}
 
@@ -286,20 +306,25 @@ std::string Parser::find_typedef_mapping_type(std::string& type_name,size_t& cur
 		idl_type == "int64_t" ||
 		idl_type == "uint64_t" ||
 		idl_type == "double" ||
-		idl_type == "std::string" )
+		idl_type == "std::string")
+	{
 		return idl_type;
-	else if (idl_type == "std::map" && cur < type_name.size() && type_name[cur] == '<')
+	}
+	else if (idl_type == "std::map" && cur < type_name.size() &&
+			 type_name[cur] == '<')
 	{
 		auto key_type = find_typedef_mapping_type(type_name, ++cur, info);
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
 		return "std::map<" + key_type + ", " + val_type + ">";
 	}
-	else if (idl_type == "std::set" && cur < type_name.size() && type_name[cur] == '<')
+	else if (idl_type == "std::set" && cur < type_name.size() &&
+			 type_name[cur] == '<')
 	{
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
 		return "std::set<" + val_type + ">";
 	}
-	else if (idl_type == "std::vector" && cur < type_name.size() && type_name[cur] == '<')
+	else if (idl_type == "std::vector" && cur < type_name.size() &&
+			 type_name[cur] == '<')
 	{
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
 		return "std::vector<" + val_type + ">";
@@ -318,15 +343,18 @@ std::string Parser::find_typedef_mapping_type(std::string& type_name,size_t& cur
 
 	for (auto& include : info.include_list)
 	{
-		if ( (type_namespace != "" && include.package_name.size() > 0 && include.package_name[0] == type_namespace)
-					|| (type_namespace == "" && include.package_name.size() == 0) )
+		if ( (type_namespace != "" && include.package_name.size() > 0 &&
+			  include.package_name[0] == type_namespace) ||
+			(type_namespace == "" && include.package_name.size() == 0) )
 		{
 			for (auto& t : include.typedef_list)
 			{
 				if (real_type_name  == t.new_type_name)
 				{
 					size_t offset = 0;
-					include.typedef_mapping[real_type_name] = find_typedef_mapping_type(t.old_type_name,offset,include);
+					include.typedef_mapping[real_type_name] =
+						find_typedef_mapping_type(t.old_type_name, offset, include);
+
 					return include.typedef_mapping[real_type_name];
 				}
 			}
@@ -338,7 +366,8 @@ std::string Parser::find_typedef_mapping_type(std::string& type_name,size_t& cur
 		if (real_type_name  == t.new_type_name)
 		{
 			size_t offset = 0;
-			info.typedef_mapping[real_type_name] = find_typedef_mapping_type(t.old_type_name,offset,info);
+			info.typedef_mapping[real_type_name] =
+				find_typedef_mapping_type(t.old_type_name, offset, info);
 			return info.typedef_mapping[real_type_name];
 		}
 	}
@@ -349,25 +378,27 @@ std::string Parser::find_typedef_mapping_type(std::string& type_name,size_t& cur
 
 void Parser::build_typedef_mapping(idl_info& info)
 {
-	for(auto &include:info.include_list)
+	for (auto &include:info.include_list)
 	{
-		for(auto &t:include.typedef_list)
+		for (auto &t:include.typedef_list)
 		{
 			if (include.typedef_mapping.find(t.new_type_name) != include.typedef_mapping.end())
 				continue;
+
 			size_t cur = 0;
-			include.typedef_mapping[t.new_type_name] = find_typedef_mapping_type(t.old_type_name,cur,include);
-//			fprintf(stdout,"%s %s\n",t.new_type_name.c_str(),include.typedef_mapping[t.new_type_name].c_str());
+			include.typedef_mapping[t.new_type_name] =
+				find_typedef_mapping_type(t.old_type_name, cur, include);
 		}
 	}
-	
-	for(auto &t:info.typedef_list)
+
+	for (auto &t:info.typedef_list)
 	{
 		if (info.typedef_mapping.find(t.new_type_name) != info.typedef_mapping.end())
 			continue;
+
 		size_t cur = 0;
-		info.typedef_mapping[t.new_type_name] = find_typedef_mapping_type(t.old_type_name,cur,info);
-//		fprintf(stdout,"%s %s\n",t.new_type_name.c_str(),info.typedef_mapping[t.new_type_name].c_str());
+		info.typedef_mapping[t.new_type_name] =
+			find_typedef_mapping_type(t.old_type_name, cur, info);
 	}
 }
 
@@ -428,19 +459,26 @@ bool Parser::parse_dir_prefix(const std::string& file_name, char *dir_prefix)
 	return true;
 }
 
-bool Parser::parse_thrift_typedef(const std::string& line, std::string& old_type_name, std::string& new_type_name, idl_info&info)
+bool Parser::parse_thrift_typedef(const std::string& line,
+								  std::string& old_type_name,
+								  std::string& new_type_name,
+								  idl_info&info)
 {
 	std::vector<std::string> elems = SGenUtil::split_by_space(line);
+
 	if (elems.size() >= 3 && elems[0] == "typedef")
 	{
 		size_t offset = 0;
 		std::string idl_type;
 		for (size_t i = 1; i < elems.size()-1; i++)
 			idl_type.append(elems[i]);
+
 		old_type_name = gen_param_var(idl_type,offset,info);
 		new_type_name = elems[elems.size()-1];
+
 		return true;
 	}
+
 	return false;
 }
 
@@ -519,9 +557,11 @@ bool Parser::parse_package_name(const std::string& line,
 		begin = pos;
 	}
 
-	while (pos < line.length() && !isspace(line[pos])
-			&& line[pos] != ';')
+	while (pos < line.length() && !isspace(line[pos]) &&
+		   line[pos] != ';')
+	{
 		pos++;
+	}
 
 	std::string names = line.substr(begin, pos - begin);
 
@@ -537,13 +577,16 @@ bool Parser::parse_package_name(const std::string& line,
 	return true;
 }
 
-static std::string gen_param_var(const std::string& type_name, size_t& cur, idl_info& info)
+static std::string gen_param_var(const std::string& type_name, size_t& cur,
+								 idl_info& info)
 {
 	size_t st = cur;
 	cur = SGenUtil::find_next_nonspace(type_name,cur);
+
 	for (; cur < type_name.size(); cur++)
 	{
-		if (type_name[cur] == ',' || type_name[cur] == '>' || type_name[cur] == '<')
+		if (type_name[cur] == ',' || type_name[cur] == '>' ||
+			type_name[cur] == '<')
 			break;
 	}
 
@@ -565,18 +608,21 @@ static std::string gen_param_var(const std::string& type_name, size_t& cur, idl_
 		return "double";
 	else if (idl_type == "string" || idl_type == "binary")
 		return "std::string";
-	else if (idl_type == "map" && cur < type_name.size() && type_name[cur] == '<')
+	else if (idl_type == "map" && cur < type_name.size() &&
+			 type_name[cur] == '<')
 	{
 		auto key_type = gen_param_var(type_name, ++cur, info);
 		auto val_type = gen_param_var(type_name, ++cur, info);
 		return "std::map<" + key_type + ", " + val_type + ">";
 	}
-	else if (idl_type == "set" && cur < type_name.size() && type_name[cur] == '<')
+	else if (idl_type == "set" && cur < type_name.size() &&
+			 type_name[cur] == '<')
 	{
 		auto val_type = gen_param_var(type_name, ++cur, info);
 		return "std::set<" + val_type + ">";
 	}
-	else if (idl_type == "list" && cur < type_name.size() && type_name[cur] == '<')
+	else if (idl_type == "list" && cur < type_name.size() &&
+			 type_name[cur] == '<')
 	{
 		auto val_type = gen_param_var(type_name, ++cur, info);
 		return "std::vector<" + val_type + ">";
@@ -586,7 +632,7 @@ static std::string gen_param_var(const std::string& type_name, size_t& cur, idl_
 }
 
 static void fill_rpc_param_type(const std::string& file_name_prefix,
-								const std::string idl_type, 
+								const std::string idl_type,
 								rpc_param& param, idl_info& info)
 {
 	if (idl_type == "bool")
@@ -650,7 +696,8 @@ static void fill_rpc_param_type(const std::string& file_name_prefix,
 	else
 	{
 		auto *enum_set = SGenUtil::get_enum_set();
-		if (enum_set->count(idl_type) > 0 || enum_set->count(file_name_prefix + idl_type) > 0)
+		if (enum_set->count(idl_type) > 0 ||
+			enum_set->count(file_name_prefix + idl_type) > 0)
 		{
 			//enum
 			param.data_type = srpc::TDT_I32;
@@ -671,39 +718,42 @@ std::vector<std::string> Parser::split_thrift_rpc(const std::string& str)
 	std::string::const_iterator start = str.begin();
 	std::string::const_iterator parameter_end = str.end();
 	std::string::const_iterator throws_end = str.end();
-	while(1) 
+	while (1)
 	{
-		parameter_end = find(start,str.end(),')');
+		parameter_end = find(start,str.end(), ')');
 		if (parameter_end == str.end()) 
-		{	
+		{
 			res.emplace_back(start,parameter_end);
 			break;
 		}
-		
-		std::string::const_iterator	offset = find_if(parameter_end+1,str.end(),
+
+		std::string::const_iterator offset = find_if(parameter_end + 1, str.end(),
 					[](char c){return !std::isspace(c);});
 		if (offset == str.end())
 		{
 			res.emplace_back(start,parameter_end);
 			break;
 		}
-		
-		if (str.compare(offset-str.begin(),6,"throws") == 0) 
+
+		if (str.compare(offset-str.begin(), 6, "throws") == 0)
 		{
-			throws_end = find(offset,str.end(),')');
+			throws_end = find(offset,str.end(), ')');
 			res.emplace_back(start,throws_end);
-			start = throws_end+1;
+			start = throws_end + 1;
 		}
 		else
 		{
 			res.emplace_back(start,parameter_end);
-			start = parameter_end+1;
+			start = parameter_end + 1;
 		}
 	}
 	return res;
 }
 
-bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,const std::string& str, std::vector<rpc_param>& params, idl_info& info)
+bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,
+									const std::string& str,
+									std::vector<rpc_param>& params,
+									idl_info& info)
 {
 	size_t left_b = 0;
 	rpc_param param;
@@ -732,7 +782,10 @@ bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,const st
 	return true;
 }
 
-bool Parser::parse_service_thrift(const std::string& file_name_prefix, const std::string& block, Descriptor& desc, idl_info& info)
+bool Parser::parse_service_thrift(const std::string& file_name_prefix,
+								  const std::string& block,
+								  Descriptor& desc,
+								  idl_info& info)
 {
 	rpc_descriptor rpc_desc;
 	auto st = block.find_first_of('{');
@@ -791,19 +844,25 @@ bool Parser::parse_service_thrift(const std::string& file_name_prefix, const std
 		auto right_b = line.find(')',left_b);
 		if (right_b == std::string::npos)
 		{
-			parse_rpc_param_thrift(file_name_prefix,line.substr(left_b),rpc_desc.req_params,info);
+			parse_rpc_param_thrift(file_name_prefix, line.substr(left_b),
+								   rpc_desc.req_params,info);
 		}
 		else
 		{
-			parse_rpc_param_thrift(file_name_prefix,line.substr(left_b,right_b-left_b),rpc_desc.req_params,info);
-			auto throws_start = line.find("throws",right_b);
-			if (throws_start != std::string::npos) 
+			parse_rpc_param_thrift(file_name_prefix,
+								   line.substr(left_b, right_b - left_b),
+								   rpc_desc.req_params,
+								   info);
+
+			auto throws_start = line.find("throws", right_b);
+			if (throws_start != std::string::npos)
 			{
-				left_b = line.find('(',throws_start+6); 	
-				parse_rpc_param_thrift(file_name_prefix,line.substr(left_b),rpc_desc.resp_params,info);
+				left_b = line.find('(', throws_start + 6);
+				parse_rpc_param_thrift(file_name_prefix, line.substr(left_b),
+									   rpc_desc.resp_params, info);
 			}
 		}
-	
+
 		fprintf(stdout, "Successfully parse method:%s req:%s resp:%s\n",
 				rpc_desc.method_name.c_str(),
 				rpc_desc.request_name.c_str(),
@@ -933,8 +992,9 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		}
 		else
 		{
-			param.required_state = (b1 == "required") ? srpc::THRIFT_STRUCT_FIELD_REQUIRED
-													  : srpc::THRIFT_STRUCT_FIELD_OPTIONAL;
+			param.required_state = (b1 == "required") ?
+								   srpc::THRIFT_STRUCT_FIELD_REQUIRED :
+								   srpc::THRIFT_STRUCT_FIELD_OPTIONAL;
 			b2 = SGenUtil::strip(bb.substr(idx1 + 1, idx2 - idx1 - 1));
 			b3 = SGenUtil::strip(bb.substr(idx2 + 1));
 		}
@@ -967,7 +1027,8 @@ bool Parser::parse_service_pb(const std::string& block, Descriptor& desc)
 		{
 			if (desc.rpcs.size() == 0)
 			{
-				fprintf(stderr, "no \"rpc\" in service block [%s]\n", block.c_str());
+				fprintf(stderr, "no \"rpc\" in service block [%s]\n",
+						block.c_str());
 				return false;
 			} else {
 				return true;
@@ -982,7 +1043,8 @@ bool Parser::parse_service_pb(const std::string& block, Descriptor& desc)
 		size_t method_name_pos = block.find("(", pos);
 		if (method_name_pos == std::string::npos)
 		{
-			fprintf(stderr, "no method_name in service block [%s]\n", block.c_str());
+			fprintf(stderr, "no method_name in service block [%s]\n",
+					block.c_str());
 			return false;
 		}
 
@@ -998,15 +1060,18 @@ bool Parser::parse_service_pb(const std::string& block, Descriptor& desc)
 		size_t request_name_pos = block.find(")", pos + 1);
 		if (request_name_pos == std::string::npos)
 		{
-			fprintf(stderr, "no request_name in service block [%s]\n", block.c_str());
+			fprintf(stderr, "no request_name in service block [%s]\n",
+					block.c_str());
 			return false;
 		}
-		rpc_desc.request_name = std::string(&block[pos + 1], &block[request_name_pos]);
+		rpc_desc.request_name = std::string(&block[pos + 1],
+											&block[request_name_pos]);
 
 		pos = block.find("returns", pos + 1);
 		if (pos == std::string::npos)
 		{
-			fprintf(stderr, "no \"returns\" in service block [%s]\n", block.c_str());
+			fprintf(stderr, "no \"returns\" in service block [%s]\n",
+					block.c_str());
 			return false;
 		}
 
@@ -1017,12 +1082,14 @@ bool Parser::parse_service_pb(const std::string& block, Descriptor& desc)
 
 		size_t response_name_pos = block.find("(", pos + 1);
 		size_t response_name_end = block.find(")", pos + 1);
-		if (response_name_pos == std::string::npos
-			|| response_name_end == std::string::npos)
+		if (response_name_pos == std::string::npos ||
+			response_name_end == std::string::npos)
 		{
-			fprintf(stderr, "no response_name in service block [%s]\n", block.c_str());
+			fprintf(stderr, "no response_name in service block [%s]\n",
+					block.c_str());
 			return false;
 		}
+
 		rpc_desc.response_name = std::string(&block[response_name_pos + 1],
 											 &block[response_name_end]);
 		fprintf(stdout, "Successfully parse method:%s req:%s resp:%s\n",
@@ -1054,13 +1121,14 @@ bool Parser::parse_block_name(const std::string& line,
 		block_name_value = elems[1];
 		extends_type = "";
 	}
-	else if (this->is_thrift && elems.size() == 4 && elems[0] == "service" && elems[2] == "extends")
+	else if (this->is_thrift && elems.size() == 4 && elems[0] == "service" &&
+			 elems[2] == "extends")
 	{
 		block_name = elems[0];
 		block_name_value = elems[1];
 		extends_type = elems[3];
 	}
-	else 
+	else
 	{
 		fprintf(stderr, "failed to parse block name in %s\n", line.c_str());
 		return false;
@@ -1154,34 +1222,38 @@ void parse_thrift_type_name(const std::string& type_name,
 		type_prefix = "";
 		real_type_name = SGenUtil::strip(type_name);
 	}
-	else 
+	else
 	{
-		type_prefix = SGenUtil::strip(type_name.substr(0,pos));	
+		type_prefix = SGenUtil::strip(type_name.substr(0,pos));
 		real_type_name = SGenUtil::strip(type_name.substr(pos+1));
 	}
 }
 
-std::string type_prefix_to_namespace(const std::string& type_name, idl_info& info)
+std::string type_prefix_to_namespace(const std::string& type_name,
+									 idl_info& info)
 {
 	std::string prefix;
 	std::string real_type;
-	parse_thrift_type_name(type_name,prefix,real_type);
+	parse_thrift_type_name(type_name, prefix, real_type);
 	if (prefix == "")
 		return type_name;
-	idl_info *include = search_include_file(info,prefix+".thrift");
+
+	idl_info *include = search_include_file(info, prefix + ".thrift");
 	if (include == NULL)
 	{
 		fprintf(stderr,"cannot find type %s\n",type_name.c_str());
 		return type_name;
 	}
+
 	if (include->package_name.size() > 0)
 		return include->package_name[0]+"::"+real_type;
+
 	return "::"+real_type;
 }
 
-Descriptor * search_cur_file_descriptor( idl_info& info,
-										const std::string& block_type,
-										const std::string& block_name)
+Descriptor *search_cur_file_descriptor(idl_info& info,
+									   const std::string& block_type,
+									   const std::string& block_name)
 {
 	for (auto &desc : info.desc_list)
 	{
@@ -1191,20 +1263,20 @@ Descriptor * search_cur_file_descriptor( idl_info& info,
 	return NULL;
 }
 
-Descriptor * search_include_file_descriptor( idl_info& info,
-											const std::string include_file_name,
-											const std::string& block_type,
-											const std::string& block_name)
+Descriptor *search_include_file_descriptor(idl_info& info,
+										   const std::string include_file_name,
+										   const std::string& block_type,
+										   const std::string& block_name)
 {
 	for (auto &include : info.include_list)
 	{
 		if (include.file_name == include_file_name)
-			return search_cur_file_descriptor(include,block_type,block_name);
+			return search_cur_file_descriptor(include, block_type, block_name);
 	}
 	return NULL;
 }
 
-idl_info * search_include_file( idl_info& info, const std::string file_name)
+idl_info *search_include_file(idl_info& info, const std::string file_name)
 {
 	for (auto &include : info.include_list)
 	{
@@ -1213,19 +1285,20 @@ idl_info * search_include_file( idl_info& info, const std::string file_name)
 	}
 	return NULL;
 }
-idl_info * search_namespace( idl_info& info, const std::string name_space)
+
+idl_info *search_namespace(idl_info& info, const std::string name_space)
 {
 	if (name_space == "")
 		return &info;
+
 	for (auto &include : info.include_list)
 	{
-		if (include.package_name.size() > 0 and include.package_name[0] == name_space)
+		if (include.package_name.size() > 0 &&
+			include.package_name[0] == name_space)
 			return &include;
 	}
 	return NULL;
 }
-
-
 
 int Parser::find_valid(const std::string& line)
 {

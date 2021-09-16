@@ -337,6 +337,7 @@ void Generator::generate_srpc_file(const idl_info& cur_info)
 			this->printer.print_client_class(type, desc.block_name, desc.rpcs);
 
 		this->printer.print_implement_comments();
+
 		this->printer.print_server_constructor(package + desc.block_name, desc.rpcs);
 		if (this->is_thrift)
 			this->printer.print_server_methods_thrift(desc.block_name, desc.rpcs);

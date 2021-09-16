@@ -132,7 +132,7 @@ static inline void fill_thrift_sync_params(const rpc_descriptor& rpc, std::strin
 	if (!rpc.resp_params.empty())
 	{
 		const auto &param = rpc.resp_params[0];
-		if (param.field_id == 0) 
+		if (param.field_id == 0)
 		{
 			if (is_simple_type(param.data_type))
 			  return_type = param.type_name;
