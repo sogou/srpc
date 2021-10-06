@@ -51,6 +51,7 @@ bool BRPCRequest::deserialize_meta()
 		{
 			this->attachment_len = meta->attachment_size();
 			this->message_len -= this->attachment_len;
+			this->attachment = new RPCBuffer();
 			this->message->cut(this->message_len, this->attachment);
 		}
 
@@ -70,6 +71,7 @@ bool BRPCResponse::deserialize_meta()
 		{
 			this->attachment_len = meta->attachment_size();
 			this->message_len -= this->attachment_len;
+			this->attachment = new RPCBuffer();
 			this->message->cut(this->message_len, this->attachment);
 		}
 
@@ -241,6 +243,7 @@ void BRPCMessage::set_attachment_nocopy(const char *attachment, size_t len)
 
 	this->attachment_len += len;
 	meta->set_attachment_size(this->attachment_len);
+	this->attachment = new RPCBuffer();
 	this->attachment->append(attachment, len, BUFFER_MODE_NOCOPY);
 }
 
@@ -248,8 +251,12 @@ bool BRPCMessage::get_attachment_nocopy(const char **attachment, size_t *len) co
 {
 	size_t tmp_len = *len;
 	const void *tmp_buf;
-	if (this->attachment->fetch(&tmp_buf, &tmp_len) == false)
+
+	if (this->attachment == NULL ||
+		this->attachment->fetch(&tmp_buf, &tmp_len) == false)
+	{
 		return false;
+	}
 
 	*attachment = (const char *)tmp_buf;
 	*len = tmp_len;

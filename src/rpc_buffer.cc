@@ -21,6 +21,165 @@
 namespace srpc
 {
 
+void RPCBuffer::clear_list_buffer()
+{
+	for (const auto& ele: buffer_list_)
+	{
+		if (!ele.is_nocopy)
+		{
+			if (ele.is_new)
+				delete []((char *)ele.buf);
+			else
+				free(ele.buf);
+		}
+	}
+}
+
+void RPCBuffer::clear()
+{
+	clear_list_buffer();
+	buffer_list_.clear();
+	size_ = 0;
+	piece_min_size_ = BUFFER_PIECE_MIN_SIZE;
+	piece_max_size_ = BUFFER_PIECE_MAX_SIZE;
+	init_read_over_ = false;
+	last_piece_left_ = 0;
+}
+
+bool RPCBuffer::append(void *buf, size_t buflen, int mode)
+{
+	if (mode == BUFFER_MODE_COPY)
+		return write(buf, buflen);
+
+	buffer_t ele;
+	void *left_buf;
+
+	if (last_piece_left_ > 0)
+	{
+		const auto it = buffer_list_.rbegin();
+
+		left_buf = (char *)it->buf + it->buflen;
+	}
+
+	ele.buflen = buflen;
+	ele.buf = buf;
+	ele.is_nocopy = (mode == BUFFER_MODE_NOCOPY);
+	ele.is_new = (mode == BUFFER_MODE_GIFT_NEW);
+	buffer_list_.emplace_back(std::move(ele));
+	size_ += buflen;
+
+	if (last_piece_left_ > 0)
+	{
+		ele.buflen = 0;
+		ele.buf = left_buf;
+		ele.is_nocopy = true;
+		ele.is_new = false;
+		buffer_list_.emplace_back(std::move(ele));
+	}
+
+	return true;
+}
+
+bool RPCBuffer::append(const void *buf, size_t buflen, int mode)
+{
+	if (mode == BUFFER_MODE_COPY)
+		return write(buf, buflen);
+
+	return append(const_cast<void *>(buf), buflen, mode);
+}
+
+size_t RPCBuffer::backup(size_t count)
+{
+	if (count == 0 || buffer_list_.empty())
+		return 0;
+
+	const auto it = buffer_list_.rbegin();
+	size_t sz = 0;
+
+	if (it->buflen > count)
+	{
+		sz = count;
+		it->buflen -= count;
+	}
+	else
+	{
+		sz = it->buflen;
+		it->buflen = 0;
+	}
+
+	last_piece_left_ += sz;
+	size_ -= sz;
+	return sz;
+}
+
+bool RPCBuffer::read(void *buf, size_t buflen)
+{
+	while (buflen > 0)
+	{
+		const void *p;
+		size_t sz = buflen;
+
+		if (!fetch(&p, &sz))
+			return false;
+
+		memcpy(buf, p, sz);
+		buf = (char *)buf + sz;
+		buflen -= sz;
+	}
+
+	return true;
+}
+
+bool RPCBuffer::write(const void *buf, size_t buflen)
+{
+	while (buflen > 0)
+	{
+		void *p;
+		size_t sz = buflen;
+
+		if (!acquire(&p, &sz))
+			return false;
+
+		memcpy(p, buf, sz);
+		buf = (const char *)buf + sz;
+		buflen -= sz;
+	}
+
+	return true;
+}
+
+void RPCBuffer::rewind()
+{
+	cur_.first = buffer_list_.begin();
+	cur_.second = 0;
+	init_read_over_ = true;
+}
+
+long RPCBuffer::seek(long offset)
+{
+	if (offset > 0)
+		return read_skip(offset);
+	else if (offset < 0)
+		return read_back(offset);
+
+	return 0;
+}
+
+size_t RPCBuffer::peek(const void **buf)
+{
+	return internal_fetch(buf, BUFFER_FETCH_STAY);
+}
+
+size_t RPCBuffer::fetch(const void **buf)
+{
+	return internal_fetch(buf, BUFFER_FETCH_MOVE);
+}
+
+RPCBuffer::~RPCBuffer()
+{
+	clear_list_buffer();
+}
+
 size_t RPCBuffer::acquire(void **buf)
 {
 	if (last_piece_left_ > 0)
