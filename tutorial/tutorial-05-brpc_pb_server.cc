@@ -22,13 +22,15 @@ using namespace srpc;
 
 static WFFacilities::WaitGroup wait_group(1);
 
+char attachment[10] = "ATTACH";
+
 class ExampleServiceImpl : public Example::Service
 {
 public:
 	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
 	{
-//		ctx->set_compress_type(RPCCompressGzip);
 		response->set_message("Hi back, " + request->name());
+		ctx->set_attachment_nocopy(attachment, strlen(attachment));
 
 		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
 									request->DebugString().c_str(),
