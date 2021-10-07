@@ -21,6 +21,165 @@
 namespace srpc
 {
 
+void RPCBuffer::clear_list_buffer()
+{
+	for (const auto& ele: buffer_list_)
+	{
+		if (!ele.is_nocopy)
+		{
+			if (ele.is_new)
+				delete []((char *)ele.buf);
+			else
+				free(ele.buf);
+		}
+	}
+}
+
+void RPCBuffer::clear()
+{
+	clear_list_buffer();
+	buffer_list_.clear();
+	size_ = 0;
+	piece_min_size_ = BUFFER_PIECE_MIN_SIZE;
+	piece_max_size_ = BUFFER_PIECE_MAX_SIZE;
+	init_read_over_ = false;
+	last_piece_left_ = 0;
+}
+
+bool RPCBuffer::append(void *buf, size_t buflen, int mode)
+{
+	if (mode == BUFFER_MODE_COPY)
+		return write(buf, buflen);
+
+	buffer_t ele;
+	void *left_buf;
+
+	if (last_piece_left_ > 0)
+	{
+		const auto it = buffer_list_.rbegin();
+
+		left_buf = (char *)it->buf + it->buflen;
+	}
+
+	ele.buflen = buflen;
+	ele.buf = buf;
+	ele.is_nocopy = (mode == BUFFER_MODE_NOCOPY);
+	ele.is_new = (mode == BUFFER_MODE_GIFT_NEW);
+	buffer_list_.emplace_back(std::move(ele));
+	size_ += buflen;
+
+	if (last_piece_left_ > 0)
+	{
+		ele.buflen = 0;
+		ele.buf = left_buf;
+		ele.is_nocopy = true;
+		ele.is_new = false;
+		buffer_list_.emplace_back(std::move(ele));
+	}
+
+	return true;
+}
+
+bool RPCBuffer::append(const void *buf, size_t buflen, int mode)
+{
+	if (mode == BUFFER_MODE_COPY)
+		return write(buf, buflen);
+
+	return append(const_cast<void *>(buf), buflen, mode);
+}
+
+size_t RPCBuffer::backup(size_t count)
+{
+	if (count == 0 || buffer_list_.empty())
+		return 0;
+
+	const auto it = buffer_list_.rbegin();
+	size_t sz = 0;
+
+	if (it->buflen > count)
+	{
+		sz = count;
+		it->buflen -= count;
+	}
+	else
+	{
+		sz = it->buflen;
+		it->buflen = 0;
+	}
+
+	last_piece_left_ += sz;
+	size_ -= sz;
+	return sz;
+}
+
+bool RPCBuffer::read(void *buf, size_t buflen)
+{
+	while (buflen > 0)
+	{
+		const void *p;
+		size_t sz = buflen;
+
+		if (!fetch(&p, &sz))
+			return false;
+
+		memcpy(buf, p, sz);
+		buf = (char *)buf + sz;
+		buflen -= sz;
+	}
+
+	return true;
+}
+
+bool RPCBuffer::write(const void *buf, size_t buflen)
+{
+	while (buflen > 0)
+	{
+		void *p;
+		size_t sz = buflen;
+
+		if (!acquire(&p, &sz))
+			return false;
+
+		memcpy(p, buf, sz);
+		buf = (const char *)buf + sz;
+		buflen -= sz;
+	}
+
+	return true;
+}
+
+void RPCBuffer::rewind()
+{
+	cur_.first = buffer_list_.begin();
+	cur_.second = 0;
+	init_read_over_ = true;
+}
+
+long RPCBuffer::seek(long offset)
+{
+	if (offset > 0)
+		return read_skip(offset);
+	else if (offset < 0)
+		return read_back(offset);
+
+	return 0;
+}
+
+size_t RPCBuffer::peek(const void **buf)
+{
+	return internal_fetch(buf, BUFFER_FETCH_STAY);
+}
+
+size_t RPCBuffer::fetch(const void **buf)
+{
+	return internal_fetch(buf, BUFFER_FETCH_MOVE);
+}
+
+RPCBuffer::~RPCBuffer()
+{
+	clear_list_buffer();
+}
+
 size_t RPCBuffer::acquire(void **buf)
 {
 	if (last_piece_left_ > 0)
@@ -247,6 +406,7 @@ size_t RPCBuffer::internal_fetch(const void **buf, bool move_or_stay)
 	{
 		*buf = (char *)cur_.first->buf + cur_.second;
 		sz = cur_.first->buflen - cur_.second;
+
 		if (move_or_stay)
 		{
 			++cur_.first;
@@ -338,65 +498,47 @@ size_t RPCBuffer::cut(size_t offset, RPCBuffer *out)
 
 	size_t cutsize = 0;
 	const void *buf;
-	size_t sz = fetch(&buf);
+	size_t sz = peek(&buf);
+	// sz is the length in this current buf, not final len
 
 	if (sz > 0)
 	{
-		bool keep_left = false;
-		void *left_buf;
-
-		if (last_piece_left_ > 0)
-		{
-			const auto it = buffer_list_.rbegin();
-
-			left_buf = (char *)it->buf + it->buflen;
-		}
-
 		out->last_piece_left_ = 0; // drop
-		if (sz < cur_.second)
-		{
-			out->append(buf, sz, BUFFER_MODE_COPY);
-			cutsize += sz;
-			cur_.first->buflen = cur_.second;
-			++cur_.first;
-			if (std::next(cur_.first, 1) == buffer_list_.end())
-				keep_left = true;
-		}
+
+		auto erase_it = buffer_list_.end();
 
 		while (cur_.first != buffer_list_.end())
 		{
 			auto it = cur_.first;
+			size_t cur_len = it->buflen - cur_.second;
 
-			if (it->is_nocopy)
-				out->append(it->buf, it->buflen, BUFFER_MODE_NOCOPY);
+			if (it->is_nocopy || cur_.second != 0)
+			{
+				out->append((char *)it->buf + cur_.second, cur_len,
+							BUFFER_MODE_NOCOPY);
+			}
 			else
-				out->append(it->buf, it->buflen,
+			{
+				out->append((char *)it->buf + cur_.second, cur_len,
 							it->is_new ? BUFFER_MODE_GIFT_NEW
 									   : BUFFER_MODE_GIFT_MALLOC);
+			}
 
-			cutsize += it->buflen;
+			if (erase_it == buffer_list_.end() && cur_.second == 0)
+				erase_it = it;
+			else
+				cur_.first->buflen = cur_.second;
+
+			cutsize += cur_len;
 			++cur_.first;
-			buffer_list_.erase(it);
+			cur_.second = 0;
 		}
 
 		if (last_piece_left_ > 0)
-		{
-			if (keep_left)
-			{
-				buffer_t ele;
+			out->last_piece_left_ = last_piece_left_;
 
-				ele.buflen = 0;
-				ele.buf = left_buf;
-				ele.is_nocopy = true;
-				ele.is_new = false;
-				buffer_list_.emplace_back(std::move(ele));
-			}
-			else
-			{
-				out->append(left_buf, last_piece_left_, BUFFER_MODE_NOCOPY);
-				out->backup(last_piece_left_);
-			}
-		}
+		if (erase_it != buffer_list_.end())
+			buffer_list_.erase(erase_it, buffer_list_.end());
 	}
 
 	rewind();

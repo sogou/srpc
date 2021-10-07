@@ -34,7 +34,16 @@ int main()
 		else
 			printf("status[%d] error[%d] errmsg:%s\n",
 					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
-	});
+
+		const char *attachment;
+		size_t len;
+
+		while (ctx->get_attachment(&attachment, &len))
+			printf("get attachment [%.*s] len=%z\n", len, attachment, len);
+
+		printf("no attachment\n\n");
+
+		});
 
 	//sync
 	EchoRequest sync_req;
