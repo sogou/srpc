@@ -22,11 +22,11 @@ git_repository(
 new_git_repository(
     name = "lz4",
     build_file = "@//third_party:lz4.BUILD",
-	tag = "v1.9.3"
+    tag = "v1.9.3"
     remote = "https://github.com/lz4/lz4.git")
 
 new_git_repository(
     name = "snappy",
     build_file = "@//third_party:snappy.BUILD",
-	tag = "1.1.9"
+    tag = "1.1.9"
     remote = "https://github.com/google/snappy.git")
