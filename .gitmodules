@@ -4,6 +4,8 @@
 [submodule "third_party/snappy"]
 	path = third_party/snappy
 	url = https://github.com/google/snappy
+	branch = 1.1.9
 [submodule "third_party/lz4"]
 	path = third_party/lz4
 	url = https://github.com/lz4/lz4
+	branch = v1.9.3

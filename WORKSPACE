@@ -16,17 +16,17 @@ rules_proto_toolchains()
 
 git_repository(
     name = "workflow",
-    commit = "fafe09a833beab5fc74c709c1d3fe47b63ec9351",
+    commit = "4bdef0030319916debd683316a5b5ae6011f41c6",
     remote = "https://github.com/sogou/workflow.git")
 
 new_git_repository(
     name = "lz4",
     build_file = "@//third_party:lz4.BUILD",
-    commit = "bdc9d3b0c10cbf7e1ff40fc6e27dad5f693a00e7",
+    tag = "v1.9.3"
     remote = "https://github.com/lz4/lz4.git")
 
 new_git_repository(
     name = "snappy",
     build_file = "@//third_party:snappy.BUILD",
-    commit = "78650d126afc55f834d15d018b430985f0c8c87c",
+    tag = "1.1.9"
     remote = "https://github.com/google/snappy.git")
