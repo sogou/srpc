@@ -87,10 +87,10 @@ public:
 	using SPAN_CONTEXT = RPCSpanContext<typename RPCTYPE::REQ,
 										typename RPCTYPE::RESP>;
 
-	bool client_begin(SubTask *task, const RPCModuleData& data) override;
-	bool client_end(SubTask *task, const RPCModuleData& data) override;
-	bool server_begin(SubTask *task, const RPCModuleData& data) override;
-	bool server_end(SubTask *task, const RPCModuleData& data) override;
+	bool client_begin(SubTask *task, RPCModuleData& data) override;
+	bool client_end(SubTask *task, RPCModuleData& data) override;
+	bool server_begin(SubTask *task, RPCModuleData& data) override;
+	bool server_end(SubTask *task, RPCModuleData& data) override;
 
 public:
 	RPCSpanModule() : RPCModule(RPCModuleSpan) { }
@@ -100,19 +100,19 @@ template<class RPCTYPE>
 class RPCMonitorModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, const RPCModuleData& data) override
+	bool client_begin(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool client_end(SubTask *task, const RPCModuleData& data) override
+	bool client_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool server_begin(SubTask *task, const RPCModuleData& data) override
+	bool server_begin(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool server_end(SubTask *task, const RPCModuleData& data) override
+	bool server_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
@@ -125,19 +125,19 @@ template<class RPCTYPE>
 class RPCEmptyModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, const RPCModuleData& data) override
+	bool client_begin(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool client_end(SubTask *task, const RPCModuleData& data) override
+	bool client_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool server_begin(SubTask *task, const RPCModuleData& data) override
+	bool server_begin(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool server_end(SubTask *task, const RPCModuleData& data) override
+	bool server_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
@@ -150,7 +150,7 @@ public:
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
-										  const RPCModuleData& data)
+										  RPCModuleData& data)
 {
 	auto *client_task = static_cast<CLIENT_TASK *>(task);
 	auto *req = client_task->get_req();
@@ -185,7 +185,7 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
-										const RPCModuleData& data)
+										RPCModuleData& data)
 {
 	std::string ip;
 	unsigned short port;
@@ -194,15 +194,18 @@ bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
 	RPCModuleData& module_data = *(client_task->mutable_module_data());
 	long long end_time = GET_CURRENT_MS;
 
-	module_data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-	module_data[SRPC_DURATION] = std::to_string(end_time -
-						atoll(module_data[SRPC_START_TIMESTAMP].c_str()));
-	module_data[SRPC_STATE] = std::to_string(resp->get_status_code());
-	module_data[SRPC_ERROR] = std::to_string(resp->get_error());
+	for (auto kv : module_data)
+		data[kv.first] = module_data[kv.first];
+
+	data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
+	data[SRPC_DURATION] = std::to_string(end_time -
+						atoll(data[SRPC_START_TIMESTAMP].c_str()));
+	data[SRPC_STATE] = std::to_string(resp->get_status_code());
+	data[SRPC_ERROR] = std::to_string(resp->get_error());
 	if (client_task->get_remote(ip, &port))
 	{
-		module_data[SRPC_REMOTE_IP] = std::move(ip);
-		module_data[SRPC_REMOTE_PORT] = std::to_string(port);
+		data[SRPC_REMOTE_IP] = std::move(ip);
+		data[SRPC_REMOTE_PORT] = std::to_string(port);
 	}
 
 	return true;
@@ -210,7 +213,7 @@ bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
-										  const RPCModuleData& data)
+										  RPCModuleData& data)
 {
 	std::string ip;
 	unsigned short port;
@@ -249,7 +252,7 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::server_end(SubTask *task,
-										const RPCModuleData& data)
+										RPCModuleData& data)
 {
 	auto *server_task = static_cast<SERVER_TASK *>(task);
 	auto *resp = server_task->get_resp();

@@ -1,59 +1,28 @@
 #include <stdio.h>
 #include <limits.h>
 #include "workflow/WFTask.h"
+#include "workflow/HttpUtil.h"
 #include "rpc_span_policies.h"
 #include "trace_service.pb.h"
-
-#include <google/protobuf/util/json_util.h>                                     
-#include <google/protobuf/util/type_resolver_util.h>
 
 namespace srpc
 {
 
-static constexpr const char* kTypeUrlPrefix = "type.googleapis.com";
-
-class ResolverInstance
-{
-public:
-	static google::protobuf::util::TypeResolver* get_resolver()
-	{
-		static ResolverInstance kInstance;
-		return kInstance.resolver_;
-	}
-
-private:
-	ResolverInstance()
-	{
-		resolver_ = google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix,
-									google::protobuf::DescriptorPool::generated_pool());
-	}
-
-	~ResolverInstance() { delete resolver_; }
-
-	google::protobuf::util::TypeResolver* resolver_;
-};
-
-static inline std::string GetTypeUrl(const ProtobufIDLMessage *pb_msg)
-{
-	return std::string(kTypeUrlPrefix) + "/" + pb_msg->GetDescriptor()->full_name();
-}
-
 static size_t rpc_span_pb_format(RPCModuleData& data,
-opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
+	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
 {
-	///TODO:
 	auto resource_span = req.add_resource_spans();
-	auto instrumentation_lib = resource_span->add_instrumentation_library_spans();
-	auto span = instrumentation_lib->add_spans();
+	auto ins_lib = resource_span->add_instrumentation_library_spans();
+	auto span = ins_lib->add_spans();
 
-	span->set_span_id("1412");//data[SRPC_SPAN_ID]);
+	span->set_span_id(data[SRPC_SPAN_ID]);
 	span->set_trace_id(data[SRPC_TRACE_ID]);
 	span->set_name(data[SRPC_METHOD_NAME]);
+
 	auto iter = data.find(SRPC_PARENT_SPAN_ID);
 	if (iter != data.end())
 		span->set_parent_span_id(iter->second);
-	
-//	resource_span->mutable_resource() = rec->ProtoResource();
+
 	return req.ByteSize();
 }
 
@@ -177,37 +146,25 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 
 	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest req;
 	rpc_span_pb_format(span, req);
-//	void *buffer = malloc(req.ByteSize());
 
-	std::string binary_output;//TODO: remember to save it till task deconstructed
-/*
-	std::string binary_input = req.SerializeAsString();                     
-
-	const auto* pool = req.GetDescriptor()->file()->pool();                 
-	auto* resolver = (pool == google::protobuf::DescriptorPool::generated_pool()
-							? ResolverInstance::get_resolver()                      
-							: google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix, pool));
-
-	bool ret = BinaryToJsonString(resolver, GetTypeUrl(&req), binary_input, &binary_output).ok();
-	if (pool != google::protobuf::DescriptorPool::generated_pool())             
-		delete resolver;
-
-*/
-	fprintf(stderr, "get json string:\n%s\n", binary_output.c_str());
-
-//	auto *task = WFTaskFactory::create_http_task("http://127.0.0.1:16686/v1/traces",
-	auto *task = WFTaskFactory::create_http_task("http://127.0.0.1:80/v1/traces",
-// + this->otel_url +
-//												 "/" + SPAN_OPENTELEMETRY_PATH,
-												 this->redirect_max,
-												 this->retry_max,
-												 [](WFHttpTask *t){
-								fprintf(stderr, "span report callback: s=%d e=%d\n",
-										t->get_state(), t->get_error());
-												 });
+	WFHttpTask *task = WFTaskFactory::create_http_task(this->url,
+													   this->redirect_max,
+													   this->retry_max,
+													   [](WFHttpTask *task) {
+//		fprintf(stderr, "span report callback: s=%d e=%d\n",
+//				task->get_state(), task->get_error());
+		delete (std::string *)task->user_data;
+	});
 
 	protocol::HttpRequest *http_req = task->get_req();
-	http_req->append_output_body_nocopy(binary_output.c_str(), binary_output.length());
+	http_req->set_method(HttpMethodPost);
+	http_req->add_header_pair("Content-Type", "application/x-protobuf");
+
+	task->user_data = new std::string;	
+	std::string *output = (std::string *)task->user_data;
+	req.SerializeToString(output);
+	http_req->append_output_body_nocopy(output->c_str(), output->length());
+
 	return task;
 }
 

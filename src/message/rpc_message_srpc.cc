@@ -269,7 +269,8 @@ bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 	iter = data.find("span_id");
 	if (iter != data.end())
 		meta->mutable_span()->set_span_id(atoi(iter->second.c_str()));
-//	meta->mutable_span()->set_parent_span_id(span->parent_span_id);
+	//	meta->mutable_span()->set_parent_span_id(span->parent_span_id);
+	//	name...
 	return true;
 }
 
@@ -280,7 +281,7 @@ bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 		return false;
 
 	data["trace_id"] = std::to_string(meta->mutable_span()->trace_id());
-//	span->span_id = meta->mutable_span()->span_id();
+	//	span->span_id = meta->mutable_span()->span_id();
 	data["parent_span_id"] = std::to_string(meta->mutable_span()->span_id());
 	return true;
 }

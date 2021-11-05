@@ -281,7 +281,7 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		{
 			RPCSeries *series = static_cast<RPCSeries *>(series_of(this));
 
-			const RPCModuleData *data = series->get_module_data();
+			RPCModuleData *data = series->get_module_data();
 
 			if (data != NULL)
 				this->set_module_data(std::move(*data));
@@ -614,7 +614,7 @@ static inline void log_format(std::string& key, std::string& value,
 		return;
 
 	char buffer[100];
-	snprintf(buffer, 100, "%s%c%ld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS);
+	snprintf(buffer, 100, "%s%c%lld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS);
 	key = std::move(buffer);
 	value = "{\"";
 

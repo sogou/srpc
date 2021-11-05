@@ -39,7 +39,7 @@ int main()
 		size_t len;
 
 		while (ctx->get_attachment(&attachment, &len))
-			printf("get attachment [%.*s] len=%z\n", len, attachment, len);
+			printf("get attachment [%.*s] len=%zu\n", (int)len, attachment, len);
 
 		printf("no attachment\n\n");
 
