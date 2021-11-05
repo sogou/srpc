@@ -196,7 +196,7 @@ class RPCSpanOpenTelemetry : public RPCFilter
 public:
 	RPCSpanOpenTelemetry(const std::string& url) :
 		RPCFilter(RPCModuleSpan),
-		url(url + "/" + SPAN_OTLP_TRACES_PATH),
+		url(url + SPAN_OTLP_TRACES_PATH),
 		redirect_max(SPAN_HTTP_REDIRECT_MAX),
 		retry_max(SPAN_HTTP_RETRY_MAX),
 		filter_policy(SPANS_PER_SECOND_DEFAULT)
@@ -207,7 +207,7 @@ public:
 						 int retry_max,
 						 size_t spans_per_second) :
 		RPCFilter(RPCModuleSpan),
-		url(url + "/" + SPAN_OTLP_TRACES_PATH),
+		url(url + SPAN_OTLP_TRACES_PATH),
 		redirect_max(redirect_max),
 		retry_max(retry_max),
 		filter_policy(spans_per_second)
