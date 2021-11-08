@@ -52,6 +52,7 @@ cc_binary(
     name ='srpc_generator',
     srcs = glob(['src/generator/*.cc']),
     deps = [':libsrpc'],
+    visibility = ["//visibility:public"],
 )
 
 proto_library(

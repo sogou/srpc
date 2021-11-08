@@ -11,6 +11,7 @@ namespace srpc
 static size_t rpc_span_pb_format(RPCModuleData& data,
 	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
 {
+
 	auto resource_span = req.add_resource_spans();
 	auto ins_lib = resource_span->add_instrumentation_library_spans();
 	auto span = ins_lib->add_spans();

@@ -20,6 +20,7 @@
 #include <time.h>
 #include <atomic>
 #include <limits>
+#include <stdio.h>
 #include "workflow/WFTask.h"
 #include "rpc_basic.h"
 #include "rpc_module.h"
@@ -53,6 +54,10 @@ const char *const SRPC_SAMPLING_PRIO	= "sampling.priority";
 // SRPC ext tags
 const char *const SRPC_DATA_TYPE		= "data.type";
 const char *const SRPC_COMPRESS_TYPE	= "compress.type";
+
+// SRPC INTERNAL
+static constexpr size_t SRPC_SPANID_SIZE = 8;
+static constexpr size_t SRPC_TRACEID_SIZE = 16;
 
 template<class RPCREQ, class RPCRESP>
 class RPCSpanContext : public RPCContextImpl<RPCREQ, RPCRESP>
@@ -163,12 +168,18 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 		if (iter != data.end())
 			module_data[SRPC_PARENT_SPAN_ID] = iter->second;
 	} else {
-		module_data[SRPC_TRACE_ID] = std::to_string(
-							SRPCGlobal::get_instance()->get_trace_id());
+		std::string trace_id_buf(SRPC_TRACEID_SIZE, 0);
+
+		snprintf((char *)trace_id_buf.c_str(), SRPC_TRACEID_SIZE,
+				 "%0llx", SRPCGlobal::get_instance()->get_trace_id());
+		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 
-	module_data[SRPC_SPAN_ID] = std::to_string(
-							SRPCGlobal::get_instance()->get_span_id());
+	std::string span_id_buf(SRPC_SPANID_SIZE, 0);
+
+	snprintf((char *)span_id_buf.c_str(), SRPC_SPANID_SIZE,
+			 "%0x", SRPCGlobal::get_instance()->get_span_id());
+	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
 	module_data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_CLIENT;
@@ -228,10 +239,20 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 							std::to_string(req->get_compress_type());
 
 	if (module_data[SRPC_TRACE_ID].empty())
-		module_data[SRPC_TRACE_ID] = std::to_string(
-							SRPCGlobal::get_instance()->get_trace_id());
-	module_data[SRPC_SPAN_ID] = std::to_string(
-							SRPCGlobal::get_instance()->get_span_id());
+	{
+		std::string trace_id_buf(SRPC_TRACEID_SIZE, 0);
+
+		snprintf((char *)trace_id_buf.c_str(), SRPC_TRACEID_SIZE,
+				 "%0llx", SRPCGlobal::get_instance()->get_trace_id());
+		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
+	}
+
+	std::string span_id_buf(SRPC_SPANID_SIZE, 0);
+
+	snprintf((char *)span_id_buf.c_str(), SRPC_SPANID_SIZE,
+			 "%0x", SRPCGlobal::get_instance()->get_span_id());
+	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
+
 	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS);
 
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;

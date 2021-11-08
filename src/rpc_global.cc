@@ -38,7 +38,7 @@ SRPCGlobal::SRPCGlobal()
 {
 	WFGlobal::register_scheme_port(SRPC_SCHEME, SRPC_DEFAULT_PORT);
 	WFGlobal::register_scheme_port(SRPC_SSL_SCHEME, SRPC_SSL_DEFAULT_PORT);
-	this->span_id = 0;
+	this->span_id = 1;
 }
 
 static int __get_addr_info(const std::string& host, unsigned short port,
