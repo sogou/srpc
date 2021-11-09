@@ -15,6 +15,8 @@
 */
 
 #include <ctype.h>
+#include <unistd.h>
+#include <sys/param.h>
 #include "parser.h"
 #include "thrift/rpc_thrift_enum.h"
 
@@ -39,14 +41,19 @@ void parse_thrift_type_name(const std::string& type_name,
 
 bool Parser::parse(const std::string& proto_file, idl_info& info)
 {
+	char current_dir[MAXPATHLEN] = {};
 	std::string dir_prefix;
+
 	auto pos = proto_file.find_last_of('/');
 	if (pos == std::string::npos)
 		info.file_name = proto_file;
 	else
 	{
 		info.file_name = proto_file.substr(pos + 1);
-		dir_prefix = proto_file.substr(0, pos + 1);
+
+		getcwd(current_dir, MAXPATHLEN);
+		dir_prefix = current_dir;
+		dir_prefix += "/";
 	}
 
 	pos = info.file_name.find_last_of('.');
@@ -129,8 +136,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 		if (this->parse_include_file(line, file_path) == true)
 		{
-			if (file_path[0] != '/')
-				file_path = dir_prefix + file_path;
+			file_path = dir_prefix + file_path;
 
 			info.include_list.resize(info.include_list.size() + 1);
 			succ = this->parse(file_path, info.include_list.back());
