@@ -25,7 +25,7 @@ proto_library(
         'src/module/opentelemetry_common.proto',
         'src/module/opentelemetry_resource.proto',
         'src/module/opentelemetry_trace.proto',
-        'src/module/opentelemetrytrace_service.proto',
+        'src/module/opentelemetry_trace_service.proto',
     ],
     strip_import_prefix = "src/module",
 )
