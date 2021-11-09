@@ -40,6 +40,9 @@ static constexpr unsigned int	SPAN_REDIS_RETRY_MAX		= 0;
 static constexpr const char	   *SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
 static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT	= 4 * 1024 * 1024;
 static constexpr size_t			SPANS_PER_SECOND_DEFAULT	= 1000;
+static constexpr const char	   *SPAN_OTLP_TRACES_PATH		= "/v1/traces";
+static constexpr unsigned int	SPAN_HTTP_REDIRECT_MAX		= 0;
+static constexpr unsigned int	SPAN_HTTP_RETRY_MAX			= 0;
 
 class RPCSpanFilterPolicy
 {
@@ -187,6 +190,57 @@ public:
 private:
 	RPCSpanFilterPolicy filter_policy;
 };
+
+class RPCSpanOpenTelemetry : public RPCFilter
+{
+public:
+	RPCSpanOpenTelemetry(const std::string& url) :
+		RPCFilter(RPCModuleSpan),
+		url(url + SPAN_OTLP_TRACES_PATH),
+		redirect_max(SPAN_HTTP_REDIRECT_MAX),
+		retry_max(SPAN_HTTP_RETRY_MAX),
+		filter_policy(SPANS_PER_SECOND_DEFAULT)
+	{}
+
+	RPCSpanOpenTelemetry(const std::string& url,
+						 int redirect_max,
+						 int retry_max,
+						 size_t spans_per_second) :
+		RPCFilter(RPCModuleSpan),
+		url(url + SPAN_OTLP_TRACES_PATH),
+		redirect_max(redirect_max),
+		retry_max(retry_max),
+		filter_policy(spans_per_second)
+	{}
+
+private:
+	std::string url;
+	int redirect_max;
+	int retry_max;
+
+private:
+	SubTask *create(RPCModuleData& span) override;
+
+	bool filter(RPCModuleData& span) override
+	{
+		return this->filter_policy.filter(span);
+	}
+
+public:
+	void set_spans_per_sec(size_t n)
+	{
+		this->filter_policy.set_spans_per_sec(n);
+	}
+
+	void set_stat_interval(int msec)
+	{
+		this->filter_policy.set_stat_interval(msec);
+	}
+
+private:
+	RPCSpanFilterPolicy filter_policy;
+};
+
 
 } // end namespace srpc
 

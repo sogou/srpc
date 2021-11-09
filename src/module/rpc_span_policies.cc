@@ -1,10 +1,31 @@
 #include <stdio.h>
 #include <limits.h>
 #include "workflow/WFTask.h"
+#include "workflow/HttpUtil.h"
 #include "rpc_span_policies.h"
+#include "opentelemetry_trace_service.pb.h"
 
 namespace srpc
 {
+
+static size_t rpc_span_pb_format(RPCModuleData& data,
+	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
+{
+
+	auto resource_span = req.add_resource_spans();
+	auto ins_lib = resource_span->add_instrumentation_library_spans();
+	auto span = ins_lib->add_spans();
+
+	span->set_span_id(data[SRPC_SPAN_ID]);
+	span->set_trace_id(data[SRPC_TRACE_ID]);
+	span->set_name(data[SRPC_METHOD_NAME]);
+
+	auto iter = data.find(SRPC_PARENT_SPAN_ID);
+	if (iter != data.end())
+		span->set_parent_span_id(iter->second);
+
+	return req.ByteSize();
+}
 
 static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 {
@@ -114,6 +135,36 @@ SubTask *RPCSpanRedis::create(RPCModuleData& span)
 
 	rpc_span_log_format(span, value, SPAN_LOG_MAX_LENGTH);
 	req->set_request("SET", { span[SRPC_TRACE_ID], value} );
+
+	return task;
+}
+
+SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
+{
+	auto iter = span.find(SRPC_TRACE_ID);
+	if (iter == span.end())
+		return WFTaskFactory::create_empty_task();
+
+	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest req;
+	rpc_span_pb_format(span, req);
+
+	WFHttpTask *task = WFTaskFactory::create_http_task(this->url,
+													   this->redirect_max,
+													   this->retry_max,
+													   [](WFHttpTask *task) {
+//		fprintf(stderr, "span report callback: s=%d e=%d\n",
+//				task->get_state(), task->get_error());
+		delete (std::string *)task->user_data;
+	});
+
+	protocol::HttpRequest *http_req = task->get_req();
+	http_req->set_method(HttpMethodPost);
+	http_req->add_header_pair("Content-Type", "application/x-protobuf");
+
+	task->user_data = new std::string;	
+	std::string *output = (std::string *)task->user_data;
+	req.SerializeToString(output);
+	http_req->append_output_body_nocopy(output->c_str(), output->length());
 
 	return task;
 }

@@ -20,6 +20,7 @@
 #include <time.h>
 #include <atomic>
 #include <limits>
+#include <stdio.h>
 #include "workflow/WFTask.h"
 #include "rpc_basic.h"
 #include "rpc_module.h"
@@ -54,6 +55,10 @@ const char *const SRPC_SAMPLING_PRIO	= "sampling.priority";
 const char *const SRPC_DATA_TYPE		= "data.type";
 const char *const SRPC_COMPRESS_TYPE	= "compress.type";
 
+// SRPC INTERNAL
+static constexpr size_t SRPC_SPANID_SIZE = 8;
+static constexpr size_t SRPC_TRACEID_SIZE = 16;
+
 template<class RPCREQ, class RPCRESP>
 class RPCSpanContext : public RPCContextImpl<RPCREQ, RPCRESP>
 {
@@ -87,10 +92,10 @@ public:
 	using SPAN_CONTEXT = RPCSpanContext<typename RPCTYPE::REQ,
 										typename RPCTYPE::RESP>;
 
-	bool client_begin(SubTask *task, const RPCModuleData& data) override;
-	bool client_end(SubTask *task, const RPCModuleData& data) override;
-	bool server_begin(SubTask *task, const RPCModuleData& data) override;
-	bool server_end(SubTask *task, const RPCModuleData& data) override;
+	bool client_begin(SubTask *task, RPCModuleData& data) override;
+	bool client_end(SubTask *task, RPCModuleData& data) override;
+	bool server_begin(SubTask *task, RPCModuleData& data) override;
+	bool server_end(SubTask *task, RPCModuleData& data) override;
 
 public:
 	RPCSpanModule() : RPCModule(RPCModuleSpan) { }
@@ -100,19 +105,19 @@ template<class RPCTYPE>
 class RPCMonitorModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, const RPCModuleData& data) override
+	bool client_begin(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool client_end(SubTask *task, const RPCModuleData& data) override
+	bool client_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool server_begin(SubTask *task, const RPCModuleData& data) override
+	bool server_begin(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool server_end(SubTask *task, const RPCModuleData& data) override
+	bool server_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
@@ -125,19 +130,19 @@ template<class RPCTYPE>
 class RPCEmptyModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, const RPCModuleData& data) override
+	bool client_begin(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool client_end(SubTask *task, const RPCModuleData& data) override
+	bool client_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool server_begin(SubTask *task, const RPCModuleData& data) override
+	bool server_begin(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
-	bool server_end(SubTask *task, const RPCModuleData& data) override
+	bool server_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
@@ -150,7 +155,7 @@ public:
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
-										  const RPCModuleData& data)
+										  RPCModuleData& data)
 {
 	auto *client_task = static_cast<CLIENT_TASK *>(task);
 	auto *req = client_task->get_req();
@@ -163,12 +168,18 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 		if (iter != data.end())
 			module_data[SRPC_PARENT_SPAN_ID] = iter->second;
 	} else {
-		module_data[SRPC_TRACE_ID] = std::to_string(
-							SRPCGlobal::get_instance()->get_trace_id());
+		std::string trace_id_buf(SRPC_TRACEID_SIZE, 0);
+
+		snprintf((char *)trace_id_buf.c_str(), SRPC_TRACEID_SIZE,
+				 "%0llx", SRPCGlobal::get_instance()->get_trace_id());
+		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 
-	module_data[SRPC_SPAN_ID] = std::to_string(
-							SRPCGlobal::get_instance()->get_span_id());
+	std::string span_id_buf(SRPC_SPANID_SIZE, 0);
+
+	snprintf((char *)span_id_buf.c_str(), SRPC_SPANID_SIZE,
+			 "%0x", SRPCGlobal::get_instance()->get_span_id());
+	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
 	module_data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_CLIENT;
@@ -185,7 +196,7 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
-										const RPCModuleData& data)
+										RPCModuleData& data)
 {
 	std::string ip;
 	unsigned short port;
@@ -194,15 +205,18 @@ bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
 	RPCModuleData& module_data = *(client_task->mutable_module_data());
 	long long end_time = GET_CURRENT_MS;
 
-	module_data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-	module_data[SRPC_DURATION] = std::to_string(end_time -
-						atoll(module_data[SRPC_START_TIMESTAMP].c_str()));
-	module_data[SRPC_STATE] = std::to_string(resp->get_status_code());
-	module_data[SRPC_ERROR] = std::to_string(resp->get_error());
+	for (auto kv : module_data)
+		data[kv.first] = module_data[kv.first];
+
+	data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
+	data[SRPC_DURATION] = std::to_string(end_time -
+						atoll(data[SRPC_START_TIMESTAMP].c_str()));
+	data[SRPC_STATE] = std::to_string(resp->get_status_code());
+	data[SRPC_ERROR] = std::to_string(resp->get_error());
 	if (client_task->get_remote(ip, &port))
 	{
-		module_data[SRPC_REMOTE_IP] = std::move(ip);
-		module_data[SRPC_REMOTE_PORT] = std::to_string(port);
+		data[SRPC_REMOTE_IP] = std::move(ip);
+		data[SRPC_REMOTE_PORT] = std::to_string(port);
 	}
 
 	return true;
@@ -210,7 +224,7 @@ bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
-										  const RPCModuleData& data)
+										  RPCModuleData& data)
 {
 	std::string ip;
 	unsigned short port;
@@ -225,10 +239,20 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 							std::to_string(req->get_compress_type());
 
 	if (module_data[SRPC_TRACE_ID].empty())
-		module_data[SRPC_TRACE_ID] = std::to_string(
-							SRPCGlobal::get_instance()->get_trace_id());
-	module_data[SRPC_SPAN_ID] = std::to_string(
-							SRPCGlobal::get_instance()->get_span_id());
+	{
+		std::string trace_id_buf(SRPC_TRACEID_SIZE, 0);
+
+		snprintf((char *)trace_id_buf.c_str(), SRPC_TRACEID_SIZE,
+				 "%0llx", SRPCGlobal::get_instance()->get_trace_id());
+		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
+	}
+
+	std::string span_id_buf(SRPC_SPANID_SIZE, 0);
+
+	snprintf((char *)span_id_buf.c_str(), SRPC_SPANID_SIZE,
+			 "%0x", SRPCGlobal::get_instance()->get_span_id());
+	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
+
 	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS);
 
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
@@ -249,7 +273,7 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::server_end(SubTask *task,
-										const RPCModuleData& data)
+										RPCModuleData& data)
 {
 	auto *server_task = static_cast<SERVER_TASK *>(task);
 	auto *resp = server_task->get_resp();

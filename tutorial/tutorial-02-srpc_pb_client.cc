@@ -15,17 +15,20 @@
 */
 
 #include <stdio.h>
+#include "workflow/WFFacilities.h"
 #include "echo_pb.srpc.h"
 #include "srpc/rpc_types.h"
 #include "srpc/rpc_span_policies.h"
 
 using namespace srpc;
 
+static WFFacilities::WaitGroup wait_group(1); 
+
 int main()
 {
 	Example::SRPCClient client("127.0.0.1", 1412);
 
-	RPCSpanDefault span_log;
+	RPCSpanOpenTelemetry span_log("http://127.0.0.1:8080");
 	client.add_filter(&span_log);
 
 	//async
@@ -55,6 +58,7 @@ int main()
 		printf("status[%d] error[%d] errmsg:%s\n",
 				sync_ctx.status_code, sync_ctx.error, sync_ctx.errmsg.c_str());
 
+	wait_group.wait();
 	return 0;
 }
 
