@@ -3,7 +3,7 @@
 #include "workflow/WFTask.h"
 #include "workflow/HttpUtil.h"
 #include "rpc_span_policies.h"
-#include "trace_service.pb.h"
+#include "opentelemetry_trace_service.pb.h"
 
 namespace srpc
 {

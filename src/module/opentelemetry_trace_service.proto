@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package opentelemetry.proto.collector.trace.v1;
 
-import "trace.proto";
+import "opentelemetry_trace.proto";
 
 // Service that can be used to push spans between one Application instrumented with
 // OpenTelemetry and a collector, or between a collector and a central collector (in this

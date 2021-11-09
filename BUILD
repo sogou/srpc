@@ -19,6 +19,23 @@ cc_proto_library(
     deps = [":message_proto"],
 )
 
+proto_library(
+    name = "module_proto",
+    srcs = [
+        'src/module/opentelemetry_common.proto',
+        'src/module/opentelemetry_resource.proto',
+        'src/module/opentelemetry_trace.proto',
+        'src/module/opentelemetrytrace_service.proto',
+    ],
+    strip_import_prefix = "src/module",
+)
+
+cc_proto_library(
+    name = "ModuleProto",
+    deps = [":module_proto"],
+)
+
+
 cc_library(
     name = 'srpc_hdrs',
     hdrs = glob(['src/include/srpc/*']),
@@ -44,6 +61,7 @@ cc_library(
         '@lz4//:lz4',
         '@snappy//:snappy',
         ':MessageProto',
+        ':ModuleProto',
     ],
     visibility = ["//visibility:public"],
 )

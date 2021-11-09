@@ -3,7 +3,12 @@ project(module)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-set(PROTO_LIST common.proto resource.proto trace.proto trace_service.proto)
+set(PROTO_LIST
+	opentelemetry_common.proto
+	opentelemetry_resource.proto
+	opentelemetry_trace.proto
+	opentelemetry_trace_service.proto)
+
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_LIST})
 
 set(SRC

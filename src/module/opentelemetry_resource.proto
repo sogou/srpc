@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package opentelemetry.proto.resource.v1;
 
-import "common.proto";
+import "opentelemetry_common.proto";
 
 // Resource information.
 message Resource {

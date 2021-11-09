@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package opentelemetry.proto.trace.v1;
 
-import "common.proto";
-import "resource.proto";
+import "opentelemetry_common.proto";
+import "opentelemetry_resource.proto";
 
 // A collection of InstrumentationLibrarySpans from a Resource.
 message ResourceSpans {
