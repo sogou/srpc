@@ -47,7 +47,6 @@ public:
 	RPCServer();
 	RPCServer(const struct RPCServerParams *params);
 
-
 	int add_service(RPCService *service);
 	const RPCService* find_service(const std::string& name) const;
 	void add_filter(RPCFilter *filter);

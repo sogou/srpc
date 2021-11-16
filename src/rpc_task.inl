@@ -123,8 +123,6 @@ public:
 protected:
 	using user_done_t = std::function<int (int, RPCWorker&)>;
 
-//	using WFComplexClientTask<RPCREQ, RPCRESP>::get_req;
-//	using WFComplexClientTask<RPCREQ, RPCRESP>::get_resp;
 	using WFComplexClientTask<RPCREQ, RPCRESP>::set_callback;
 
 	void init_failed() override;
@@ -138,7 +136,7 @@ public:
 	RPCClientTask(const std::string& service_name,
 				  const std::string& method_name,
 				  const RPCTaskParams *params,
-				  std::list<RPCModule *>&& modules,
+				  const std::list<RPCModule *>&& modules,
 				  user_done_t&& user_done);
 
 	bool get_remote(std::string& ip, unsigned short *port) const;
@@ -164,7 +162,7 @@ class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 public:
 	RPCServerTask(CommService *service,
 				  std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
-				  std::list<RPCModule *>&& modules) :
+				  const std::list<RPCModule *>&& modules) :
 		WFServerTask<RPCREQ, RPCRESP>(service, WFGlobal::get_scheduler(), process),
 		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this), &this->req, &this->resp),
 		modules_(modules)
@@ -371,9 +369,9 @@ inline int RPCClientTask<RPCREQ, RPCRESP>::__serialize_input(const IDL *in)
 	return -1;
 }
 
-static inline bool addr_to_string(const struct sockaddr *addr,
-								  char *ip_str, socklen_t len,
-								  unsigned short *port)
+static bool addr_to_string(const struct sockaddr *addr,
+						   char *ip_str, socklen_t len,
+						   unsigned short *port)
 {
 	const char *ret = NULL;
 
@@ -402,7 +400,7 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
 					const std::string& method_name,
 					const RPCTaskParams *params,
-					std::list<RPCModule *>&& modules,
+					const std::list<RPCModule *>&& modules,
 					user_done_t&& user_done):
 	WFComplexClientTask<RPCREQ, RPCRESP>(0, nullptr),
 	user_done_(std::move(user_done)),
@@ -607,14 +605,15 @@ bool RPCServerTask<RPCREQ, RPCRESP>::get_remote(std::string& ip,
 
 	return false;
 }
-static inline void log_format(std::string& key, std::string& value,
-							  const RPCLogVector& fields)
+
+static void log_format(std::string& key, std::string& value,
+					   const RPCLogVector& fields)
 {
 	if (fields.size() == 0)
 		return;
 
 	char buffer[100];
-	snprintf(buffer, 100, "%s%c%lld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS);
+	snprintf(buffer, 100, "%s%c%ld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS);
 	key = std::move(buffer);
 	value = "{\"";
 
@@ -623,8 +622,8 @@ static inline void log_format(std::string& key, std::string& value,
 		value = value + std::move(field.first) + "\":\""
 			  + std::move(field.second) + "\",";
 	}
-	value[value.length() - 1] = '}';
 
+	value[value.length() - 1] = '}';
 }
 
 template<class RPCREQ, class RPCRESP>

@@ -92,9 +92,9 @@ public:
 	using SPAN_CONTEXT = RPCSpanContext<typename RPCTYPE::REQ,
 										typename RPCTYPE::RESP>;
 
-	bool client_begin(SubTask *task, RPCModuleData& data) override;
+	bool client_begin(SubTask *task, const RPCModuleData& data) override;
 	bool client_end(SubTask *task, RPCModuleData& data) override;
-	bool server_begin(SubTask *task, RPCModuleData& data) override;
+	bool server_begin(SubTask *task, const RPCModuleData& data) override;
 	bool server_end(SubTask *task, RPCModuleData& data) override;
 
 public:
@@ -105,7 +105,7 @@ template<class RPCTYPE>
 class RPCMonitorModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) override
+	bool client_begin(SubTask *task, const RPCModuleData& data) override
 	{
 		return true;
 	}
@@ -113,7 +113,7 @@ public:
 	{
 		return true;
 	}
-	bool server_begin(SubTask *task, RPCModuleData& data) override
+	bool server_begin(SubTask *task, const RPCModuleData& data) override
 	{
 		return true;
 	}
@@ -130,7 +130,7 @@ template<class RPCTYPE>
 class RPCEmptyModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) override
+	bool client_begin(SubTask *task, const RPCModuleData& data) override
 	{
 		return true;
 	}
@@ -138,7 +138,7 @@ public:
 	{
 		return true;
 	}
-	bool server_begin(SubTask *task, RPCModuleData& data) override
+	bool server_begin(SubTask *task, const RPCModuleData& data) override
 	{
 		return true;
 	}
@@ -155,7 +155,7 @@ public:
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
-										  RPCModuleData& data)
+										  const RPCModuleData& data)
 {
 	auto *client_task = static_cast<CLIENT_TASK *>(task);
 	auto *req = client_task->get_req();
@@ -224,7 +224,7 @@ bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
 
 template<class RPCTYPE>
 bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
-										  RPCModuleData& data)
+										  const RPCModuleData& data)
 {
 	std::string ip;
 	unsigned short port;
