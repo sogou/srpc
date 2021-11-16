@@ -22,7 +22,7 @@
 namespace srpc
 {
 
-bool RPCModule::client_task_begin(SubTask *task, RPCModuleData& data)
+bool RPCModule::client_task_begin(SubTask *task, const RPCModuleData& data)
 {
 	bool ret = this->client_begin(task, data);
 
@@ -32,7 +32,7 @@ bool RPCModule::client_task_begin(SubTask *task, RPCModuleData& data)
 	return ret;
 }
 
-bool RPCModule::server_task_begin(SubTask *task, RPCModuleData& data)
+bool RPCModule::server_task_begin(SubTask *task, const RPCModuleData& data)
 {
 	bool ret = this->server_begin(task, data);
 
@@ -107,9 +107,10 @@ bool SnowFlake::get_id(long long group_id, long long machine_id, long long *uid)
 	{
 		if (++this->sequence > this->sequence_max)
 			return false; // too many sequence_id in one millie second
-	} else {
-		this->sequence = 0L;
 	}
+	else
+		this->sequence = 0L;
+
 	seq_id = this->sequence++;
 
 	this->last_timestamp = timestamp;

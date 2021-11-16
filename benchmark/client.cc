@@ -10,7 +10,6 @@
 using namespace srpc;
 
 #define TEST_SECOND		20
-#define GET_CURRENT_MS	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
 #define GET_CURRENT_NS	std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
 
 std::atomic<int> query_count(0);
@@ -40,7 +39,8 @@ static void do_echo_pb(CLIENT *client)
 		}
 		else
 		{
-			printf("status[%d] error[%d] errmsg:%s\n", ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+			printf("status[%d] error[%d] errmsg:%s\n",
+				   ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
 			++error_count;
 		}
 
@@ -69,7 +69,8 @@ static void do_echo_thrift(CLIENT *client)
 		}
 		else
 		{
-			printf("status[%d] error[%d] errmsg:%s \n", ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+			printf("status[%d] error[%d] errmsg:%s \n",
+				   ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
 			++error_count;
 		}
 
@@ -108,6 +109,7 @@ int main(int argc, char* argv[])
 	int REQUEST_BYTES = atoi(argv[6]);
 
 	request_msg.resize(REQUEST_BYTES, 'r');
+
 	//for (int i = 0; i < REQUEST_BYTES; i++)
 	//	request_msg[i] = (unsigned char)(rand() % 256);
 
