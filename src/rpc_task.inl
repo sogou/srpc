@@ -613,7 +613,7 @@ static void log_format(std::string& key, std::string& value,
 		return;
 
 	char buffer[100];
-	snprintf(buffer, 100, "%s%c%ld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS);
+	snprintf(buffer, 100, "%s%c%lld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS());
 	key = std::move(buffer);
 	value = "{\"";
 

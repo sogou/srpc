@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 	//for (int i = 0; i < REQUEST_BYTES; i++)
 	//	request_msg[i] = (unsigned char)(rand() % 256);
 
-	int64_t start = GET_CURRENT_MS;
+	int64_t start = GET_CURRENT_MS();
 
 	if (server_type == "srpc")
 	{
@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
 	std::this_thread::sleep_for(std::chrono::seconds(TEST_SECOND));
 	stop_flag = true;
 
-	int64_t end = GET_CURRENT_MS;
+	int64_t end = GET_CURRENT_MS();
 	int tot = query_count;
 	int s = success_count;
 	int e = error_count;
