@@ -14,7 +14,6 @@
 using namespace srpc;
 
 #define TEST_SECOND		20
-#define GET_CURRENT_MS	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
 #define GET_CURRENT_NS	std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
 
 std::atomic<int> query_count(0);
@@ -160,7 +159,7 @@ int main(int argc, char* argv[])
 
 	latency_lists.resize(PARALLEL_NUMBER);
 	std::vector<std::thread *> th;
-	int64_t start = GET_CURRENT_MS;
+	int64_t start = GET_CURRENT_MS();
 
 	if (server_type == "srpc")
 	{
@@ -253,7 +252,7 @@ int main(int argc, char* argv[])
 		delete t;
 	}
 
-	int64_t end = GET_CURRENT_MS;
+	int64_t end = GET_CURRENT_MS();
 	int tot = query_count - slow_count;
 	int s = success_count;
 	int e = error_count;

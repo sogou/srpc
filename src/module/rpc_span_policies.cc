@@ -81,7 +81,7 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 
 bool RPCSpanFilterPolicy::filter(RPCModuleData& span)
 {
-	long long timestamp = GET_CURRENT_MS;
+	long long timestamp = GET_CURRENT_MS();
 
 	if (timestamp < this->last_timestamp + this->stat_interval &&
 		this->spans_interval_count < this->spans_per_interval &&

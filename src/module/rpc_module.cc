@@ -97,7 +97,7 @@ bool SnowFlake::get_id(long long group_id, long long machine_id, long long *uid)
 	if (group_id > this->group_id_max || machine_id > this->machine_id_max)
 		return false;
 
-	long long timestamp = GET_CURRENT_MS_STEADY;
+	long long timestamp = GET_CURRENT_MS_STEADY();
 	long long seq_id;
 
 	if (timestamp < this->last_timestamp)

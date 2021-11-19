@@ -17,7 +17,7 @@ WFFacilities::WaitGroup wait_group(1);
 
 inline void collect_qps()
 {
-	int64_t ms_timestamp = GET_CURRENT_MS;
+	int64_t ms_timestamp = GET_CURRENT_MS();
 	++query_count;
 	if (ms_timestamp / 1000 > last_timestamp)
 	{

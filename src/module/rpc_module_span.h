@@ -189,7 +189,7 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 	module_data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 	module_data[SRPC_COMPRESS_TYPE] =
 							std::to_string(req->get_compress_type());
-	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS);
+	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS());
 
 	return true; // always success
 }
@@ -203,7 +203,7 @@ bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
 	auto *client_task = static_cast<CLIENT_TASK *>(task);
 	auto *resp = client_task->get_resp();
 	RPCModuleData& module_data = *(client_task->mutable_module_data());
-	long long end_time = GET_CURRENT_MS;
+	long long end_time = GET_CURRENT_MS();
 
 	for (auto kv : module_data)
 		data[kv.first] = module_data[kv.first];
@@ -253,7 +253,7 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 			 "%0x", SRPCGlobal::get_instance()->get_span_id());
 	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
-	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS);
+	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS());
 
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
 	module_data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_SERVER;
@@ -278,7 +278,7 @@ bool RPCSpanModule<RPCTYPE>::server_end(SubTask *task,
 	auto *server_task = static_cast<SERVER_TASK *>(task);
 	auto *resp = server_task->get_resp();
 	RPCModuleData& module_data = *(server_task->mutable_module_data());
-	long long end_time = GET_CURRENT_MS;
+	long long end_time = GET_CURRENT_MS();
 
 	module_data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
 	module_data[SRPC_DURATION] = std::to_string(end_time -
