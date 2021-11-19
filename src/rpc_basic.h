@@ -36,8 +36,18 @@ static constexpr int			SRPC_MODULE_MAX			= 5;
 
 using ProtobufIDLMessage = google::protobuf::Message;
 
-#define GET_CURRENT_MS std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
-#define GET_CURRENT_MS_STEADY std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()
+
+static inline long long GET_CURRENT_MS()
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::system_clock::now().time_since_epoch()).count();
+};
+
+static inline long long GET_CURRENT_MS_STEADY()
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 enum RPCDataType
 {
