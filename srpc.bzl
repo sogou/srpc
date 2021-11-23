@@ -1,80 +1,74 @@
-def gen_srpc_pb_cc(name, files, deps_lib):
+"""
+Rules for building C++ srpc with Bazel.
+"""
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+tool_path = ":srpc_generator"
+
+def srpc_cc_library(
+        name,
+        srcs,
+        deps = [],
+        type = "proto",
+        out_prefix = "",
+        visibility = None):
+    output_directory = (
+        ("$(@D)/%s" % (out_prefix)) if len(srcs) > 1 else ("$(@D)")
+    )
+
+    proto_output_headers = [
+        (out_prefix + "%s.srpc.h") % (s.replace(".%s" % type, "").split("/")[-1])
+        for s in srcs
+    ]
+    thrift_output_headers = [
+        (out_prefix + "%s.thrift.h") % (s.replace(".%s" % type, "").split("/")[-1])
+        for s in srcs
+    ]
+
+    if type == "thrift":
+        output_headers = proto_output_headers + thrift_output_headers
+    if type == "proto":
+        output_headers = proto_output_headers
+
+    genrule_cmd = " ".join([
+        "SRCS=($(SRCS));",
+        "for f in $${SRCS[@]:0:%s}; do" % len(srcs),
+        "$(location %s)" % (tool_path),
+        " %s " % type,
+        "$$f",
+        output_directory + ";",
+        "done",
+    ])
+
+    srcs_lib = "%s_srcs" % (name)
+
     native.genrule(
+        name = srcs_lib,
+        srcs = srcs,
+        outs = output_headers,
+        tools = [tool_path],
+        cmd = genrule_cmd,
+        output_to_bindir = True,
+        message = "Generating srpc files for %s:" % (name),
+    )
+
+    runtime_deps = deps + [":libsrpc"]
+    print(runtime_deps)
+
+    cc_library(
         name = name,
-        srcs = files,
-        outs = [
-            name + ".srpc.h",
-            "client." + name + ".srpc.cc",
-            "server." + name + ".srpc.cc",
-        ],
-        cmd = "$(location srpc_generator) protobuf $(<) ./ && mv " + name + ".srpc.h $(location " + name + ".srpc.h) && mv client.pb_skeleton.cc $(location client." + name + ".srpc.cc) && mv server.pb_skeleton.cc $(location server." + name + ".srpc.cc)",
-        tools = [":srpc_generator"],
-    )
-    
-    native.cc_library(
-        name = name + "_client_cc",
-        srcs = [
-            "client." + name + ".srpc.cc",
-        ],
         hdrs = [
-            name + ".srpc.h",
+            ":" + srcs_lib,
         ],
-        deps = [
-            ':srpc_hdrs',
-        ] + deps_lib,
-    )
-
-    native.cc_library(
-        name = name + "_server_cc",
         srcs = [
-            "server." + name + ".srpc.cc",
+            ":" + srcs_lib,
         ],
-        hdrs = [
-            name + ".srpc.h",
+        features = [
+            "-parse_headers",
         ],
-        deps = [
-            ':srpc_hdrs',
-        ] + deps_lib,
-    )
-
-def gen_srpc_thrift_cc(name, files, deps_lib):
-    native.genrule(
-        name = name,
-        srcs = files,
-        outs = [
-            name + ".srpc.h",
-            name + ".thrift.h",
-            "client." + name + ".thrift.cc",
-            "server." + name + ".thrift.cc",
-        ],
-        cmd = "$(location srpc_generator) thrift $(<) ./ &&  mv " + name + ".thrift.h $(location " + name + ".thrift.h) && mv " + name + ".srpc.h $(location " + name + ".srpc.h) && mv client.thrift_skeleton.cc $(location client." + name + ".thrift.cc) && mv server.thrift_skeleton.cc $(location server." + name + ".thrift.cc)",
-        tools = [":srpc_generator"],
-    )
-    
-    native.cc_library(
-        name = name + "_client_cc",
-        srcs = [
-            "client." + name + ".thrift.cc",
-        ],
-        hdrs = [
-            name + ".srpc.h",
-            name + ".thrift.h",
-        ],
-        deps = [
-            ':srpc_hdrs',
-        ] + deps_lib,
-    )
-
-    native.cc_library(
-        name = name + "_server_cc",
-        srcs = [
-            "server." + name + ".thrift.cc",
-        ],
-        hdrs = [
-            name + ".srpc.h",
-            name + ".thrift.h",
-        ],
-        deps = [
-            ':srpc_hdrs',
-        ] + deps_lib,
+        deps = runtime_deps,
+        includes = [],
+        linkstatic = 1,
+        visibility = visibility,
     )

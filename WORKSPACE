@@ -1,3 +1,5 @@
+workspace(name = "srpc")
+
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -16,7 +18,7 @@ rules_proto_toolchains()
 
 git_repository(
     name = "workflow",
-    commit = "4bdef0030319916debd683316a5b5ae6011f41c6",
+    commit = "fb28c578c0537114f35abb00523d83e965c516c3",
     remote = "https://github.com/sogou/workflow.git")
 
 new_git_repository(
