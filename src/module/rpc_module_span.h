@@ -246,6 +246,8 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 				 "%0llx", SRPCGlobal::get_instance()->get_trace_id());
 		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
+	else
+		module_data[SRPC_PARENT_SPAN_ID] = module_data[SRPC_SPAN_ID];
 
 	std::string span_id_buf(SRPC_SPANID_SIZE, 0);
 

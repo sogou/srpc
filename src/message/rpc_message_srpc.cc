@@ -281,8 +281,11 @@ bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 		return false;
 
 	data["trace_id"] = std::to_string(meta->mutable_span()->trace_id());
-	//	span->span_id = meta->mutable_span()->span_id();
-	data["parent_span_id"] = std::to_string(meta->mutable_span()->span_id());
+	data["span_id"] = std::to_string(meta->mutable_span()->span_id());
+
+	if (meta->mutable_span()->has_parent_span_id())
+		data["parent_span_id"] = std::to_string(meta->mutable_span()->parent_span_id());
+
 	return true;
 }
 
@@ -918,7 +921,7 @@ bool SRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
 	if (iter != data.end())
 		set_header_pair("Trace-Id", iter->second);
 
-	iter = data.find("trace_id");
+	iter = data.find("span_id");
 	if (iter != data.end())
 		set_header_pair("Span-Id", iter->second);
 
@@ -960,7 +963,7 @@ bool SRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 	if (iter != data.end())
 		set_header_pair("Trace-Id", iter->second);
 
-	iter = data.find("trace_id");
+	iter = data.find("span_id");
 	if (iter != data.end())
 		set_header_pair("Span-Id", iter->second);
 
