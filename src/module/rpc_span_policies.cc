@@ -12,12 +12,12 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
 {
 	using namespace opentelemetry::proto::trace::v1;
-	auto resource_span = req.add_resource_spans();
-	auto ins_lib = resource_span->add_instrumentation_library_spans();
-	auto span = ins_lib->add_spans();
+	ResourceSpans *resource_span = req.add_resource_spans();
+	InstrumentationLibrarySpans *ins_lib = resource_span->add_instrumentation_library_spans();
+	Span *span = ins_lib->add_spans();
 
 	span->set_span_id(data[SRPC_SPAN_ID]);
-	span->set_trace_id(data[SRPC_TRACE_ID].c_str());
+	span->set_trace_id(data[SRPC_TRACE_ID]);
 	span->set_name(data[SRPC_METHOD_NAME]);
 
 	for (auto iter : data)
