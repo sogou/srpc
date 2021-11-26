@@ -11,18 +11,37 @@ namespace srpc
 static size_t rpc_span_pb_format(RPCModuleData& data,
 	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
 {
-
-	auto resource_span = req.add_resource_spans();
-	auto ins_lib = resource_span->add_instrumentation_library_spans();
-	auto span = ins_lib->add_spans();
+	using namespace opentelemetry::proto::trace::v1;
+	ResourceSpans *resource_span = req.add_resource_spans();
+	InstrumentationLibrarySpans *ins_lib = resource_span->add_instrumentation_library_spans();
+	Span *span = ins_lib->add_spans();
 
 	span->set_span_id(data[SRPC_SPAN_ID]);
 	span->set_trace_id(data[SRPC_TRACE_ID]);
 	span->set_name(data[SRPC_METHOD_NAME]);
 
-	auto iter = data.find(SRPC_PARENT_SPAN_ID);
-	if (iter != data.end())
-		span->set_parent_span_id(iter->second);
+	for (auto iter : data)
+	{
+		if (iter.first.compare(SRPC_PARENT_SPAN_ID) == 0)
+			span->set_parent_span_id(iter.second);
+		else if (iter.first.compare(SRPC_SPAN_KIND) == 0)
+		{
+			if (iter.second.compare(SRPC_SPAN_KIND_CLIENT) == 0)
+				span->set_kind(Span_SpanKind_SPAN_KIND_CLIENT);
+			else if (iter.second.compare(SRPC_SPAN_KIND_SERVER) == 0)
+				span->set_kind(Span_SpanKind_SPAN_KIND_SERVER);
+		}
+		else if (iter.first.compare(SRPC_START_TIMESTAMP) == 0)
+		{
+			span->set_start_time_unix_nano(
+						atoll(data[SRPC_START_TIMESTAMP].c_str()));
+		}
+		else if (iter.first.compare(SRPC_FINISH_TIMESTAMP) == 0)
+		{
+			span->set_end_time_unix_nano(
+						atoll(data[SRPC_FINISH_TIMESTAMP].c_str()));
+		}
+	}
 
 	return req.ByteSize();
 }
@@ -152,8 +171,6 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 													   this->redirect_max,
 													   this->retry_max,
 													   [](WFHttpTask *task) {
-//		fprintf(stderr, "span report callback: s=%d e=%d\n",
-//				task->get_state(), task->get_error());
 		delete (std::string *)task->user_data;
 	});
 

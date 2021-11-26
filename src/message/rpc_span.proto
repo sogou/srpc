@@ -1,8 +1,8 @@
 syntax="proto2";
 
 message Span {
-	required int64 trace_id = 1;
-	required int64 span_id = 2;
-	optional int64 parent_span_id = 3;
+	required bytes trace_id = 1;
+	required bytes span_id = 2;
+	optional bytes parent_span_id = 3;
 };
 
