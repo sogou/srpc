@@ -264,11 +264,11 @@ bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 
 	auto iter = data.find("trace_id");
 	if (iter != data.end())
-		meta->mutable_span()->set_trace_id(atoll(iter->second.c_str()));
+		meta->mutable_span()->set_trace_id(iter->second.c_str());
 
 	iter = data.find("span_id");
 	if (iter != data.end())
-		meta->mutable_span()->set_span_id(atoi(iter->second.c_str()));
+		meta->mutable_span()->set_span_id(iter->second.c_str());
 	//	meta->mutable_span()->set_parent_span_id(span->parent_span_id);
 	//	name...
 	return true;
@@ -280,11 +280,11 @@ bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 	if (!meta->has_span())
 		return false;
 
-	data["trace_id"] = std::to_string(meta->mutable_span()->trace_id());
-	data["span_id"] = std::to_string(meta->mutable_span()->span_id());
+	data["trace_id"] = meta->mutable_span()->trace_id();
+	data["span_id"] = meta->mutable_span()->span_id();
 
 	if (meta->mutable_span()->has_parent_span_id())
-		data["parent_span_id"] = std::to_string(meta->mutable_span()->parent_span_id());
+		data["parent_span_id"] = meta->mutable_span()->parent_span_id();
 
 	return true;
 }
