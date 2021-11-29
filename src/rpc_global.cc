@@ -30,15 +30,13 @@
 namespace srpc
 {
 
-const char *SRPC_VERSION = "SRPC Library Version: 0.9.2";
-
-const char *SRPCGlobal::get_srpc_version() const { return SRPC_VERSION; }
-
-SRPCGlobal::SRPCGlobal()
+SRPCGlobal::SRPCGlobal() :
+	gen(rd())
 {
 	WFGlobal::register_scheme_port(SRPC_SCHEME, SRPC_DEFAULT_PORT);
 	WFGlobal::register_scheme_port(SRPC_SSL_SCHEME, SRPC_SSL_DEFAULT_PORT);
-	this->span_id = 1;
+	this->group_id = this->gen() % (1 << SRPC_GROUP_BITS);
+	this->machine_id = this->gen() % (1 << SRPC_MACHINE_BITS);
 }
 
 static int __get_addr_info(const std::string& host, unsigned short port,
@@ -114,10 +112,10 @@ bool SRPCGlobal::task_init(RPCClientParams& params, ParsedURI& uri,
 	return false;
 }
 
-long long SRPCGlobal::get_trace_id()
+unsigned long long SRPCGlobal::get_trace_id()
 {
-	long long trace_id = 0;
-	this->snowflake.get_id(0, 0, &trace_id);
+	unsigned long long trace_id = 0;
+	this->snowflake.get_id(this->group_id, this->machine_id, &trace_id);
 	return trace_id;
 }
 
