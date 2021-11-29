@@ -98,7 +98,18 @@ public:
 	bool server_end(SubTask *task, RPCModuleData& data) override;
 
 public:
-	RPCSpanModule() : RPCModule(RPCModuleSpan) { }
+	RPCSpanModule() : RPCModule(RPCModuleSpan)
+	{
+		snprintf(this->traceid_pattern, PATTERN_LEN, "%%0%zullx",
+				 SRPC_TRACEID_SIZE);
+		snprintf(this->spanid_pattern, PATTERN_LEN, "%%0%zullx",
+				 SRPC_SPANID_SIZE);
+	}
+
+private:
+	static constexpr int PATTERN_LEN = 10;
+	char traceid_pattern[PATTERN_LEN];
+	char spanid_pattern[PATTERN_LEN];
 };
 
 template<class RPCTYPE>
@@ -168,17 +179,19 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 		if (iter != data.end())
 			module_data[SRPC_PARENT_SPAN_ID] = iter->second;
 	} else {
-		std::string trace_id_buf(SRPC_TRACEID_SIZE, 0);
+		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
 
-		snprintf((char *)trace_id_buf.c_str(), SRPC_TRACEID_SIZE,
-				 "%0llx", SRPCGlobal::get_instance()->get_trace_id());
+		snprintf((char *)trace_id_buf.c_str(), SRPC_TRACEID_SIZE + 1,
+				 this->traceid_pattern,
+				 SRPCGlobal::get_instance()->get_trace_id());
 		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 
-	std::string span_id_buf(SRPC_SPANID_SIZE, 0);
+	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
 
-	snprintf((char *)span_id_buf.c_str(), SRPC_SPANID_SIZE,
-			 "%0x", SRPCGlobal::get_instance()->get_span_id());
+	snprintf((char *)span_id_buf.c_str(), SRPC_SPANID_SIZE + 1,
+			 this->spanid_pattern,
+			 SRPCGlobal::get_instance()->get_span_id());
 	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
@@ -240,19 +253,21 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 
 	if (module_data[SRPC_TRACE_ID].empty())
 	{
-		std::string trace_id_buf(SRPC_TRACEID_SIZE, 0);
+		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
 
-		snprintf((char *)trace_id_buf.c_str(), SRPC_TRACEID_SIZE,
-				 "%0llx", SRPCGlobal::get_instance()->get_trace_id());
+		snprintf((char *)trace_id_buf.c_str(), SRPC_TRACEID_SIZE + 1,
+				 this->traceid_pattern,
+				 SRPCGlobal::get_instance()->get_trace_id());
 		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 	else
 		module_data[SRPC_PARENT_SPAN_ID] = module_data[SRPC_SPAN_ID];
 
-	std::string span_id_buf(SRPC_SPANID_SIZE, 0);
+	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
 
-	snprintf((char *)span_id_buf.c_str(), SRPC_SPANID_SIZE,
-			 "%0x", SRPCGlobal::get_instance()->get_span_id());
+	snprintf((char *)span_id_buf.c_str(), SRPC_SPANID_SIZE + 1,
+			 this->spanid_pattern,
+			 SRPCGlobal::get_instance()->get_span_id());
 	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
 	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS());

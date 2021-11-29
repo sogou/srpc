@@ -77,7 +77,7 @@ SnowFlake::SnowFlake(int timestamp_bits, int group_bits, int machine_bits)
 	this->timestamp_bits = timestamp_bits;
 	this->group_bits = group_bits;
 	this->machine_bits = machine_bits;
-	this->sequence_bits = TOTAL_BITS - timestamp_bits -
+	this->sequence_bits = SRPC_TOTAL_BITS - timestamp_bits -
 						  group_bits - machine_bits;
 
 	this->last_timestamp = 1L;
@@ -92,7 +92,8 @@ SnowFlake::SnowFlake(int timestamp_bits, int group_bits, int machine_bits)
 	this->timestamp_shift = this->group_shift + this->group_bits;
 }
 
-bool SnowFlake::get_id(long long group_id, long long machine_id, long long *uid)
+bool SnowFlake::get_id(long long group_id, long long machine_id,
+					   unsigned long long *uid)
 {
 	if (group_id > this->group_id_max || machine_id > this->machine_id_max)
 		return false;

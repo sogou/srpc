@@ -17,6 +17,7 @@
 #ifndef __RPC_GLOBAL_H__
 #define __RPC_GLOBAL_H__
 
+#include <random>
 #include <workflow/URIParser.h>
 #include "rpc_options.h"
 #include "rpc_module.h"
@@ -40,13 +41,18 @@ public:
 	bool task_init(RPCClientParams& params, ParsedURI& uri,
 				   struct sockaddr_storage *ss, socklen_t *ss_len) const;
 
-	long long get_trace_id();
-	unsigned int get_span_id() { return this->span_id++; }
+	unsigned long long get_trace_id();
+	unsigned int get_span_id() { return this->gen(); }
+	void set_group_id(unsigned short id) { this->group_id = id; }
+	void set_machine_id(unsigned short id) { this->machine_id = id; }
 
 private:
 	SRPCGlobal();
 	SnowFlake snowflake;
-	std::atomic<unsigned int> span_id;
+	std::random_device rd;
+	std::mt19937 gen;
+	unsigned short group_id;
+	unsigned short machine_id;
 };
 
 } // namespace srpc

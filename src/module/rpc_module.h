@@ -31,6 +31,13 @@ static constexpr char const *SRPC_SPAN_LOG		= "log";
 static constexpr char const *SRPC_SPAN_EVENT	= "event";
 static constexpr char const *SRPC_SPAN_MESSAGE	= "message";
 
+//for SnowFlake: u_id = [timestamp][group][machine][sequence]
+static constexpr int SRPC_TIMESTAMP_BITS		= 38;
+static constexpr int SRPC_GROUP_BITS			= 4;
+static constexpr int SRPC_MACHINE_BITS			= 10;
+//static constexpr int SEQUENCE_BITS			= 12;
+static constexpr int SRPC_TOTAL_BITS			= 64;
+
 class RPCModule
 {
 protected:
@@ -70,11 +77,12 @@ public:
 	SnowFlake(int timestamp_bits, int group_bits, int machine_bits);
 
 	SnowFlake() :
-		SnowFlake(TIMESTAMP_BITS, GROUP_BITS, MACHINE_BITS)
+		SnowFlake(SRPC_TIMESTAMP_BITS, SRPC_GROUP_BITS, SRPC_MACHINE_BITS)
 	{
 	}
 
-	bool get_id(long long group_id, long long machine_id, long long *uid);
+	bool get_id(long long group_id, long long machine_id,
+				unsigned long long *uid);
 
 private:
 	std::atomic<long long> last_timestamp; // -1L;
@@ -92,13 +100,6 @@ private:
 	long long timestamp_shift;
 	long long group_shift;
 	long long machine_shift;
-
-	// u_id = [timestamp][group][machine][sequence]
-	static constexpr int TIMESTAMP_BITS = 37;
-	static constexpr int GROUP_BITS = 4;
-	static constexpr int MACHINE_BITS = 10;
-//	static constexpr int SEQUENCE_BITS = 12;
-	static constexpr int TOTAL_BITS = 63;
 };
 
 } // end namespace srpc
