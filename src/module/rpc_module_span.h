@@ -102,7 +102,7 @@ public:
 	{
 		snprintf(this->traceid_pattern, PATTERN_LEN, "%%0%zullx",
 				 SRPC_TRACEID_SIZE);
-		snprintf(this->spanid_pattern, PATTERN_LEN, "%%0%zullx",
+		snprintf(this->spanid_pattern, PATTERN_LEN, "%%0%zux",
 				 SRPC_SPANID_SIZE);
 	}
 

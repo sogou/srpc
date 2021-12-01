@@ -9,15 +9,26 @@ namespace srpc
 {
 
 static size_t rpc_span_pb_format(RPCModuleData& data,
+	const std::unordered_map<std::string, std::string>& attributes,
 	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
 {
 	using namespace opentelemetry::proto::trace::v1;
 	ResourceSpans *resource_span = req.add_resource_spans();
-	InstrumentationLibrarySpans *ins_lib = resource_span->add_instrumentation_library_spans();
+	InstrumentationLibrarySpans *ins_lib;
+	ins_lib = resource_span->add_instrumentation_library_spans();
 	Span *span = ins_lib->add_spans();
 
-	span->set_span_id(data[SRPC_SPAN_ID]);
-	span->set_trace_id(data[SRPC_TRACE_ID]);
+	for (auto attr : attributes)
+	{
+		auto attribute = span->add_attributes();
+		attribute->set_key(attr.first);
+
+		auto value = attribute->mutable_value();
+		value->set_string_value(attr.second);
+	}
+
+	span->set_span_id(data[SRPC_SPAN_ID].c_str(), SRPC_SPANID_SIZE);
+	span->set_trace_id(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE);
 	span->set_name(data[SRPC_METHOD_NAME]);
 
 	for (auto iter : data)
@@ -86,8 +97,9 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	for (auto &it : data)
 	{
 		if (strncmp(it.first.c_str(), SRPC_SPAN_LOG, 3) == 0)
-			ret += snprintf(str + ret, len - ret, "\n%s trace_id: %s span_id: %s"
-												  " timestamp: %s %s",
+			ret += snprintf(str + ret, len - ret,
+							"\n%s trace_id: %s span_id: %s"
+							" timestamp: %s %s",
 							"[ANNOTATION]",
 							data[SRPC_TRACE_ID].c_str(),
 							data[SRPC_SPAN_ID].c_str(),
@@ -165,7 +177,9 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 		return WFTaskFactory::create_empty_task();
 
 	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest req;
-	rpc_span_pb_format(span, req);
+	this->mutex.lock();
+	rpc_span_pb_format(span, this->attributes, req);
+	this->mutex.unlock();
 
 	WFHttpTask *task = WFTaskFactory::create_http_task(this->url,
 													   this->redirect_max,
@@ -184,6 +198,25 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 	http_req->append_output_body_nocopy(output->c_str(), output->length());
 
 	return task;
+}
+
+void RPCSpanOpenTelemetry::add_attributes(std::string key, std::string value)
+{
+	this->mutex.lock();
+	this->attributes.emplace(std::move(key), std::move(value));
+	this->mutex.unlock();
+}
+
+size_t RPCSpanOpenTelemetry::clear_attributes()
+{
+	size_t ret;
+
+	this->mutex.lock();
+	ret = this->attributes.size();
+	this->attributes.clear();
+	this->mutex.unlock();
+
+	return ret;
 }
 
 }
