@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <limits>
+#include <unordered_map>
 #include "workflow/WFTask.h"
 #include "workflow/WFTaskFactory.h"
 #include "workflow/RedisMessage.h"
@@ -210,8 +211,8 @@ public:
 
 private:
 	std::string url;
-	unsigned int redirect_max;
-	unsigned int retry_max;
+	int redirect_max;
+	int retry_max;
 
 	RPCSpanFilterPolicy filter_policy;
 	std::mutex mutex;

@@ -13,6 +13,8 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
 {
 	using namespace opentelemetry::proto::trace::v1;
+	using namespace opentelemetry::proto::common::v1;
+
 	ResourceSpans *resource_span = req.add_resource_spans();
 	InstrumentationLibrarySpans *ins_lib;
 	ins_lib = resource_span->add_instrumentation_library_spans();
@@ -20,10 +22,9 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 
 	for (auto attr : attributes)
 	{
-		auto attribute = span->add_attributes();
+		KeyValue *attribute = span->add_attributes();
 		attribute->set_key(attr.first);
-
-		auto value = attribute->mutable_value();
+		AnyValue *value = attribute->mutable_value();
 		value->set_string_value(attr.second);
 	}
 
