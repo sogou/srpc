@@ -28,7 +28,8 @@ int main()
 {
 	Example::SRPCClient client("127.0.0.1", 1412);
 
-	RPCSpanOpenTelemetry span_log("http://127.0.0.1:8080");
+	RPCSpanOpenTelemetry span_log("http://127.0.0.1:4318");
+	span_log.add_attributes("provider.id", "default");
 	client.add_filter(&span_log);
 
 	//async
