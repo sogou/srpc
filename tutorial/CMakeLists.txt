@@ -84,6 +84,7 @@ set(TUTORIAL_PB_LIST
 	tutorial-06-brpc_pb_client
 	tutorial-09-client_task
 	tutorial-10-server_async
+	tutorial-15-srpc_pb_proxy
 )
 
 if (APPLE)
