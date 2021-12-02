@@ -8,19 +8,21 @@
 namespace srpc
 {
 
+using namespace opentelemetry::proto::collector::trace::v1;
+using namespace opentelemetry::proto::trace::v1;
+using namespace opentelemetry::proto::common::v1;
+
 static size_t rpc_span_pb_format(RPCModuleData& data,
 	const std::unordered_map<std::string, std::string>& attributes,
-	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest& req)
+	ExportTraceServiceRequest& req)
 {
-	using namespace opentelemetry::proto::trace::v1;
-	using namespace opentelemetry::proto::common::v1;
 
 	ResourceSpans *resource_span = req.add_resource_spans();
 	InstrumentationLibrarySpans *ins_lib;
 	ins_lib = resource_span->add_instrumentation_library_spans();
 	Span *span = ins_lib->add_spans();
 
-	for (auto attr : attributes)
+	for (const auto& attr : attributes)
 	{
 		KeyValue *attribute = span->add_attributes();
 		attribute->set_key(attr.first);
@@ -32,7 +34,7 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 	span->set_trace_id(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE);
 	span->set_name(data[SRPC_METHOD_NAME]);
 
-	for (auto iter : data)
+	for (const auto& iter : data)
 	{
 		if (iter.first.compare(SRPC_PARENT_SPAN_ID) == 0)
 			span->set_parent_span_id(iter.second);
@@ -95,7 +97,7 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 						data[SRPC_ERROR].c_str());
 	}
 
-	for (auto &it : data)
+	for (const auto& it : data)
 	{
 		if (strncmp(it.first.c_str(), SRPC_SPAN_LOG, 3) == 0)
 			ret += snprintf(str + ret, len - ret,
@@ -177,7 +179,7 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 	if (iter == span.end())
 		return WFTaskFactory::create_empty_task();
 
-	opentelemetry::proto::collector::trace::v1::ExportTraceServiceRequest req;
+	ExportTraceServiceRequest req;
 	this->mutex.lock();
 	rpc_span_pb_format(span, this->attributes, req);
 	this->mutex.unlock();
@@ -205,7 +207,7 @@ void RPCSpanOpenTelemetry::add_attributes(const std::string& key,
 										  const std::string& value)
 {
 	this->mutex.lock();
-	this->attributes.emplace(std::move(key), std::move(value));
+	this->attributes.insert(std::make_pair(key, value));
 	this->mutex.unlock();
 }
 
