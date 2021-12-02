@@ -201,7 +201,8 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 	return task;
 }
 
-void RPCSpanOpenTelemetry::add_attributes(std::string key, std::string value)
+void RPCSpanOpenTelemetry::add_attributes(const std::string& key,
+										  const std::string& value)
 {
 	this->mutex.lock();
 	this->attributes.emplace(std::move(key), std::move(value));

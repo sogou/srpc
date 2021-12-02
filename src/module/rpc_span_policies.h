@@ -206,7 +206,7 @@ public:
 	}
 
 	// for client level attributes, such as ProviderID
-	void add_attributes(std::string key, std::string value);
+	void add_attributes(const std::string& key, const std::string& value);
 	size_t clear_attributes();
 
 private:
