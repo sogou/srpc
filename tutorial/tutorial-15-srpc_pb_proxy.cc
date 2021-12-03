@@ -37,14 +37,15 @@ private:
 	CLIENT *client;
 
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *context) override
 	{
 		auto *task = this->client->create_Echo_task([response](EchoResponse *resp,
-															   RPCContext *) {
-			*response = std::move(*resp);
+															   RPCContext *ctx) {
+			if (ctx->success())
+				*response = std::move(*resp);
 		});
 		task->serialize_input(request);
-		ctx->get_series()->push_back(task);
+		context->get_series()->push_back(task);
 	}
 };
 
