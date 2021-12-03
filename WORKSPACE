@@ -18,7 +18,7 @@ rules_proto_toolchains()
 
 git_repository(
     name = "workflow",
-    commit = "802c22496b7829000c65201f64cead37d5cbeac5",
+    commit = "a13d5d58854a80bf3156f32ae5fb580b73f451a8",
     remote = "https://github.com/sogou/workflow.git")
 
 new_git_repository(
