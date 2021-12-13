@@ -17,6 +17,7 @@
 #ifndef __RPC_BASIC_H__
 #define __RPC_BASIC_H__
 
+#include <chrono>
 #include <google/protobuf/message.h>
 #include "rpc_thrift_idl.h"
 #include "rpc_buffer.h"
