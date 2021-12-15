@@ -112,11 +112,11 @@ bool SRPCGlobal::task_init(RPCClientParams& params, ParsedURI& uri,
 	return false;
 }
 
-unsigned long long SRPCGlobal::get_long_long()
+unsigned long long SRPCGlobal::get_random()
 {
-	unsigned long long trace_id = 0;
-	this->snowflake.get_id(this->group_id, this->machine_id, &trace_id);
-	return trace_id;
+	unsigned long long id = 0;
+	this->snowflake.get_id(this->group_id, this->machine_id, &id);
+	return id;
 }
 
 static const SRPCGlobal *srpc_global = SRPCGlobal::get_instance();

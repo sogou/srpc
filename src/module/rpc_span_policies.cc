@@ -56,12 +56,12 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 		else if (iter.first.compare(SRPC_START_TIMESTAMP) == 0)
 		{
 			span->set_start_time_unix_nano(
-						atoll(data[SRPC_START_TIMESTAMP].c_str()) * 1000000);
+						1000000 * atoll(data[SRPC_START_TIMESTAMP].c_str()));
 		}
 		else if (iter.first.compare(SRPC_FINISH_TIMESTAMP) == 0)
 		{
 			span->set_end_time_unix_nano(
-						atoll(data[SRPC_FINISH_TIMESTAMP].c_str()) * 1000000);
+						1000000 * atoll(data[SRPC_FINISH_TIMESTAMP].c_str()));
 		}
 	}
 

@@ -171,8 +171,8 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 		if (iter != data.end())
 			module_data[SRPC_PARENT_SPAN_ID] = iter->second;
 	} else {
-		uint64_t trace_id_high = SRPCGlobal::get_instance()->get_long_long();
-		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_long_long();
+		uint64_t trace_id_high = SRPCGlobal::get_instance()->get_random();
+		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_random();
 		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
 
 		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
@@ -183,7 +183,7 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 
-	uint64_t span_id = SRPCGlobal::get_instance()->get_long_long();
+	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
 	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
 
 	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
@@ -248,8 +248,8 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 
 	if (module_data[SRPC_TRACE_ID].empty())
 	{
-		uint64_t trace_id_high = SRPCGlobal::get_instance()->get_long_long();
-		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_long_long();
+		uint64_t trace_id_high = SRPCGlobal::get_instance()->get_random();
+		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_random();
 		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
 
 		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
@@ -262,7 +262,7 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 	else
 		module_data[SRPC_PARENT_SPAN_ID] = module_data[SRPC_SPAN_ID];
 
-	uint64_t span_id = SRPCGlobal::get_instance()->get_long_long();
+	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
 	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
 
 	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
