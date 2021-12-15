@@ -41,8 +41,7 @@ public:
 	bool task_init(RPCClientParams& params, ParsedURI& uri,
 				   struct sockaddr_storage *ss, socklen_t *ss_len) const;
 
-	unsigned long long get_trace_id();
-	unsigned int get_span_id() { return this->gen(); }
+	unsigned long long get_random();
 	void set_group_id(unsigned short id) { this->group_id = id; }
 	void set_machine_id(unsigned short id) { this->machine_id = id; }
 

@@ -11,6 +11,7 @@ namespace srpc
 using namespace opentelemetry::proto::collector::trace::v1;
 using namespace opentelemetry::proto::trace::v1;
 using namespace opentelemetry::proto::common::v1;
+using namespace opentelemetry::proto::resource::v1;
 
 static size_t rpc_span_pb_format(RPCModuleData& data,
 	const std::unordered_map<std::string, std::string>& attributes,
@@ -20,15 +21,22 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 	ResourceSpans *resource_span = req.add_resource_spans();
 	InstrumentationLibrarySpans *ins_lib;
 	ins_lib = resource_span->add_instrumentation_library_spans();
-	Span *span = ins_lib->add_spans();
+	Resource *resource = resource_span->mutable_resource();
 
 	for (const auto& attr : attributes)
 	{
-		KeyValue *attribute = span->add_attributes();
+		KeyValue *attribute = resource->add_attributes();
 		attribute->set_key(attr.first);
 		AnyValue *value = attribute->mutable_value();
 		value->set_string_value(attr.second);
 	}
+
+	Span *span = ins_lib->add_spans();
+
+	KeyValue *attribute = span->add_attributes();
+	attribute->set_key(SRPC_SERVICE_NAME);
+	AnyValue *value = attribute->mutable_value();
+	value->set_string_value(data[SRPC_SERVICE_NAME]);
 
 	span->set_span_id(data[SRPC_SPAN_ID].c_str(), SRPC_SPANID_SIZE);
 	span->set_trace_id(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE);
@@ -48,12 +56,12 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 		else if (iter.first.compare(SRPC_START_TIMESTAMP) == 0)
 		{
 			span->set_start_time_unix_nano(
-						atoll(data[SRPC_START_TIMESTAMP].c_str()) * 1000);
+						1000000 * atoll(data[SRPC_START_TIMESTAMP].c_str()));
 		}
 		else if (iter.first.compare(SRPC_FINISH_TIMESTAMP) == 0)
 		{
 			span->set_end_time_unix_nano(
-						atoll(data[SRPC_FINISH_TIMESTAMP].c_str()) * 1000);
+						1000000 * atoll(data[SRPC_FINISH_TIMESTAMP].c_str()));
 		}
 	}
 
