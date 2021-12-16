@@ -742,7 +742,7 @@ public:
 			std::string req = change_include_prefix(rpc.request_name);
 			std::string resp = change_include_prefix(rpc.response_name);
 
-			if (type == "TRPC" || type == "TRPCHttp")
+			if (type == "TRPC")
 			{
 				std::string full_method = make_trpc_method_prefix(package,
 																  service,
@@ -759,6 +759,21 @@ public:
 						resp.c_str(), type.c_str(),
 						rpc.method_name.c_str(), req.c_str(),
 						resp.c_str(), resp.c_str(), full_method.c_str(),
+						resp.c_str());
+			}
+			else if (type == "TRPCHttp")
+			{
+				fprintf(this->out_file, this->client_method_trpc_format.c_str(),
+						type.c_str(), rpc.method_name.c_str(),
+						req.c_str(), rpc.method_name.c_str(),
+						rpc.method_name.c_str(),
+
+						type.c_str(), rpc.method_name.c_str(),
+						req.c_str(), resp.c_str(), rpc.method_name.c_str(),
+
+						resp.c_str(), type.c_str(),
+						rpc.method_name.c_str(), req.c_str(),
+						resp.c_str(), resp.c_str(), rpc.method_name.c_str(),
 						resp.c_str());
 			}
 			else
@@ -850,7 +865,7 @@ public:
 	{
 		for (const auto& rpc : rpcs)
 		{
-			if (type == "TRPC" || type == "TRPCHttp")
+			if (type == "TRPC")
 			{
 				std::string full_method = make_trpc_method_prefix(package,
 																  service,
@@ -859,6 +874,12 @@ public:
 				fprintf(this->out_file, this->client_create_task_trpc_format.c_str(),
 						type.c_str(), type.c_str(), rpc.method_name.c_str(),
 				rpc.method_name.c_str(), full_method.c_str());
+			}
+			else if (type == "TRPCHttp")
+			{
+				fprintf(this->out_file, this->client_create_task_trpc_format.c_str(),
+						type.c_str(), type.c_str(), rpc.method_name.c_str(),
+						rpc.method_name.c_str(), rpc.method_name.c_str());
 			}
 			else
 			{
