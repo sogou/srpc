@@ -80,8 +80,11 @@ protected:
 private:
 	void __task_init(COMPLEXTASK *task) const;
 
+protected:
 	RPCClientParams params;
 	ParsedURI uri;
+
+private:
 	struct sockaddr_storage ss;
 	socklen_t ss_len;
 	bool has_addr_info;

@@ -577,6 +577,13 @@ void TRPCRequest::set_method_name(const std::string& method_name)
 	meta->set_func(method_name);
 }
 
+void TRPCRequest::set_caller_name(const std::string& caller_name)
+{
+	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
+
+	meta->set_caller(caller_name);
+}
+
 int TRPCResponse::get_compress_type() const
 {
 	ResponseProtocol *meta = static_cast<ResponseProtocol *>(this->meta);
@@ -891,6 +898,7 @@ bool TRPCHttpRequest::serialize_meta()
 	set_header_pair(TRPCHttpHeaders::RequestId, std::to_string(this->get_request_id()));
 	set_header_pair(TRPCHttpHeaders::Callee, this->get_method_name());
 	set_header_pair(TRPCHttpHeaders::Func, this->get_service_name());
+	set_header_pair(TRPCHttpHeaders::Caller, this->get_caller_name());
 
 	const void *buffer;
 	size_t buflen;
