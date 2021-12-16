@@ -62,7 +62,7 @@ struct RPCServerParams : public WFServerParams
 	{}
 };
 
-static const struct RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
+static constexpr struct RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
 {
 /*	.send_timeout		=	*/	-1,
 /*	.receive_timeout	=	*/	-1,
