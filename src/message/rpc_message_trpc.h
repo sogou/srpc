@@ -81,6 +81,7 @@ public:
 
 	const std::string& get_service_name() const;
 	const std::string& get_method_name() const;
+	const std::string& get_caller_name() const;
 
 	void set_service_name(const std::string& service_name);
 	void set_method_name(const std::string& method_name);
@@ -294,6 +295,11 @@ public:
 	void set_caller_name(const std::string& caller_name)
 	{
 		return this->TRPCRequest::set_caller_name(caller_name);
+	}
+
+	const std::string& get_caller_name() const
+	{
+		return this->TRPCRequest::get_caller_name();
 	}
 
 public:

@@ -584,6 +584,13 @@ void TRPCRequest::set_caller_name(const std::string& caller_name)
 	meta->set_caller(caller_name);
 }
 
+const std::string& TRPCRequest::get_caller_name() const
+{
+	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
+
+	return meta->caller();
+}
+
 int TRPCResponse::get_compress_type() const
 {
 	ResponseProtocol *meta = static_cast<ResponseProtocol *>(this->meta);
