@@ -1402,7 +1402,8 @@ inline void %sClient::%s(const %s *req, %sDone done)
 {
 	auto *task = this->create_rpc_client_task("%s", std::move(done));
 
-	task->get_req()->set_caller_name(this->params.caller);
+	if (!this->params.caller.empty())
+		task->get_req()->set_caller_name(this->params.caller);
 	task->serialize_input(req);
 	task->start();
 }
@@ -1425,7 +1426,8 @@ inline WFFuture<std::pair<%s, srpc::RPCSyncContext>> %sClient::async_%s(const %s
 	auto fr = pr->get_future();
 	auto *task = this->create_rpc_client_task<%s>("%s", srpc::RPCAsyncFutureCallback<%s>);
 
-	task->get_req()->set_caller_name(this->params.caller);
+	if (!this->params.caller.empty())
+		task->get_req()->set_caller_name(this->params.caller);
 	task->serialize_input(req);
 	task->user_data = pr;
 	task->start();
@@ -1521,7 +1523,10 @@ inline srpc::%sClientTask *%sClient::create_%s_task(%sDone done)
 inline srpc::%sClientTask *%sClient::create_%s_task(%sDone done)
 {
 	auto *task = this->create_rpc_client_task("%s", std::move(done));
-	task->get_req()->set_caller_name(this->params.caller);
+
+	if (!this->params.caller.empty())
+		task->get_req()->set_caller_name(this->params.caller);
+
 	return task;
 }
 )";
