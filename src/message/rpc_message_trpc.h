@@ -84,6 +84,7 @@ public:
 
 	void set_service_name(const std::string& service_name);
 	void set_method_name(const std::string& method_name);
+	void set_caller_name(const std::string& caller_name);
 
 	int get_compress_type() const override;
 	void set_compress_type(int type) override;
@@ -187,6 +188,11 @@ public:
 		return this->TRPCRequest::get_meta_module_data(data);
 	}
 
+	void set_caller_name(const std::string& caller_name)
+	{
+		return this->TRPCRequest::set_caller_name(caller_name);
+	}
+
 public:
 	TRPCStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -284,6 +290,11 @@ public:
 
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
+
+	void set_caller_name(const std::string& caller_name)
+	{
+		return this->TRPCRequest::set_caller_name(caller_name);
+	}
 
 public:
 	TRPCHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }

@@ -742,21 +742,40 @@ public:
 			std::string req = change_include_prefix(rpc.request_name);
 			std::string resp = change_include_prefix(rpc.response_name);
 
-			std::string full_method = rpc.method_name;
-			if (type == "TRPC")
-				full_method = make_trpc_method_prefix(package, service, rpc.method_name);
+			if (type == "TRPC" || type == "TRPCHttp")
+			{
+				std::string full_method = make_trpc_method_prefix(package,
+																  service,
+																  rpc.method_name);
 
-			fprintf(this->out_file, this->client_method_format.c_str(),
-					type.c_str(), rpc.method_name.c_str(),
-					req.c_str(), rpc.method_name.c_str(),
-					full_method.c_str(),
+				fprintf(this->out_file, this->client_method_trpc_format.c_str(),
+						type.c_str(), rpc.method_name.c_str(),
+						req.c_str(), rpc.method_name.c_str(),
+						full_method.c_str(),
 
-					type.c_str(), rpc.method_name.c_str(),
-					req.c_str(), resp.c_str(), rpc.method_name.c_str(),
+						type.c_str(), rpc.method_name.c_str(),
+						req.c_str(), resp.c_str(), rpc.method_name.c_str(),
 
-					resp.c_str(), type.c_str(),
-					rpc.method_name.c_str(), req.c_str(),
-					resp.c_str(), resp.c_str(), full_method.c_str(), resp.c_str());
+						resp.c_str(), type.c_str(),
+						rpc.method_name.c_str(), req.c_str(),
+						resp.c_str(), resp.c_str(), full_method.c_str(),
+						resp.c_str());
+			}
+			else
+			{
+				fprintf(this->out_file, this->client_method_format.c_str(),
+						type.c_str(), rpc.method_name.c_str(),
+						req.c_str(), rpc.method_name.c_str(),
+						rpc.method_name.c_str(),
+
+						type.c_str(), rpc.method_name.c_str(),
+						req.c_str(), resp.c_str(), rpc.method_name.c_str(),
+
+						resp.c_str(), type.c_str(),
+						rpc.method_name.c_str(), req.c_str(),
+						resp.c_str(), resp.c_str(), rpc.method_name.c_str(),
+						resp.c_str());
+			}
 		}
 
 		if (this->is_thrift)
@@ -831,17 +850,22 @@ public:
 	{
 		for (const auto& rpc : rpcs)
 		{
-			std::string full_method = rpc.method_name;
-			if (type == "TRPC")
-				full_method = make_trpc_method_prefix(package, service, rpc.method_name);
+			if (type == "TRPC" || type == "TRPCHttp")
+			{
+				std::string full_method = make_trpc_method_prefix(package,
+																  service,
+																  rpc.method_name);
 
-			fprintf(this->out_file, this->client_create_task_format.c_str(),
-					type.c_str(), type.c_str(), rpc.method_name.c_str(),
-					rpc.method_name.c_str(), full_method.c_str());
-/*
-					type.c_str(), service.c_str(),
-					type.c_str(), rpc.method_name.c_str(),
-					rpc.request_name.c_str(), rpc.method_name.c_str(), rpc.method_name.c_str());*/
+				fprintf(this->out_file, this->client_create_task_trpc_format.c_str(),
+						type.c_str(), type.c_str(), rpc.method_name.c_str(),
+				rpc.method_name.c_str(), full_method.c_str());
+			}
+			else
+			{
+				fprintf(this->out_file, this->client_create_task_format.c_str(),
+						type.c_str(), type.c_str(), rpc.method_name.c_str(),
+						rpc.method_name.c_str(), rpc.method_name.c_str());
+			}
 		}
 	}
 
@@ -1352,6 +1376,42 @@ inline WFFuture<std::pair<%s, srpc::RPCSyncContext>> %sClient::async_%s(const %s
 }
 )";
 
+	std::string client_method_trpc_format = R"(
+inline void %sClient::%s(const %s *req, %sDone done)
+{
+	auto *task = this->create_rpc_client_task("%s", std::move(done));
+
+	task->get_req()->set_caller_name(this->params.caller);
+	task->serialize_input(req);
+	task->start();
+}
+
+inline void %sClient::%s(const %s *req, %s *resp, srpc::RPCSyncContext *sync_ctx)
+{
+	auto res = this->async_%s(req).get();
+
+	if (resp && res.second.success)
+		*resp = std::move(res.first);
+
+	if (sync_ctx)
+		*sync_ctx = std::move(res.second);
+}
+
+inline WFFuture<std::pair<%s, srpc::RPCSyncContext>> %sClient::async_%s(const %s *req)
+{
+	using RESULT = std::pair<%s, srpc::RPCSyncContext>;
+	auto *pr = new WFPromise<RESULT>();
+	auto fr = pr->get_future();
+	auto *task = this->create_rpc_client_task<%s>("%s", srpc::RPCAsyncFutureCallback<%s>);
+
+	task->get_req()->set_caller_name(this->params.caller);
+	task->serialize_input(req);
+	task->user_data = pr;
+	task->start();
+	return fr;
+}
+)";
+
 	std::string client_method_thrift_begin_format = R"(
 inline srpc::ThriftReceiver<%s> *%sClient::get_thread_sync_receiver_%s()
 {
@@ -1435,6 +1495,16 @@ inline srpc::%sClientTask *%sClient::create_%s_task(%sDone done)
 	return this->create_rpc_client_task("%s", std::move(done));
 }
 )";
+
+	std::string client_create_task_trpc_format = R"(
+inline srpc::%sClientTask *%sClient::create_%s_task(%sDone done)
+{
+	auto *task = this->create_rpc_client_task("%s", std::move(done));
+	task->get_req()->set_caller_name(this->params.caller);
+	return task;
+}
+)";
+
 /*
 inline %sClientTask *%sClient::create_%s_task(%s *req, %sDone done)
 {

@@ -45,6 +45,7 @@ struct RPCClientParams
 	bool is_ssl;
 //or URL
 	std::string url;
+	std::string caller;
 };
 
 struct RPCServerParams : public WFServerParams
@@ -61,7 +62,7 @@ struct RPCServerParams : public WFServerParams
 	{}
 };
 
-static constexpr struct RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
+static const struct RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
 {
 /*	.send_timeout		=	*/	-1,
 /*	.receive_timeout	=	*/	-1,
@@ -78,7 +79,8 @@ static const struct RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
 /*	.host				=	*/	"",
 /*	.port				=	*/	SRPC_DEFAULT_PORT,
 /*	.is_ssl				=	*/	false,
-/*	.url				=	*/	""
+/*	.url				=	*/	"",
+/*	.caller				=	*/	""
 };
 
 static const RPCServerParams RPC_SERVER_PARAMS_DEFAULT;
