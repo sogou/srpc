@@ -898,6 +898,7 @@ bool TRPCHttpRequest::serialize_meta()
 	set_header_pair(TRPCHttpHeaders::RequestId, std::to_string(this->get_request_id()));
 	set_header_pair(TRPCHttpHeaders::Callee, this->get_method_name());
 	set_header_pair(TRPCHttpHeaders::Func, this->get_service_name());
+	set_header_pair(TRPCHttpHeaders::Caller, this->get_caller_name());
 
 	const void *buffer;
 	size_t buflen;
