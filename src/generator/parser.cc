@@ -965,23 +965,19 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		auto idx1 = std::string::npos;//bb.find_first_of(' ');
 		auto idx2 = std::string::npos;//bb.find_last_of(' ');
 
-		for (size_t i = 0; i < bb.size(); i++)
-		{
-			if (isspace(bb[i]))
-			{
-				idx1 = i;
-				break;
-			}
+		/// @note split str by '='，extract the first half and second half
+		/// string value = "xxx x" ---> string value and "xxx x"
+		std::string default_val_part;
+		std::string type_var_part;
+		auto equal_idx = bb.find("=");
+		if (equal_idx != std::string::npos) {
+			auto pre_nospace_index = SGenUtil::find_pre_nonspace(bb, equal_idx - 1);
+			auto nospace_index = SGenUtil::find_next_nonspace(bb, equal_idx + 1);
+			type_var_part = bb.substr(0, pre_nospace_index + 1);
+			default_val_part = bb.substr(nospace_index, bb.size() - nospace_index);
+			bb = type_var_part;
 		}
-
-		for (size_t i = 0; i < bb.size(); i++)
-		{
-			if (isspace(bb[bb.size() - i - 1]))
-			{
-				idx2 = bb.size() - i - 1;
-				break;
-			}
-		}
+		calculate_space_index(bb, idx1, idx2);
 
 		if (idx1 == std::string::npos || idx2 == std::string::npos)
 			continue;
@@ -1009,6 +1005,7 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 			continue;
 
 		param.var_name = b3;
+		param.default_value = default_val_part;
 
 		fill_rpc_param_type(file_name_prefix, b2, param, info);
 		fprintf(stdout, "Successfully parse struct param: %s %s\n",
@@ -1320,3 +1317,23 @@ int Parser::find_valid(const std::string& line)
 	return 0;
 }
 
+void Parser::calculate_space_index(const std::string& contents, size_t& index1, size_t& index2)
+{
+	for (size_t i = 0; i < contents.size(); i++)
+	{
+		if (isspace(contents[i])) {
+			index1 = i;
+			break;
+		}
+	}
+
+	for (size_t i = 0; i < contents.size() - 1; i++)
+	{
+		char cur_char = contents[contents.size() - i - 1];
+		if (isspace(cur_char))
+		{
+			index2 = contents.size() - i - 1;
+			break;
+		}
+	}
+}

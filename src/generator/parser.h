@@ -82,6 +82,7 @@ public:
 	bool check_multi_comments_end(std::string& line);
 	bool parse_dir_prefix(const std::string& file_name, char *dir_prefix);
 	int parse_pb_rpc_option(const std::string& line);
+	void calculate_space_index(const std::string& contents, size_t& index1, size_t& index2);
 	Parser(bool is_thrift) { this->is_thrift = is_thrift; }
 
 private:

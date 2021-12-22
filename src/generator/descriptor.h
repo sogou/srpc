@@ -25,6 +25,7 @@ struct rpc_param
 {
 	std::string type_name;
 	std::string var_name;
+	std::string default_value;
 	int16_t field_id;
 	int8_t data_type;
 	int8_t required_state;
@@ -213,6 +214,16 @@ public:
 			else
 				break;
 		}
+	}
+
+	static size_t find_pre_nonspace(const std::string& str, size_t pos)
+	{
+		for(size_t i = pos; i >= 1; i--)
+		{
+			if (!std::isspace(str[i]))
+				return i;
+		}
+		return std::string::npos;
 	}
 
 	static size_t find_next_nonspace(const std::string& str, size_t pos)
