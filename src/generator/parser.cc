@@ -923,7 +923,6 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 								 const std::string& block,
 								 Descriptor& desc, idl_info& info)
 {
-	rpc_param param;
 	auto st = block.find_first_of('{');
 	auto ed = block.find_last_of('}');
 	if (st == std::string::npos || ed == std::string::npos || st == ed)
@@ -959,15 +958,15 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		if (aa.empty())
 			continue;
 
+		rpc_param param;
 		param.field_id = atoi(aa.c_str());
 
 		auto bb = SGenUtil::strip(aabb[1]);
 		auto bbcc = SGenUtil::split_filter_empty(bb, '=');
-		std::string default_value;
 		if (bbcc.size() == 2)
 		{
 			bb = SGenUtil::strip(bbcc[0]);
-			default_value = SGenUtil::strip(bbcc[1]);
+			param.default_value = SGenUtil::strip(bbcc[1]);
 		}
 
 		auto idx1 = std::string::npos;//bb.find_first_of(' ');
@@ -1017,7 +1016,6 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 			continue;
 
 		param.var_name = b3;
-		param.default_value = default_value;
 
 		fill_rpc_param_type(file_name_prefix, b2, param, info);
 		fprintf(stdout, "Successfully parse struct param: %s %s\n",
