@@ -20,7 +20,7 @@
 #include "parser.h"
 #include "thrift/rpc_thrift_enum.h"
 
-#define LINE_MAX 2048
+#define LINE_LENGTH_MAX 2048
 
 static std::string gen_param_var(const std::string& type_name, size_t& cur,
 								 idl_info& info);
@@ -74,7 +74,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 	fprintf(stdout, "proto file: [%s]\n", proto_file.c_str());
 
-	char line_buffer[LINE_MAX];
+	char line_buffer[LINE_LENGTH_MAX];
 	std::string file_path;
 	std::string block;
 	int state = PARSER_ST_OUTSIDE_BLOCK;
@@ -89,7 +89,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 	std::string thrift_type_name;
 	bool succ;
 
-	while (fgets(line_buffer, LINE_MAX, in))
+	while (fgets(line_buffer, LINE_LENGTH_MAX, in))
 	{
 		std::string line = SGenUtil::lstrip(line_buffer);
 
@@ -923,7 +923,6 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 								 const std::string& block,
 								 Descriptor& desc, idl_info& info)
 {
-	rpc_param param;
 	auto st = block.find_first_of('{');
 	auto ed = block.find_last_of('}');
 	if (st == std::string::npos || ed == std::string::npos || st == ed)
@@ -959,9 +958,17 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		if (aa.empty())
 			continue;
 
+		rpc_param param;
 		param.field_id = atoi(aa.c_str());
 
 		auto bb = SGenUtil::strip(aabb[1]);
+		auto bbcc = SGenUtil::split_filter_empty(bb, '=');
+		if (bbcc.size() == 2)
+		{
+			bb = SGenUtil::strip(bbcc[0]);
+			param.default_value = SGenUtil::strip(bbcc[1]);
+		}
+
 		auto idx1 = std::string::npos;//bb.find_first_of(' ');
 		auto idx2 = std::string::npos;//bb.find_last_of(' ');
 
@@ -1189,9 +1196,9 @@ bool Parser::check_block_begin(FILE *in, std::string& line)
 	if (line.find("{") != std::string::npos)
 		return true;
 
-	char line_buffer[LINE_MAX];
+	char line_buffer[LINE_LENGTH_MAX];
 
-	if (fgets(line_buffer, LINE_MAX, in))
+	if (fgets(line_buffer, LINE_LENGTH_MAX, in))
 	{
 		std::string next = SGenUtil::strip(line_buffer);
 		if (next.find("{") != std::string::npos)
