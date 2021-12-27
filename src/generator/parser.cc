@@ -1018,8 +1018,9 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		param.var_name = b3;
 
 		fill_rpc_param_type(file_name_prefix, b2, param, info);
-		fprintf(stdout, "Successfully parse struct param: %s %s\n",
-				param.type_name.c_str(), param.var_name.c_str());
+		fprintf(stdout, "Successfully parse struct param: %s %s %s\n",
+				param.type_name.c_str(), param.var_name.c_str(),
+			    param.default_value.c_str());
 		desc.st.params.push_back(param);
 	}
 
