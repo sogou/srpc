@@ -25,6 +25,7 @@ struct rpc_param
 {
 	std::string type_name;
 	std::string var_name;
+	std::string default_value;
 	int16_t field_id;
 	int8_t data_type;
 	int8_t required_state;
