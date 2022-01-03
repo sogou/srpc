@@ -56,9 +56,28 @@ const char *const SRPC_SAMPLING_PRIO	= "sampling.priority";
 const char *const SRPC_DATA_TYPE		= "data.type";
 const char *const SRPC_COMPRESS_TYPE	= "compress.type";
 
-// SRPC INTERNAL
-static constexpr size_t SRPC_SPANID_SIZE = 8;
-static constexpr size_t SRPC_TRACEID_SIZE = 16;
+static inline void rpc_fill_16_bytes(const char *buf,
+									 uint64_t high, uint64_t low)
+{
+	char *pos = (char *)buf;
+	unsigned char *ptr = ((unsigned char *)&high) + 7;
+
+	for (size_t i = 0; i < 16; i++, ptr--)
+		pos[i] = *ptr;
+
+	ptr = ((unsigned char *)&low) + 7;
+	for (size_t i = 0; i < 16; i++, ptr--)
+		pos[i + 8] = *ptr;
+}
+
+static inline void rpc_fill_8_bytes(const char *buf, uint64_t num)
+{
+	char *pos = (char *)buf;
+	unsigned char *ptr = ((unsigned char *)&num) + 7;
+
+	for (size_t i = 0; i < 16; i++, ptr--)
+		pos[i] = *ptr;
+}
 
 template<class RPCREQ, class RPCRESP>
 class RPCSpanContext : public RPCContextImpl<RPCREQ, RPCRESP>
@@ -166,7 +185,6 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 
 	if (!data.empty())
 	{
-		//module_data["trace_id"] = data["trace_id"];
 		auto iter = data.find(SRPC_SPAN_ID);
 		if (iter != data.end())
 			module_data[SRPC_PARENT_SPAN_ID] = iter->second;
@@ -175,18 +193,14 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_random();
 		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
 
-		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
-			   SRPC_TRACEID_SIZE / 2);
-		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
-			   &trace_id_low, SRPC_TRACEID_SIZE / 2);
-
+		rpc_fill_16_bytes(trace_id_buf.c_str(), trace_id_high, trace_id_low);
 		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 
 	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
 	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
 
-	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
+	rpc_fill_8_bytes(span_id_buf.c_str(), span_id);
 	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
@@ -252,11 +266,7 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_random();
 		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
 
-		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
-			   SRPC_TRACEID_SIZE / 2);
-		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
-			   &trace_id_low, SRPC_TRACEID_SIZE / 2);
-
+		rpc_fill_16_bytes(trace_id_buf.c_str(), trace_id_high, trace_id_low);
 		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 	else
@@ -265,7 +275,7 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
 	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
 
-	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
+	rpc_fill_8_bytes(span_id_buf.c_str(), span_id);
 	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
 	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS());

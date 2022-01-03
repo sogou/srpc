@@ -34,6 +34,8 @@ static constexpr unsigned short	SRPC_SSL_DEFAULT_PORT	= 6462;
 static constexpr int			SRPC_COMPRESS_TYPE_MAX	= 10;
 static constexpr size_t			RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
 static constexpr int			SRPC_MODULE_MAX			= 5;
+static constexpr size_t			SRPC_SPANID_SIZE		= 8;
+static constexpr size_t			SRPC_TRACEID_SIZE		= 16;
 
 using ProtobufIDLMessage = google::protobuf::Message;
 
