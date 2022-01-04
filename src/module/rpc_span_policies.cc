@@ -68,35 +68,27 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 	return req.ByteSize();
 }
 
-static size_t rpc_id_string_format(const char *str, size_t str_len,
-								   char *buf, size_t buf_len)
-{
-//	if (buf_len != str_len * 2 + 1)
-//		return 0;
-
-	unsigned char *ptr = (unsigned char *)str;
-	size_t ret = 0;
-
-	for (size_t i = 0; i < str_len; i++)
-	{
-		ret += snprintf(buf + ret, buf_len - ret, "%x%x",
-						(*ptr) >> 4, (*ptr) & 0x0F);
-		ptr++;
-	}
-	buf[buf_len - 1] = '\0';
-
-	return ret;
-}
-
 static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 {
 	char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
 	char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
 
-	rpc_id_string_format(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE,
-						 trace_id_buf, SRPC_TRACEID_SIZE * 2 + 1);
-	rpc_id_string_format(data[SRPC_SPAN_ID].c_str(), SRPC_SPANID_SIZE,
-						 span_id_buf, SRPC_SPANID_SIZE * 2 + 1);
+	uint64_t trace_id_high;
+	uint64_t trace_id_low;
+	uint64_t span_id;
+
+	memcpy(&trace_id_high, data[SRPC_TRACE_ID].c_str(), 8);
+	memcpy(&trace_id_low, data[SRPC_TRACE_ID].c_str() + 8, 8);
+	trace_id_high = ntohll(trace_id_high);
+	trace_id_low = ntohll(trace_id_low);
+
+	snprintf(trace_id_buf, SRPC_TRACEID_SIZE + 1, "%016llx", trace_id_high);
+	snprintf(trace_id_buf + SRPC_TRACEID_SIZE, SRPC_TRACEID_SIZE + 1,
+			 "%016llx", trace_id_low);
+
+	memcpy(&span_id, data[SRPC_SPAN_ID].c_str(), 8);
+	span_id = ntohll(span_id);
+	snprintf(span_id_buf, SRPC_SPANID_SIZE * 2 + 1, "%016llx", span_id);
 
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
 									" method: %s start_time: %s",
@@ -110,8 +102,13 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	if (iter != data.end())
 	{
 		char parent_span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
-		rpc_id_string_format(iter->second.c_str(), SRPC_SPANID_SIZE,
-							 parent_span_id_buf, SRPC_SPANID_SIZE * 2 + 1);
+		uint64_t parent_span_id;
+
+		memcpy(&parent_span_id_buf, data[SRPC_SPAN_ID].c_str(), 8);
+		parent_span_id = ntohll(parent_span_id);
+
+		snprintf(parent_span_id_buf, SRPC_SPANID_SIZE * 2 + 1,
+				 "%016llx", parent_span_id);
 		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
 						parent_span_id_buf);
 	}
