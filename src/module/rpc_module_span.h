@@ -22,6 +22,8 @@
 #include <limits>
 #include <stdio.h>
 #include <string>
+#include <sys/types.h>
+#include <arpa/inet.h>
 #include "workflow/WFTask.h"
 #include "rpc_basic.h"
 #include "rpc_module.h"
@@ -56,9 +58,37 @@ const char *const SRPC_SAMPLING_PRIO	= "sampling.priority";
 const char *const SRPC_DATA_TYPE		= "data.type";
 const char *const SRPC_COMPRESS_TYPE	= "compress.type";
 
-// SRPC INTERNAL
-static constexpr size_t SRPC_SPANID_SIZE = 8;
-static constexpr size_t SRPC_TRACEID_SIZE = 16;
+#ifndef htonll
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+
+static inline uint64_t htonll(uint64_t x)
+{
+	return ((uint64_t)htonl(x & 0xFFFFFFFF) << 32) + htonl(x >> 32);
+}
+
+static inline uint64_t ntohll(uint64_t x)
+{
+	return ((uint64_t)ntohl(x & 0xFFFFFFFF) << 32) + ntohl(x >> 32);
+}
+
+#elif __BYTE_ORDER == __BIG_ENDIAN
+
+static inline uint64_t htonll(uint64_t x)
+{
+	return x;
+}
+
+static inline uint64_t ntohll(uint64_t x)
+{
+	return x;
+}
+
+#else
+# error "unknown byte order"
+#endif
+
+#endif
 
 template<class RPCREQ, class RPCRESP>
 class RPCSpanContext : public RPCContextImpl<RPCREQ, RPCRESP>
@@ -166,19 +196,18 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 
 	if (!data.empty())
 	{
-		//module_data["trace_id"] = data["trace_id"];
 		auto iter = data.find(SRPC_SPAN_ID);
 		if (iter != data.end())
 			module_data[SRPC_PARENT_SPAN_ID] = iter->second;
 	} else {
-		uint64_t trace_id_high = SRPCGlobal::get_instance()->get_random();
-		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_random();
+		uint64_t trace_id_high = htonll(SRPCGlobal::get_instance()->get_random());
+		uint64_t trace_id_low = htonll(SRPCGlobal::get_instance()->get_random());
 		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
 
 		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
-			   SRPC_TRACEID_SIZE / 2);
+				SRPC_TRACEID_SIZE / 2);
 		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
-			   &trace_id_low, SRPC_TRACEID_SIZE / 2);
+				&trace_id_low, SRPC_TRACEID_SIZE / 2);
 
 		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
@@ -253,9 +282,9 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
 
 		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
-			   SRPC_TRACEID_SIZE / 2);
+				SRPC_TRACEID_SIZE / 2);
 		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
-			   &trace_id_low, SRPC_TRACEID_SIZE / 2);
+				&trace_id_low, SRPC_TRACEID_SIZE / 2);
 
 		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}

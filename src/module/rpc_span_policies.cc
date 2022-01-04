@@ -70,10 +70,30 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 
 static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 {
+	char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
+	char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
+
+	uint64_t trace_id_high;
+	uint64_t trace_id_low;
+	uint64_t span_id;
+
+	memcpy(&trace_id_high, data[SRPC_TRACE_ID].c_str(), 8);
+	memcpy(&trace_id_low, data[SRPC_TRACE_ID].c_str() + 8, 8);
+	trace_id_high = ntohll(trace_id_high);
+	trace_id_low = ntohll(trace_id_low);
+
+	snprintf(trace_id_buf, SRPC_TRACEID_SIZE + 1, "%016llx", trace_id_high);
+	snprintf(trace_id_buf + SRPC_TRACEID_SIZE, SRPC_TRACEID_SIZE + 1,
+			 "%016llx", trace_id_low);
+
+	memcpy(&span_id, data[SRPC_SPAN_ID].c_str(), 8);
+	span_id = ntohll(span_id);
+	snprintf(span_id_buf, SRPC_SPANID_SIZE * 2 + 1, "%016llx", span_id);
+
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
 									" method: %s start_time: %s",
-						  data[SRPC_TRACE_ID].c_str(),
-						  data[SRPC_SPAN_ID].c_str(),
+						  trace_id_buf,
+						  span_id_buf,
 						  data[SRPC_SERVICE_NAME].c_str(),
 						  data[SRPC_METHOD_NAME].c_str(),
 						  data[SRPC_START_TIMESTAMP].c_str());
@@ -81,8 +101,16 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	auto iter = data.find(SRPC_PARENT_SPAN_ID);
 	if (iter != data.end())
 	{
+		char parent_span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
+		uint64_t parent_span_id;
+
+		memcpy(&parent_span_id_buf, data[SRPC_SPAN_ID].c_str(), 8);
+		parent_span_id = ntohll(parent_span_id);
+
+		snprintf(parent_span_id_buf, SRPC_SPANID_SIZE * 2 + 1,
+				 "%016llx", parent_span_id);
 		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
-						iter->second.c_str());
+						parent_span_id_buf);
 	}
 
 	iter = data.find(SRPC_FINISH_TIMESTAMP);
@@ -112,8 +140,8 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 							"\n%s trace_id: %s span_id: %s"
 							" timestamp: %s %s",
 							"[ANNOTATION]",
-							data[SRPC_TRACE_ID].c_str(),
-							data[SRPC_SPAN_ID].c_str(),
+							trace_id_buf,
+							span_id_buf,
 							it.first.c_str() + 4,
 							it.second.c_str());
 	}
