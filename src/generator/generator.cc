@@ -95,12 +95,6 @@ bool Generator::generate(const std::string& idl_file, struct GeneratorParams par
 
 bool Generator::generate_header(idl_info& cur_info, struct GeneratorParams params)
 {
-	if (strlen(params.out_dir) + this->suffix.length() > 100)
-	{
-		fprintf(stderr, "[Generator Error] params out file name and dir are longer than 100.\n");
-		return false;
-	}
-
 	for (auto& sub_info : cur_info.include_list)
 	{
 		fprintf(stdout, "[Generator] auto generate include file [%s]\n",
