@@ -82,9 +82,10 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	trace_id_high = ntohll(trace_id_high);
 	trace_id_low = ntohll(trace_id_low);
 
-	snprintf(trace_id_buf, SRPC_TRACEID_SIZE + 1, "%016llx", trace_id_high);
+	snprintf(trace_id_buf, SRPC_TRACEID_SIZE + 1,
+			 "%016llx", (unsigned long long)trace_id_high);
 	snprintf(trace_id_buf + SRPC_TRACEID_SIZE, SRPC_TRACEID_SIZE + 1,
-			 "%016llx", trace_id_low);
+			 "%016llx", (unsigned long long)trace_id_low);
 
 	memcpy(&span_id, data[SRPC_SPAN_ID].c_str(), 8);
 	span_id = ntohll(span_id);
@@ -104,11 +105,11 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 		char parent_span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
 		uint64_t parent_span_id;
 
-		memcpy(&parent_span_id_buf, data[SRPC_SPAN_ID].c_str(), 8);
+		memcpy(&parent_span_id, data[SRPC_SPAN_ID].c_str(), 8);
 		parent_span_id = ntohll(parent_span_id);
 
 		snprintf(parent_span_id_buf, SRPC_SPANID_SIZE * 2 + 1,
-				 "%016llx", parent_span_id);
+				 "%016llx", (unsigned long long)parent_span_id);
 		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
 						parent_span_id_buf);
 	}
