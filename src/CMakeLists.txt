@@ -26,16 +26,22 @@ else ()
 endif ()
 
 if(NOT VCPKG_TOOLCHAIN)
-	set(SNAPPY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy)
-	configure_file(${SNAPPY_DIR}/cmake/config.h.in ${SNAPPY_DIR}/config.h)
-	configure_file(${SNAPPY_DIR}/snappy-stubs-public.h.in ${SNAPPY_DIR}/snappy-stubs-public.h)
-	#find_package(Workflow REQUIRED CONFIG HINTS /usr/lib64/cmake/workflow)
 	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+
+	set(SNAPPY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy)
+
+	if (EXISTS ${SNAPPY_DIR}/cmake)
+		configure_file(${SNAPPY_DIR}/cmake/config.h.in ${SNAPPY_DIR}/config.h)
+		configure_file(${SNAPPY_DIR}/snappy-stubs-public.h.in ${SNAPPY_DIR}/snappy-stubs-public.h)
+	else()
+		find_package(Snappy REQUIRED CONFIG)
+		if (${Snappy_CONSIDERED_VERSIONS} VERSION_LESS 1.1.6)
+			message(FATAL_ERROR "Snappy version is less than 1.1.6")
+		endif()
+	endif()
 else()
 	find_package(Workflow REQUIRED CONFIG)
 endif()
-
-
 
 include_directories(
 	${OPENSSL_INCLUDE_DIR}

@@ -6,7 +6,11 @@ set(SRC
 	rpc_compress_snappy.cc
 )
 
-if(NOT VCPKG_TOOLCHAIN)
+set_property(SOURCE rpc_compress_snappy.cc APPEND PROPERTY COMPILE_OPTIONS "-fno-rtti")
+
+set(SNAPPY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/snappy)
+
+if(NOT VCPKG_TOOLCHAIN AND EXISTS ${SNAPPY_DIR}/cmake)
 	set(SNAPPY_SRC
 		../../third_party/snappy/config.h
 		../../third_party/snappy/snappy-internal.h
@@ -29,6 +33,7 @@ if(NOT VCPKG_TOOLCHAIN)
 		../../third_party/lz4/lib/xxhash.c
 		../../third_party/lz4/lib/xxhash.h
 	)
+
 	add_library(
 		${PROJECT_NAME} OBJECT
 		${SRC}
@@ -42,8 +47,4 @@ else()
 	)
 	target_link_libraries(${PROJECT_NAME} lz4 snappy)
 endif()
-
-
-
-#add_library(${PROJECT_NAME} OBJECT ${SRC})
 

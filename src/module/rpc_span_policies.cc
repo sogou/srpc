@@ -89,7 +89,8 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 
 	memcpy(&span_id, data[SRPC_SPAN_ID].c_str(), 8);
 	span_id = ntohll(span_id);
-	snprintf(span_id_buf, SRPC_SPANID_SIZE * 2 + 1, "%016llx", span_id);
+	snprintf(span_id_buf, SRPC_SPANID_SIZE * 2 + 1,
+			 "%016llx", (unsigned long long)span_id);
 
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
 									" method: %s start_time: %s",
