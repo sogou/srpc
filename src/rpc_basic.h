@@ -17,10 +17,16 @@
 #ifndef __RPC_BASIC_H__
 #define __RPC_BASIC_H__
 
+#include <stdint.h>
 #include <chrono>
 #include <google/protobuf/message.h>
-#include "rpc_thrift_idl.h"
 #include "rpc_buffer.h"
+
+#ifdef _WIN32
+#include <workflow/PlatformSocket.h>
+#else
+#include <arpa/inet.h>
+#endif
 
 namespace srpc
 {
@@ -37,8 +43,39 @@ static constexpr int			SRPC_MODULE_MAX			= 5;
 static constexpr size_t			SRPC_SPANID_SIZE		= 8;
 static constexpr size_t			SRPC_TRACEID_SIZE		= 16;
 
-using ProtobufIDLMessage = google::protobuf::Message;
+#ifndef htonll
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+
+static inline uint64_t htonll(uint64_t x)
+{
+	return ((uint64_t)htonl(x & 0xFFFFFFFF) << 32) + htonl(x >> 32);
+}
+
+static inline uint64_t ntohll(uint64_t x)
+{
+	return ((uint64_t)ntohl(x & 0xFFFFFFFF) << 32) + ntohl(x >> 32);
+}
+
+#elif __BYTE_ORDER == __BIG_ENDIAN
+
+static inline uint64_t htonll(uint64_t x)
+{
+	return x;
+}
+
+static inline uint64_t ntohll(uint64_t x)
+{
+	return x;
+}
+
+#else
+# error "unknown byte order"
+#endif
+
+#endif
+
+using ProtobufIDLMessage = google::protobuf::Message;
 
 static inline long long GET_CURRENT_MS()
 {

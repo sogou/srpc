@@ -15,10 +15,172 @@
 */
 
 #include "rpc_thrift_buffer.h"
+#include "rpc_basic.h"
 
 namespace srpc
 {
 
+bool ThriftBuffer::readI08(int8_t& val)
+{
+	return this->buffer->read((char *)&val, 1);
+}
+
+bool ThriftBuffer::readI16(int16_t& val)
+{
+	if (!this->buffer->read((char *)&val, 2))
+		return false;
+
+	val = ntohs(val);
+	return true;
+}
+
+bool ThriftBuffer::readI32(int32_t& val)
+{
+	if (!this->buffer->read((char *)&val, 4))
+		return false;
+
+	val = ntohl(val);
+	return true;
+}
+
+bool ThriftBuffer::readI64(int64_t& val)
+{
+	if (!this->buffer->read((char *)&val, 8))
+		return false;
+
+	val = ntohll(val);
+	return true;
+}
+
+bool ThriftBuffer::readU64(uint64_t& val)
+{
+	if (!this->buffer->read((char *)&val, 8))
+		return false;
+
+	val = ntohll(val);
+	return true;
+}
+
+bool ThriftBuffer::readFieldBegin(int8_t& field_type, int16_t& field_id)
+{
+	if (!readI08(field_type))
+		return false;
+
+	if (field_type == TDT_STOP)
+		field_id = 0;
+	else if (!readI16(field_id))
+		return false;
+
+	return true;
+}
+
+bool ThriftBuffer::readString(std::string& str)
+{
+	int32_t slen;
+
+	if (!readI32(slen) || slen < 0)
+		return false;
+
+	if (!readStringBody(str, slen))
+		return false;
+
+	return true;
+}
+
+bool ThriftBuffer::readStringBody(std::string& str, int32_t slen)
+{
+	if (slen < 0)
+		return false;
+
+	str.resize(slen);
+	return this->buffer->read(const_cast<char *>(str.c_str()), slen);
+}
+
+bool ThriftBuffer::writeFieldStop()
+{
+	return writeI08((int8_t)TDT_STOP);
+}
+
+bool ThriftBuffer::writeI08(int8_t val)
+{
+	return this->buffer->write((char *)&val, 1);
+}
+
+bool ThriftBuffer::writeI16(int16_t val)
+{
+	int16_t x = htons(val);
+
+	return this->buffer->write((char *)&x, 2);
+}
+
+bool ThriftBuffer::writeI32(int32_t val)
+{
+	int32_t x = htonl(val);
+
+	return this->buffer->write((char *)&x, 4);
+}
+
+bool ThriftBuffer::writeI64(int64_t val)
+{
+	int64_t x = htonll(val);
+
+	return this->buffer->write((char *)&x, 8);
+}
+
+bool ThriftBuffer::writeU64(uint64_t val)
+{
+	uint64_t x = htonll(val);
+
+	return this->buffer->write((char *)&x, 8);
+}
+
+bool ThriftBuffer::writeFieldBegin(int8_t field_type, int16_t field_id)
+{
+	if (!writeI08(field_type))
+		return false;
+
+	return writeI16(field_id);
+}
+
+bool ThriftBuffer::writeString(const std::string& str)
+{
+	int32_t slen = (int32_t)str.size();
+
+	if (!writeI32(slen))
+		return false;
+
+	return writeStringBody(str);
+}
+
+bool ThriftBuffer::writeStringBody(const std::string& str)
+{
+	return this->buffer->write(str.c_str(), str.size());
+}
+
+bool ThriftMeta::writeI08(int8_t val)
+{
+	this->writebuf.append(1, (char)val);
+	return true;
+}
+
+bool ThriftMeta::writeI32(int32_t val)
+{
+	int32_t x = htonl(val);
+
+	this->writebuf.append((const char *)&x, 4);
+	return true;
+}
+
+bool ThriftMeta::writeString(const std::string& str)
+{
+	int32_t slen = (int32_t)str.size();
+
+	writeI32(slen);
+	if (slen > 0)
+		this->writebuf.append(str);
+
+	return true;
+}
 bool ThriftBuffer::readMessageBegin()
 {
 	int32_t header;

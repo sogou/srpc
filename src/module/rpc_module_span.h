@@ -58,38 +58,6 @@ const char *const SRPC_SAMPLING_PRIO	= "sampling.priority";
 const char *const SRPC_DATA_TYPE		= "data.type";
 const char *const SRPC_COMPRESS_TYPE	= "compress.type";
 
-#ifndef htonll
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-
-static inline uint64_t htonll(uint64_t x)
-{
-	return ((uint64_t)htonl(x & 0xFFFFFFFF) << 32) + htonl(x >> 32);
-}
-
-static inline uint64_t ntohll(uint64_t x)
-{
-	return ((uint64_t)ntohl(x & 0xFFFFFFFF) << 32) + ntohl(x >> 32);
-}
-
-#elif __BYTE_ORDER == __BIG_ENDIAN
-
-static inline uint64_t htonll(uint64_t x)
-{
-	return x;
-}
-
-static inline uint64_t ntohll(uint64_t x)
-{
-	return x;
-}
-
-#else
-# error "unknown byte order"
-#endif
-
-#endif
-
 template<class RPCREQ, class RPCRESP>
 class RPCSpanContext : public RPCContextImpl<RPCREQ, RPCRESP>
 {
