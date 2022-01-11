@@ -40,15 +40,9 @@ set(COMPRESS_HEADERS
 	third_party/lz4/lib/lz4frame.h
 )
 
-if(NOT VCPKG_TOOLCHAIN)
-	set(INCLUDE_HEADERS
-		${SRC_HEADERS}
-		${COMPRESS_HEADERS}
-	)
+if(NOT VCPKG_TOOLCHAIN AND EXISTS third_party/snappy/cmake)
+	set(INCLUDE_HEADERS ${SRC_HEADERS} ${COMPRESS_HEADERS})
 else()
-	set(INCLUDE_HEADERS
-		${SRC_HEADERS}
-	)
+	set(INCLUDE_HEADERS ${SRC_HEADERS})
 endif()
-
 

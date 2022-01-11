@@ -22,6 +22,7 @@
 #include <workflow/ProtocolMessage.h>
 #include "rpc_basic.h"
 #include "rpc_filter.h"
+#include "rpc_thrift_idl.h"
 
 namespace srpc
 {
