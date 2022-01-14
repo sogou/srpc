@@ -27,7 +27,11 @@ else ()
 	find_package(Protobuf REQUIRED)
 endif ()
 
-find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+if (WORKFLOW_INSTALLED)
+	find_package(Workflow REQUIRED CONFIG)
+else ()
+	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+endif ()
 
 #if (APPLE)
 #	if (WORKFLOW_INCLUDE_DIR)

@@ -31,17 +31,24 @@ set(SRC_HEADERS
 	src/rpc_define.h
 )
 
-set(COMPRESS_HEADERS
-	third_party/snappy/snappy.h
-	third_party/snappy/snappy-c.h
-	third_party/snappy/snappy-sinksource.h
-	third_party/snappy/snappy-stubs-public.h
-	third_party/lz4/lib/lz4.h
-	third_party/lz4/lib/lz4frame.h
-)
+if (NOT SNAPPY_INSTALLED)
+	set(SNAPPY_HEADERS
+		third_party/snappy/snappy.h
+		third_party/snappy/snappy-c.h
+		third_party/snappy/snappy-sinksource.h
+		third_party/snappy/snappy-stubs-public.h
+	)
+endif ()
 
-if(NOT VCPKG_TOOLCHAIN AND EXISTS third_party/snappy/cmake)
-	set(INCLUDE_HEADERS ${SRC_HEADERS} ${COMPRESS_HEADERS})
+if (NOT LZ4_INSTALLED)
+	set(LZ4_HEADERS
+		third_party/lz4/lib/lz4.h
+		third_party/lz4/lib/lz4frame.h
+	)
+endif ()
+
+if(NOT VCPKG_TOOLCHAIN)
+	set(INCLUDE_HEADERS ${SRC_HEADERS} ${SNAPPY_HEADERS} ${LZ4_HEADERS})
 else()
 	set(INCLUDE_HEADERS ${SRC_HEADERS})
 endif()

@@ -5,6 +5,40 @@ project(srpc
 	VERSION 0.9.4
 	LANGUAGES C CXX)
 
+#### CHECK
+
+include(CheckIncludeFile)
+include(CheckIncludeFileCXX)
+
+check_include_file("lz4.h" LZ4_INSTALLED)
+if (NOT LZ4_INSTALLED)
+	if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/lz4/lib/lz4.h")
+		message( FATAL_ERROR "Lz4 is neither installed not in third_party!")
+	endif ()
+endif ()
+
+check_include_file_cxx("snappy.h" SNAPPY_INSTALLED)
+if (NOT SNAPPY_INSTALLED)
+	if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/snappy/cmake")
+		message( FATAL_ERROR "Snappy is neither installed not in third_party!")
+	endif ()
+endif ()
+
+check_include_file_cxx("workflow/Workflow.h" WORKFLOW_INSTALLED)
+if (NOT WORKFLOW_INSTALLED)
+	message ("Workflow not installed") #TODO:
+	if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
+		message( FATAL_ERROR "Workflow is neither installed not in third_party!")
+	endif ()
+endif ()
+
+find_program(PROTOC "protoc")
+if(${PROTOC} STREQUAL "PROTOC-NOTFOUND")
+    message( FATAL_ERROR "Protobuf compiler is missing!")
+endif()
+
+#### PREPARE
+
 set(INC_DIR ${PROJECT_SOURCE_DIR}/_include CACHE PATH "srpc inc")
 set(LIB_DIR ${PROJECT_SOURCE_DIR}/_lib CACHE PATH "srpc lib")
 set(BIN_DIR ${PROJECT_SOURCE_DIR}/_bin CACHE PATH "srpc bin")
@@ -45,7 +79,7 @@ endforeach()
 
 add_subdirectory(src)
 
-####CONFIG
+#### CONFIG
 
 include(CMakePackageConfigHelpers)
 set(CONFIG_INC_DIR ${INC_DIR})
