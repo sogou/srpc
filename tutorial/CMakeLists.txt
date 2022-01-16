@@ -27,6 +27,13 @@ else ()
 	find_package(Protobuf REQUIRED)
 endif ()
 
+include(CheckIncludeFile)
+include(CheckIncludeFileCXX)
+
+check_include_file("lz4.h" LZ4_INSTALLED)
+check_include_file_cxx("snappy.h" SNAPPY_INSTALLED)
+check_include_file_cxx("workflow/Workflow.h" WORKFLOW_INSTALLED)
+
 if (WORKFLOW_INSTALLED)
 	find_package(Workflow REQUIRED CONFIG)
 else ()
@@ -34,6 +41,7 @@ else ()
 endif ()
 
 find_package(ZLIB REQUIRED)
+
 #if (APPLE)
 #	if (WORKFLOW_INCLUDE_DIR)
 #		set (WORKFLOW_INCLUDE_DIR ${Workflow_DIR}/_include)
