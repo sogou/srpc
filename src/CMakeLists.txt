@@ -27,9 +27,8 @@ endif ()
 
 if(NOT VCPKG_TOOLCHAIN)
 
-	if (WORKFLOW_INSTALLED)
-		find_package(Workflow REQUIRED CONFIG)
-	else ()
+	# Try to find the package if workflow is not installed, otherwise proceed with find_package()
+	if (NOT WORKFLOW_INSTALLED)
 		find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
 	endif ()
 
