@@ -27,14 +27,15 @@ else ()
 	find_package(Protobuf REQUIRED)
 endif ()
 
-include(CheckIncludeFile)
-include(CheckIncludeFileCXX)
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/lz4/lib/lz4.h")
+	set(LZ4_LIB lz4)
+endif ()
 
-check_include_file("lz4.h" LZ4_INSTALLED)
-check_include_file_cxx("snappy.h" SNAPPY_INSTALLED)
-check_include_file_cxx("workflow/Workflow.h" WORKFLOW_INSTALLED)
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy/cmake")
+	set(SNAPPY_LIB snappy)
+endif ()
 
-if (NOT WORKFLOW_INSTALLED)
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
 	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
 endif ()
 
@@ -103,14 +104,6 @@ if (APPLE)
 elseif (WIN32)
 	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto protobuf::libprotobuf ZLIB::ZLIB)
 else ()
-	if (SNAPPY_INSTALLED)
-		set(SNAPPY_LIB snappy)
-	endif ()
-
-	if (LZ4_INSTALLED)
-		set(LZ4_LIB lz4)
-	endif ()
-
 	set(SRPC_LIB srpc ${SNAPPY_LIB} ${LZ4_LIB})
 endif ()
 
