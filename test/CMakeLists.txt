@@ -32,9 +32,7 @@ check_include_file("lz4.h" LZ4_INSTALLED)
 check_include_file_cxx("snappy.h" SNAPPY_INSTALLED)
 check_include_file_cxx("workflow/Workflow.h" WORKFLOW_INSTALLED)
 
-if (WORKFLOW_INSTALLED)
-	find_package(Workflow REQUIRED CONFIG)
-else ()
+if (NOT WORKFLOW_INSTALLED)
 	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
 endif ()
 
