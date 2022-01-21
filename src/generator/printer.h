@@ -326,14 +326,25 @@ public:
 		fprintf(this->out_file, thrift_struct_class_begin_format.c_str(), class_name.c_str());
 
 		for (const auto& ele : class_params)
-			fprintf(this->out_file, "\t%s %s;\n", ele.type_name.c_str(), ele.var_name.c_str());
+		{
+			if (ele.default_value.empty())
+				fprintf(this->out_file, "\t%s %s;\n", ele.type_name.c_str(), ele.var_name.c_str());
+			else
+				fprintf(this->out_file, "\t%s %s = %s;\n",
+						ele.type_name.c_str(), ele.var_name.c_str(), ele.default_value.c_str());
+		}
 
 		fprintf(this->out_file, "%s", thrift_struct_class_isset_begin_format.c_str());
 
 		for (const auto& ele : class_params)
 		{
 			if (ele.required_state != srpc::THRIFT_STRUCT_FIELD_REQUIRED)
-				fprintf(this->out_file, "\t\tbool %s = false;\n", ele.var_name.c_str());
+			{
+				if (!ele.default_value.empty())
+					fprintf(this->out_file, "\t\tbool %s = true;\n", ele.var_name.c_str());
+				else
+					fprintf(this->out_file, "\t\tbool %s = false;\n", ele.var_name.c_str());
+			}
 		}
 
 		fprintf(this->out_file, thrift_struct_class_isset_end_format.c_str(), class_name.c_str());
@@ -377,7 +388,10 @@ public:
 		for (const auto& ele : class_params)
 		{
 			if (is_simple_type(ele.data_type))
-				fprintf(this->out_file, "\t\tthis->%s = 0;\n", ele.var_name.c_str());
+			{
+				if (ele.default_value.empty())
+					fprintf(this->out_file, "\t\tthis->%s = 0;\n", ele.var_name.c_str());
+			}
 		}
 
 		fprintf(this->out_file, thrift_struct_class_constructor_end_format.c_str(),
