@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "build type")
 
 project(srpc
-	VERSION 0.9.4
+	VERSION 0.9.5
 	LANGUAGES C CXX)
 
 #### CHECK
@@ -17,6 +17,7 @@ if (NOT LZ4_INSTALLED)
 	endif ()
 else ()
 	if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/lz4/lib/lz4.h")
+		message("Lz4 third_party FOUND. Use for source code dependencies.")
 		set(LZ4_INSTALLED 0)
 	endif ()
 endif ()
@@ -28,6 +29,7 @@ if (NOT SNAPPY_INSTALLED)
 	endif ()
 else ()
 	if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/snappy/cmake")
+		message("Snappy third_party FOUND. Use for source code dependencies.")
 		set(SNAPPY_INSTALLED 0)
 	endif ()
 endif ()
@@ -39,6 +41,7 @@ if (NOT WORKFLOW_INSTALLED)
 	endif ()
 else ()
 	if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
+		message("Workflow third_party FOUND. Use for source code dependencies.")
 		set(WORKFLOW_INSTALLED 0)
 	endif ()
 endif ()
