@@ -27,7 +27,17 @@ else ()
 	find_package(Protobuf REQUIRED)
 endif ()
 
-find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/lz4/lib/lz4.h")
+	set(LZ4_LIB lz4)
+endif ()
+
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy/cmake")
+	set(SNAPPY_LIB snappy)
+endif ()
+
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
+	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+endif ()
 
 #if (APPLE)
 #	if (WORKFLOW_INCLUDE_DIR)

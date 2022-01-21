@@ -2,8 +2,56 @@ cmake_minimum_required(VERSION 3.6)
 set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "build type")
 
 project(srpc
-	VERSION 0.9.4
+	VERSION 0.9.5
 	LANGUAGES C CXX)
+
+#### CHECK
+
+include(CheckIncludeFile)
+include(CheckIncludeFileCXX)
+
+check_include_file("lz4.h" LZ4_INSTALLED)
+if (NOT LZ4_INSTALLED)
+	if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/lz4/lib/lz4.h")
+		message( FATAL_ERROR "Lz4 is neither installed not in third_party!")
+	endif ()
+else ()
+	if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/lz4/lib/lz4.h")
+		message("Lz4 third_party FOUND. Use for source code dependencies.")
+		set(LZ4_INSTALLED 0)
+	endif ()
+endif ()
+
+check_include_file_cxx("snappy.h" SNAPPY_INSTALLED)
+if (NOT SNAPPY_INSTALLED)
+	if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/snappy/cmake")
+		message( FATAL_ERROR "Snappy is neither installed not in third_party!")
+	endif ()
+else ()
+	if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/snappy/cmake")
+		message("Snappy third_party FOUND. Use for source code dependencies.")
+		set(SNAPPY_INSTALLED 0)
+	endif ()
+endif ()
+
+check_include_file_cxx("workflow/Workflow.h" WORKFLOW_INSTALLED)
+if (NOT WORKFLOW_INSTALLED)
+	if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
+		message( FATAL_ERROR "Workflow is neither installed not in third_party!")
+	endif ()
+else ()
+	if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
+		message("Workflow third_party FOUND. Use for source code dependencies.")
+		set(WORKFLOW_INSTALLED 0)
+	endif ()
+endif ()
+
+find_program(PROTOC "protoc")
+if(${PROTOC} STREQUAL "PROTOC-NOTFOUND")
+    message( FATAL_ERROR "Protobuf compiler is missing!")
+endif()
+
+#### PREPARE
 
 set(INC_DIR ${PROJECT_SOURCE_DIR}/_include CACHE PATH "srpc inc")
 set(LIB_DIR ${PROJECT_SOURCE_DIR}/_lib CACHE PATH "srpc lib")
@@ -45,7 +93,7 @@ endforeach()
 
 add_subdirectory(src)
 
-####CONFIG
+#### CONFIG
 
 include(CMakePackageConfigHelpers)
 set(CONFIG_INC_DIR ${INC_DIR})
