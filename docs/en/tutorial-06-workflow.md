@@ -2,7 +2,7 @@
 
 ## Integrating with the asynchronous Workflow framework
 
-### Server
+### 1. Server
 
 You can follow the detailed example below:
 
@@ -41,7 +41,7 @@ public:
 };
 ~~~
 
-### Client
+### 2. Client
 
 You can follow the detailed example below:
 
@@ -100,3 +100,29 @@ int main()
 }
 ~~~
 
+### 3. Upstream
+SRPC can directly use any component of Workflow, the most commonly used is [Upstream](https://github.com/sogou/workflow/blob/master/docs/en/about-upstream.md), any kind of client of SRPC can use Upstream.
+
+You may use the example below to construct a client that can use Upstream through parameters:
+
+```cpp
+#include "workflow/UpstreamManager.h"
+
+int main()
+{
+    // 1. create upstream and add server instances
+    UpstreamManager::upstream_create_weighted_random("echo_server", true);
+    UpstreamManager::upstream_add_server("echo_server", "127.0.0.1:1412");
+    UpstreamManager::upstream_add_server("echo_server", "10.135.35.53");
+    UpstreamManager::upstream_add_server("echo_server", "internal.host.com");
+
+    // 2. create params and fill upstream name
+    RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
+    client_params.host = "srpc::echo_server"; // this scheme only used when upstream URI parsing
+    client_params.port = 1412; // this port only used when upstream URI parsing and will not affect the select of instances
+
+    // 3. construct client by params, the rest of usage is similar as other tutorials
+    Example::SRPCClient client(&client_params);
+
+    ...
+```
