@@ -113,7 +113,7 @@ int main()
     // 1. create upstream and add server instances
     UpstreamManager::upstream_create_weighted_random("echo_server", true);
     UpstreamManager::upstream_add_server("echo_server", "127.0.0.1:1412");
-    UpstreamManager::upstream_add_server("echo_server", "10.135.35.53");
+    UpstreamManager::upstream_add_server("echo_server", "192.168.10.10");
     UpstreamManager::upstream_add_server("echo_server", "internal.host.com");
 
     // 2. create params and fill upstream name

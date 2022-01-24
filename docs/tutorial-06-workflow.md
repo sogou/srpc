@@ -96,7 +96,7 @@ int main()
 ~~~
 
 ### 3. Upstream
-SRPC可以直接使用Workflow的任何组建，最常用的就是[Upstream](https://github.com/sogou/workflow/blob/master/docs/about-upstream.md)，SRPC的任何一种client都可以使用Upstream。
+SRPC可以直接使用Workflow的任何组件，最常用的就是[Upstream](https://github.com/sogou/workflow/blob/master/docs/about-upstream.md)，SRPC的任何一种client都可以使用Upstream。
 
 我们通过参数来看看如何构造可以使用Upstream的client：
 
@@ -108,7 +108,7 @@ int main()
     // 1. 创建upstream并添加实例
     UpstreamManager::upstream_create_weighted_random("echo_server", true);
     UpstreamManager::upstream_add_server("echo_server", "127.0.0.1:1412");
-    UpstreamManager::upstream_add_server("echo_server", "10.135.35.53");
+    UpstreamManager::upstream_add_server("echo_server", "192.168.10.10");
     UpstreamManager::upstream_add_server("echo_server", "internal.host.com");
 
     // 2. 构造参数，填上upstream的名字
