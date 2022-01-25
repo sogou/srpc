@@ -1,0 +1,40 @@
+name: ci build                                                                  
+
+on:                                                                             
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:                                                                           
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: install protobuf
+      run: |
+        git clone https://github.com/protocolbuffers/protobuf.git -b v3.12.0
+        cd protobuf
+        sh autogen.sh
+        ./configure
+        make
+        sudo make install
+        cd ..
+        export LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
+
+    - name: install protoc
+      uses: arduino/setup-protoc@v1
+      with:
+        version: '3.12.0'
+
+    - name: update submodules
+      run: git submodule update --init --recursive
+
+    - name: make
+      run: make
+
+    - name: make tutorial
+      run: make tutorial
