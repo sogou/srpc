@@ -1,7 +1,7 @@
 [English version](/docs/en/tutorial-06-workflow.md)
 
 ## 与workflow异步框架的结合
-### Server
+### 1. Server
 下面我们通过一个具体例子来呈现
 - Echo RPC在接收到请求时，向下游发起一次http请求
 - 对下游请求完成后，我们将http response的body信息填充到response的message里，回复给客户端
@@ -38,7 +38,7 @@ public:
 };
 ~~~
 
-### Client
+### 2. Client
 下面我们通过一个具体例子来呈现
 - 我们并行发出两个请求，1个是rpc请求，1个是http请求
 - 两个请求都结束后，我们再发起一次计算任务，计算两个数的平方和
@@ -95,3 +95,29 @@ int main()
 }
 ~~~
 
+### 3. Upstream
+SRPC可以直接使用Workflow的任何组件，最常用的就是[Upstream](https://github.com/sogou/workflow/blob/master/docs/about-upstream.md)，SRPC的任何一种client都可以使用Upstream。
+
+我们通过参数来看看如何构造可以使用Upstream的client：
+
+```cpp
+#include "workflow/UpstreamManager.h"
+
+int main()
+{
+    // 1. 创建upstream并添加实例
+    UpstreamManager::upstream_create_weighted_random("echo_server", true);
+    UpstreamManager::upstream_add_server("echo_server", "127.0.0.1:1412");
+    UpstreamManager::upstream_add_server("echo_server", "192.168.10.10");
+    UpstreamManager::upstream_add_server("echo_server", "internal.host.com");
+
+    // 2. 构造参数，填上upstream的名字
+    RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
+    client_params.host = "srpc::echo_server"; // 这个scheme只用于upstream URI解析
+    client_params.port = 1412; // 这个port只用于upstream URI解析，不影响具体实例的选取
+
+    // 3. 用参数创建client，其他用法与示例类似
+    Example::SRPCClient client(&client_params);
+
+    ...
+```
