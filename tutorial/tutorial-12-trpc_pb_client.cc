@@ -29,9 +29,9 @@ int main()
 	HelloRequest req;
 	req.set_msg("Hello, trpc server. This is srpc framework trpc client!");
 
-	client.SayHello(&req, [](HelloReply *response, RPCContext *ctx) {
+	client.SayHello(&req, [](HelloReply *resp, RPCContext *ctx) {
 		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
+			printf("%s\n", resp->DebugString().c_str());
 		else
 			printf("status[%d] error[%d] errmsg:%s\n",
 					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
@@ -44,6 +44,7 @@ int main()
 
 	sync_req.set_msg("Hello, trpc server. This is srpc framework trpc client!");
 	client.SayHello(&sync_req, &sync_resp, &sync_ctx);
+
 	if (sync_ctx.success)
 		printf("%s\n", sync_resp.DebugString().c_str());
 	else

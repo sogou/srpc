@@ -215,7 +215,7 @@ private:
 	int retry_max;
 
 	RPCSpanFilterPolicy filter_policy;
-	std::mutex mutex;
+	std::mutex attributes_mutex;
 	std::unordered_map<std::string, std::string> attributes;
 
 private:

@@ -17,7 +17,6 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 	const std::unordered_map<std::string, std::string>& attributes,
 	ExportTraceServiceRequest& req)
 {
-
 	ResourceSpans *resource_span = req.add_resource_spans();
 	InstrumentationLibrarySpans *ins_lib;
 	ins_lib = resource_span->add_instrumentation_library_spans();
@@ -33,7 +32,7 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 
 	Span *span = ins_lib->add_spans();
 
-	KeyValue *attribute = span->add_attributes();
+	KeyValue *attribute = resource->add_attributes();
 	attribute->set_key(SRPC_SERVICE_NAME);
 	AnyValue *value = attribute->mutable_value();
 	value->set_string_value(data[SRPC_SERVICE_NAME]);
@@ -106,7 +105,7 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 		char parent_span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
 		uint64_t parent_span_id;
 
-		memcpy(&parent_span_id, data[SRPC_SPAN_ID].c_str(), 8);
+		memcpy(&parent_span_id, data[SRPC_PARENT_SPAN_ID].c_str(), 8);
 		parent_span_id = ntohll(parent_span_id);
 
 		snprintf(parent_span_id_buf, SRPC_SPANID_SIZE * 2 + 1,
@@ -218,9 +217,9 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 		return WFTaskFactory::create_empty_task();
 
 	ExportTraceServiceRequest req;
-	this->mutex.lock();
+	this->attributes_mutex.lock();
 	rpc_span_pb_format(span, this->attributes, req);
-	this->mutex.unlock();
+	this->attributes_mutex.unlock();
 
 	WFHttpTask *task = WFTaskFactory::create_http_task(this->url,
 													   this->redirect_max,
@@ -244,19 +243,19 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 void RPCSpanOpenTelemetry::add_attributes(const std::string& key,
 										  const std::string& value)
 {
-	this->mutex.lock();
+	this->attributes_mutex.lock();
 	this->attributes.insert(std::make_pair(key, value));
-	this->mutex.unlock();
+	this->attributes_mutex.unlock();
 }
 
 size_t RPCSpanOpenTelemetry::clear_attributes()
 {
 	size_t ret;
 
-	this->mutex.lock();
+	this->attributes_mutex.lock();
 	ret = this->attributes.size();
 	this->attributes.clear();
-	this->mutex.unlock();
+	this->attributes_mutex.unlock();
 
 	return ret;
 }
