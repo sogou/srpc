@@ -717,7 +717,7 @@ public:
 			fprintf(this->out_file, this->server_constructor_add_method_format.c_str(),
 					rpc.method_name.c_str(), rpc.method_name.c_str());
 		}
-		fprintf(this->out_file, "}");
+		fprintf(this->out_file, "}\n");
 	}
 
 	void print_client_constructor(const std::string& type, const std::string& service,

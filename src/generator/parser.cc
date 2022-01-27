@@ -136,6 +136,12 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 		if (this->parse_include_file(line, file_path) == true)
 		{
+			if (!this->is_thrift)
+			{
+				if (file_path.rfind("google/protobuf/", 0) == 0)
+					continue;
+			}
+
 			file_path = dir_prefix + file_path;
 
 			info.include_list.resize(info.include_list.size() + 1);
@@ -284,6 +290,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 	build_typedef_mapping(info);
 	fclose(in);
+	fprintf(stdout, "finish parsing proto file: [%s]\n", proto_file.c_str());
 	return true;
 }
 
@@ -503,28 +510,8 @@ bool Parser::parse_include_file(const std::string& line, std::string& file_name)
 		return false;
 
 	file_name = line.substr(st + 1, ed - st - 1);
-//	fprintf(stderr, "parse_include_file() %s--------%s\n", line.c_str(), file_name.c_str());
+//	fprintf(stderr, "parse_include_file(%s,%s)\n", line.c_str(), file_name.c_str());
 	return true;
-
-/*
-	pos += include_prefix.length();
-
-	while (line[pos] == ' ')
-		pos++;
-
-	size_t begin = pos;
-
-	//TODO: special logic for thrift
-	while (pos < line.length() && !isspace(line[pos])
-			&& line[pos] != ';')
-		pos++;
-
-	if (line[begin] != '\"' || line[line.length() - 2] != ';'
-		|| line[line.length() - 3] != '\"')
-		return false;
-
-	file_name = line.substr(begin + 1, line.length() - 4 - begin);
-	return true;*/
 }
 
 bool Parser::parse_package_name(const std::string& line,
