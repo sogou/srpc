@@ -18,7 +18,6 @@
 #include "echo_pb.srpc.h"
 #include "workflow/WFFacilities.h"
 #include "srpc/rpc_types.h"
-#include "srpc/rpc_span_policies.h"
 
 using namespace srpc;
 
@@ -27,15 +26,12 @@ static WFFacilities::WaitGroup wait_group(1);
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+	void Echo(EchoRequest *req, EchoResponse *resp, RPCContext *ctx) override
 	{
-//		ctx->set_compress_type(RPCCompressGzip);
-		response->set_message("Hi back");
+		resp->set_message("Hi back");
 
 		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
-									request->DebugString().c_str(),
-									response->DebugString().c_str());
-		ctx->log({{"event", "info"}, {"message", "rpc server echo() end()"}});
+				req->DebugString().c_str(), resp->DebugString().c_str());
 	}
 };
 
@@ -54,9 +50,6 @@ int main()
 	ExampleServiceImpl impl;
 
 	server.add_service(&impl);
-
-	RPCSpanDefault span_log;
-	server.add_filter(&span_log);
 
 	if (server.start(1412) == 0)
 	{

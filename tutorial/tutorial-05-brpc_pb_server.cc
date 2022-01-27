@@ -27,14 +27,13 @@ char attachment[10] = "ATTACH";
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+	void Echo(EchoRequest *req, EchoResponse *resp, RPCContext *ctx) override
 	{
-		response->set_message("Hi back, " + request->name());
+		resp->set_message("Hi back, " + req->name());
 		ctx->set_attachment_nocopy(attachment, strlen(attachment));
 
 		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
-									request->DebugString().c_str(),
-									response->DebugString().c_str());
+				req->DebugString().c_str(), resp->DebugString().c_str());
 	}
 };
 
@@ -53,6 +52,7 @@ int main()
 	ExampleServiceImpl impl;
 
 	server.add_service(&impl);
+
 	if (server.start(1412) == 0)
 	{
 		wait_group.wait();

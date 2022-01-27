@@ -32,9 +32,11 @@ int main()
 	req.set_message("Hello, sogou rpc!");
 	req.set_name("1412");
 
-	auto *rpc_task = client.create_Echo_task([](EchoResponse *response, RPCContext *ctx) {
+	auto *rpc_task = client.create_Echo_task([](EchoResponse *resp,
+												RPCContext *ctx)
+	{
 		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
+			printf("%s\n", resp->DebugString().c_str());
 		else
 			printf("status[%d] error[%d] errmsg:%s\n",
 					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
@@ -42,7 +44,10 @@ int main()
 		wait_group.done();
 	});
 
-	auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0, [](WFHttpTask *task) {
+	auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com",
+													  0, 0,
+													  [](WFHttpTask *task)
+	{
 		if (task->get_state() == WFT_STATE_SUCCESS)
 		{
 			std::string body;
@@ -59,7 +64,7 @@ int main()
 
 	rpc_task->serialize_input(&req);
 	(*http_task > rpc_task).start();
-	rpc_task->log({{"event", "info"}, {"message", "rpc client task testing log."}});
+	rpc_task->log({{"event", "info"}, {"message", "rpc client task log."}});
 	wait_group.wait();
 
 	return 0;

@@ -18,7 +18,6 @@
 #include "workflow/WFFacilities.h"
 #include "echo_pb.srpc.h"
 #include "srpc/rpc_types.h"
-#include "srpc/rpc_span_policies.h"
 
 using namespace srpc;
 
@@ -33,9 +32,9 @@ int main()
 	req.set_message("Hello, sogou rpc!");
 	req.set_name("1412");
 
-	client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
+	client.Echo(&req, [](EchoResponse *resp, RPCContext *ctx) {
 		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
+			printf("%s\n", resp->DebugString().c_str());
 		else
 			printf("status[%d] error[%d] errmsg:%s\n",
 					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());

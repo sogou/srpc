@@ -27,14 +27,13 @@ static WFFacilities::WaitGroup wait_group(1);
 class GreeterServiceImpl : public Greeter::Service
 {
 public:
-	void SayHello(HelloRequest *request, HelloReply *response, RPCContext *ctx) override
+	void SayHello(HelloRequest *req, HelloReply *resp, RPCContext *ctx) override
 	{
-//		ctx->set_compress_type(RPCCompressGzip);
-		response->set_msg("This is SRPC framework TRPC protocol. Hi back.");
+		ctx->set_compress_type(RPCCompressGzip);
+		resp->set_msg("This is SRPC framework TRPC protocol. Hi back.");
 
 		printf("Server SayHello()\nget_req:\n%s\nset_resp:\n%s\n",
-									request->DebugString().c_str(),
-									response->DebugString().c_str());
+		req->DebugString().c_str(), resp->DebugString().c_str());
 	}
 };
 

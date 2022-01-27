@@ -26,26 +26,28 @@ static WFFacilities::WaitGroup wait_group(1);
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
+	void Echo(EchoRequest *req, EchoResponse *resp, RPCContext *ctx) override
 	{
 		ctx->set_compress_type(RPCCompressGzip);
+		ctx->log({{"event", "info"}, {"message", "rpc server echo() end."}});
 
-		auto *task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0,
-			[request, response](WFHttpTask *task) {
-				if (task->get_state() == WFT_STATE_SUCCESS)
-				{
-					const void *data;
-					size_t len;
-					task->get_resp()->get_parsed_body(&data, &len);
-					response->mutable_message()->assign((const char *)data, len);
-				}
-				else
-					response->set_message("Error: " + std::to_string(task->get_error()));
+		auto *task = WFTaskFactory::create_http_task("https://www.sogou.com",
+													 0, 0,
+													 [req, resp](WFHttpTask *task)
+		{
+			if (task->get_state() == WFT_STATE_SUCCESS)
+			{
+				const void *data;
+				size_t len;
+				task->get_resp()->get_parsed_body(&data, &len);
+				resp->mutable_message()->assign((const char *)data, len);
+			}
+			else
+				resp->set_message("Error: " + std::to_string(task->get_error()));
 
-				printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
-											request->DebugString().c_str(),
-											response->DebugString().c_str());
-			});
+			printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
+					req->DebugString().c_str(), resp->DebugString().c_str());
+		});
 
 		ctx->get_series()->push_back(task);
 	}
@@ -66,6 +68,7 @@ int main(int argc, char *argv[])
 	ExampleServiceImpl impl;
 
 	server.add_service(&impl);
+
 	if (server.start(1412) == 0)
 	{
 		wait_group.wait();
