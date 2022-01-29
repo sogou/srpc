@@ -72,8 +72,8 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS benchmark_pb.proto)
 
 add_custom_target(
 	BENCHMARK_GEN ALL
-	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/benchmark_pb.proto  ${PROJECT_SOURCE_DIR}
-	COMMAND ${SRPC_GEN_PROGRAM} thrift   ${PROJECT_SOURCE_DIR}/benchmark_thrift.thrift ${PROJECT_SOURCE_DIR}
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/benchmark_pb.proto  ${PROJECT_SOURCE_DIR}
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/benchmark_thrift.thrift ${PROJECT_SOURCE_DIR}
 	COMMENT "sprc generator..."
 )
 
