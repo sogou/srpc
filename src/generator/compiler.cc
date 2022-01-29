@@ -22,27 +22,68 @@
 #endif
 #include "generator.h"
 #include <fstream>
+#include <string.h>
 
 /* LQ - prototype to determine if the file type is thrift */
-bool isThrift(char* filename);
+enum
+{
+	TYPE_UNKNOWN = -1,
+	TYPE_PROTOBUF = 0,
+	TYPE_THRIFT = 1,
+};
+
+const char *SRPC_VERSION = "0.9.5";
+
+static int check_idl_type(const char *filename);
+const char *SRPC_GENERATOR_USAGE = "Usage:\n\t%s <idl_file> <output_dir>\n";
 
 int main(int argc, const char *argv[])
 {
 	/* LQ - update to use 2 command line arguments */
 	/* TODO: use optarg/getopt_long to have index-independent arguments? */
-	/* 	 Ex: srpc_generator -i <IDL_FILE> -o <OUTPUT_DIR> or */
-	/*  	     srpc_generator --input <IDL_FILE> --output <OUTPUT_DIR> */
-	if(argc != 3) {
-		fprintf(stderr, "Usage:\n\t%s <idl_file> <output_dir>\n", argv[0]);
+	/*   Ex: srpc_generator -i <IDL_FILE> -o <OUTPUT_DIR> or */
+	/*       srpc_generator --input <IDL_FILE> --output <OUTPUT_DIR> */
+
+	int idl_type;
+	int idl_file_id = 1;
+
+	if (argc == 2 &&
+		(strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0))
+	{
+		fprintf(stderr, "srpc_generator version %s\n", SRPC_VERSION);
 		return 0;
 	}
-	char *idl = const_cast<char *>(argv[1]);
-	bool is_thrift = isThrift(idl);
-	const char *idl_file = argv[1];
-	struct GeneratorParams params;
-	Generator gen(is_thrift);
+	else if (argc != 3 && argc != 4)
+	{
+		fprintf(stderr, SRPC_GENERATOR_USAGE, argv[0]);
+		return 0;
+	}
 
-	params.out_dir = argv[2];
+	if (argc == 4)
+	{
+		if (strcmp(argv[1], "protobuf") && strcmp(argv[1], "thrift"))
+		{
+			fprintf(stderr, "ERROR: Invalid IDL type %s\n", argv[1]);
+			fprintf(stderr, SRPC_GENERATOR_USAGE, argv[0]);
+			return 0;
+		}
+
+		idl_file_id++;
+	}
+
+	idl_type = check_idl_type(argv[idl_file_id]);
+	if (idl_type == TYPE_UNKNOWN)
+	{
+		fprintf(stderr, "ERROR: Invalid IDL file %s\n", argv[idl_file_id]);
+		fprintf(stderr, SRPC_GENERATOR_USAGE, argv[0]);
+		return 0;
+	}
+
+	const char *idl_file = argv[idl_file_id];
+	struct GeneratorParams params;
+	Generator gen(idl_type == TYPE_THRIFT ? true : false);
+
+	params.out_dir = argv[idl_file_id + 1];
 
 	char file_name[DIRECTORY_LENGTH] = { 0 };
 	size_t pos = 0;
@@ -65,35 +106,15 @@ int main(int argc, const char *argv[])
 	return 0;
 }
 
-/* LQ - function to determine if the input file is thrift or not */
-/* Date: 28 JAN 2022 */
-/* Description: Opens a file, reads the lines and checks for "syntax = proto", */
-/* 		which indicates a protobuf file. If it does not find this string, */
-/* 		return true and assume the file is thrift. Error out if file is unable to be read */
-/* Notes/TODO:  * Add enum to handle file types? (TYPE_THRIFT, TYPE_PROTOBUF, TYPE_UNKNOWN) */
-/*		* Better detection of file types? Better behaviour if thrift files have a specific format to look for */
-/*		* Handle error case when user provides a file that is not thrift nor protobuf */
-bool isThrift(char* filename) {
+int check_idl_type(const char *filename)
+{
+	size_t len = strlen(filename);
 
-	std::ifstream idl_file;
-	std::string line;
-	idl_file.open(filename);
+	if (len > 6 && strstr(filename, ".proto") == filename + len - 6)
+		return TYPE_PROTOBUF;
+	else if (len > 7 && strstr(filename, ".thrift") == filename + len - 7)
+		return TYPE_THRIFT;
 
-	if(idl_file.is_open()) {
-		while(!idl_file.eof()) {
-			getline(idl_file, line);
-			/* If the line contains "syntax = proto", it is a protobuf file */
-			if(line.find("syntax = proto") != std::string::npos) {
-				idl_file.close();
-				return false;
-			}	
-		}
-		idl_file.close();
-	} else {
-		/* Error case */
-		fprintf(stderr, "Unable to open IDL file: %s\n", filename);
-		exit(0);
-	}
-	/* Otherwise, return true (assume thrift format) */
-	return true;
+	return TYPE_UNKNOWN;
 }
+
