@@ -25,6 +25,7 @@
 #include <list>
 #include <string>
 #include <algorithm>
+#include <sys/stat.h>
 
 #include "printer.h"
 #include "parser.h"

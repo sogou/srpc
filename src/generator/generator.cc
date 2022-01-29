@@ -95,12 +95,24 @@ bool Generator::generate(const std::string& idl_file, struct GeneratorParams par
 
 bool Generator::generate_header(idl_info& cur_info, struct GeneratorParams params)
 {
+	struct stat info;
+
 	for (auto& sub_info : cur_info.include_list)
 	{
 		fprintf(stdout, "[Generator] auto generate include file [%s]\n",
 				sub_info.absolute_file_path.c_str());
 		if (!this->generate_header(sub_info, params))
 			return false;
+	}
+
+	/* LQ - check if the output directory exists, if it does not error out */
+	/* Fixes a segfault (SIGSEG) crash if the output directory doesn't exist */
+	if(stat(params.out_dir, &info) != 0) {
+		fprintf(stderr, "[Generator Error] ouptut directory does not exist! Check the path?\n");
+		return false;
+	} else if((info.st_mode & S_IFDIR) == 0) {
+		fprintf(stderr, "[Generator Error] output directory path is not a directory! Check the path?\n");
+		return false;
 	}
 
 	// for protobuf: if no [rpc], don`t need to generate xxx.srpc.h
