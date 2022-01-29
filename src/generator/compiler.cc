@@ -22,12 +22,58 @@
 #endif
 #include "generator.h"
 
+const char *SRPC_VERSION = "0.9.5";
+
+const char *SRPC_GENERATOR_USAGE = "\
+Usage: %s [protobuf|thrift] IDL_FILE OUTPUT_DIR\n\
+Parse Protobuf IDL or Thrift IDL file and generate output.\n\
+Only need to input the top idl_file name.\n\
+The correlated files will be parsed recursively.\n\
+  -v, --version    Show version info and exit.\n\
+  -h, --help       Show this text and exit.\n\
+Example :\n\
+  %sprotobuf proto_file.proto ./output_dir\n\
+  %sthrift thrift_file.thrift ./output_dir\n";
+
 int main(int argc, const char *argv[])
 {
 	if (argc != 4)
 	{
-		fprintf(stderr, "Usage:\n\t%s protobuf proto_file output_dir\n"
-				"\t%s thrift thrift_file output_dir\n", argv[0], argv[0]);
+		if (argc == 1 || strcmp(argv[1], "-h") == 0 ||
+			strcmp(argv[1], "--help") == 0)
+		{
+			fprintf(stderr, SRPC_GENERATOR_USAGE, argv[0], argv[0], argv[0]);
+		}
+		else if (strcmp(argv[1], "-v") == 0 ||
+				 strcmp(argv[1], "--version") == 0)
+		{
+			fprintf(stderr, "srpc_generator version %s\n", SRPC_VERSION);
+		}
+		else if (strncmp(argv[1], "--", 2) == 0 ||
+				 strncmp(argv[1], "-", 1) == 0)
+		{
+			fprintf(stderr, "Invalid flag. "
+					"Please use --help to show usage.\n");
+		}
+		else if (strcmp(argv[1], "protobuf") && strcmp(argv[1], "thrift"))
+		{
+			fprintf(stderr, "IDL_TYPE : %s invalid. "
+					"Only supports protobuf and thrift.\n", argv[1]);
+		}
+		else if (argc == 2)
+		{
+			fprintf(stderr, "Missing IDL_FILE.\n");
+		}
+		else if (argc == 3)
+		{
+			fprintf(stderr, "Missing OUTPUT_DIR.\n");
+		}
+		else
+		{
+			fprintf(stderr, "Invalid arguments. "
+					"Please use --help to show usage.\n");
+		}
+
 		return 0;
 	}
 
@@ -60,3 +106,4 @@ int main(int argc, const char *argv[])
 	fprintf(stdout, "[Generator Done]\n");
 	return 0;
 }
+
