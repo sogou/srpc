@@ -32,8 +32,8 @@ The correlated files will be parsed recursively.\n\
   -v, --version    Show version info and exit.\n\
   -h, --help       Show this text and exit.\n\
 Example :\n\
-  %sprotobuf proto_file.proto ./output_dir\n\
-  %sthrift thrift_file.thrift ./output_dir\n";
+  %s protobuf proto_file.proto ./output_dir\n\
+  %s thrift thrift_file.thrift ./output_dir\n";
 
 int main(int argc, const char *argv[])
 {
