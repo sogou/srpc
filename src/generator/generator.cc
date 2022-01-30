@@ -118,7 +118,7 @@ bool Generator::generate_header(idl_info& cur_info, struct GeneratorParams param
 	// for protobuf: if no [rpc], don`t need to generate xxx.srpc.h
 	if (this->init_file_names(cur_info.absolute_file_path, params.out_dir) == false)
 	{
-		fprintf(stderr, "[Generator Error] parse proto output dir failed. %s %s\n",
+		fprintf(stderr, "[Generator Error] init file name failed. %s %s\n",
 				cur_info.absolute_file_path.c_str(), params.out_dir);
 		return false;
 	}

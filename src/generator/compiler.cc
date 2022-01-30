@@ -35,7 +35,8 @@ enum
 const char *SRPC_VERSION = "0.9.5";
 
 static int check_idl_type(const char *filename);
-const char *SRPC_GENERATOR_USAGE = "Usage:\n\t%s <idl_file> <output_dir>\n";
+const char *SRPC_GENERATOR_USAGE = "\
+Usage:\n\t%s [protobuf|thrift] <idl_file> <output_dir>\n";
 
 int main(int argc, const char *argv[])
 {
@@ -53,28 +54,33 @@ int main(int argc, const char *argv[])
 		fprintf(stderr, "srpc_generator version %s\n", SRPC_VERSION);
 		return 0;
 	}
-	else if (argc != 3 && argc != 4)
+	else if (argc == 3)
 	{
-		fprintf(stderr, SRPC_GENERATOR_USAGE, argv[0]);
-		return 0;
-	}
-
-	if (argc == 4)
-	{
-		if (strcmp(argv[1], "protobuf") && strcmp(argv[1], "thrift"))
+		idl_type = check_idl_type(argv[1]);
+		if (idl_type == TYPE_UNKNOWN)
 		{
-			fprintf(stderr, "ERROR: Invalid IDL type %s\n", argv[1]);
+			fprintf(stderr, "ERROR: Invalid IDL file \"%s\"\n", argv[1]);
+			fprintf(stderr, SRPC_GENERATOR_USAGE, argv[0]);
+			return 0;
+		}
+	}
+	else if (argc == 4)
+	{
+		if (strcasecmp(argv[1], "protobuf") == 0)
+			idl_type = TYPE_PROTOBUF;
+		else if (strcasecmp(argv[1], "thrift") == 0)
+			idl_type = TYPE_THRIFT;
+		else
+		{
+			fprintf(stderr, "ERROR: Invalid IDL type \"%s\"\n", argv[1]);
 			fprintf(stderr, SRPC_GENERATOR_USAGE, argv[0]);
 			return 0;
 		}
 
 		idl_file_id++;
 	}
-
-	idl_type = check_idl_type(argv[idl_file_id]);
-	if (idl_type == TYPE_UNKNOWN)
+	else
 	{
-		fprintf(stderr, "ERROR: Invalid IDL file %s\n", argv[idl_file_id]);
 		fprintf(stderr, SRPC_GENERATOR_USAGE, argv[0]);
 		return 0;
 	}
