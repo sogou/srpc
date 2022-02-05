@@ -75,8 +75,8 @@ protobuf_generate_cpp(HELLOWORLD_SRCS HELLOWORLD_HDRS helloworld.proto)
 
 add_custom_target(
 	TURORIAL_GEN ALL
-	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/echo_pb.proto  ${PROJECT_SOURCE_DIR}
-	COMMAND ${SRPC_GEN_PROGRAM} thrift   ${PROJECT_SOURCE_DIR}/echo_thrift.thrift ${PROJECT_SOURCE_DIR}
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/echo_pb.proto  ${PROJECT_SOURCE_DIR}
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/echo_thrift.thrift ${PROJECT_SOURCE_DIR}
 	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/helloworld.proto  ${PROJECT_SOURCE_DIR}
 	COMMENT "sprc generator..."
 )
