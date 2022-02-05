@@ -15,14 +15,13 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #ifdef _WIN32
 #include <direct.h>
 #else
 #include <unistd.h>
 #endif
 #include "generator.h"
-#include <fstream>
-#include <string.h>
 
 /* LQ - prototype to determine if the file type is thrift */
 enum
@@ -116,9 +115,9 @@ int check_idl_type(const char *filename)
 {
 	size_t len = strlen(filename);
 
-	if (len > 6 && strstr(filename, ".proto") == filename + len - 6)
+	if (len > 6 && strcmp(filename + len - 6, ".proto") == 0)
 		return TYPE_PROTOBUF;
-	else if (len > 7 && strstr(filename, ".thrift") == filename + len - 7)
+	else if (len > 7 && strcmp(filename + len - 7, ".thrift") == 0)
 		return TYPE_THRIFT;
 
 	return TYPE_UNKNOWN;

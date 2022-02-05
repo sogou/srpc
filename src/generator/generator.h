@@ -25,7 +25,6 @@
 #include <list>
 #include <string>
 #include <algorithm>
-#include <sys/stat.h>
 
 #include "printer.h"
 #include "parser.h"
@@ -55,7 +54,7 @@ private:
 	bool generate_header(idl_info& cur_info, struct GeneratorParams params);
 	void generate_skeleton(const std::string& idl_file);
 
-	void generate_srpc_file(const idl_info& cur_info);
+	bool generate_srpc_file(const idl_info& cur_info);
 	bool generate_thrift_type_file(idl_info& cur_info);
 	void generate_server_cpp_file(const idl_info& cur_info, const std::string& idle_file_name);
 	void generate_client_cpp_file(const idl_info& cur_info, const std::string& idle_file_name);
