@@ -14,6 +14,8 @@
   limitations under the License.
 */
 
+#include <stdlib.h>
+#include <string.h>
 #include <string>
 #include <functional>
 #include <workflow/WFGlobal.h>
@@ -111,6 +113,7 @@ public:
 	void set_compress_type(RPCCompressType type);
 	void set_retry_max(int retry_max);
 	void set_attachment_nocopy(const char *attachment, size_t len);
+	bool set_fragment(const std::string& fragment);
 	int serialize_input(const ProtobufIDLMessage *in);
 	int serialize_input(const ThriftIDLMessage *in);
 
@@ -333,6 +336,29 @@ inline void RPCClientTask<RPCREQ, RPCRESP>::set_attachment_nocopy(const char *at
 																  size_t len)
 {
 	this->req.set_attachment_nocopy(attachment, len);
+}
+
+template<class RPCREQ, class RPCRESP>
+bool RPCClientTask<RPCREQ, RPCRESP>::set_fragment(const std::string& fragment)
+{
+	if (this->uri_.fragment)
+	{
+		size_t origin_len = strlen(this->uri_.fragment);
+
+		this->uri_.fragment = (char *)realloc(this->uri_.fragment, fragment.length());
+		if (!this->uri_.fragment)
+			return false;
+
+		memcpy(this->uri_.fragment + origin_len, fragment.c_str(), fragment.length());
+	}
+	else
+	{
+		this->uri_.fragment = strdup(fragment.c_str());
+		if (!this->uri_.fragment)
+			return false;
+	}
+
+	return true;
 }
 
 template<class RPCREQ, class RPCRESP>
