@@ -113,7 +113,7 @@ public:
 	void set_compress_type(RPCCompressType type);
 	void set_retry_max(int retry_max);
 	void set_attachment_nocopy(const char *attachment, size_t len);
-	bool set_fragment(const std::string& fragment);
+	int set_uri_fragment(const std::string& fragment);
 	int serialize_input(const ProtobufIDLMessage *in);
 	int serialize_input(const ThriftIDLMessage *in);
 
@@ -339,26 +339,18 @@ inline void RPCClientTask<RPCREQ, RPCRESP>::set_attachment_nocopy(const char *at
 }
 
 template<class RPCREQ, class RPCRESP>
-bool RPCClientTask<RPCREQ, RPCRESP>::set_fragment(const std::string& fragment)
+int RPCClientTask<RPCREQ, RPCRESP>::set_uri_fragment(const std::string& fragment)
 {
-	if (this->uri_.fragment)
-	{
-		size_t origin_len = strlen(this->uri_.fragment);
+	char *str = strdup(fragment.c_str());
 
-		this->uri_.fragment = (char *)realloc(this->uri_.fragment, fragment.length());
-		if (!this->uri_.fragment)
-			return false;
-
-		memcpy(this->uri_.fragment + origin_len, fragment.c_str(), fragment.length());
-	}
-	else
+	if (str)
 	{
-		this->uri_.fragment = strdup(fragment.c_str());
-		if (!this->uri_.fragment)
-			return false;
+		free(this->uri_.fragment);
+		this->uri_.fragment = str;
+		return 0;
 	}
 
-	return true;
+	return -1;
 }
 
 template<class RPCREQ, class RPCRESP>
