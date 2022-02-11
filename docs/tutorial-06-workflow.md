@@ -121,3 +121,7 @@ int main()
 
     ...
 ```
+
+如果使用了ConsistentHash或者Manual方式创建upstream，则我们往往需要对不同的task进行区分、以供选取算法使用。这时候可以使用client task上的`int set_uri_fragment(const std::string& fragment);`接口，设置请求级相关的信息。
+
+这个域的是URI里的fragment，语义请参考[RFC3689 3.5-Fragment](https://datatracker.ietf.org/doc/html/rfc3986#section-3.5)，任何需要用到fragment的功能（如其他选取策略里附带的其他信息），都可以利用这个域。
