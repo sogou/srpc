@@ -349,7 +349,7 @@ For Server only. Set the maximum connection keep-alive time,  in milliseconds. -
 
 ## Integrating with the asynchronous Workflow framework
 
-### Server
+### 1. Server
 
 You can follow the detailed example below:
 
@@ -388,7 +388,7 @@ public:
 };
 ~~~
 
-### Client
+### 2. Client
 
 You can follow the detailed example below:
 
@@ -446,4 +446,35 @@ int main()
     return 0;
 }
 ~~~
+
+### 3. Upstream
+SRPC can directly use any component of Workflow, the most commonly used is [Upstream](https://github.com/sogou/workflow/blob/master/docs/en/about-upstream.md), any kind of client of SRPC can use Upstream.
+
+You may use the example below to construct a client that can use Upstream through parameters:
+
+```cpp
+#include "workflow/UpstreamManager.h"
+
+int main()
+{
+    // 1. create upstream and add server instances
+    UpstreamManager::upstream_create_weighted_random("echo_server", true);
+    UpstreamManager::upstream_add_server("echo_server", "127.0.0.1:1412");
+    UpstreamManager::upstream_add_server("echo_server", "192.168.10.10");
+    UpstreamManager::upstream_add_server("echo_server", "internal.host.com");
+
+    // 2. create params and fill upstream name
+    RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
+    client_params.host = "srpc::echo_server"; // this scheme only used when upstream URI parsing
+    client_params.port = 1412; // this port only used when upstream URI parsing and will not affect the select of instances
+
+    // 3. construct client by params, the rest of usage is similar as other tutorials
+    Example::SRPCClient client(&client_params);
+
+    ...
+```
+
+If we use the **ConsistentHash** or **Manual** upstream, we often need to distinguish different tasks for the selection algorithm. At this time, we may use the `int set_uri_fragment(const std::string& fragment);` interface on the client task to set request-level related information.
+
+This field is the fragment in the URI. For the semantics, please refer to [RFC3689 3.5-Fragment](https://datatracker.ietf.org/doc/html/rfc3986#section-3.5), any infomation that needs to use the fragment (such as other information included in some other selection policy), you may use this field as well.
 
