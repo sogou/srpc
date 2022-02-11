@@ -126,3 +126,7 @@ int main()
 
     ...
 ```
+
+If we use the **ConsistentHash** or **Manual** upstream, we often need to distinguish different tasks for the selection algorithm. At this time, we may use the `int set_uri_fragment(const std::string& fragment);` interface on the client task to set request-level related information.
+
+This field is the fragment in the URI. For the semantics, please refer to [RFC3689 3.5-Fragment](https://datatracker.ietf.org/doc/html/rfc3986#section-3.5), any infomation that needs to use the fragment (such as other information included in some other selection policy), you may use this field as well.
