@@ -52,10 +52,10 @@
 ## Installation
   * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
   * srpc依赖workflow和protobuf3
-    * protobuf需要用户自行安装v3.12.0以上的版本
+    * protobuf需要用户自行安装v3.12.0或以上的版本
     * workflow可以通过git的submodule形式进行依赖
     * 压缩库snappy和lz4也以submodule的形式在third_party/中作源码依赖
-    * workflow、snappy和lz4也可以系统预装，如果thirt_party中没有拉取源码依赖，则会从系统默认安装路径寻找，snappy的预装要求版本是v1.1.6以上
+    * workflow、snappy和lz4也可以系统预装，如果thirt_party中没有拉取源码依赖，则会从系统默认安装路径寻找，snappy的预装要求版本是v1.1.6或以上
 
 ~~~sh
 git clone --recursive https://github.com/sogou/srpc.git
