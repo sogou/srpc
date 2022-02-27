@@ -242,10 +242,16 @@ bool ThriftHttpResponse::serialize_meta()
 		return false;
 
 	int rpc_status_code = this->get_status_code();
+	const char *http_status_code = this->protocol::HttpResponse::get_status_code();
 
 	set_http_version("HTTP/1.1");
 	if (rpc_status_code == RPCStatusOK)
-		protocol::HttpUtil::set_response_status(this, HttpStatusOK);
+	{
+		if (http_status_code)
+			protocol::HttpUtil::set_response_status(this, atoi(http_status_code));
+		else
+			protocol::HttpUtil::set_response_status(this, HttpStatusOK);
+	}
 	else if (rpc_status_code == RPCStatusServiceNotFound
 			|| rpc_status_code == RPCStatusMethodNotFound
 			|| rpc_status_code == RPCStatusMetaError

@@ -180,6 +180,40 @@ protected:
 			|| task_->get_state() == WFT_STATE_NOREPLY;
 	}
 
+public:
+	// for json format
+	void set_json_add_whitespace(bool flag) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->set_json_add_whitespace(flag);
+		else
+			return task_->get_req()->set_json_add_whitespace(flag);
+	}
+
+	void set_json_always_print_enums_as_ints(bool flag) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->set_json_enums_as_ints(flag);
+		else
+			return task_->get_req()->set_json_enums_as_ints(flag);
+	}
+
+	void set_json_preserve_proto_field_names(bool flag) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->set_json_preserve_names(flag);
+		else
+			return task_->get_req()->set_json_preserve_names(flag);
+	}
+
+	void set_json_always_print_primitive_fields(bool flag) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->set_json_print_primitive(flag);
+		else
+			return task_->get_req()->set_json_print_primitive(flag);
+	}
+
 protected:
 	WFNetworkTask<RPCREQ, RPCRESP> *task_;
 };

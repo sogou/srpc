@@ -201,6 +201,7 @@ TRPCMessage::TRPCMessage()
 	this->meta_buf = NULL;
 	this->meta_len = 0;
 	this->message_len = 0;
+	this->flag = 0;
 	memset(this->header, 0, TRPC_HEADER_SIZE);
 	this->message = new RPCBuffer();
 }
@@ -507,6 +508,58 @@ const char *TRPCMessage::error_msg_srpc_trpc(int srpc_status_code) const
 	return "";//TODO
 }
 
+void TRPCMessage::set_json_add_whitespace(bool flag)
+{
+	if (flag)
+		this->flag |= SRPC_JSON_OPTION_ADD_WHITESPACE;
+	else
+		this->flag &= ~SRPC_JSON_OPTION_ADD_WHITESPACE;
+}
+
+bool TRPCMessage::get_json_add_whitespace() const
+{
+	return this->flag & SRPC_JSON_OPTION_ADD_WHITESPACE;
+}
+
+void TRPCMessage::set_json_enums_as_ints(bool flag)
+{
+	if (flag)
+		this->flag |= SRPC_JSON_OPTION_ENUM_AS_INITS;
+	else
+		this->flag &= ~SRPC_JSON_OPTION_ENUM_AS_INITS;
+}
+
+bool TRPCMessage::get_json_enums_as_ints() const
+{
+	return this->flag & SRPC_JSON_OPTION_ENUM_AS_INITS;
+}
+
+void TRPCMessage::set_json_preserve_names(bool flag)
+{
+	if (flag)
+		this->flag |= SRPC_JSON_OPTION_PRESERVE_NAMES;
+	else
+		this->flag &= ~SRPC_JSON_OPTION_PRESERVE_NAMES;
+}
+
+bool TRPCMessage::get_json_preserve_names() const
+{
+	return this->flag & SRPC_JSON_OPTION_PRESERVE_NAMES;
+}
+
+void TRPCMessage::set_json_print_primitive(bool flag)
+{
+	if (flag)
+		this->flag |= SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+	else
+		this->flag &= ~SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+}
+
+bool TRPCMessage::get_json_print_primitive() const
+{
+	return this->flag & SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+}
+
 int TRPCRequest::get_compress_type() const
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
@@ -689,7 +742,14 @@ int TRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 							? ResolverInstance::get_resolver()
 							: google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix, pool));
 
-		ret = BinaryToJsonStream(resolver, GetTypeUrl(pb_msg), &input_stream, &output_stream).ok() ? 0 : -1;
+		google::protobuf::util::JsonOptions options;
+		options.add_whitespace = this->get_json_add_whitespace();
+		options.always_print_enums_as_ints = this->get_json_enums_as_ints();
+		options.preserve_proto_field_names = this->get_json_preserve_names();
+		options.always_print_primitive_fields = this->get_json_print_primitive();
+
+		ret = BinaryToJsonStream(resolver, GetTypeUrl(pb_msg), &input_stream,
+								 &output_stream, options).ok() ? 0 : -1;
 		if (pool != google::protobuf::DescriptorPool::generated_pool())
 			delete resolver;
 	}

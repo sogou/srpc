@@ -59,6 +59,15 @@ public:
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
+	void set_json_add_whitespace(bool flag);
+	bool get_json_add_whitespace() const;
+	void set_json_enums_as_ints(bool flag);
+	bool get_json_enums_as_ints() const;
+	void set_json_preserve_names(bool flag);
+	bool get_json_preserve_names() const;
+	void set_json_print_primitive(bool flag);
+	bool get_json_print_primitive() const;
+
 public:
 	using RPCMessage::serialize;
 	using RPCMessage::deserialize;
@@ -86,6 +95,7 @@ protected:
 	size_t meta_len;
 	size_t message_len;
 	ProtobufIDLMessage *meta;
+	uint32_t flag;
 };
 
 class SRPCRequest : public SRPCMessage

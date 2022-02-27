@@ -75,6 +75,11 @@ static inline uint64_t ntohll(uint64_t x)
 
 #endif
 
+#define SRPC_JSON_OPTION_ADD_WHITESPACE		(1<<3)
+#define SRPC_JSON_OPTION_ENUM_AS_INITS		(1<<4)
+#define SRPC_JSON_OPTION_PRESERVE_NAMES		(1<<5)
+#define SRPC_JSON_OPTION_PRINT_PRIMITIVE	(1<<6)
+
 using ProtobufIDLMessage = google::protobuf::Message;
 
 static inline long long GET_CURRENT_MS()
