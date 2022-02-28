@@ -82,7 +82,7 @@ public:
 
 	// Whether to add spaces, line breaks and indentation to make the JSON
 	// output easy to read.
-	virtual void set_json_add_whitespace(bool flag) = 0;
+	virtual void set_json_add_whitespace(bool on) = 0;
 
 	// Whether to always print enums as ints.
 	virtual void set_json_always_print_enums_as_ints(bool flag) = 0;

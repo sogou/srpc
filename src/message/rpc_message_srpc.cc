@@ -112,7 +112,6 @@ SRPCMessage::SRPCMessage()
 	this->meta_buf = NULL;
 	this->meta_len = 0;
 	this->message_len = 0;
-	this->flag = 0;
 	memset(this->header, 0, sizeof (this->header));
 	this->meta = new RPCMeta();
 	this->buf = new RPCBuffer();
@@ -294,58 +293,6 @@ bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 		data["parent_span_id"] = meta->mutable_span()->parent_span_id();
 
 	return true;
-}
-
-void SRPCMessage::set_json_add_whitespace(bool flag)
-{
-	if (flag)
-		this->flag |= SRPC_JSON_OPTION_ADD_WHITESPACE;
-	else
-		this->flag &= ~SRPC_JSON_OPTION_ADD_WHITESPACE;
-}
-
-bool SRPCMessage::get_json_add_whitespace() const
-{
-	return this->flag & SRPC_JSON_OPTION_ADD_WHITESPACE;
-}
-
-void SRPCMessage::set_json_enums_as_ints(bool flag)
-{
-	if (flag)
-		this->flag |= SRPC_JSON_OPTION_ENUM_AS_INITS;
-	else
-		this->flag &= ~SRPC_JSON_OPTION_ENUM_AS_INITS;
-}
-
-bool SRPCMessage::get_json_enums_as_ints() const
-{
-	return this->flag & SRPC_JSON_OPTION_ENUM_AS_INITS;
-}
-
-void SRPCMessage::set_json_preserve_names(bool flag)
-{
-	if (flag)
-		this->flag |= SRPC_JSON_OPTION_PRESERVE_NAMES;
-	else
-		this->flag &= ~SRPC_JSON_OPTION_PRESERVE_NAMES;
-}
-
-bool SRPCMessage::get_json_preserve_names() const
-{
-	return this->flag & SRPC_JSON_OPTION_PRESERVE_NAMES;
-}
-
-void SRPCMessage::set_json_print_primitive(bool flag)
-{
-	if (flag)
-		this->flag |= SRPC_JSON_OPTION_PRINT_PRIMITIVE;
-	else
-		this->flag &= ~SRPC_JSON_OPTION_PRINT_PRIMITIVE;
-}
-
-bool SRPCMessage::get_json_print_primitive() const
-{
-	return this->flag & SRPC_JSON_OPTION_PRINT_PRIMITIVE;
 }
 
 const std::string& SRPCRequest::get_service_name() const

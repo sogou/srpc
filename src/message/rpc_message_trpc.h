@@ -44,15 +44,6 @@ public:
 	bool get_attachment_nocopy(const char **attachment, size_t *len) const { return false; }
 	void set_attachment_nocopy(const char *attachment, size_t len) { }
 
-	void set_json_add_whitespace(bool flag);
-	bool get_json_add_whitespace() const;
-	void set_json_enums_as_ints(bool flag);
-	bool get_json_enums_as_ints() const;
-	void set_json_preserve_names(bool flag);
-	bool get_json_preserve_names() const;
-	void set_json_print_primitive(bool flag);
-	bool get_json_print_primitive() const;
-
 public:
 	using RPCMessage::serialize;
 	using RPCMessage::deserialize;
@@ -69,7 +60,6 @@ protected:
 	char *meta_buf;
 	RPCBuffer *message;
 	ProtobufIDLMessage *meta;
-	uint32_t flag;
 
 protected:
 	int compress_type_trpc_srpc(int trpc_content_encoding) const;

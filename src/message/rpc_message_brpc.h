@@ -49,20 +49,9 @@ public:
 	int get_data_type() const override { return RPCDataProtobuf; }
 	void set_data_type(int type) override { }
 
-	//To be supported.
+	//Different data type is not supported in BrpcMeta.
 	bool get_meta_module_data(RPCModuleData& data) const override { return false; }
 	bool set_meta_module_data(const RPCModuleData& data) override { return false; }
-
-	void set_json_add_whitespace(bool flag) { }
-	bool get_json_add_whitespace() const { return false; }
-	void set_json_enums_as_ints(bool flag) { }
-	bool get_json_enums_as_ints() const { return false; }
-	void set_json_preserve_names(bool flag) { }
-	bool get_json_preserve_names() const { return false; }
-	void set_json_print_primitive(bool flag) { }
-	bool get_json_print_primitive() const { return false; }
-
-public:
 
 public:
 	using RPCMessage::serialize;
