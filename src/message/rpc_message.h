@@ -74,6 +74,15 @@ public:
 	virtual bool get_meta_module_data(RPCModuleData& data) const = 0;
 	virtual bool set_meta_module_data(const RPCModuleData& data) = 0;
 
+	void set_json_add_whitespace(bool on);
+	bool get_json_add_whitespace() const;
+	void set_json_enums_as_ints(bool on);
+	bool get_json_enums_as_ints() const;
+	void set_json_preserve_names(bool on);
+	bool get_json_preserve_names() const;
+	void set_json_print_primitive(bool on);
+	bool get_json_print_primitive() const;
+
 public:
 	//pb
 	virtual int serialize(const ProtobufIDLMessage *idl_msg)
@@ -97,7 +106,68 @@ public:
 	{
 		return RPCStatusIDLDeserializeNotSupported;
 	}
+
+public:
+	RPCMessage() { this->flags = 0; }
+
+protected:
+	uint32_t flags;
 };
+
+
+// implementation
+
+inline void RPCMessage::set_json_add_whitespace(bool on)
+{
+	if (on)
+		this->flags |= SRPC_JSON_OPTION_ADD_WHITESPACE;
+	else
+		this->flags &= ~SRPC_JSON_OPTION_ADD_WHITESPACE;
+}
+
+inline bool RPCMessage::get_json_add_whitespace() const
+{
+	return this->flags & SRPC_JSON_OPTION_ADD_WHITESPACE;
+}
+
+inline void RPCMessage::set_json_enums_as_ints(bool on)
+{
+	if (on)
+		this->flags |= SRPC_JSON_OPTION_ENUM_AS_INITS;
+	else
+		this->flags &= ~SRPC_JSON_OPTION_ENUM_AS_INITS;
+}
+
+inline bool RPCMessage::get_json_enums_as_ints() const
+{
+	return this->flags & SRPC_JSON_OPTION_ENUM_AS_INITS;
+}
+
+inline void RPCMessage::set_json_preserve_names(bool on)
+{
+	if (on)
+		this->flags |= SRPC_JSON_OPTION_PRESERVE_NAMES;
+	else
+		this->flags &= ~SRPC_JSON_OPTION_PRESERVE_NAMES;
+}
+
+inline bool RPCMessage::get_json_preserve_names() const
+{
+	return this->flags & SRPC_JSON_OPTION_PRESERVE_NAMES;
+}
+
+inline void RPCMessage::set_json_print_primitive(bool on)
+{
+	if (on)
+		this->flags |= SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+	else
+		this->flags &= ~SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+}
+
+inline bool RPCMessage::get_json_print_primitive() const
+{
+	return this->flags & SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+}
 
 } // namespace srpc
 

@@ -53,11 +53,11 @@ static const struct SRPCHttpHeadersString SRPCHttpHeaders;
 
 static const std::map<const std::string, int, CaseCmp> SRPCHttpHeadersCode =
 {
-	{SRPCHttpHeaders.RPCCompressType,		1},
-	{SRPCHttpHeaders.OriginSize,			2},
+	{SRPCHttpHeaders.RPCCompressType,	1},
+	{SRPCHttpHeaders.OriginSize,		2},
 	{SRPCHttpHeaders.CompressdSize,		3},
-	{SRPCHttpHeaders.DataType,				4},
-	{SRPCHttpHeaders.SRPCStatus,			5},
+	{SRPCHttpHeaders.DataType,			4},
+	{SRPCHttpHeaders.SRPCStatus,		5},
 	{SRPCHttpHeaders.SRPCError,			6}
 };
 
@@ -444,7 +444,14 @@ int SRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 							? ResolverInstance::get_resolver()
 							: google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix, pool));
 
-		ret = BinaryToJsonStream(resolver, GetTypeUrl(pb_msg), &input_stream, &output_stream).ok() ? 0 : -1;
+		google::protobuf::util::JsonOptions options;
+		options.add_whitespace = this->get_json_add_whitespace();
+		options.always_print_enums_as_ints = this->get_json_enums_as_ints();
+		options.preserve_proto_field_names = this->get_json_preserve_names();
+		options.always_print_primitive_fields = this->get_json_print_primitive();
+
+		ret = BinaryToJsonStream(resolver, GetTypeUrl(pb_msg), &input_stream,
+								 &output_stream, options).ok() ? 0 : -1;
 		if (pool != google::protobuf::DescriptorPool::generated_pool())
 			delete resolver;
 

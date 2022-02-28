@@ -123,6 +123,12 @@ public:
 	// Baggage Items, which are just key:value pairs that cross process boundaries
 	void baggage(const std::string& key, const std::string& value);
 
+	// JsonPrintOptions
+	void set_json_add_whitespace(bool on);
+	void set_json_always_print_enums_as_ints(bool on);
+	void set_json_preserve_proto_field_names(bool on);
+	void set_json_always_print_primitive_fields(bool on);
+
 protected:
 	using user_done_t = std::function<int (int, RPCWorker&)>;
 
@@ -674,6 +680,30 @@ void RPCServerTask<RPCREQ, RPCRESP>::baggage(const std::string& key,
 											 const std::string& value)
 {
 	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
+}
+
+template<class RPCREQ, class RPCRESP>
+inline void RPCClientTask<RPCREQ, RPCRESP>::set_json_add_whitespace(bool on)
+{
+	this->req.set_json_add_whitespace(on);
+}
+
+template<class RPCREQ, class RPCRESP>
+inline void RPCClientTask<RPCREQ, RPCRESP>::set_json_always_print_enums_as_ints(bool on)
+{
+	this->req.set_json_enums_as_ints(on);
+}
+
+template<class RPCREQ, class RPCRESP>
+inline void RPCClientTask<RPCREQ, RPCRESP>::set_json_preserve_proto_field_names(bool on)
+{
+	this->req.set_json_preserve_names(on);
+}
+
+template<class RPCREQ, class RPCRESP>
+inline void RPCClientTask<RPCREQ, RPCRESP>::set_json_always_print_primitive_fields(bool on)
+{
+	this->req.set_json_print_primitive(on);
 }
 
 } // namespace srpc

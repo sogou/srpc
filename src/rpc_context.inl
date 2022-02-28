@@ -168,6 +168,30 @@ public:
 
 	void baggage(const std::string& key, const std::string& value) override { }
 
+	void set_json_add_whitespace(bool on) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_json_add_whitespace(on);
+	}
+
+	void set_json_always_print_enums_as_ints(bool on) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_json_enums_as_ints(on);
+	}
+
+	void set_json_preserve_proto_field_names(bool on) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_json_preserve_names(on);
+	}
+
+	void set_json_always_print_primitive_fields(bool on) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_json_print_primitive(on);
+	}
+
 	//void noreply() override;
 	//WFConnection *get_connection() override;
 
