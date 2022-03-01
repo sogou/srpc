@@ -77,12 +77,12 @@ static const std::vector<std::string> RPCRPCCompressTypeString =
 	"x-lz4"
 };
 
-static constexpr const char* kTypeUrlPrefix = "type.googleapis.com";
+static constexpr const char *kTypePrefix = "type.googleapis.com";
 
 class ResolverInstance
 {
 public:
-	static google::protobuf::util::TypeResolver* get_resolver()
+	static google::protobuf::util::TypeResolver *get_resolver()
 	{
 		static ResolverInstance kInstance;
 
@@ -92,18 +92,18 @@ public:
 private:
 	ResolverInstance()
 	{
-		resolver_ = google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix,
-									google::protobuf::DescriptorPool::generated_pool());
+		resolver_ = google::protobuf::util::NewTypeResolverForDescriptorPool(
+			kTypePrefix, google::protobuf::DescriptorPool::generated_pool());
 	}
 
 	~ResolverInstance() { delete resolver_; }
 
-	google::protobuf::util::TypeResolver* resolver_;
+	google::protobuf::util::TypeResolver *resolver_;
 };
 
 static inline std::string GetTypeUrl(const ProtobufIDLMessage *pb_msg)
 {
-	return std::string(kTypeUrlPrefix) + "/" + pb_msg->GetDescriptor()->full_name();
+	return std::string(kTypePrefix) + "/" + pb_msg->GetDescriptor()->full_name();
 }
 
 SRPCMessage::SRPCMessage()
@@ -420,6 +420,7 @@ void SRPCResponse::set_error(int error)
 
 int SRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 {
+	using namespace google::protobuf;
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
 	bool is_resp = !meta->has_request();
 	int data_type = meta->data_type();
@@ -438,13 +439,14 @@ int SRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 	else if (data_type == RPCDataJson)
 	{
 		std::string binary_input = pb_msg->SerializeAsString();
-		google::protobuf::io::ArrayInputStream input_stream(binary_input.data(), (int)binary_input.size());
-		const auto* pool = pb_msg->GetDescriptor()->file()->pool();
-		auto* resolver = (pool == google::protobuf::DescriptorPool::generated_pool()
-							? ResolverInstance::get_resolver()
-							: google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix, pool));
+		io::ArrayInputStream input_stream(binary_input.data(),
+											  (int)binary_input.size());
+		const auto *pool = pb_msg->GetDescriptor()->file()->pool();
+		auto *resolver = (pool == DescriptorPool::generated_pool() ? 
+					ResolverInstance::get_resolver() :
+					util::NewTypeResolverForDescriptorPool(kTypePrefix, pool));
 
-		google::protobuf::util::JsonOptions options;
+		util::JsonOptions options;
 		options.add_whitespace = this->get_json_add_whitespace();
 		options.always_print_enums_as_ints = this->get_json_enums_as_ints();
 		options.preserve_proto_field_names = this->get_json_preserve_names();
@@ -452,7 +454,7 @@ int SRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 
 		ret = BinaryToJsonStream(resolver, GetTypeUrl(pb_msg), &input_stream,
 								 &output_stream, options).ok() ? 0 : -1;
-		if (pool != google::protobuf::DescriptorPool::generated_pool())
+		if (pool != DescriptorPool::generated_pool())
 			delete resolver;
 
 		this->message_len = this->buf->size();
@@ -461,13 +463,15 @@ int SRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 		ret = -1;
 
 	if (ret < 0)
-		return is_resp ? RPCStatusRespSerializeError : RPCStatusReqSerializeError;
+		return is_resp ? RPCStatusRespSerializeError :
+						 RPCStatusReqSerializeError;
 
 	return RPCStatusOK;
 }
 
 int SRPCMessage::deserialize(ProtobufIDLMessage *pb_msg)
 {
+	using namespace google::protobuf;
 	const RPCMeta *meta = static_cast<const RPCMeta *>(this->meta);
 	bool is_resp = !meta->has_request();
 	int data_type = meta->data_type();
@@ -479,25 +483,29 @@ int SRPCMessage::deserialize(ProtobufIDLMessage *pb_msg)
 	else if (data_type == RPCDataJson)
 	{
 		std::string binary_output;
-		google::protobuf::io::StringOutputStream output_stream(&binary_output);
-		const auto* pool = pb_msg->GetDescriptor()->file()->pool();
-		auto* resolver = (pool == google::protobuf::DescriptorPool::generated_pool()
-							? ResolverInstance::get_resolver()
-							: google::protobuf::util::NewTypeResolverForDescriptorPool(kTypeUrlPrefix, pool));
+		io::StringOutputStream output_stream(&binary_output);
+		const auto *pool = pb_msg->GetDescriptor()->file()->pool();
+		auto *resolver = (pool == DescriptorPool::generated_pool() ?
+					ResolverInstance::get_resolver() :
+					util::NewTypeResolverForDescriptorPool(kTypePrefix, pool));
 
-		if (JsonToBinaryStream(resolver, GetTypeUrl(pb_msg), &input_stream, &output_stream).ok())
+		if (JsonToBinaryStream(resolver, GetTypeUrl(pb_msg),
+							   &input_stream, &output_stream).ok())
+		{
 			ret = pb_msg->ParseFromString(binary_output) ? 0 : -1;
+		}
 		else
 			ret = -1;
 
-		if (pool != google::protobuf::DescriptorPool::generated_pool())
+		if (pool != DescriptorPool::generated_pool())
 			delete resolver;
 	}
 	else
 		ret = -1;
 
 	if (ret < 0)
-		return is_resp ? RPCStatusRespDeserializeError : RPCStatusReqDeserializeError;
+		return is_resp ? RPCStatusRespDeserializeError :
+						 RPCStatusReqDeserializeError;
 
 	return RPCStatusOK;
 }
@@ -522,7 +530,8 @@ int SRPCMessage::serialize(const ThriftIDLMessage *thrift_msg)
 		ret = -1;
 
 	if (ret < 0)
-		return is_resp ? RPCStatusRespSerializeError : RPCStatusReqSerializeError;
+		return is_resp ? RPCStatusRespSerializeError :
+						 RPCStatusReqSerializeError;
 
 	this->message_len = this->buf->size();
 	return RPCStatusOK;
@@ -632,9 +641,9 @@ int SRPCMessage::compress()
 		delete this->buf;
 		this->buf = dst_buf;
 		this->message_len = buflen;
-	} else {
-		delete dst_buf;
 	}
+	else
+		delete dst_buf;
 
 	return status_code;
 }
@@ -684,9 +693,9 @@ int SRPCMessage::decompress()
 		delete this->buf;
 		this->buf = dst_buf;
 		this->message_len = ret;
-	} else {
-		delete dst_buf;
 	}
+	else
+		delete dst_buf;
 
 	return status_code;
 }
@@ -864,10 +873,16 @@ bool SRPCHttpResponse::serialize_meta()
 	int data_type = meta->data_type();
 	int compress_type = meta->compress_type();
 	int rpc_status_code = this->get_status_code();
+	int http_status_code = this->get_http_code();
 
 	set_http_version("HTTP/1.1");
 	if (rpc_status_code == RPCStatusOK)
-		protocol::HttpUtil::set_response_status(this, HttpStatusOK);
+	{
+		if (http_status_code)
+			protocol::HttpUtil::set_response_status(this, http_status_code);
+		else
+			protocol::HttpUtil::set_response_status(this, HttpStatusOK);
+	}
 	else if (rpc_status_code == RPCStatusServiceNotFound
 			|| rpc_status_code == RPCStatusMethodNotFound
 			|| rpc_status_code == RPCStatusMetaError
@@ -883,9 +898,15 @@ bool SRPCHttpResponse::serialize_meta()
 		protocol::HttpUtil::set_response_status(this, HttpStatusNotImplemented);
 	}
 	else if (rpc_status_code == RPCStatusUpstreamFailed)
-		protocol::HttpUtil::set_response_status(this, HttpStatusServiceUnavailable);
+	{
+		protocol::HttpUtil::set_response_status(this,
+												HttpStatusServiceUnavailable);
+	}
 	else
-		protocol::HttpUtil::set_response_status(this, HttpStatusInternalServerError);
+	{
+		protocol::HttpUtil::set_response_status(this,
+												HttpStatusInternalServerError);
+	}
 
 	//set header
 	set_header_pair(SRPCHttpHeaders.SRPCStatus,
@@ -953,7 +974,6 @@ bool SRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 	{
 		if (!strcasecmp(name.c_str(), "Trace-Id"))
 		{
-			//span->set_trace_id(strtoll(value.c_str(), NULL, 10));
 			data["trace_id"] = value;
 			found = true;
 			continue;
@@ -961,7 +981,6 @@ bool SRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 
 		if (!strcasecmp(name.c_str(), "Span-Id"))
 		{
-			//span->set_parent_span_id(strtoll(value.c_str(), NULL, 10));
 			data["parent_span_id"] = value;
 			found = true;
 			continue;
@@ -995,7 +1014,6 @@ bool SRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 	{
 		if (!strcasecmp(name.c_str(), "Trace-Id"))
 		{
-			//span->set_trace_id(strtoll(value.c_str(), NULL, 10));
 			data["trace_id"] = value;
 			found = true;
 			continue;
@@ -1003,7 +1021,6 @@ bool SRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 
 		if (!strcasecmp(name.c_str(), "Span-Id"))
 		{
-			//span->set_parent_span_id(strtoll(value.c_str(), NULL, 10));
 			data["parent_span_id"] = value;
 			found = true;
 			continue;
