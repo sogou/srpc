@@ -61,6 +61,7 @@ protected:
 	RPCBuffer *message;
 	ProtobufIDLMessage *meta;
 
+protected:
 	int compress_type_trpc_srpc(int trpc_content_encoding) const;
 	int compress_type_srpc_trpc(int srpc_compress_type) const;
 	int data_type_trpc_srpc(int trpc_content_type) const;

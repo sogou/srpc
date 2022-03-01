@@ -28,14 +28,16 @@ def srpc_cc_library(
 
     if type == "thrift":
         output_headers = proto_output_headers + thrift_output_headers
+        gen_proto = "thrift"
     if type == "proto":
         output_headers = proto_output_headers
+        gen_proto = "protobuf"
 
     genrule_cmd = " ".join([
         "SRCS=($(SRCS));",
         "for f in $${SRCS[@]:0:%s}; do" % len(srcs),
         "$(location %s)" % (tool_path),
-        " %s " % type,
+        " %s " % gen_proto,
         "$$f",
         output_directory + ";",
         "done",

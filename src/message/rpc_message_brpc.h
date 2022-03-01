@@ -49,6 +49,7 @@ public:
 	int get_data_type() const override { return RPCDataProtobuf; }
 	void set_data_type(int type) override { }
 
+	//Different data type is not supported in BrpcMeta.
 	bool get_meta_module_data(RPCModuleData& data) const override { return false; }
 	bool set_meta_module_data(const RPCModuleData& data) override { return false; }
 
