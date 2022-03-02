@@ -164,6 +164,12 @@ public:
 		}
 	}
 
+	void set_http_code(int code) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_http_code(code);
+	}
+
 	void log(const RPCLogVector& fields) override { }
 
 	void baggage(const std::string& key, const std::string& value) override { }
