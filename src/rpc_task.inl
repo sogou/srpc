@@ -121,7 +121,8 @@ public:
 	void log(const RPCLogVector& fields);
 
 	// Baggage Items, which are just key:value pairs that cross process boundaries
-	void baggage(const std::string& key, const std::string& value);
+	void set_baggage(const std::string& key, const std::string& value);
+	std::string get_baggage(const std::string& key) const;
 
 	// JsonPrintOptions
 	void set_json_add_whitespace(bool on);
@@ -205,7 +206,8 @@ public:
 	RPCModuleData *mutable_module_data() { return &module_data_; }
 	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
 	void log(const RPCLogVector& fields);
-	void baggage(const std::string& key, const std::string& value);
+	void set_baggage(const std::string& key, const std::string& value);
+	std::string get_baggage(const std::string& key) const;
 
 public:
 	RPCWorker worker;
@@ -639,11 +641,11 @@ static void log_format(std::string& key, std::string& value,
 	char buffer[100];
 	snprintf(buffer, 100, "%s%c%lld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS());
 	key = std::move(buffer);
-	value = "{\"";
+	value = "{";
 
 	for (auto& field : fields)
 	{
-		value = value + std::move(field.first) + "\":\""
+		value = value + "\"" + std::move(field.first) + "\":\""
 			  + std::move(field.second) + "\",";
 	}
 
@@ -660,10 +662,20 @@ void RPCClientTask<RPCREQ, RPCRESP>::log(const RPCLogVector& fields)
 }
 
 template<class RPCREQ, class RPCRESP>
-void RPCClientTask<RPCREQ, RPCRESP>::baggage(const std::string& key,
-											 const std::string& value)
+void RPCClientTask<RPCREQ, RPCRESP>::set_baggage(const std::string& key,
+												 const std::string& value)
 {
-	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
+	module_data_.insert(std::make_pair(SRPC_BAGGAGE_PREFIX + key, std::move(value)));
+}
+
+template<class RPCREQ, class RPCRESP>
+std::string RPCClientTask<RPCREQ, RPCRESP>::get_baggage(const std::string& key) const
+{
+	const auto it = module_data_.find(key);
+	if (it != module_data_.cend())
+		return it->second;
+
+	return "";
 }
 
 template<class RPCREQ, class RPCRESP>
@@ -676,10 +688,20 @@ void RPCServerTask<RPCREQ, RPCRESP>::log(const RPCLogVector& fields)
 }
 
 template<class RPCREQ, class RPCRESP>
-void RPCServerTask<RPCREQ, RPCRESP>::baggage(const std::string& key,
-											 const std::string& value)
+void RPCServerTask<RPCREQ, RPCRESP>::set_baggage(const std::string& key,
+												 const std::string& value)
 {
-	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
+	module_data_.insert(std::make_pair(SRPC_BAGGAGE_PREFIX + key, std::move(value)));
+}
+
+template<class RPCREQ, class RPCRESP>
+std::string RPCServerTask<RPCREQ, RPCRESP>::get_baggage(const std::string& key) const
+{
+	const auto it = module_data_.find(key);
+	if (it != module_data_.cend())
+		return it->second;
+
+	return "";
 }
 
 template<class RPCREQ, class RPCRESP>

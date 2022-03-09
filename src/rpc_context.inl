@@ -170,9 +170,37 @@ public:
 			task_->get_resp()->set_http_code(code);
 	}
 
-	void log(const RPCLogVector& fields) override { }
+	void log(const RPCLogVector& fields) override
+	{
+		if (this->is_server_task())
+		{
+			auto *task = (RPCServerTask<RPCREQ, RPCRESP> *)this->task_;
+			task->log(fields);
+		}
+	}
 
-	void baggage(const std::string& key, const std::string& value) override { }
+	void set_baggage(const std::string& key, const std::string& value) override
+	{
+		if (this->is_server_task())
+		{
+			auto *task = (RPCServerTask<RPCREQ, RPCRESP> *)this->task_;
+			task->set_baggage(key, value);
+		}
+	}
+
+	std::string get_baggage(const std::string& key) const
+	{
+		if (this->is_server_task())
+		{
+			auto *task = (RPCServerTask<RPCREQ, RPCRESP> *)this->task_;
+			return task->get_baggage(key);
+		}
+		else
+		{
+			auto *task = (RPCClientTask<RPCREQ, RPCRESP> *)this->task_;
+			return task->get_baggage(key);
+		}
+	}
 
 	void set_json_add_whitespace(bool on) override
 	{

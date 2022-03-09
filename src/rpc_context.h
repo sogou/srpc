@@ -73,7 +73,8 @@ public:
 	virtual void set_keep_alive(int timeout) = 0;
 	virtual void set_http_code(int code) = 0;
 	virtual void log(const RPCLogVector& fields) = 0;
-	virtual void baggage(const std::string& key, const std::string& value) = 0;
+	virtual void set_baggage(const std::string& key, const std::string& value) = 0;
+	virtual std::string get_baggage(const std::string& key) const = 0;
 	//virtual void noreply();
 	//virtual WFConnection *get_connection();
 
@@ -101,6 +102,12 @@ public:
 public:
 	virtual ~RPCContext() { }
 };
+
+template<class RPCREQ, class RPCRESP>
+class RPCClientTask;
+
+template<class RPCREQ, class RPCRESP>
+class RPCServerTask;
 
 } // namespace srpc
 

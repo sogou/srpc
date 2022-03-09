@@ -42,6 +42,8 @@ static constexpr size_t			RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
 static constexpr int			SRPC_MODULE_MAX			= 5;
 static constexpr size_t			SRPC_SPANID_SIZE		= 8;
 static constexpr size_t			SRPC_TRACEID_SIZE		= 16;
+static constexpr const char	   *SRPC_BAGGAGE_PREFIX		= "baggage-";
+static constexpr size_t			SRPC_BAGGAGE_PREFIX_LEN	= 8;
 
 #ifndef htonll
 
@@ -81,18 +83,6 @@ static inline uint64_t ntohll(uint64_t x)
 #define SRPC_JSON_OPTION_PRINT_PRIMITIVE	(1<<6)
 
 using ProtobufIDLMessage = google::protobuf::Message;
-
-static inline long long GET_CURRENT_MS()
-{
-	return std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch()).count();
-};
-
-static inline long long GET_CURRENT_MS_STEADY()
-{
-	return std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::steady_clock::now().time_since_epoch()).count();
-}
 
 enum RPCDataType
 {
@@ -152,6 +142,45 @@ enum RPCModuleType
 	RPCModuleMonitor	=	1,
 	RPCModuleEmpty		=	2
 };
+
+static inline long long GET_CURRENT_MS()
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::system_clock::now().time_since_epoch()).count();
+};
+
+static inline long long GET_CURRENT_MS_STEADY()
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+static inline void TRACE_ID_BUF_TO_HEX(const char *in, char **hex_out)
+{
+	uint64_t trace_id_high;
+	uint64_t trace_id_low;
+
+	memcpy(&trace_id_high, in, 8);
+	memcpy(&trace_id_low, in + 8, 8);
+	trace_id_high = ntohll(trace_id_high);
+	trace_id_low = ntohll(trace_id_low);
+
+	snprintf(*hex_out, SRPC_TRACEID_SIZE + 1,
+			 "%016llx", (unsigned long long)trace_id_high);
+	snprintf(*hex_out + SRPC_TRACEID_SIZE, SRPC_TRACEID_SIZE + 1,
+			 "%016llx", (unsigned long long)trace_id_low);
+}
+
+static inline void SPAN_ID_BUF_TO_HEX(const char *in, char **hex_out)
+{
+	uint64_t span_id;
+
+	memcpy(&span_id, in, 8);
+	span_id = ntohll(span_id);
+
+	snprintf(*hex_out, SRPC_SPANID_SIZE * 2 + 1,
+			 "%016llx", (unsigned long long)span_id);
+}
 
 } // end namespace srpc
 

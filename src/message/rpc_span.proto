@@ -1,8 +1,15 @@
 syntax="proto2";
 
+message KeyValue
+{
+	required string key = 1;
+	required bytes value = 2;
+};
+
 message Span {
 	required bytes trace_id = 1;
 	required bytes span_id = 2;
 	optional bytes parent_span_id = 3;
+	repeated KeyValue baggage = 4;
 };
 

@@ -262,19 +262,26 @@ bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
 
-	auto iter = data.find("trace_id");
-	if (iter != data.end())
+	for (const auto& kv : data)
 	{
-		meta->mutable_span()->set_trace_id(iter->second.c_str(),
-										   SRPC_TRACEID_SIZE);
+		if (kv.first == "trace_id")
+		{
+			meta->mutable_span()->set_trace_id(kv.second.c_str(),
+											   SRPC_TRACEID_SIZE);
+		}
+		else if (kv.first == "span_id")
+		{
+			meta->mutable_span()->set_span_id(kv.second.c_str(),
+											  SRPC_SPANID_SIZE);
+		}
+		else if (kv.first.rfind(SRPC_BAGGAGE_PREFIX, 0) != std::string::npos)
+		{
+			KeyValue *baggage = meta->mutable_span()->add_baggage();
+			baggage->set_key(kv.first.c_str() + SRPC_BAGGAGE_PREFIX_LEN);
+			baggage->set_value(kv.second.c_str());
+		}
 	}
 
-	iter = data.find("span_id");
-	if (iter != data.end())
-	{
-		meta->mutable_span()->set_span_id(iter->second.c_str(),
-										  SRPC_SPANID_SIZE);
-	}
 	//	meta->mutable_span()->set_parent_span_id(span->parent_span_id);
 	//	name...
 	return true;
@@ -291,6 +298,12 @@ bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 
 	if (meta->mutable_span()->has_parent_span_id())
 		data["parent_span_id"] = meta->mutable_span()->parent_span_id();
+
+	for (int i = 0; i < meta->mutable_span()->baggage_size(); i++)
+	{
+		KeyValue *baggage = meta->mutable_span()->mutable_baggage(i);
+		data[baggage->key()] = baggage->value();
+	}
 
 	return true;
 }
@@ -949,84 +962,82 @@ bool SRPCHttpResponse::deserialize_meta()
 	return __deserialize_meta_http(NULL, this, this, this->meta);
 }
 
+static void __set_meta_module_data(const RPCModuleData& data,
+								   protocol::HttpMessage *http_msg)
+{
+	for (const auto& kv : data)
+	{
+		if (kv.first == "trace_id")
+		{
+			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
+			char *ptr = trace_id_buf;
+
+			TRACE_ID_BUF_TO_HEX(kv.second.c_str(), &ptr);
+			http_msg->set_header_pair("Trace-Id", trace_id_buf);
+		}
+		else if (kv.first == "span_id")
+		{
+			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
+			char *ptr = span_id_buf;
+
+			SPAN_ID_BUF_TO_HEX(kv.second.c_str(), &ptr);
+			http_msg->set_header_pair("Span-Id", span_id_buf);
+		}
+		else if (kv.first.rfind(SRPC_BAGGAGE_PREFIX, 0) != std::string::npos)
+		{
+			http_msg->set_header_pair(kv.first.c_str() + SRPC_BAGGAGE_PREFIX_LEN,
+									  kv.second.c_str());
+		}
+	}
+}
+
+static void __get_meta_module_data(RPCModuleData& data,
+								   const protocol::HttpMessage *http_msg)
+{
+	std::string name;
+	std::string value;
+	protocol::HttpHeaderCursor cursor(http_msg);
+
+	while (cursor.next(name, value))
+	{
+		if (!strcasecmp(name.c_str(), "Trace-Id"))
+		{
+			data["trace_id"] = value; // TODO
+			continue;
+		}
+
+		if (!strcasecmp(name.c_str(), "Span-Id"))
+		{
+			data["parent_span_id"] = value; // TODO
+			continue;
+		}
+
+		data[name] = value;
+	}
+}
+
 bool SRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
 {
-	auto iter = data.find("trace_id");
-	if (iter != data.end())
-		set_header_pair("Trace-Id", iter->second);
-
-	iter = data.find("span_id");
-	if (iter != data.end())
-		set_header_pair("Span-Id", iter->second);
-
+	__set_meta_module_data(data, this);
 	return true;
 }
 
 bool SRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 {
-	std::string name;
-	std::string value;
-
-	protocol::HttpHeaderCursor cursor(this);
-	bool found = false;
-
-	while (cursor.next(name, value))
-	{
-		if (!strcasecmp(name.c_str(), "Trace-Id"))
-		{
-			data["trace_id"] = value;
-			found = true;
-			continue;
-		}
-
-		if (!strcasecmp(name.c_str(), "Span-Id"))
-		{
-			data["parent_span_id"] = value;
-			found = true;
-			continue;
-		}
-	}
-	return found;
+	__get_meta_module_data(data, this);
+	return true;
 }
 
 bool SRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 {
-	auto iter = data.find("trace_id");
-	if (iter != data.end())
-		set_header_pair("Trace-Id", iter->second);
-
-	iter = data.find("span_id");
-	if (iter != data.end())
-		set_header_pair("Span-Id", iter->second);
-
+	__set_meta_module_data(data, this);
 	return true;
 }
 
 bool SRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
-	std::string name;
-	std::string value;
-
-	protocol::HttpHeaderCursor cursor(this);
-	bool found = false;
-
-	while (cursor.next(name, value))
-	{
-		if (!strcasecmp(name.c_str(), "Trace-Id"))
-		{
-			data["trace_id"] = value;
-			found = true;
-			continue;
-		}
-
-		if (!strcasecmp(name.c_str(), "Span-Id"))
-		{
-			data["parent_span_id"] = value;
-			found = true;
-			continue;
-		}
-	}
-	return found;
+	__get_meta_module_data(data, this);
+	return true;
 }
 
 } // namespace srpc
