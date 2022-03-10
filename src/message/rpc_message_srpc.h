@@ -262,6 +262,9 @@ public:
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
+	bool set_http_header(const char *name, const char *value) override;
+	std::string get_http_header(std::string& key) const override;
+
 public:
 	SRPCHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -305,6 +308,9 @@ public:
 
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
+
+	bool set_http_header(const char *name, const char *value) override;
+	std::string get_http_header(std::string& key) const override;
 
 public:
 	SRPCHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }

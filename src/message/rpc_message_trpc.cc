@@ -1222,5 +1222,42 @@ bool TRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 	return true;
 }
 
+static std::string __get_http_header(std::string& key,
+									 const protocol::HttpMessage *http_msg)
+{
+	std::string name;
+	std::string value;
+
+	protocol::HttpHeaderCursor cursor(http_msg);
+
+	while (cursor.next(name, value))
+	{
+		if (key == name)
+			break;
+	}
+
+	return std::move(value);
+}
+
+bool TRPCHttpRequest::set_http_header(const char *name, const char *value)
+{
+	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+std::string TRPCHttpRequest::get_http_header(std::string& key) const
+{
+	return __get_http_header(key, this);
+}
+
+bool TRPCHttpResponse::set_http_header(const char *name, const char *value)
+{
+	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+std::string TRPCHttpResponse::get_http_header(std::string& key) const
+{
+	return __get_http_header(key, this);
+}
+
 } // namespace srpc
 

@@ -314,6 +314,9 @@ public:
 		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
+	bool set_http_header(const char *name, const char *value) override;
+	std::string get_http_header(std::string& key) const override;
+
 public:
 	ThriftHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -364,6 +367,9 @@ public:
 	{
 		return this->ThriftMessage::get_meta_module_data(data);
 	}
+
+	bool set_http_header(const char *name, const char *value) override;
+	std::string get_http_header(std::string& key) const override;
 
 public:
 	ThriftHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }

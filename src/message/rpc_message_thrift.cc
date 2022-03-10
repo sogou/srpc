@@ -295,5 +295,42 @@ bool ThriftHttpResponse::deserialize_meta()
 	return this->ThriftResponse::deserialize_meta();
 }
 
+static std::string __get_http_header(std::string& key,
+									 const protocol::HttpMessage *http_msg)
+{
+	std::string name;
+	std::string value;
+
+	protocol::HttpHeaderCursor cursor(http_msg);
+
+	while (cursor.next(name, value))
+	{
+		if (key == name)
+			break;
+	}
+
+	return std::move(value);
 }
+
+bool ThriftHttpRequest::set_http_header(const char *name, const char *value)
+{
+	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+std::string ThriftHttpRequest::get_http_header(std::string& key) const
+{
+	return __get_http_header(key, this);
+}
+
+bool ThriftHttpResponse::set_http_header(const char *name, const char *value)
+{
+	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+std::string ThriftHttpResponse::get_http_header(std::string& key) const
+{
+	return __get_http_header(key, this);
+}
+
+} // namespace srpc
 
