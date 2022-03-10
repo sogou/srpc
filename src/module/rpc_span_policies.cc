@@ -72,24 +72,11 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
 	char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
 
-	uint64_t trace_id_high;
-	uint64_t trace_id_low;
-	uint64_t span_id;
+	char *ptr = trace_id_buf;
+	TRACE_ID_BUF_TO_HEX(data[SRPC_TRACE_ID].c_str(), &ptr);
 
-	memcpy(&trace_id_high, data[SRPC_TRACE_ID].c_str(), 8);
-	memcpy(&trace_id_low, data[SRPC_TRACE_ID].c_str() + 8, 8);
-	trace_id_high = ntohll(trace_id_high);
-	trace_id_low = ntohll(trace_id_low);
-
-	snprintf(trace_id_buf, SRPC_TRACEID_SIZE + 1,
-			 "%016llx", (unsigned long long)trace_id_high);
-	snprintf(trace_id_buf + SRPC_TRACEID_SIZE, SRPC_TRACEID_SIZE + 1,
-			 "%016llx", (unsigned long long)trace_id_low);
-
-	memcpy(&span_id, data[SRPC_SPAN_ID].c_str(), 8);
-	span_id = ntohll(span_id);
-	snprintf(span_id_buf, SRPC_SPANID_SIZE * 2 + 1,
-			 "%016llx", (unsigned long long)span_id);
+	ptr = span_id_buf;
+	SPAN_ID_BUF_TO_HEX(data[SRPC_SPAN_ID].c_str(), &ptr);
 
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
 									" method: %s start_time: %s",
@@ -103,13 +90,10 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	if (iter != data.end())
 	{
 		char parent_span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
-		uint64_t parent_span_id;
 
-		memcpy(&parent_span_id, data[SRPC_PARENT_SPAN_ID].c_str(), 8);
-		parent_span_id = ntohll(parent_span_id);
+		ptr = parent_span_id_buf;
+		SPAN_ID_BUF_TO_HEX(iter->second.c_str(), &ptr);
 
-		snprintf(parent_span_id_buf, SRPC_SPANID_SIZE * 2 + 1,
-				 "%016llx", (unsigned long long)parent_span_id);
 		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
 						parent_span_id_buf);
 	}
