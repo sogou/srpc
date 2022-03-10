@@ -298,6 +298,11 @@ public:
 		return this->SRPCResponse::set_error(error);
 	}
 
+	bool set_http_code(const char *code) override
+	{
+		return this->protocol::HttpResponse::set_status_code(code);
+	}
+
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
 

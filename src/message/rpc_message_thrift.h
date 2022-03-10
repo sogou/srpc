@@ -350,6 +350,11 @@ public:
 		return this->ThriftResponse::set_error(error);
 	}
 
+	bool set_http_code(const char *code) override
+	{
+		return this->protocol::HttpResponse::set_status_code(code);
+	}
+
 	bool set_meta_module_data(const RPCModuleData& data) override
 	{
 		return this->ThriftMessage::set_meta_module_data(data);

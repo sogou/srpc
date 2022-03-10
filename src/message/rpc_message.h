@@ -58,14 +58,7 @@ public:
 	virtual void set_status_code(int code) = 0;
 	virtual void set_error(int error) = 0;
 
-	void set_http_code(int code) { this->http_code = code; }
-	int get_http_code() const { return this->http_code; }
-
-public:
-	RPCResponse() { this->http_code = 0; }
-
-private:
-	int http_code;
+	virtual bool set_http_code(const char *code) { return false; }
 };
 
 class RPCMessage

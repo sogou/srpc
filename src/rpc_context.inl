@@ -164,7 +164,7 @@ public:
 		}
 	}
 
-	void set_http_code(int code) override
+	bool set_http_code(const char *code) override
 	{
 		if (this->is_server_task())
 			task_->get_resp()->set_http_code(code);
