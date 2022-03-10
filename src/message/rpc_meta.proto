@@ -12,6 +12,12 @@ message RPCResponseMeta {
 	optional int32 error = 2 [default = 0];
 };
 
+message KeyValue
+{
+	required string key = 1;
+	required bytes value = 2;
+};
+
 message RPCMeta {
 	optional RPCRequestMeta request = 1;
 	optional RPCResponseMeta response = 2;
@@ -21,4 +27,5 @@ message RPCMeta {
 	optional int32 compressed_size = 6;
 	optional int32 data_type = 7;
 	optional Span span = 8;
+	repeated KeyValue baggage = 9;
 };

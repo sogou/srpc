@@ -42,7 +42,7 @@ static constexpr size_t			RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
 static constexpr int			SRPC_MODULE_MAX			= 5;
 static constexpr size_t			SRPC_SPANID_SIZE		= 8;
 static constexpr size_t			SRPC_TRACEID_SIZE		= 16;
-static constexpr const char	   *SRPC_BAGGAGE_PREFIX		= "baggage-";
+static constexpr const char	   *SRPC_BAGGAGE_PREFIX		= "user-";
 static constexpr size_t			SRPC_BAGGAGE_PREFIX_LEN	= 8;
 
 #ifndef htonll
@@ -180,6 +180,28 @@ static inline void SPAN_ID_BUF_TO_HEX(const char *in, char **hex_out)
 
 	snprintf(*hex_out, SRPC_SPANID_SIZE * 2 + 1,
 			 "%016llx", (unsigned long long)span_id);
+}
+
+// here hex_in is not 'const' char *
+static inline void TRACE_ID_HEX_TO_BUF(char *hex_in, char **out)
+{
+	uint64_t trace_id_low = strtoull(hex_in + 16, NULL, 16);
+	hex_in[16] = '\0';
+	uint64_t trace_id_high = strtoull(hex_in, NULL, 16);
+
+	trace_id_high = htonll(trace_id_high);
+	trace_id_low = htonll(trace_id_low);
+
+	memcpy(*out, &trace_id_high, SRPC_TRACEID_SIZE / 2);
+	memcpy((*out) + SRPC_TRACEID_SIZE / 2, &trace_id_low, SRPC_TRACEID_SIZE / 2);
+}
+
+static inline void SPAN_ID_HEX_TO_BUF(char *hex_in, char **out)
+{
+	uint64_t span_id = strtoull(hex_in, NULL, 16);
+
+	span_id = htonll(span_id);
+	memcpy(*out, &span_id, SRPC_SPANID_SIZE);
 }
 
 } // end namespace srpc

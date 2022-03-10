@@ -1242,13 +1242,21 @@ static void __get_meta_module_data(RPCModuleData& data,
 	{
 		if (!strcasecmp(name.c_str(), "Trace-Id"))
 		{
-			data["trace_id"] = value; // TODO
+			std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
+			char *ptr = (char *)trace_id_buf.c_str();
+
+			TRACE_ID_HEX_TO_BUF((char *)value.c_str(), &ptr);
+			data["trace_id"] = std::move(trace_id_buf);
 			continue;
 		}
 
 		if (!strcasecmp(name.c_str(), "Span-Id"))
 		{
-			data["parent_span_id"] = value; // TODO
+			std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
+			char *ptr = (char *)span_id_buf.c_str();
+
+			SPAN_ID_HEX_TO_BUF((char *)value.c_str(), &ptr);
+			data["span_id"] = std::move(span_id_buf);
 			continue;
 		}
 

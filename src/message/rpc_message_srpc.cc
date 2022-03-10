@@ -276,7 +276,7 @@ bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 		}
 		else if (kv.first.rfind(SRPC_BAGGAGE_PREFIX, 0) != std::string::npos)
 		{
-			KeyValue *baggage = meta->mutable_span()->add_baggage();
+			KeyValue *baggage = meta->add_baggage();
 			baggage->set_key(kv.first.c_str() + SRPC_BAGGAGE_PREFIX_LEN);
 			baggage->set_value(kv.second.c_str());
 		}
@@ -299,9 +299,9 @@ bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 	if (meta->mutable_span()->has_parent_span_id())
 		data["parent_span_id"] = meta->mutable_span()->parent_span_id();
 
-	for (int i = 0; i < meta->mutable_span()->baggage_size(); i++)
+	for (int i = 0; i < meta->baggage_size(); i++)
 	{
-		KeyValue *baggage = meta->mutable_span()->mutable_baggage(i);
+		KeyValue *baggage = meta->mutable_baggage(i);
 		data[baggage->key()] = baggage->value();
 	}
 
@@ -1002,13 +1002,21 @@ static void __get_meta_module_data(RPCModuleData& data,
 	{
 		if (!strcasecmp(name.c_str(), "Trace-Id"))
 		{
-			data["trace_id"] = value; // TODO
+			std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
+			char *ptr = (char *)trace_id_buf.c_str();
+
+			TRACE_ID_HEX_TO_BUF((char *)value.c_str(), &ptr);
+			data["trace_id"] = std::move(trace_id_buf);
 			continue;
 		}
 
 		if (!strcasecmp(name.c_str(), "Span-Id"))
 		{
-			data["parent_span_id"] = value; // TODO
+			std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
+			char *ptr = (char *)span_id_buf.c_str();
+
+			SPAN_ID_HEX_TO_BUF((char *)value.c_str(), &ptr);
+			data["span_id"] = std::move(span_id_buf);
 			continue;
 		}
 
