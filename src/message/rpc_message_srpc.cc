@@ -952,27 +952,25 @@ static bool __set_meta_module_data(const RPCModuleData& data,
 								   protocol::HttpMessage *http_msg)
 {
 	auto it = data.begin();
-	int total = 2;
+	int flag = 0;
 
-	while (it != data.end() && total)
+	while (it != data.end() && flag != 3)
 	{
 		if (it->first == "trace_id")
 		{
 			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
-			char *ptr = trace_id_buf;
 
-			TRACE_ID_BUF_TO_HEX(it->second.c_str(), &ptr);
+			TRACE_ID_BUF_TO_HEX(it->second.c_str(), trace_id_buf);
 			http_msg->set_header_pair("Trace-Id", trace_id_buf);
-			--total;
+			flag |= 1;
 		}
 		else if (it->first == "span_id")
 		{
 			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
-			char *ptr = span_id_buf;
 
-			SPAN_ID_BUF_TO_HEX(it->second.c_str(), &ptr);
+			SPAN_ID_BUF_TO_HEX(it->second.c_str(), span_id_buf);
 			http_msg->set_header_pair("Span-Id", span_id_buf);
-			--total;
+			flag |= (1 << 1);
 		}
 		++it;
 	}
@@ -986,27 +984,25 @@ static bool __get_meta_module_data(RPCModuleData& data,
 	protocol::HttpHeaderCursor cursor(http_msg);
 	std::string name;
 	std::string value;
-	int total = 2;
+	int flag = 0;
 
-	while (cursor.next(name, value) && total)
+	while (cursor.next(name, value) && flag != 3)
 	{
 		if (strcasecmp(name.c_str(), "Trace-Id") == 0)
 		{
 			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
-			char *ptr = trace_id_buf;
 
-			TRACE_ID_HEX_TO_BUF((char *)value.c_str(), &ptr);
+			TRACE_ID_HEX_TO_BUF((char *)value.c_str(), trace_id_buf);
 			data["trace_id"] = trace_id_buf;
-			--total;
+			flag |= 1;
 		}
 		else if (strcasecmp(name.c_str(), "Span-Id") == 0)
 		{
 			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
-			char *ptr = span_id_buf;
 
-			SPAN_ID_HEX_TO_BUF((char *)value.c_str(), &ptr);
+			SPAN_ID_HEX_TO_BUF((char *)value.c_str(), span_id_buf);
 			data["span_id"] = span_id_buf;
-			--total;
+			flag |= (1 << 1);
 		}
 	}
 

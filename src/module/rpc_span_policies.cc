@@ -72,11 +72,8 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
 	char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
 
-	char *ptr = trace_id_buf;
-	TRACE_ID_BUF_TO_HEX(data[SRPC_TRACE_ID].c_str(), &ptr);
-
-	ptr = span_id_buf;
-	SPAN_ID_BUF_TO_HEX(data[SRPC_SPAN_ID].c_str(), &ptr);
+	TRACE_ID_BUF_TO_HEX(data[SRPC_TRACE_ID].c_str(), trace_id_buf);
+	SPAN_ID_BUF_TO_HEX(data[SRPC_SPAN_ID].c_str(), span_id_buf);
 
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
 									" method: %s start_time: %s",
@@ -91,9 +88,7 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	{
 		char parent_span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
 
-		ptr = parent_span_id_buf;
-		SPAN_ID_BUF_TO_HEX(iter->second.c_str(), &ptr);
-
+		SPAN_ID_BUF_TO_HEX(iter->second.c_str(), parent_span_id_buf);
 		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
 						parent_span_id_buf);
 	}
