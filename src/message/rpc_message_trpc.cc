@@ -1222,41 +1222,30 @@ bool TRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 	return true;
 }
 
-static std::string __get_http_header(std::string& key,
-									 const protocol::HttpMessage *http_msg)
-{
-	std::string name;
-	std::string value;
-
-	protocol::HttpHeaderCursor cursor(http_msg);
-
-	while (cursor.next(name, value))
-	{
-		if (key == name)
-			break;
-	}
-
-	return std::move(value);
-}
-
-bool TRPCHttpRequest::set_http_header(const char *name, const char *value)
+bool TRPCHttpRequest::set_http_header(const std::string& name,
+									  const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
-std::string TRPCHttpRequest::get_http_header(std::string& key) const
+bool TRPCHttpRequest::get_http_header(const std::string& name,
+									  std::string& value) const
 {
-	return __get_http_header(key, this);
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
 }
 
-bool TRPCHttpResponse::set_http_header(const char *name, const char *value)
+bool TRPCHttpResponse::set_http_header(const std::string& name,
+									   const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
-std::string TRPCHttpResponse::get_http_header(std::string& key) const
+bool TRPCHttpResponse::get_http_header(const std::string& name,
+									   std::string& value) const
 {
-	return __get_http_header(key, this);
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
 }
 
 } // namespace srpc

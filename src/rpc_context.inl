@@ -119,12 +119,12 @@ public:
 			return task_->get_resp()->get_attachment_nocopy(attachment, len);
 	}
 
-	std::string get_http_header(std::string& name) const override
+	bool get_http_header(const std::string& name, std::string& value) const override
 	{
 		if (this->is_server_task())
-			return task_->get_req()->get_http_header(name);
+			return task_->get_req()->get_http_header(name, value);
 		else
-			return task_->get_resp()->get_http_header(name);
+			return task_->get_resp()->get_http_header(name, value);
 	}
 
 public:
@@ -172,7 +172,7 @@ public:
 		}
 	}
 
-	bool set_http_code(const char *code) override
+	bool set_http_code(int code) override
 	{
 		if (this->is_server_task())
 			return task_->get_resp()->set_http_code(code);
@@ -180,7 +180,7 @@ public:
 		return false;
 	}
 
-	bool set_http_header(const char *name, const char *value) override
+	bool set_http_header(const std::string& name, const std::string& value) override
 	{
 		if (this->is_server_task())
 			return task_->get_resp()->set_http_header(name, value);

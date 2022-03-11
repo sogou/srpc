@@ -948,120 +948,115 @@ bool SRPCHttpResponse::deserialize_meta()
 	return __deserialize_meta_http(NULL, this, this, this->meta);
 }
 
-static void __set_meta_module_data(const RPCModuleData& data,
+static bool __set_meta_module_data(const RPCModuleData& data,
 								   protocol::HttpMessage *http_msg)
 {
-	for (const auto& kv : data)
+	auto it = data.begin();
+	int total = 2;
+
+	while (it != data.end() && total)
 	{
-		if (kv.first == "trace_id")
+		if (it->first == "trace_id")
 		{
 			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
 			char *ptr = trace_id_buf;
 
-			TRACE_ID_BUF_TO_HEX(kv.second.c_str(), &ptr);
+			TRACE_ID_BUF_TO_HEX(it->second.c_str(), &ptr);
 			http_msg->set_header_pair("Trace-Id", trace_id_buf);
+			--total;
 		}
-		else if (kv.first == "span_id")
+		else if (it->first == "span_id")
 		{
 			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
 			char *ptr = span_id_buf;
 
-			SPAN_ID_BUF_TO_HEX(kv.second.c_str(), &ptr);
+			SPAN_ID_BUF_TO_HEX(it->second.c_str(), &ptr);
 			http_msg->set_header_pair("Span-Id", span_id_buf);
+			--total;
 		}
+		++it;
 	}
+
+	return true;
 }
 
-static void __get_meta_module_data(RPCModuleData& data,
+static bool __get_meta_module_data(RPCModuleData& data,
 								   const protocol::HttpMessage *http_msg)
 {
+	protocol::HttpHeaderCursor cursor(http_msg);
 	std::string name;
 	std::string value;
-	protocol::HttpHeaderCursor cursor(http_msg);
+	int total = 2;
 
-	while (cursor.next(name, value))
+	while (cursor.next(name, value) && total)
 	{
-		if (!strcasecmp(name.c_str(), "Trace-Id"))
+		if (strcasecmp(name.c_str(), "Trace-Id") == 0)
 		{
-			std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
-			char *ptr = (char *)trace_id_buf.c_str();
+			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
+			char *ptr = trace_id_buf;
 
 			TRACE_ID_HEX_TO_BUF((char *)value.c_str(), &ptr);
-			data["trace_id"] = std::move(trace_id_buf);
-			continue;
+			data["trace_id"] = trace_id_buf;
+			--total;
 		}
-
-		if (!strcasecmp(name.c_str(), "Span-Id"))
+		else if (strcasecmp(name.c_str(), "Span-Id") == 0)
 		{
-			std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
-			char *ptr = (char *)span_id_buf.c_str();
+			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
+			char *ptr = span_id_buf;
 
 			SPAN_ID_HEX_TO_BUF((char *)value.c_str(), &ptr);
-			data["span_id"] = std::move(span_id_buf);
-			continue;
+			data["span_id"] = span_id_buf;
+			--total;
 		}
 	}
+
+	return true;
 }
 
 bool SRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
 {
-	__set_meta_module_data(data, this);
-	return true;
+	return __set_meta_module_data(data, this);
 }
 
 bool SRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 {
-	__get_meta_module_data(data, this);
-	return true;
+	return __get_meta_module_data(data, this);
 }
 
 bool SRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 {
-	__set_meta_module_data(data, this);
-	return true;
+	return __set_meta_module_data(data, this);
 }
 
 bool SRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
-	__get_meta_module_data(data, this);
-	return true;
+	return __get_meta_module_data(data, this);
 }
 
-static std::string __get_http_header(std::string& key,
-									 const protocol::HttpMessage *http_msg)
-{
-	std::string name;
-	std::string value;
-
-	protocol::HttpHeaderCursor cursor(http_msg);
-
-	while (cursor.next(name, value))
-	{
-		if (key == name)
-			break;
-	}
-
-	return std::move(value);
-}
-
-bool SRPCHttpRequest::set_http_header(const char *name, const char *value)
+bool SRPCHttpRequest::set_http_header(const std::string& name,
+									  const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
-std::string SRPCHttpRequest::get_http_header(std::string& key) const
+bool SRPCHttpRequest::get_http_header(const std::string& name,
+									  std::string& value) const
 {
-	return __get_http_header(key, this);
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
 }
 
-bool SRPCHttpResponse::set_http_header(const char *name, const char *value)
+bool SRPCHttpResponse::set_http_header(const std::string& name,
+									   const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
-std::string SRPCHttpResponse::get_http_header(std::string& key) const
+bool SRPCHttpResponse::get_http_header(const std::string& name,
+									   std::string& value) const
 {
-	return __get_http_header(key, this);
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
 }
 
 } // namespace srpc

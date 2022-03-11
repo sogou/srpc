@@ -21,7 +21,8 @@
 namespace srpc
 {
 
-static int thrift_parser_append_message(const void *buf, size_t *size, ThriftBuffer *TBuffer)
+static int thrift_parser_append_message(const void *buf, size_t *size,
+										ThriftBuffer *TBuffer)
 {
 	if (TBuffer->status == THRIFT_PARSE_END)
 	{
@@ -73,7 +74,8 @@ static int thrift_parser_append_message(const void *buf, size_t *size, ThriftBuf
 		}
 		else
 		{
-			int ret = thrift_parser_append_message((char *)buf + read_size, &left_size, TBuffer);
+			int ret = thrift_parser_append_message((char *)buf + read_size,
+													&left_size, TBuffer);
 
 			*size += left_size;
 			return ret;
@@ -86,7 +88,6 @@ static int thrift_parser_append_message(const void *buf, size_t *size, ThriftBuf
 		if (TBuffer->readbuf_size + *size > (size_t)TBuffer->framesize)
 			read_size = TBuffer->framesize - TBuffer->readbuf_size;
 
-		//memcpy(TBuffer->readbuf + TBuffer->readbuf_size, (const char *)buf, read_size);
 		TBuffer->buffer->append((const char *)buf, read_size, BUFFER_MODE_COPY);
 		TBuffer->readbuf_size += read_size;
 		*size = read_size;
@@ -116,8 +117,9 @@ bool ThriftResponse::serialize_meta()
 	{
 		ThriftException ex;
 
-		ex.type = (status_code_ == RPCStatusMethodNotFound ? TET_UNKNOWN_METHOD
-														   : TET_UNKNOWN);
+		ex.type = (status_code_ == RPCStatusMethodNotFound ?
+								   TET_UNKNOWN_METHOD :
+								   TET_UNKNOWN);
 		ex.message = errmsg_;
 		ex.descriptor->writer(&ex, &TBuffer_);
 		TBuffer_.meta.message_type = TMT_EXCEPTION;
@@ -167,8 +169,9 @@ bool ThriftResponse::deserialize_meta()
 
 			if (ex.descriptor->reader(&TBuffer_, &ex))
 			{
-				status_code_ = (ex.type == TET_UNKNOWN_METHOD ? RPCStatusMethodNotFound
-															  : RPCStatusMetaError);
+				status_code_ = (ex.type == TET_UNKNOWN_METHOD ?
+										   RPCStatusMethodNotFound :
+										   RPCStatusMetaError);
 				error_ = ex.type;
 				errmsg_ = ex.message;
 			}
@@ -207,9 +210,11 @@ bool ThriftHttpRequest::serialize_meta()
 
 	set_header_pair("Connection", "Keep-Alive");
 	set_header_pair("Content-Type", "application/x-thrift");
-	set_header_pair("Content-Length", std::to_string(TBuffer_.meta.writebuf.size() + buf_.size()));
+	set_header_pair("Content-Length",
+					std::to_string(TBuffer_.meta.writebuf.size() + buf_.size()));
 
-	this->append_output_body_nocopy(TBuffer_.meta.writebuf.c_str(), TBuffer_.meta.writebuf.size());
+	this->append_output_body_nocopy(TBuffer_.meta.writebuf.c_str(),
+									TBuffer_.meta.writebuf.size());
 	const void *buf;
 	size_t buflen;
 
@@ -269,9 +274,11 @@ bool ThriftHttpResponse::serialize_meta()
 
 	set_header_pair("Connection", "Keep-Alive");
 	set_header_pair("Content-Type", "application/x-thrift");
-	set_header_pair("Content-Length", std::to_string(TBuffer_.meta.writebuf.size() + buf_.size()));
+	set_header_pair("Content-Length",
+					std::to_string(TBuffer_.meta.writebuf.size() + buf_.size()));
 
-	this->append_output_body_nocopy(TBuffer_.meta.writebuf.c_str(), TBuffer_.meta.writebuf.size());
+	this->append_output_body_nocopy(TBuffer_.meta.writebuf.c_str(),
+									TBuffer_.meta.writebuf.size());
 	const void *buf;
 	size_t buflen;
 
@@ -295,41 +302,30 @@ bool ThriftHttpResponse::deserialize_meta()
 	return this->ThriftResponse::deserialize_meta();
 }
 
-static std::string __get_http_header(std::string& key,
-									 const protocol::HttpMessage *http_msg)
-{
-	std::string name;
-	std::string value;
-
-	protocol::HttpHeaderCursor cursor(http_msg);
-
-	while (cursor.next(name, value))
-	{
-		if (key == name)
-			break;
-	}
-
-	return std::move(value);
-}
-
-bool ThriftHttpRequest::set_http_header(const char *name, const char *value)
+bool ThriftHttpRequest::set_http_header(const std::string& name,
+										const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
-std::string ThriftHttpRequest::get_http_header(std::string& key) const
+bool ThriftHttpRequest::get_http_header(const std::string& name,
+										std::string& value) const
 {
-	return __get_http_header(key, this);
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
 }
 
-bool ThriftHttpResponse::set_http_header(const char *name, const char *value)
+bool ThriftHttpResponse::set_http_header(const std::string& name,
+										 const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
-std::string ThriftHttpResponse::get_http_header(std::string& key) const
+bool ThriftHttpResponse::get_http_header(const std::string& name,
+										 std::string& value) const
 {
-	return __get_http_header(key, this);
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
 }
 
 } // namespace srpc

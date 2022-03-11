@@ -41,7 +41,8 @@ public:
 	ThriftException()
 	{
 		this->elements = ThriftElementsImpl<ThriftException>::get_elements_instance();
-		this->descriptor = ThriftDescriptorImpl<ThriftException, TDT_STRUCT, void, void>::get_instance();
+		this->descriptor = ThriftDescriptorImpl<ThriftException, TDT_STRUCT,
+												void, void>::get_instance();
 	}
 
 	static void StaticElementsImpl(std::list<struct_element> *elements)
@@ -51,8 +52,12 @@ public:
 		using subtype_1 = ThriftDescriptorImpl<std::string, TDT_STRING, void, void>;
 		using subtype_2 = ThriftDescriptorImpl<int32_t, TDT_I32, void, void>;
 
-		elements->push_back({subtype_1::get_instance(), "message", (const char *)(&st->__isset.message) - base, (const char *)(&st->message) - base, 1});
-		elements->push_back({subtype_2::get_instance(), "type", (const char *)(&st->__isset.type) - base, (const char *)(&st->type) - base, 2});
+		elements->push_back({subtype_1::get_instance(), "message",
+							 (const char *)(&st->__isset.message) - base,
+							 (const char *)(&st->message) - base, 1});
+		elements->push_back({subtype_2::get_instance(), "type",
+							 (const char *)(&st->__isset.type) - base,
+							 (const char *)(&st->type) - base, 2});
 	}
 };
 
@@ -78,7 +83,10 @@ public:
 	void set_data_type(int type) override {}
 
 	void set_attachment_nocopy(const char *attachment, size_t len) { }
-	bool get_attachment_nocopy(const char **attachment, size_t *len) const { return false; }
+	bool get_attachment_nocopy(const char **attachment, size_t *len) const
+	{
+		return false;
+	}
 
 public:
 	int serialize(const ThriftIDLMessage *thrift_msg) override;
@@ -114,7 +122,10 @@ public:
 	const std::string& get_method_name() const { return TBuffer_.meta.method_name; }
 
 	void set_service_name(const std::string& service_name) { }
-	void set_method_name(const std::string& method_name) { TBuffer_.meta.method_name = method_name; }
+	void set_method_name(const std::string& method_name)
+	{
+		TBuffer_.meta.method_name = method_name;
+	}
 	void set_seqid(long long seqid) { TBuffer_.meta.seqid = (int)seqid; }
 };
 
@@ -144,7 +155,8 @@ protected:
 	std::string errmsg_;
 };
 
-class ThriftStdRequest : public protocol::ProtocolMessage, public RPCRequest, public ThriftRequest
+class ThriftStdRequest : public protocol::ProtocolMessage, public RPCRequest,
+						 public ThriftRequest
 {
 public:
 	int encode(struct iovec vectors[], int max) override
@@ -208,7 +220,8 @@ public:
 	ThriftStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class ThriftStdResponse : public protocol::ProtocolMessage, public RPCResponse, public ThriftResponse
+class ThriftStdResponse : public protocol::ProtocolMessage, public RPCResponse,
+						  public ThriftResponse
 {
 public:
 	int encode(struct iovec vectors[], int max) override
@@ -272,7 +285,8 @@ public:
 	ThriftStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class ThriftHttpRequest : public protocol::HttpRequest, public RPCRequest, public ThriftRequest
+class ThriftHttpRequest : public protocol::HttpRequest, public RPCRequest,
+						  public ThriftRequest
 {
 public:
 	bool serialize_meta() override;
@@ -314,14 +328,17 @@ public:
 		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
-	bool set_http_header(const char *name, const char *value) override;
-	std::string get_http_header(std::string& key) const override;
+	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool get_http_header(const std::string& name,
+						 std::string& value) const override;
 
 public:
 	ThriftHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class ThriftHttpResponse : public protocol::HttpResponse, public RPCResponse, public ThriftResponse
+class ThriftHttpResponse : public protocol::HttpResponse, public RPCResponse,
+						   public ThriftResponse
 {
 public:
 	bool serialize_meta() override;
@@ -353,9 +370,9 @@ public:
 		return this->ThriftResponse::set_error(error);
 	}
 
-	bool set_http_code(const char *code) override
+	bool set_http_code(int code) override
 	{
-		return this->protocol::HttpResponse::set_status_code(code);
+		return this->protocol::HttpResponse::set_status_code(std::to_string(code));
 	}
 
 	bool set_meta_module_data(const RPCModuleData& data) override
@@ -368,8 +385,10 @@ public:
 		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
-	bool set_http_header(const char *name, const char *value) override;
-	std::string get_http_header(std::string& key) const override;
+	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool get_http_header(const std::string& name,
+						 std::string& value) const override;
 
 public:
 	ThriftHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
@@ -384,8 +403,9 @@ inline int ThriftMessage::serialize(const ThriftIDLMessage *thrift_msg)
 	{
 		if (!thrift_msg->descriptor->writer(thrift_msg, &TBuffer_))
 		{
-			return TBuffer_.meta.message_type == TMT_CALL ? RPCStatusReqSerializeError
-														  : RPCStatusRespSerializeError;
+			return TBuffer_.meta.message_type == TMT_CALL ?
+												 RPCStatusReqSerializeError :
+												 RPCStatusRespSerializeError;
 		}
 	}
 
@@ -398,15 +418,17 @@ inline int ThriftMessage::deserialize(ThriftIDLMessage *thrift_msg)
 	{
 		if (!thrift_msg->descriptor->reader(&TBuffer_, thrift_msg))
 		{
-			return TBuffer_.meta.message_type == TMT_CALL ? RPCStatusReqDeserializeError
-														  : RPCStatusRespDeserializeError;
+			return TBuffer_.meta.message_type == TMT_CALL ?
+												 RPCStatusReqDeserializeError :
+												 RPCStatusRespDeserializeError;
 		}
 	}
 
 	return RPCStatusOK;
 }
 
-inline int ThriftMessage::encode(struct iovec vectors[], int max, size_t size_limit)
+inline int ThriftMessage::encode(struct iovec vectors[], int max,
+								 size_t size_limit)
 {
 	size_t sz = TBuffer_.meta.writebuf.size() + buf_.size();
 
@@ -432,7 +454,7 @@ inline int ThriftMessage::encode(struct iovec vectors[], int max, size_t size_li
 	return 0;
 }
 
-}
+} // namespace srpc
 
 #endif
 
