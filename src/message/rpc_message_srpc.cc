@@ -988,7 +988,8 @@ static bool __get_meta_module_data(RPCModuleData& data,
 
 	while (cursor.next(name, value) && flag != 3)
 	{
-		if (strcasecmp(name.c_str(), "Trace-Id") == 0)
+		if (strcasecmp(name.c_str(), "Trace-Id") == 0 &&
+			value.length() == SRPC_TRACEID_SIZE * 2)
 		{
 			uint64_t trace_id_buf[2];
 			char *ptr = (char *)trace_id_buf;
@@ -996,7 +997,8 @@ static bool __get_meta_module_data(RPCModuleData& data,
 			data["trace_id"] = std::string(ptr, SRPC_TRACEID_SIZE);
 			flag |= 1;
 		}
-		else if (strcasecmp(name.c_str(), "Span-Id") == 0)
+		else if (strcasecmp(name.c_str(), "Span-Id") == 0 &&
+				 value.length() == SRPC_SPANID_SIZE * 2)
 		{
 			uint64_t span_id = strtoull((char *)value.c_str(), NULL, 16);
 			span_id = htonll(span_id);
