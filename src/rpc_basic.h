@@ -153,7 +153,8 @@ static inline long long GET_CURRENT_MS_STEADY()
 			std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-static inline void TRACE_ID_BUF_TO_HEX(const char *in, char *hex_out)
+static inline void TRACE_ID_BUF_TO_HEX(const char *in,
+									   char hex_out[SRPC_TRACEID_SIZE * 2 + 1])
 {
 	uint64_t trace_id_high;
 	uint64_t trace_id_low;
@@ -163,25 +164,24 @@ static inline void TRACE_ID_BUF_TO_HEX(const char *in, char *hex_out)
 	trace_id_high = ntohll(trace_id_high);
 	trace_id_low = ntohll(trace_id_low);
 
-	snprintf(hex_out, SRPC_TRACEID_SIZE + 1,
-			 "%016llx", (unsigned long long)trace_id_high);
-	snprintf(hex_out + SRPC_TRACEID_SIZE, SRPC_TRACEID_SIZE + 1,
-			 "%016llx", (unsigned long long)trace_id_low);
+	sprintf(hex_out, "%016llx%016llx",
+			(unsigned long long)trace_id_high,
+			(unsigned long long)trace_id_low);
 }
 
-static inline void SPAN_ID_BUF_TO_HEX(const char *in, char *hex_out)
+static inline void SPAN_ID_BUF_TO_HEX(const char *in,
+									  char hex_out[SRPC_SPANID_SIZE * 2 + 1])
 {
 	uint64_t span_id;
 
 	memcpy(&span_id, in, 8);
 	span_id = ntohll(span_id);
 
-	snprintf(hex_out, SRPC_SPANID_SIZE * 2 + 1,
-			 "%016llx", (unsigned long long)span_id);
+	sprintf(hex_out, "%016llx", (unsigned long long)span_id);
 }
 
 // here hex_in is not 'const' char *
-static inline void TRACE_ID_HEX_TO_BUF(char *hex_in, char *out)
+static inline void TRACE_ID_HEX_TO_BUF(char *hex_in, uint64_t out[2])
 {
 	uint64_t trace_id_low = strtoull(hex_in + 16, NULL, 16);
 	hex_in[16] = '\0';
@@ -190,16 +190,8 @@ static inline void TRACE_ID_HEX_TO_BUF(char *hex_in, char *out)
 	trace_id_high = htonll(trace_id_high);
 	trace_id_low = htonll(trace_id_low);
 
-	memcpy(out, &trace_id_high, SRPC_TRACEID_SIZE / 2);
-	memcpy(out + SRPC_TRACEID_SIZE / 2, &trace_id_low, SRPC_TRACEID_SIZE / 2);
-}
-
-static inline void SPAN_ID_HEX_TO_BUF(char *hex_in, char *out)
-{
-	uint64_t span_id = strtoull(hex_in, NULL, 16);
-
-	span_id = htonll(span_id);
-	memcpy(out, &span_id, SRPC_SPANID_SIZE);
+	out[0] = trace_id_high;
+	out[1] = trace_id_low;
 }
 
 } // end namespace srpc
