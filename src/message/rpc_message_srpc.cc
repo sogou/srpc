@@ -262,21 +262,20 @@ bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
 
-	auto iter = data.find("trace_id");
-	if (iter != data.end())
+	for (const auto& kv : data)
 	{
-		meta->mutable_span()->set_trace_id(iter->second.c_str(),
-										   SRPC_TRACEID_SIZE);
+		if (kv.first == "trace_id")
+		{
+			meta->mutable_span()->set_trace_id(kv.second.c_str(),
+											   SRPC_TRACEID_SIZE);
+		}
+		else if (kv.first == "span_id")
+		{
+			meta->mutable_span()->set_span_id(kv.second.c_str(),
+											  SRPC_SPANID_SIZE);
+		}
 	}
 
-	iter = data.find("span_id");
-	if (iter != data.end())
-	{
-		meta->mutable_span()->set_span_id(iter->second.c_str(),
-										  SRPC_SPANID_SIZE);
-	}
-	//	meta->mutable_span()->set_parent_span_id(span->parent_span_id);
-	//	name...
 	return true;
 }
 
@@ -873,13 +872,13 @@ bool SRPCHttpResponse::serialize_meta()
 	int data_type = meta->data_type();
 	int compress_type = meta->compress_type();
 	int rpc_status_code = this->get_status_code();
-	int http_status_code = this->get_http_code();
+	const char *http_status_code = this->protocol::HttpResponse::get_status_code();
 
 	set_http_version("HTTP/1.1");
 	if (rpc_status_code == RPCStatusOK)
 	{
 		if (http_status_code)
-			protocol::HttpUtil::set_response_status(this, http_status_code);
+			protocol::HttpUtil::set_response_status(this, atoi(http_status_code));
 		else
 			protocol::HttpUtil::set_response_status(this, HttpStatusOK);
 	}
@@ -949,84 +948,112 @@ bool SRPCHttpResponse::deserialize_meta()
 	return __deserialize_meta_http(NULL, this, this, this->meta);
 }
 
-bool SRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
+static bool __set_meta_module_data(const RPCModuleData& data,
+								   protocol::HttpMessage *http_msg)
 {
-	auto iter = data.find("trace_id");
-	if (iter != data.end())
-		set_header_pair("Trace-Id", iter->second);
+	auto it = data.begin();
+	int flag = 0;
 
-	iter = data.find("span_id");
-	if (iter != data.end())
-		set_header_pair("Span-Id", iter->second);
+	while (it != data.end() && flag != 3)
+	{
+		if (it->first == "trace_id")
+		{
+			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
+
+			TRACE_ID_BUF_TO_HEX(it->second.c_str(), trace_id_buf);
+			http_msg->set_header_pair("Trace-Id", trace_id_buf);
+			flag |= 1;
+		}
+		else if (it->first == "span_id")
+		{
+			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
+
+			SPAN_ID_BUF_TO_HEX(it->second.c_str(), span_id_buf);
+			http_msg->set_header_pair("Span-Id", span_id_buf);
+			flag |= (1 << 1);
+		}
+		++it;
+	}
 
 	return true;
+}
+
+static bool __get_meta_module_data(RPCModuleData& data,
+								   const protocol::HttpMessage *http_msg)
+{
+	protocol::HttpHeaderCursor cursor(http_msg);
+	std::string name;
+	std::string value;
+	int flag = 0;
+
+	while (cursor.next(name, value) && flag != 3)
+	{
+		if (strcasecmp(name.c_str(), "Trace-Id") == 0 &&
+			value.length() == SRPC_TRACEID_SIZE * 2)
+		{
+			uint64_t trace_id_buf[2];
+			char *ptr = (char *)trace_id_buf;
+			TRACE_ID_HEX_TO_BUF((char *)value.c_str(), trace_id_buf);
+			data["trace_id"] = std::string(ptr, SRPC_TRACEID_SIZE);
+			flag |= 1;
+		}
+		else if (strcasecmp(name.c_str(), "Span-Id") == 0 &&
+				 value.length() == SRPC_SPANID_SIZE * 2)
+		{
+			uint64_t span_id = strtoull((char *)value.c_str(), NULL, 16);
+			span_id = htonll(span_id);
+			data["span_id"] = std::string((char *)&span_id, SRPC_SPANID_SIZE);
+			flag |= (1 << 1);
+		}
+	}
+
+	return true;
+}
+
+bool SRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
+{
+	return __set_meta_module_data(data, this);
 }
 
 bool SRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 {
-	std::string name;
-	std::string value;
-
-	protocol::HttpHeaderCursor cursor(this);
-	bool found = false;
-
-	while (cursor.next(name, value))
-	{
-		if (!strcasecmp(name.c_str(), "Trace-Id"))
-		{
-			data["trace_id"] = value;
-			found = true;
-			continue;
-		}
-
-		if (!strcasecmp(name.c_str(), "Span-Id"))
-		{
-			data["parent_span_id"] = value;
-			found = true;
-			continue;
-		}
-	}
-	return found;
+	return __get_meta_module_data(data, this);
 }
 
 bool SRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 {
-	auto iter = data.find("trace_id");
-	if (iter != data.end())
-		set_header_pair("Trace-Id", iter->second);
-
-	iter = data.find("span_id");
-	if (iter != data.end())
-		set_header_pair("Span-Id", iter->second);
-
-	return true;
+	return __set_meta_module_data(data, this);
 }
 
 bool SRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
-	std::string name;
-	std::string value;
+	return __get_meta_module_data(data, this);
+}
 
+bool SRPCHttpRequest::set_http_header(const std::string& name,
+									  const std::string& value)
+{
+	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+bool SRPCHttpRequest::get_http_header(const std::string& name,
+									  std::string& value) const
+{
 	protocol::HttpHeaderCursor cursor(this);
-	bool found = false;
+	return cursor.find(name, value);
+}
 
-	while (cursor.next(name, value))
-	{
-		if (!strcasecmp(name.c_str(), "Trace-Id"))
-		{
-			data["trace_id"] = value;
-			found = true;
-			continue;
-		}
+bool SRPCHttpResponse::set_http_header(const std::string& name,
+									   const std::string& value)
+{
+	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
 
-		if (!strcasecmp(name.c_str(), "Span-Id"))
-		{
-			data["parent_span_id"] = value;
-			found = true;
-			continue;
-		}
-	}
-	return found;
+bool SRPCHttpResponse::get_http_header(const std::string& name,
+									   std::string& value) const
+{
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
 }
 
 } // namespace srpc
