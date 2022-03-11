@@ -959,16 +959,14 @@ static bool __set_meta_module_data(const RPCModuleData& data,
 		if (it->first == "trace_id")
 		{
 			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
-
-			TRACE_ID_BUF_TO_HEX(it->second.c_str(), trace_id_buf);
+			TRACE_ID_BIN_TO_HEX((uint64_t *)it->second.c_str(), trace_id_buf);
 			http_msg->set_header_pair("Trace-Id", trace_id_buf);
 			flag |= 1;
 		}
 		else if (it->first == "span_id")
 		{
 			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
-
-			SPAN_ID_BUF_TO_HEX(it->second.c_str(), span_id_buf);
+			SPAN_ID_BIN_TO_HEX((uint64_t *)it->second.c_str(), span_id_buf);
 			http_msg->set_header_pair("Span-Id", span_id_buf);
 			flag |= (1 << 1);
 		}
@@ -989,20 +987,19 @@ static bool __get_meta_module_data(RPCModuleData& data,
 	while (cursor.next(name, value) && flag != 3)
 	{
 		if (strcasecmp(name.c_str(), "Trace-Id") == 0 &&
-			value.length() == SRPC_TRACEID_SIZE * 2)
+			value.size() == SRPC_TRACEID_SIZE * 2)
 		{
-			uint64_t trace_id_buf[2];
-			char *ptr = (char *)trace_id_buf;
-			TRACE_ID_HEX_TO_BUF((char *)value.c_str(), trace_id_buf);
-			data["trace_id"] = std::string(ptr, SRPC_TRACEID_SIZE);
+			uint64_t trace_id[2];
+			TRACE_ID_HEX_TO_BIN(value.c_str(), trace_id);
+			data["trace_id"] = std::string((char *)trace_id, SRPC_TRACEID_SIZE);
 			flag |= 1;
 		}
 		else if (strcasecmp(name.c_str(), "Span-Id") == 0 &&
-				 value.length() == SRPC_SPANID_SIZE * 2)
+				 value.size() == SRPC_SPANID_SIZE * 2)
 		{
-			uint64_t span_id = strtoull((char *)value.c_str(), NULL, 16);
-			span_id = htonll(span_id);
-			data["span_id"] = std::string((char *)&span_id, SRPC_SPANID_SIZE);
+			uint64_t span_id[1];
+			SPAN_ID_HEX_TO_BIN(value.c_str(), span_id);
+			data["span_id"] = std::string((char *)span_id, SRPC_SPANID_SIZE);
 			flag |= (1 << 1);
 		}
 	}
