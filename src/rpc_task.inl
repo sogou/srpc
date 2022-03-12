@@ -123,6 +123,8 @@ public:
 	// Baggage Items, which are just key:value pairs that cross process boundaries
 	void baggage(const std::string& key, const std::string& value);
 
+	bool set_http_header(const char *name, const char *value);
+
 	// JsonPrintOptions
 	void set_json_add_whitespace(bool on);
 	void set_json_always_print_enums_as_ints(bool on);
@@ -704,6 +706,12 @@ template<class RPCREQ, class RPCRESP>
 inline void RPCClientTask<RPCREQ, RPCRESP>::set_json_always_print_primitive_fields(bool on)
 {
 	this->req.set_json_print_primitive(on);
+}
+
+template<class RPCREQ, class RPCRESP>
+inline bool RPCClientTask<RPCREQ, RPCRESP>::set_http_header(const char *name, const char *value)
+{
+	return this->req.set_http_header(name, value);
 }
 
 } // namespace srpc

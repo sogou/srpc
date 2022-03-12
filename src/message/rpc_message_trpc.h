@@ -41,8 +41,11 @@ public:
 	int encode(struct iovec vectors[], int max, size_t size_limit);
 	int append(const void *buf, size_t *size, size_t size_limit);
 
-	bool get_attachment_nocopy(const char **attachment, size_t *len) const { return false; }
 	void set_attachment_nocopy(const char *attachment, size_t len) { }
+	bool get_attachment_nocopy(const char **attachment, size_t *len) const
+	{
+		return false;
+	}
 
 public:
 	using RPCMessage::serialize;
@@ -135,7 +138,8 @@ protected:
 	std::string srpc_error_msg;
 };
 
-class TRPCStdRequest : public protocol::ProtocolMessage, public RPCRequest, public TRPCRequest
+class TRPCStdRequest : public protocol::ProtocolMessage, public RPCRequest,
+					   public TRPCRequest
 {
 public:
 	int encode(struct iovec vectors[], int max) override
@@ -199,7 +203,8 @@ public:
 	TRPCStdRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class TRPCStdResponse : public protocol::ProtocolMessage, public RPCResponse, public TRPCResponse
+class TRPCStdResponse : public protocol::ProtocolMessage, public RPCResponse,
+						public TRPCResponse
 {
 public:
 	int encode(struct iovec vectors[], int max) override
@@ -263,7 +268,8 @@ public:
 	TRPCStdResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class TRPCHttpRequest : public protocol::HttpRequest, public RPCRequest, public TRPCRequest
+class TRPCHttpRequest : public protocol::HttpRequest, public RPCRequest,
+						public TRPCRequest
 {
 public:
 	bool serialize_meta() override;
@@ -303,11 +309,17 @@ public:
 		return this->TRPCRequest::get_caller_name();
 	}
 
+	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool get_http_header(const std::string& name,
+						 std::string& value) const override;
+
 public:
 	TRPCHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
 
-class TRPCHttpResponse : public protocol::HttpResponse, public RPCResponse, public TRPCResponse
+class TRPCHttpResponse : public protocol::HttpResponse, public RPCResponse,
+						 public TRPCResponse
 {
 public:
 	bool serialize_meta() override;
@@ -339,8 +351,18 @@ public:
 		return this->TRPCResponse::set_error(error);
 	}
 
+	bool set_http_code(int code) override
+	{
+		return this->protocol::HttpResponse::set_status_code(std::to_string(code));
+	}
+
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
+
+	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool get_http_header(const std::string& name,
+						 std::string& value) const override;
 
 public:
 	TRPCHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }

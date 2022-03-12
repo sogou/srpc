@@ -1056,13 +1056,13 @@ bool TRPCHttpResponse::serialize_meta()
 	int compress_type = this->get_compress_type();
 	int rpc_status_code = this->get_status_code();
 	int rpc_error = this->get_error();
-	int http_status_code = this->get_http_code();
+	const char *http_status_code = this->protocol::HttpResponse::get_status_code();
 
 	set_http_version("HTTP/1.1");
 	if (rpc_status_code == RPCStatusOK)
 	{
 		if (http_status_code)
-			protocol::HttpUtil::set_response_status(this, http_status_code);
+			protocol::HttpUtil::set_response_status(this, atoi(http_status_code));
 		else
 			protocol::HttpUtil::set_response_status(this, HttpStatusOK);
 	}
@@ -1220,6 +1220,32 @@ bool TRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 bool TRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
 	return true;
+}
+
+bool TRPCHttpRequest::set_http_header(const std::string& name,
+									  const std::string& value)
+{
+	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+bool TRPCHttpRequest::get_http_header(const std::string& name,
+									  std::string& value) const
+{
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
+}
+
+bool TRPCHttpResponse::set_http_header(const std::string& name,
+									   const std::string& value)
+{
+	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+bool TRPCHttpResponse::get_http_header(const std::string& name,
+									   std::string& value) const
+{
+	protocol::HttpHeaderCursor cursor(this);
+	return cursor.find(name, value);
 }
 
 } // namespace srpc

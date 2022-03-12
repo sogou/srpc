@@ -119,6 +119,14 @@ public:
 			return task_->get_resp()->get_attachment_nocopy(attachment, len);
 	}
 
+	bool get_http_header(const std::string& name, std::string& value) const override
+	{
+		if (this->is_server_task())
+			return task_->get_req()->get_http_header(name, value);
+		else
+			return task_->get_resp()->get_http_header(name, value);
+	}
+
 public:
 	// for client-done
 	bool success() const override
@@ -164,10 +172,20 @@ public:
 		}
 	}
 
-	void set_http_code(int code) override
+	bool set_http_code(int code) override
 	{
 		if (this->is_server_task())
-			task_->get_resp()->set_http_code(code);
+			return task_->get_resp()->set_http_code(code);
+
+		return false;
+	}
+
+	bool set_http_header(const std::string& name, const std::string& value) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->set_http_header(name, value);
+
+		return false;
 	}
 
 	void log(const RPCLogVector& fields) override { }

@@ -51,6 +51,8 @@ public:
 	virtual const std::string& get_method_name() const = 0;
 
 	virtual SeriesWork *get_series() const = 0;
+	virtual bool get_http_header(const std::string& name,
+								 std::string& value) const = 0;
 
 public:
 	// for client-done
@@ -71,7 +73,8 @@ public:
 	virtual void set_reply_callback(std::function<void (RPCContext *ctx)> cb) = 0;
 	virtual void set_send_timeout(int timeout) = 0;
 	virtual void set_keep_alive(int timeout) = 0;
-	virtual void set_http_code(int code) = 0;
+	virtual bool set_http_code(int code) = 0;
+	virtual bool set_http_header(const std::string& name, const std::string& value) = 0;
 	virtual void log(const RPCLogVector& fields) = 0;
 	virtual void baggage(const std::string& key, const std::string& value) = 0;
 	//virtual void noreply();

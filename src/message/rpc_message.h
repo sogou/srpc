@@ -58,14 +58,7 @@ public:
 	virtual void set_status_code(int code) = 0;
 	virtual void set_error(int error) = 0;
 
-	void set_http_code(int code) { this->http_code = code; }
-	int get_http_code() const { return this->http_code; }
-
-public:
-	RPCResponse() { this->http_code = 0; }
-
-private:
-	int http_code;
+	virtual bool set_http_code(int code) { return false; }
 };
 
 class RPCMessage
@@ -83,14 +76,25 @@ public:
 	virtual bool get_meta_module_data(RPCModuleData& data) const = 0;
 	virtual bool set_meta_module_data(const RPCModuleData& data) = 0;
 
-	void set_json_add_whitespace(bool on);
-	bool get_json_add_whitespace() const;
-	void set_json_enums_as_ints(bool on);
-	bool get_json_enums_as_ints() const;
-	void set_json_preserve_names(bool on);
-	bool get_json_preserve_names() const;
-	void set_json_print_primitive(bool on);
-	bool get_json_print_primitive() const;
+	virtual bool set_http_header(const std::string& name,
+								 const std::string& value)
+	{
+		return false;
+	}
+	virtual bool get_http_header(const std::string& name,
+								 std::string& value) const
+	{
+		return false;
+	}
+
+	virtual void set_json_add_whitespace(bool on);
+	virtual bool get_json_add_whitespace() const;
+	virtual void set_json_enums_as_ints(bool on);
+	virtual bool get_json_enums_as_ints() const;
+	virtual void set_json_preserve_names(bool on);
+	virtual bool get_json_preserve_names() const;
+	virtual void set_json_print_primitive(bool on);
+	virtual bool get_json_print_primitive() const;
 
 public:
 	//pb
@@ -122,7 +126,6 @@ public:
 protected:
 	uint32_t flags;
 };
-
 
 // implementation
 
