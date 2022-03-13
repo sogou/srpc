@@ -76,7 +76,7 @@ public:
 	virtual bool get_meta_module_data(RPCModuleData& data) const = 0;
 	virtual bool set_meta_module_data(const RPCModuleData& data) = 0;
 
-	virtual bool set_http_header(const std::string& name,
+	virtual bool add_http_header(const std::string& name,
 								 const std::string& value)
 	{
 		return false;

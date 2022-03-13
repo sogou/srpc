@@ -328,7 +328,7 @@ public:
 		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
-	bool set_http_header(const std::string& name,
+	bool add_http_header(const std::string& name,
 						 const std::string& value) override;
 	bool get_http_header(const std::string& name,
 						 std::string& value) const override;
@@ -385,7 +385,7 @@ public:
 		return this->ThriftMessage::get_meta_module_data(data);
 	}
 
-	bool set_http_header(const std::string& name,
+	bool add_http_header(const std::string& name,
 						 const std::string& value) override;
 	bool get_http_header(const std::string& name,
 						 std::string& value) const override;

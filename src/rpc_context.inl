@@ -180,10 +180,10 @@ public:
 		return false;
 	}
 
-	bool set_http_header(const std::string& name, const std::string& value) override
+	bool add_http_header(const std::string& name, const std::string& value) override
 	{
 		if (this->is_server_task())
-			return task_->get_resp()->set_http_header(name, value);
+			return task_->get_resp()->add_http_header(name, value);
 
 		return false;
 	}

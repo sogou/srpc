@@ -302,7 +302,7 @@ bool ThriftHttpResponse::deserialize_meta()
 	return this->ThriftResponse::deserialize_meta();
 }
 
-bool ThriftHttpRequest::set_http_header(const std::string& name,
+bool ThriftHttpRequest::add_http_header(const std::string& name,
 										const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
@@ -315,7 +315,7 @@ bool ThriftHttpRequest::get_http_header(const std::string& name,
 	return cursor.find(name, value);
 }
 
-bool ThriftHttpResponse::set_http_header(const std::string& name,
+bool ThriftHttpResponse::add_http_header(const std::string& name,
 										 const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);

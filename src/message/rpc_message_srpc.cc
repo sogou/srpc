@@ -1030,7 +1030,7 @@ bool SRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 	return __get_meta_module_data(data, this);
 }
 
-bool SRPCHttpRequest::set_http_header(const std::string& name,
+bool SRPCHttpRequest::add_http_header(const std::string& name,
 									  const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
@@ -1043,7 +1043,7 @@ bool SRPCHttpRequest::get_http_header(const std::string& name,
 	return cursor.find(name, value);
 }
 
-bool SRPCHttpResponse::set_http_header(const std::string& name,
+bool SRPCHttpResponse::add_http_header(const std::string& name,
 									   const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);

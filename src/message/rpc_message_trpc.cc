@@ -1222,7 +1222,7 @@ bool TRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 	return true;
 }
 
-bool TRPCHttpRequest::set_http_header(const std::string& name,
+bool TRPCHttpRequest::add_http_header(const std::string& name,
 									  const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
@@ -1235,7 +1235,7 @@ bool TRPCHttpRequest::get_http_header(const std::string& name,
 	return cursor.find(name, value);
 }
 
-bool TRPCHttpResponse::set_http_header(const std::string& name,
+bool TRPCHttpResponse::add_http_header(const std::string& name,
 									   const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);

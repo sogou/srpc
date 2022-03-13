@@ -309,7 +309,7 @@ public:
 		return this->TRPCRequest::get_caller_name();
 	}
 
-	bool set_http_header(const std::string& name,
+	bool add_http_header(const std::string& name,
 						 const std::string& value) override;
 	bool get_http_header(const std::string& name,
 						 std::string& value) const override;
@@ -359,7 +359,7 @@ public:
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
-	bool set_http_header(const std::string& name,
+	bool add_http_header(const std::string& name,
 						 const std::string& value) override;
 	bool get_http_header(const std::string& name,
 						 std::string& value) const override;
