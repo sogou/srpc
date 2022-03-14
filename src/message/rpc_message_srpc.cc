@@ -1033,6 +1033,12 @@ bool SRPCHttpRequest::set_http_header(const std::string& name,
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
+bool SRPCHttpRequest::add_http_header(const std::string& name,
+									  const std::string& value)
+{
+	return this->protocol::HttpMessage::add_header_pair(name, value);
+}
+
 bool SRPCHttpRequest::get_http_header(const std::string& name,
 									  std::string& value) const
 {
@@ -1044,6 +1050,12 @@ bool SRPCHttpResponse::set_http_header(const std::string& name,
 									   const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+bool SRPCHttpResponse::add_http_header(const std::string& name,
+									   const std::string& value)
+{
+	return this->protocol::HttpMessage::add_header_pair(name, value);
 }
 
 bool SRPCHttpResponse::get_http_header(const std::string& name,

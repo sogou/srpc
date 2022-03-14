@@ -188,6 +188,14 @@ public:
 		return false;
 	}
 
+	bool add_http_header(const std::string& name, const std::string& value) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->add_http_header(name, value);
+
+		return false;
+	}
+
 	void log(const RPCLogVector& fields) override { }
 
 	void baggage(const std::string& key, const std::string& value) override { }

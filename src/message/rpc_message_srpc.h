@@ -262,8 +262,12 @@ public:
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
-	bool set_http_header(const std::string& name, const std::string& value) override;
-	bool get_http_header(const std::string& name, std::string& value) const override;
+	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool add_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool get_http_header(const std::string& name,
+						 std::string& value) const override;
 
 public:
 	SRPCHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
@@ -309,8 +313,12 @@ public:
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
-	bool set_http_header(const std::string& name, const std::string& value) override;
-	bool get_http_header(const std::string& name, std::string& value) const override;
+	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool add_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool get_http_header(const std::string& name,
+						 std::string& value) const override;
 
 public:
 	SRPCHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }

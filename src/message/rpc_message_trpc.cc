@@ -1228,6 +1228,12 @@ bool TRPCHttpRequest::set_http_header(const std::string& name,
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
+bool TRPCHttpRequest::add_http_header(const std::string& name,
+									  const std::string& value)
+{
+	return this->protocol::HttpMessage::add_header_pair(name, value);
+}
+
 bool TRPCHttpRequest::get_http_header(const std::string& name,
 									  std::string& value) const
 {
@@ -1239,6 +1245,12 @@ bool TRPCHttpResponse::set_http_header(const std::string& name,
 									   const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+bool TRPCHttpResponse::add_http_header(const std::string& name,
+									   const std::string& value)
+{
+	return this->protocol::HttpMessage::add_header_pair(name, value);
 }
 
 bool TRPCHttpResponse::get_http_header(const std::string& name,
