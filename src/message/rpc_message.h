@@ -81,6 +81,13 @@ public:
 	{
 		return false;
 	}
+
+	virtual bool add_http_header(const std::string& name,
+								 const std::string& value)
+	{
+		return false;
+	}
+
 	virtual bool get_http_header(const std::string& name,
 								 std::string& value) const
 	{

@@ -308,6 +308,12 @@ bool ThriftHttpRequest::set_http_header(const std::string& name,
 	return this->protocol::HttpMessage::set_header_pair(name, value);
 }
 
+bool ThriftHttpRequest::add_http_header(const std::string& name,
+										const std::string& value)
+{
+	return this->protocol::HttpMessage::add_header_pair(name, value);
+}
+
 bool ThriftHttpRequest::get_http_header(const std::string& name,
 										std::string& value) const
 {
@@ -319,6 +325,12 @@ bool ThriftHttpResponse::set_http_header(const std::string& name,
 										 const std::string& value)
 {
 	return this->protocol::HttpMessage::set_header_pair(name, value);
+}
+
+bool ThriftHttpResponse::add_http_header(const std::string& name,
+										 const std::string& value)
+{
+	return this->protocol::HttpMessage::add_header_pair(name, value);
 }
 
 bool ThriftHttpResponse::get_http_header(const std::string& name,

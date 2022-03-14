@@ -330,6 +330,8 @@ public:
 
 	bool set_http_header(const std::string& name,
 						 const std::string& value) override;
+	bool add_http_header(const std::string& name,
+						 const std::string& value) override;
 	bool get_http_header(const std::string& name,
 						 std::string& value) const override;
 
@@ -386,6 +388,8 @@ public:
 	}
 
 	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool add_http_header(const std::string& name,
 						 const std::string& value) override;
 	bool get_http_header(const std::string& name,
 						 std::string& value) const override;

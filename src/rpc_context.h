@@ -75,6 +75,7 @@ public:
 	virtual void set_keep_alive(int timeout) = 0;
 	virtual bool set_http_code(int code) = 0;
 	virtual bool set_http_header(const std::string& name, const std::string& value) = 0;
+	virtual bool add_http_header(const std::string& name, const std::string& value) = 0;
 	virtual void log(const RPCLogVector& fields) = 0;
 	virtual void baggage(const std::string& key, const std::string& value) = 0;
 	//virtual void noreply();
