@@ -10,7 +10,9 @@
 
 - **HTTP body**： 如果body中涉及**bytes**类型，**json**中需要使用**base64**进行encode；
 
-### 示例
+### 1. 示例
+
+想实现**SRPCHttpClient**，可以把[tutorial-02-srpc_pb_client.cc](https://github.com/sogou/srpc/blob/master/tutorial/tutorial-02-srpc_pb_client.cc)或者[tutorial-09-client_task.cc](https://github.com/sogou/srpc/blob/master/tutorial/tutorial-09-client_task.cc)中的`SRPCClient`改成`SRPCHttpClient`即可。
 
 在项目的[README.md](/docs//README_cn.md#6-run)中，我们演示了如何使用**curl**向**SRPCHttpServer**发送请求，下面我们给出例子演示如何使用**python**作为客户端，向**TRPCHttpServer**发送请求。
 
@@ -65,7 +67,7 @@ ret = requests.post(url = "http://localhost:8800/trpc.test.helloworld.Batch/Add"
 print(ret.json())
 ```
 
-### 请求路径拼接
+### 2. 请求路径拼接
 
 [README.md](/docs//README_cn.md#6-run)中，我们可以看到，路径是由service名和rpc名拼接而成的。而对于以上带package名 `package trpc.test.helloworld;`的例子， package名也需要拼接到路径中，**SRPCHttp** 和 **TRPCHttpClient** 的拼接路径方式并不一样。我们以**curl**为例子：
 
@@ -79,7 +81,7 @@ curl 127.0.0.1:8811/trpc/test/helloworld/Batch/Add -H 'Content-Type: application
 curl 127.0.0.1:8811/trpc.test.helloworld.Batch/Add -H 'Content-Type: application/json' -d '{...}'
 ```
 
-### HTTP状态码
+### 3. HTTP状态码
 
 SRPC支持server在`process()`中设置状态码，接口为**RPCContext**上的`set_http_code(int code)`。只有在框架能够正确处理请求的情况下，该错误码才有效，否则会被设置为框架层级的错误码。
 
@@ -121,7 +123,42 @@ Connection: Keep-Alive
 
 我们依然可以通过返回结果的header中的`SRPC-Status: 1`来判断这个请求在框架层面是正确的，`404`是来自server的状态码。
 
-### IDL传输格式问题
+### 4. HTTP Header
+
+用户可以通过以下三个接口来设置/获取http header：
+~~~cpp
+bool get_http_header(const std::string& name, std::string& value) const;
+bool set_http_header(const std::string& name, const std::string& value);
+bool add_http_header(const std::string& name, const std::string& value);
+~~~
+
+对于**server**来说，这些接口在`RPCContext`上。
+对于**client**来说，需要通过`RPCClientTask`设置**请求上的http header**、并且在回调函数的`RPCContext`上**获取回复上的http header**，用法如下所示：
+
+~~~cpp
+int main()
+{
+    Example::SRPCClient client("127.0.0.1", 1412);
+    EchoRequest req;
+    req.set_message("Hello, sogou rpc!");
+
+    auto *task = client.create_Echo_task([](EchoResponse *resp, RPCContext *ctx) {                                                                              
+        if (ctx->success())
+        {
+            std::string value;
+            ctx->get_http_header("server_key", value); // 获取回复中的header
+        }
+    });
+    task->serialize_input(&req);
+    task->set_http_header("client_key", "client_value"); // 设置请求中的header
+    task->start();
+	
+    wait_group.wait();
+    return 0;
+}
+~~~
+
+### 5. IDL传输格式问题
 
 如果我们填写的是Protobuf且用的标准为proto3，每个域由于没有optional和required区分，所以都是带有默认值的。如果我们设置的值正好等于默认值，则proto3不能识别为被set过，就不能被序列化的时候发出。
 
