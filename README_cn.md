@@ -10,12 +10,13 @@
 
 
 ## Introduction
-#### 这是搜狗自研的RPC系统，主要功能和特点：
-  * 这是一个基于[Sogou C++ Workflow](https://github.com/sogou/workflow)的项目，兼具：
-    * 高性能
+#### SPRC是全搜狗和腾讯的部分业务线上使用的企业级RPC系统，也有一部分中小型公司在使用，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。主要功能和特点：
+  * 底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，兼具：
+    * 高性能、低延迟、轻量级
     * 低开发和接入门槛
     * 完美兼容workflow的串并联任务流
     * 对于已有protobuf/thrift描述文件的项目，可以做到一键迁移
+    * 支持Linux / MacOS / Windows等多操作系统
   * 支持多种IDL格式，包括：
     * Protobuf
     * Thrift
@@ -47,6 +48,10 @@
     * 提供创建任务的接口来创建一个rpc任务
     * 可以把rpc任务放到任务流图中，回调函数里也可以拿到当前的任务流
     * workflow所支持的其他功能，包括upstream、计算调度、异步文件IO等
+  * AOP模块化插件管理：
+    * 可对接[OpenTelemetry](https://opentelemetry.io)（tracing链路数据上报）
+    * 轻松上报其他云原生系统
+  * 支持srpc协议的Envoy-filter，满足Kubernetes用户的使用需求
   * [更多功能和层次介绍](docs/rpc.md)
 
 ## Installation
@@ -56,12 +61,11 @@
     * workflow可以通过git的submodule形式进行依赖
     * 压缩库snappy和lz4也以submodule的形式在third_party/中作源码依赖
     * workflow、snappy和lz4也可以系统预装，如果thirt_party中没有拉取源码依赖，则会从系统默认安装路径寻找，snappy的预装要求版本是v1.1.6或以上
-
+  * Windows版下srpc代码无差异，需要依赖workflow的windows分支
 ~~~sh
 git clone --recursive https://github.com/sogou/srpc.git
 cd srpc
 make
-sudo make install
 ~~~
 
 ## Tutorial
@@ -120,13 +124,6 @@ public:
     void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
     {
         response->set_message("Hi, " + request->name());
-
-        // gzip/zlib/snappy/lz4/none
-        // ctx->set_compress_type(RPCCompressGzip);
-
-        // protobuf/json
-        // ctx->set_data_type(RPCDataJson);
-
         printf("get_req:\n%s\nset_resp:\n%s\n",
                 request->DebugString().c_str(), response->DebugString().c_str());
     }
@@ -191,17 +188,20 @@ g++ -o client client.cc example.pb.cc -std=c++11 -lsrpc
 ~~~
 
 #### 6. run
-终端1
+终端1：
 ~~~sh
 ./server
 ~~~
-终端2
+终端2：
 ~~~sh
 ./client
+~~~
+也可以用CURL发送http请求：
+~~~sh
 curl 127.0.0.1:8811/Example/Echo -H 'Content-Type: application/json' -d '{message:"from curl",name:"CURL"}'
 ~~~
 
-终端1输出
+终端1输出：
 ~~~sh
 get_req:
 message: "Hello, srpc!"
@@ -216,11 +216,13 @@ name: "CURL"
 
 set_resp:
 message: "Hi, CURL"
-
 ~~~
-终端2输出
+终端2输出：
 ~~~sh
 message: "Hi, workflow"
+~~~
+CURL收到的回复：
+~~~sh
 {"message":"Hi, CURL"}
 ~~~
 
