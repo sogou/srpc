@@ -9,13 +9,14 @@
 
 ## Introduction
 
-#### SRPC is an RPC system developed by Sogou. Its main features include:
+#### SPRC is an enterprise-level RPC system used by online services of almost all Sogou and some departments of Tencent, and also used by some small and medium-sized companies. It handles tens of billions of requests every day, covering searches, recommendations, advertising system, and other types of services. Its main features include:
 
 * Base on [Sogou C++ Workflow](https://github.com/sogou/workflow), with the following features:
-  * High performance
+  * High performance, low latency, lightweight
   * Low development and access cost
   * Compatible with SeriesWork and ParallelWork in Workflow
   * One-click migration for existing projects with protobuf/thrift
+  * Supports multiple operating systems: Linux / MacOS / Windows
 * Support several IDL formats, including:
   * Protobuf
   * Thrift
@@ -47,6 +48,10 @@
   * You can use the interface to create an RPC task
   * You can put the RPC task into SeriesWork or ParallelWork, and you can also get the current SeriesWork in the callback.
   * You can also use other features supported by Workflow, including upstream, calculation scheduling, asynchronous file IO, etc.
+* AOP Modular Plugin Management:
+  * Able to connect to [OpenTelemetry](https://opentelemetry.io) (report Tracing)
+  * Easy to report to other Cloud Native systems
+* srpc Envoy-filter for the users of Kubernetes
 * [More features and layers](/docs/en/rpc.md)
 
 ## Installation
@@ -57,12 +62,12 @@
   * For Workflow, it\`s added as dependency automatically via git submodule.
   * For snappy and lz4, source codes are also included as third\_party via git submodule.
   * Workflow, snappy and lz4 can also be found via installed package in the system. If the submodule dependencies are not pulled in thirt_party, they will be searched from the default installation path of the system. The version of snappy is required v1.1.6 or above.
+* There is no difference in the srpc code under the Windows version, but users need to use the windows branch of Workflow
 
 ~~~sh
 git clone --recursive https://github.com/sogou/srpc.git
 cd srpc
 make
-sudo make install
 ~~~
 
 ## Tutorial
@@ -124,13 +129,6 @@ public:
     void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
     {
         response->set_message("Hi, " + request->name());
-
-        // gzip/zlib/snappy/lz4/none
-        // ctx->set_compress_type(RPCCompressGzip);
-
-        // protobuf/json
-        // ctx->set_data_type(RPCDataJson);
-
         printf("get_req:\n%s\nset_resp:\n%s\n",
                 request->DebugString().c_str(), response->DebugString().c_str());
     }
@@ -199,20 +197,25 @@ g++ -o client client.cc example.pb.cc -std=c++11 -lsrpc
 
 #### 6\. run
 
-Terminal 1
+Terminal 1:
 
 ~~~sh
 ./server
 ~~~
 
-Terminal 2
+Terminal 2:
 
 ~~~sh
 ./client
+~~~
+
+We can also use CURL to post Http request:
+
+~~~sh
 curl 127.0.0.1:8811/Example/Echo -H 'Content-Type: application/json' -d '{message:"from curl",name:"CURL"}'
 ~~~
 
-Output of Terminal 1
+Output of Terminal 1:
 
 ~~~sh
 get_req:
@@ -231,10 +234,15 @@ message: "Hi, CURL"
 
 ~~~
 
-Output of Terminal 2
+Output of Terminal 2:
 
 ~~~sh
 message: "Hi, workflow"
+~~~
+
+Output of CURL:
+
+~~~sh
 {"message":"Hi, CURL"}
 ~~~
 
