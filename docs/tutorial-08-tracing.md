@@ -5,8 +5,7 @@
 
 **SRPC**遵循**OpenTelemetry**的[数据规范(data specification)](https://github.com/open-telemetry/opentelemetry-specification)以及[w3c的trace context](https://www.w3.org/TR/trace-context/)，因此可以使用插件**RPCSpanOpenTelemetry**进行上报。
 
-秉承着**Workflow**的风格，所有的上报都是异步任务模式， 对RPC的请求和服务不会产生任何性能影响。
-
+秉承着**Workflow**的风格，所有的上报都是异步任务模式，对RPC的请求和服务不会产生任何性能影响。
 
 ### 1. 用法
 
@@ -49,7 +48,7 @@ int main()
 
 ### 2. Traces上报到Jaeger
 
-打开Jaeger的主页，我们可以找到我们名为**Example**的service和名为**Echo**method。这里有两个span节点，是由server和client分别上报的。
+打开Jaeger的主页，我们可以找到我们名为**Example**的服务(service)和名为**Echo**的函数(method)。这一个tracing记录上有两个span节点，是由server和client分别上报的。
 
 <img width="1438" alt="image" src="https://user-images.githubusercontent.com/1880011/151155282-38b09409-1700-4e76-a993-da10ee7dcdc5.png">
 
@@ -64,9 +63,9 @@ int main()
 默认每秒收集1000条trace信息，并且透传tracing信息等其他功能也已遵循上述规范实现。
 
 ### 4. Attributes
-我们可以通过`add_attributes()`添加某些额外的信息，比如OTEL_RESOURCE_ATTRIBUTES。
+我们可以通过`add_attributes()`添加某些额外的信息，比如数据规范中的OTEL_RESOURCE_ATTRIBUTES。
 
-注意我们的service name "Example"也是设置到attributes中的，key为`service.name`。如果用户也在OTEL_RESOURCE_ATTRIBUTES中使用了`service.name`这个key，则SRPC的service name优先级更高，参考：[OpenTelemetry#resource](https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry#resource)
+注意我们的service名"Example"也是设置到attributes中的，key为`service.name`。如果用户也在OTEL_RESOURCE_ATTRIBUTES中使用了`service.name`这个key，则SRPC的service name优先级更高，参考：[OpenTelemetry#resource](https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/src/OpenTelemetry#resource)
 
 ### 5. Log和Baggage
 SRPC提供了`log()`和`baggage()`接口，用户可以添加需要通过链路透传的数据。
