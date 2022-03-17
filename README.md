@@ -78,6 +78,8 @@ make
 * [Step 4: Use the Client](/docs/en/tutorial-04-client.md)
 * [Step 5: Understand asynchrous Context](/docs/en/tutorial-05-context.md)
 * [Step 6: Use it together with the Workflow](/docs/en/tutorial-06-workflow.md)
+* [Step 7: Common Usage of HTTP](/docs/en/tutorial-07-http.md)
+* [Step 8: Report Tracing to OpenTelemetry](/docs/en/tutorial-08-tracing.md)
 
 Easy to compile tutorial with these commands:
 
