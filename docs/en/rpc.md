@@ -250,6 +250,10 @@ Get RPC Method Name.
 
 Get the SeriesWork of the current ServerTask/ClientTask.
 
+#### `bool get_http_header(const std::string& name, std::string& value);`
+
+If using the HTTP protocol, get the value in the HTTP header according to the name
+
 ### RPCContext API - Only for client done
 
 #### `bool success() const;`
@@ -311,6 +315,42 @@ For Server only. Set the maximum time for sending the message, in milliseconds. 
 #### `void set_keep_alive(int timeout);`
 
 For Server only. Set the maximum connection keep-alive time,  in milliseconds. -1 indicates unlimited time.
+
+#### `bool set_http_code(int code);`
+
+For Server only. If using the HTTP protocol, set the http status code. Only works if the srpc framework handles correctly.
+
+#### `bool set_http_header(const std::string& name, const std::string& value);`
+
+For Server only. If using the HTTP protocol, set into http header. If the name is set, old value will be overwritten.
+
+#### `bool add_http_header(const std::string& name, const std::string& value);`
+
+For Server only. If using the HTTP protocol, set into http header. Will keep multiple values if the name is set.
+
+#### `void log(const RPCLogVector& fields);`
+
+For Server only. For transparent data transmission, please refer to the log semantics in OpenTelemetry.
+
+#### `void baggage(const std::string& key, const std::string& value);`
+
+For Server only. For transparent data transmission, please refer to the baggage semantics in OpenTelemetry.
+
+#### `void set_json_add_whitespace(bool on);`
+
+For Server only. For JsonPrintOptions, whether to add white space and so on to make JSON output easy to read.
+
+#### `void set_json_always_print_enums_as_ints(bool flag);`
+
+For Server only. For JsonPrintOptions, whether to always print enums as ints.
+
+#### `void set_json_preserve_proto_field_names(bool flag);`
+
+For Server only. For JsonPrintOptions, whether to preserve proto field names.
+
+#### `void set_json_always_print_primitive_fields(bool flag);`
+
+For Server only. For JsonPrintOptions, whether to always print primitive fields.
 
 ## RPC Options
 

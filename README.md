@@ -39,9 +39,9 @@
   * As a server, you can accept POST requests with HTTP server developed in any language and parse the HTTP headers.
   * As a client, you can send POST requests with HTTP client developed in any language and add the required HTTP headers.
 * Built-in client/server which can seamlessly communicate with a server/client in other RPC frameworks, including:
+  * SRPC
   * BRPC
   * TRPC (the only open-source implementation of TRPC protocol so far)
-  * ~~GRPC~~
   * Thrift Framed Binary
   * Thrift Http Binary
 * How to use it together with Workflow:
