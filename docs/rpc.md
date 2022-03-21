@@ -154,7 +154,7 @@ int main()
     server_srpc_http.start(8811);
     server_brpc.start(2020);
     server_thrift.start(9090);
-    pause();
+    getchar();
     server_thrift.stop();
     server_brpc.stop();
     server_srpc_http.stop();
@@ -197,7 +197,7 @@ int main()
                     ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
     });
 
-    pause();
+    getchar();
     return 0;
 }
 ~~~
@@ -206,7 +206,7 @@ int main()
 - RPCContext专门用来辅助异步接口，Service和Client通用
 - 每一个异步接口都会提供Context，用来给用户提供更高级的功能，比如获取对方ip、获取连接seqid等
 - Context上一些功能是Server或Client独有的，比如Server可以设置回复数据的压缩方式，Client可以获取请求成功或失败
-- Context上可以通过g``et_series()``获得所在的series，与workflow的异步模式无缝结合
+- Context上可以通过``get_series()``获得所在的series，与workflow的异步模式无缝结合
 
 ### RPCContext API - Common
 #### ``long long get_seqid() const;``
@@ -226,6 +226,9 @@ int main()
 
 #### ``SeriesWork *get_series() const;``
 获取当前ServerTask/ClientTask所在series
+
+#### ``bool get_http_header(const std::string& name, std::string& value);``  
+如果通讯使用HTTP协议，则根据name获取HTTP header中的value
 
 ### RPCContext API - Only for client done
 #### ``bool success() const;``
@@ -272,6 +275,33 @@ Server专用。设置发送超时，单位毫秒。-1代表无限。
 
 #### ``void set_keep_alive(int timeout);``
 Server专用。设置连接保活时间，单位毫秒。-1代表无限。
+
+#### ``bool set_http_code(int code);``   
+Server专用。如果通讯使用HTTP协议，则可以设置http status code返回码。仅在框架层能正确响应时有效。
+
+#### ``bool set_http_header(const std::string& name, const std::string& value);``    
+Server专用。如果通讯使用HTTP协议，可以在回复中设置HTTP header，如果name被设置过会覆盖旧value。
+
+#### ``bool add_http_header(const std::string& name, const std::string& value);``    
+Server专用。如果通讯使用HTTP协议，可以在回复中添加HTTP header，如果有重复name，会保留多个value。
+
+#### ``void log(const RPCLogVector& fields);``    
+Server专用。透传数据相关，请参考OpenTelemetry数据协议中的log语义。
+
+#### ``void baggage(const std::string& key, const std::string& value);``    
+Server专用。透传数据相关，参考OpenTelemetry数据协议中的baggage语义。
+
+#### ``void set_json_add_whitespace(bool on);``    
+Server专用。JsonPrintOptions相关，可设置增加json空格等。
+
+#### ``void set_json_always_print_enums_as_ints(bool flag);``    
+Server专用。JsonPrintOptions相关，可设置用int打印enum名。
+
+#### ``void set_json_preserve_proto_field_names(bool flag);``    
+Server专用。JsonPrintOptions相关，可设置保留原始字段名字。
+
+#### ``void set_json_always_print_primitive_fields(bool flag);``    
+Server专用。JsonPrintOptions相关，可设置带上所有默认的proto数据中的域。
 
 ## RPC Options
 ### Server Params
@@ -394,7 +424,7 @@ int main()
 
     ((*http_task * rpc_task) > calc_task).start();
 
-    pause();
+    getchar();
     return 0;
 }
 ~~~

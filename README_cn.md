@@ -39,9 +39,9 @@
     * 如果自己是server提供方，用任何语言的http server接受post请求，解析若干http header即可
     * 如果自己是client调用方，用任何语言的http client发送post请求，添加若干http header即可
   * 内置了可以与其他RPC框架的server/client无缝互通的client/server，包括：
+    * SRPC
     * BRPC
     * TRPC (目前唯一的TRPC协议开源实现)
-    * ~~GRPC~~
     * Thrift Framed Binary
     * Thrift Http Binary
   * 兼容workflow的使用方式：
