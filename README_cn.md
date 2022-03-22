@@ -1,16 +1,16 @@
-[English version](README.md)
+[English version](README.md) &nbsp;&nbsp;|&nbsp;&nbsp; [Wiki：SRPC架构介绍](/docs/wiki.md)
 
-# SRPC
-[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE)
-[![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
-[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)
-[![Build Status](https://github.com/sogou/srpc/actions/workflows/ci.yml/badge.svg)](https://github.com/sogou/srpc/actions/workflows/ci.yml)
+<img src="https://raw.githubusercontent.com/wiki/sogou/srpc/srpc-logo-min.png" width = "140" height = "40" alt="srpc-logo"/>
 
-[Wiki：SRPC架构介绍](/docs/wiki.md)
+<a href="https://github.com/sogou/srpc/blob/master/LICENSE"><img src="https://img.shields.io/github/license/sogou/srpc?color=379c9c&style=flat-square"/></a>
+<a href="https://en.cppreference.com/"><img src="https://img.shields.io/badge/language-C++-black.svg?color=379c9c&style=flat-square"/></a>
+<a href="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"/></a>
+<a href="https://github.com/sogou/srpc/releases"><img src="https://img.shields.io/github/v/release/sogou/srpc?color=379c9c&logoColor=ffffff&style=flat-square"/></a>
+<a href="https://travis-ci.com/sogou/srpc"><img src="https://img.shields.io/travis/sogou/srpc/master?color=379c9c&style=flat-square"/></a>
 
 
 ## Introduction
-#### SPRC是全搜狗和腾讯的部分业务线上使用的企业级RPC系统，也有一部分中小型公司在使用，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。主要功能和特点：
+#### SPRC是全搜狗业务线上使用的企业级RPC系统，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。主要功能和特点：
   * 底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，兼具：
     * 高性能、低延迟、轻量级
     * 低开发和接入门槛
