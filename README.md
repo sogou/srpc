@@ -1,15 +1,17 @@
 [中文版入口](README_cn.md)
 
-# SRPC
+<br/>
+<img src="https://raw.githubusercontent.com/wiki/sogou/srpc/srpc-logo-min.png" width = "140" height = "40" alt="srpc-logo"/>
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE)
-[![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
-[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)
-[![Build Status](https://github.com/sogou/srpc/actions/workflows/ci.yml/badge.svg)](https://github.com/sogou/srpc/actions/workflows/ci.yml)
+<a href="https://github.com/sogou/srpc/blob/master/LICENSE"><img src="https://img.shields.io/github/license/sogou/srpc?color=379c9c&style=flat-square"/></a>
+<a href="https://en.cppreference.com/"><img src="https://img.shields.io/badge/language-C++-black.svg?color=379c9c&style=flat-square"/></a>
+<a href="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"/></a>
+<a href="https://github.com/sogou/srpc/releases"><img src="https://img.shields.io/github/v/release/sogou/srpc?color=379c9c&logoColor=ffffff&style=flat-square"/></a>
+<a href="https://travis-ci.com/sogou/srpc"><img src="https://img.shields.io/travis/sogou/srpc/master?color=379c9c&style=flat-square"/></a>
 
 ## Introduction
 
-#### SPRC is an enterprise-level RPC system used by online services of almost all Sogou and some departments of Tencent, and also used by some small and medium-sized companies. It handles tens of billions of requests every day, covering searches, recommendations, advertising system, and other types of services. Its main features include:
+#### SPRC is an enterprise-level RPC system used by almost all online services in Sogou. It handles tens of billions of requests every day, covering searches, recommendations, advertising system, and other types of services. Its main features include:
 
 * Base on [Sogou C++ Workflow](https://github.com/sogou/workflow), with the following features:
   * High performance, low latency, lightweight
