@@ -42,12 +42,12 @@ srpc整体代码量大约1万行，内部使用多种泛型编程的方式，实
 * **IDL序列化**（protobuf/thrift serialization）
 * **数据组织** （protobuf/thrift/json）
 * **压缩**（none/gzip/zlib/snappy/lz4）
-* **协议** （Sogou-std/Baidu-std/Thrift-framed/TRPC）
+* **协议** （SRPC-std/BRPC-std/Thrift-framed/TRPC）
 * **通信** （TCP/HTTP）
 
 以上各层级可以相互拼装，利用函数重载、派生子类实现父类接口和模版特化等多种多态方式，来实现内部使用同一套代码的高度复用，以后如果想架构升级，无论是中间再加一层、还是某层内横向添加一种内容都非常方便，整体设计比较精巧。
 
-且得益于workflow的性能，srpc本身的性能也很优异。srpc系统除了Sogou-std协议以外，同时实现了Baidu-std协议、Thrift-framed协议、腾讯的TRPC协议，同协议下与brpc系统和apache thrift系统进行了性能对比，吞吐性能领先，长尾性能与brpc各有优势但都比thrift强。
+且得益于workflow的性能，srpc本身的性能也很优异。srpc系统除了SRPC-std协议以外，同时实现了BRPC-std协议、Thrift-framed协议、腾讯的TRPC协议，同协议下与brpc系统和apache thrift系统进行了性能对比，吞吐性能领先，长尾性能与brpc各有优势但都比thrift强。
 
 srpc目前在搜狗公司内部和开源后业界一些开发者的团队中已经稳定使用一段时间，并以其简单的接口让小伙伴们可以快速开发，且协助业务性能带来好几倍的提升。
 
@@ -74,7 +74,7 @@ srpc目前在搜狗公司内部和开源后业界一些开发者的团队中已�
 
 ### 2. RPC协议层
 
-中间那列是具体的协议，我们实现了``Sogou-std``，``Baidu-std``，``Thrift-framed``和``TRPC``，其中**Sogou-std**的协议如下：
+中间那列是具体的协议，我们实现了``SRPC-std``，``BRPC-std``，``Thrift-framed``和``TRPC``，其中**SRPC-std**的协议如下：
 
 <img src="https://raw.githubusercontent.com/wiki/sogou/srpc/srpc-protocol.jpg" width = "719" height = "280" alt="srpc_protocol" align=center />
 
@@ -90,12 +90,13 @@ srpc目前在搜狗公司内部和开源后业界一些开发者的团队中已�
 
 我们把``service``/``method``拼到``URL``的host后面，接下来把具体协议的``meta``的内容按照HTTP可以识别的header key一项一项填进``header``里。 最后把具体``request``/``response``作为HTTP的``body``填好，发送出去。
 
-我们除了HTTP + Baidu-std/TRPC没有实现，其他两两结合一共实现出了6种网络通信协议：
+我们除了BRPC + Http没有实现，其他两两结合一共实现出了7种网络通信协议：
 
 * SRPCStd
 * SRPCHttp
 * BRPCStd
-* TRPC
+* TRPCStd
+* TRPCHttp
 * ThriftBinaryFramed
 * ThriftBinaryHttp
 
@@ -243,7 +244,9 @@ int main()
 
     // 3. 把server启动起来
     server.start(PORT);
-    pause();
+
+    // 4. server启动是异步的，需要暂时卡住主线程
+    getchar();
     server.stop();
     return 0;
 }
@@ -291,25 +294,28 @@ int main()
     SRPCServer server_srpc;
     SRPCHttpServer server_srpc_http;
     BRPCServer server_brpc;
-    TRPCServer server_trpc;
     ThriftServer server_thrift;
+    TRPCServer server_trpc;
+    TRPCHttpServer server_trpc_http;
 
     ExampleServiceImpl impl_pb;                   // 使用pb作为接口的service
     AnotherThriftServiceImpl impl_thrift;         // 使用thrift作为接口的service
 
     server_srpc.add_service(&impl_pb);            // 只要协议本身支持这种IDL，就可以把这类service往里加
     server_srpc.add_service(&impl_thrift); 
-    server_srpc_http.add_service(&impl_pb);       // srpc还可以同时提供TCP和Http服务
+    server_srpc_http.add_service(&impl_pb);       // 还可以同时提供二进制协议和Http服务
     server_srpc_http.add_service(&impl_thrift);
-    server_brpc.add_service(&impl_pb);            // baidu-std协议只支持了protobuf
-    server_trpc.add_service(&impl_pb);            // 只需要改一个字母，就可以方便兼容不同协议
+    server_brpc.add_service(&impl_pb);            // brpc-std协议只支持了protobuf
     server_thrift.add_service(&impl_thrift);      // thrift-binary协议只支持了thrift
+    server_trpc.add_service(&impl_pb);            // 只需要改一个字母，就可以方便兼容不同协议
+    server_trpc_http.add_service(&impl_pb);       // 目前也是唯一开源的trpc协议实现
 
     server_srpc.start(1412);
     server_srpc_http.start(8811);
     server_brpc.start(2020);
     server_trpc.start(2021);
     server_thrift.start(9090);
+    server_trpc_http.start(8822);
     ....
 
     return 0;

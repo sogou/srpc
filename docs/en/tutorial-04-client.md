@@ -18,6 +18,7 @@ You can follow the detailed example below:
 ~~~cpp
 #include <stdio.h>
 #include "example.srpc.h"
+#include "workflow/WFFacilities.h"
 
 using namespace srpc;
 
@@ -25,18 +26,21 @@ int main()
 {
     Example::SRPCClient client("127.0.0.1", 1412);
     EchoRequest req;
-    req.set_message("Hello, sogou rpc!");
-    req.set_name("Li Yingxin");
+    req.set_message("Hello!");
+    req.set_name("SRPCClient");
 
-    client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
+    WFFacilities::WaitGroup wait_group(1);
+
+    client.Echo(&req, [&wait_group](EchoResponse *response, RPCContext *ctx) {
         if (ctx->success())
             printf("%s\n", response->DebugString().c_str());
         else
             printf("status[%d] error[%d] errmsg:%s\n",
                     ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+        wait_group.done();
     });
 
-    pause();
+    wait_group.wait();
     return 0;
 }
 ~~~

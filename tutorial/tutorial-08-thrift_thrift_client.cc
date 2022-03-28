@@ -26,7 +26,7 @@ int main()
 	//sync
 	EchoResult sync_res;
 
-	client.Echo(sync_res, "Hello, sogou rpc!", "1412");
+	client.Echo(sync_res, "Hello, srpc!", "1412");
 	if (client.thrift_last_sync_success())
 		printf("%s\n", sync_res.message.c_str());
 	else
@@ -38,7 +38,7 @@ int main()
 	}
 
 	//send/recv
-	client.send_Echo("Hello, sogou rpc!", "1412");
+	client.send_Echo("Hello, srpc!", "1412");
 	//do anything you want
 	client.recv_Echo(sync_res);
 
@@ -54,7 +54,7 @@ int main()
 
 	//async
 	Example::EchoRequest req;
-	req.message = "Hello, sogou rpc!";
+	req.message = "Hello, srpc!";
 	req.name = "1412";
 
 	client.Echo(&req, [](Example::EchoResponse *resp, RPCContext *ctx) {
@@ -70,7 +70,7 @@ int main()
 	Example::EchoResponse sync_resp;
 	RPCSyncContext sync_ctx;
 
-	sync_req.message = "Hello, sogou rpc!";
+	sync_req.message = "Hello, srpc!";
 	sync_req.name = "Sync";
 	client.Echo(&sync_req, &sync_resp, &sync_ctx);
 

@@ -146,7 +146,7 @@ int main()
 {
     Example::SRPCClient client("127.0.0.1", 1412);
     EchoRequest req;
-    req.set_message("Hello, sogou rpc!");
+    req.set_message("Hello, srpc!");
 
     auto *task = client.create_Echo_task([](EchoResponse *resp, RPCContext *ctx) {                                                                              
         if (ctx->success())
