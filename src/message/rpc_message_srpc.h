@@ -34,7 +34,7 @@ namespace srpc
 
 static constexpr int SRPC_HEADER_SIZE = 16;
 
-// define sogou rpc protocol
+// define srpc protocol
 class SRPCMessage : public RPCMessage
 {
 public:

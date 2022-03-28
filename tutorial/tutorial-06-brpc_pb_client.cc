@@ -25,7 +25,7 @@ int main()
 
 	//async
 	EchoRequest req;
-	req.set_message("Hello, sogou rpc!");
+	req.set_message("Hello, srpc!");
 	req.set_name("1412");
 
 	client.Echo(&req, [](EchoResponse *resp, RPCContext *ctx) {
@@ -50,7 +50,7 @@ int main()
 	EchoResponse sync_resp;
 	RPCSyncContext sync_ctx;
 
-	sync_req.set_message("Hello, sogou rpc!");
+	sync_req.set_message("Hello, srpc!");
 	sync_req.set_name("Sync");
 
 	client.Echo(&sync_req, &sync_resp, &sync_ctx);

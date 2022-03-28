@@ -89,13 +89,20 @@ int main()
     auto *calc_task = WFTaskFactory::create_go_task(calc, 3, 4);
 
     EchoRequest req;
-    req.set_message("Hello, sogou rpc!");
+    req.set_message("Hello!");
     req.set_name("1412");
     rpc_task->serialize_input(&req);
 
-    ((*http_task * rpc_task) > calc_task).start();
+    WFFacilities::WaitGroup wait_group(1);
 
-    pause();
+    SeriesWork *series = Workflow::create_series_work(http_task, [&wait_group](const SeriesWork *) {
+        wait_group.done();
+    });
+    series->push_back(rpc_task);
+    series->push_back(calc_task);
+    series->start();
+
+    wait_group.wait();
     return 0;
 }
 ~~~

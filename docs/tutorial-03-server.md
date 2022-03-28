@@ -16,8 +16,8 @@
 - 想像一下，我们也可以从``Example::Service``派生更多的功能的rpc``Echo``不同实现的Service
 - 想像一下，我们可以在N个不同的端口创建N个不同的RPC Server、代表着不同的协议
 - 想像一下，我们可以把同一个ServiceIMPL实例``add_service``到不同的Server上，我们也可以把不同的ServiceIMPL实例``add_service``到同一个Server上
-- 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BPRC-STD、SogouRPC-STD、SogouRPC-Http
-- 甚至，我们可以将1个PB的``ExampleServiceImpl``和1个Thrift的``AnotherThriftServiceImpl``，``add_service``到同一个SogouRPC-STD Server，两种IDL在同一个端口上完美工作！
+- 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BPRC-STD、SRPC-STD、SRPC-Http
+- 甚至，我们可以将1个PB的``ExampleServiceImpl``和1个Thrift的``AnotherThriftServiceImpl``，``add_service``到同一个SRPC-STD Server，两种IDL在同一个端口上完美工作！
 
 ~~~cpp
 int main()
@@ -26,6 +26,8 @@ int main()
     SRPCHttpServer server_srpc_http;
     BRPCServer server_brpc;
     ThriftServer server_thrift;
+    TRPCServer server_trpc;
+    TRPCHttpServer server_trpc_http;
 
     ExampleServiceImpl impl_pb;
     AnotherThriftServiceImpl impl_thrift;
@@ -36,12 +38,19 @@ int main()
     server_srpc_http.add_service(&impl_thrift);
     server_brpc.add_service(&impl_pb);
     server_thrift.add_service(&impl_thrift);
+    server_trpc.add_service(&impl_pb);
+    server_trpc_http.add_service(&impl_thrift);
 
     server_srpc.start(1412);
     server_srpc_http.start(8811);
     server_brpc.start(2020);
     server_thrift.start(9090);
-    pause();
+    server_trpc.start(2022);
+    server_trpc_http.start(8822);
+    
+    getchar();
+    server_trpc_http.stop();
+    server_trpc.stop();
     server_thrift.stop();
     server_brpc.stop();
     server_srpc_http.stop();

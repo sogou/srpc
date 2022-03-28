@@ -7,13 +7,13 @@
 |Thrift Binary HttpTransport| Thrift    | http | 二进制      |不支持               | 不支持      |  支持    | 不支持  |  不支持      |
 |GRPC                       | PB        | http2| 二进制      |gzip/zlib/lz4/snappy| 支持        |  不支持  | 支持    |  支持       |
 |BRPC Std                   | PB        | tcp  | 二进制      |gzip/zlib/lz4/snappy| 支持        |  不支持  | 支持    |  支持       |
-|SogouRPC Std               | PB/Thrift | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
-|SogouRPC Std Http          | PB/Thrift | http | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
+|SRPC Std               | PB/Thrift | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
+|SRPC Std Http          | PB/Thrift | http | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
 |tRPC Std                   | PB        | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
 
 ## 基础概念
 - 通信层：TCP/TPC_SSL/HTTP/HTTPS/HTTP2
-- 协议层：Thrift-binary/BRPC-std/SogouRPC-std/tRPC-std
+- 协议层：Thrift-binary/BRPC-std/SRPC-std/tRPC-std
 - 压缩层：不压缩/gzip/zlib/lz4/snappy
 - 数据层：PB binary/Thrift binary/Json string
 - IDL序列化层：PB/Thrift serialization
@@ -85,7 +85,7 @@ service Example {
 ~~~
 
 ## RPC Service
-- 组成sogouRPC服务的基本单元
+- 组成SRPC服务的基本单元
 - 每一个Service一定由某一种IDL生成
 - Service由IDL决定，与网络通信具体协议无关
 
@@ -93,7 +93,7 @@ service Example {
 下面我们通过一个具体例子来呈现
 - 沿用上面的``example.proto``IDL描述文件
 - 执行官方的``protoc example.proto --cpp_out=./ --proto_path=./``获得``example.pb.h``和``example.pb.cpp``两个文件
-- 执行SogouRPC的``srpc_generator protobuf ./example.proto ./``获得``example.srpc.h``文件
+- 执行SRPC的``srpc_generator protobuf ./example.proto ./``获得``example.srpc.h``文件
 - 我们派生``Example::Service``来实现具体的rpc业务逻辑，这就是一个RPC Service
 - 注意这个Service没有任何网络、端口、通信协议等概念，仅仅负责完成实现从``EchoRequest``输入到输出``EchoResponse``的业务逻辑
 
@@ -129,8 +129,8 @@ public:
 - 想像一下，我们也可以从``Example::Service``派生出多个Service，而它们的rpc``Echo``实现的功能可以不同
 - 想像一下，我们可以在N个不同的端口创建N个不同的RPC Server，代表着不同的协议
 - 想像一下，我们可以把同一个ServiceIMPL实例``add_service()``到不同的Server上，我们也可以把不同的ServiceIMPL实例``add_service``到同一个Server上
-- 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BPRC-STD、SogouRPC-STD、SogouRPC-Http
-- 甚至，我们可以将1个Protobuf IDL相关的``ExampleServiceImpl``和1个Thrift IDL相关的``AnotherThriftServiceImpl``，``add_service``到同一个SogouRPC-STD Server，两种IDL在同一个端口上完美工作！
+- 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BPRC-STD、SRPC-STD、SRPC-Http
+- 甚至，我们可以将1个Protobuf IDL相关的``ExampleServiceImpl``和1个Thrift IDL相关的``AnotherThriftServiceImpl``，``add_service``到同一个SRPC-STD Server，两种IDL在同一个端口上完美工作！
 
 ~~~cpp
 int main()
@@ -139,6 +139,8 @@ int main()
     SRPCHttpServer server_srpc_http;
     BRPCServer server_brpc;
     ThriftServer server_thrift;
+    TRPCServer server_trpc;
+    TRPCHttpServer server_trpc_http;
 
     ExampleServiceImpl impl_pb;
     AnotherThriftServiceImpl impl_thrift;
@@ -149,12 +151,19 @@ int main()
     server_srpc_http.add_service(&impl_thrift);
     server_brpc.add_service(&impl_pb);
     server_thrift.add_service(&impl_thrift);
+    server_trpc.add_service(&impl_pb);
+    server_trpc_http.add_service(&impl_pb);
 
     server_srpc.start(1412);
     server_srpc_http.start(8811);
     server_brpc.start(2020);
     server_thrift.start(9090);
+    server_trpc.start(2022);
+    server_trpc_http.start(8822);
+
     getchar();
+    server_trpc_http.stop();
+    server_trpc.stop();
     server_thrift.stop();
     server_brpc.stop();
     server_srpc_http.stop();
@@ -179,6 +188,7 @@ int main()
 ~~~cpp
 #include <stdio.h>
 #include "example.srpc.h"
+#include "workflow/WFFacilities.h"
 
 using namespace srpc;
 
@@ -186,18 +196,21 @@ int main()
 {
     Example::SRPCClient client("127.0.0.1", 1412);
     EchoRequest req;
-    req.set_message("Hello, sogou rpc!");
-    req.set_name("Li Yingxin");
+    req.set_message("Hello!");
+    req.set_name("SRPCClient");
 
-    client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
+    WFFacilities::WaitGroup wait_group(1);
+
+    client.Echo(&req, [&wait_group](EchoResponse *response, RPCContext *ctx) {
         if (ctx->success())
             printf("%s\n", response->DebugString().c_str());
         else
             printf("status[%d] error[%d] errmsg:%s\n",
                     ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+        wait_group.done();
     });
 
-    getchar();
+    wait_group.wait();
     return 0;
 }
 ~~~
@@ -418,13 +431,20 @@ int main()
     auto *calc_task = WFTaskFactory::create_go_task(calc, 3, 4);
 
     EchoRequest req;
-    req.set_message("Hello, sogou rpc!");
+    req.set_message("Hello!");
     req.set_name("1412");
     rpc_task->serialize_input(&req);
 
-    ((*http_task * rpc_task) > calc_task).start();
+    WFFacilities::WaitGroup wait_group(1);
 
-    getchar();
+    SeriesWork *series = Workflow::create_series_work(http_task, [&wait_group](const SeriesWork *) {
+        wait_group.done();
+    });
+    series->push_back(rpc_task);
+    series->push_back(calc_task);
+    series->start();
+
+    wait_group.wait();
     return 0;
 }
 ~~~
