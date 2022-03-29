@@ -917,16 +917,28 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 
 	std::string valid_block = block.substr(st + 1, ed - st - 1);
 	int deep = 0;
+	bool in_string = false;
 	for (size_t i = 0; i < valid_block.size(); i++)
 	{
-		if (valid_block[i] == '\n' || valid_block[i] == '\r')
+		int c = valid_block[i];
+		if (c == '\n' || c == '\r')
+		{
 			valid_block[i] = ';';
-		else if (valid_block[i] == ',' && deep == 0)
+			in_string = false;
+		}
+		else if (c == ',' && !in_string && deep == 0)
 			valid_block[i] = ';';
-		else if (valid_block[i] == '<')
+		else if (c == '<' && !in_string)
 			deep++;
-		else if (valid_block[i] == '>')
+		else if (c == '>' && !in_string)
 			deep--;
+		else if (c == '\"')
+			in_string = !in_string;
+		else if (in_string && c == '\\')
+		{
+			if (i + 1 < valid_block.size())
+				i++;
+		}
 	}
 
 	auto arr = SGenUtil::split_skip_string(valid_block, ';');
