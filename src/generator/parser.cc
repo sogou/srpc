@@ -753,16 +753,16 @@ bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,
 	std::string idl_type;
 	if (left_b + 1 < str.size())
 	{
-		auto bb = SGenUtil::split_filter_empty(str.substr(left_b + 1), ',');
+		auto bb = SGenUtil::split_skip_string(str.substr(left_b + 1), ',');
 		for (const auto& ele : bb)
 		{
-			auto filedparam = SGenUtil::split_filter_empty(ele, ':');
+			auto filedparam = SGenUtil::split_skip_string(ele, ':');
 			if (filedparam.size() != 2)
 			  continue;
 
-			auto typevar = SGenUtil::split_filter_empty(filedparam[1], ' ');
+			auto typevar = SGenUtil::split_skip_string(filedparam[1], ' ');
 			if (typevar.size() != 2)
-			  continue;
+				continue;
 
 			param.var_name = typevar[1];
 			param.required_state = srpc::THRIFT_STRUCT_FIELD_REQUIRED;
@@ -811,7 +811,7 @@ bool Parser::parse_service_thrift(const std::string& file_name_prefix,
 		if (left_b == std::string::npos)
 			continue;
 
-		auto aa = SGenUtil::split_filter_empty(line.substr(0, left_b), ' ');
+		auto aa = SGenUtil::split_skip_string(line.substr(0, left_b), ' ');
 		if (aa.size() != 2)
 			continue;
 
@@ -889,7 +889,7 @@ bool Parser::parse_enum_thrift(const std::string& block, Descriptor& desc)
 		if (valid_block[i] == '\n' || valid_block[i] == '\r' || valid_block[i] == ',')
 			valid_block[i] = ';';
 
-	auto arr = SGenUtil::split_filter_empty(valid_block, ';');
+	auto arr = SGenUtil::split_skip_string(valid_block, ';');
 
 	for (const auto& ele : arr)
 	{
@@ -929,7 +929,7 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 			deep--;
 	}
 
-	auto arr = SGenUtil::split_filter_empty(valid_block, ';');
+	auto arr = SGenUtil::split_skip_string(valid_block, ';');
 
 	for (const auto& ele : arr)
 	{
@@ -937,7 +937,7 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		if (line.empty())
 			continue;
 
-		auto aabb = SGenUtil::split_filter_empty(line, ':');
+		auto aabb = SGenUtil::split_skip_string(line, ':');
 		if (aabb.size() != 2)
 			continue;
 
@@ -949,7 +949,7 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		param.field_id = atoi(aa.c_str());
 
 		auto bb = SGenUtil::strip(aabb[1]);
-		auto bbcc = SGenUtil::split_filter_empty(bb, '=');
+		auto bbcc = SGenUtil::split_skip_string(bb, '=');
 		if (bbcc.size() == 2)
 		{
 			bb = SGenUtil::strip(bbcc[0]);
