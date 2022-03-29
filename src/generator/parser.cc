@@ -328,18 +328,21 @@ std::string Parser::find_typedef_mapping_type(std::string& type_name,
 	{
 		auto key_type = find_typedef_mapping_type(type_name, ++cur, info);
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
+		++cur;
 		return "std::map<" + key_type + ", " + val_type + ">";
 	}
 	else if (idl_type == "std::set" && cur < type_name.size() &&
 			 type_name[cur] == '<')
 	{
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
+		++cur;
 		return "std::set<" + val_type + ">";
 	}
 	else if (idl_type == "std::vector" && cur < type_name.size() &&
 			 type_name[cur] == '<')
 	{
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
+		++cur;
 		return "std::vector<" + val_type + ">";
 	}
 
@@ -606,18 +609,21 @@ static std::string gen_param_var(const std::string& type_name, size_t& cur,
 	{
 		auto key_type = gen_param_var(type_name, ++cur, info);
 		auto val_type = gen_param_var(type_name, ++cur, info);
+		++cur;
 		return "std::map<" + key_type + ", " + val_type + ">";
 	}
 	else if (idl_type == "set" && cur < type_name.size() &&
 			 type_name[cur] == '<')
 	{
 		auto val_type = gen_param_var(type_name, ++cur, info);
+		++cur;
 		return "std::set<" + val_type + ">";
 	}
 	else if (idl_type == "list" && cur < type_name.size() &&
 			 type_name[cur] == '<')
 	{
 		auto val_type = gen_param_var(type_name, ++cur, info);
+		++cur;
 		return "std::vector<" + val_type + ">";
 	}
 
