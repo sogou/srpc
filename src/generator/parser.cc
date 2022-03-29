@@ -932,6 +932,10 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 			deep++;
 		else if (c == '>' && !in_string)
 			deep--;
+		else if (c == '[' && !in_string)
+			valid_block[i] = '{';
+		else if (c == ']' && !in_string)
+			valid_block[i] = '}';
 		else if (c == '\"')
 			in_string = !in_string;
 		else if (in_string && c == '\\')
