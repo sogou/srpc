@@ -968,7 +968,8 @@ public:
 
 	void print_client_main_service(const std::string& type,
 								   const std::vector<std::string>& package,
-								   const std::string& service)
+								   const std::string& service,
+								   const std::string& suffix)
 	{
 		//std::string service_lower = service;
 		//std::transform(service_lower.begin(), service_lower.end(),
@@ -976,13 +977,14 @@ public:
 
 		std::string base_service = make_package_prefix(package, service);
 		fprintf(this->out_file, this->client_main_service_format.c_str(),
-				base_service.c_str(), type.c_str());
+				base_service.c_str(), type.c_str(), suffix.c_str());
 	}
 
 	void print_client_main_method_call(const std::vector<std::string>& package,
 									   const std::string& service,
 									   const std::string& method,
-									   const std::string& request)
+									   const std::string& request,
+									   const std::string& suffix)
 	{
 		std::string method_lower = method;
 		std::transform(method_lower.begin(), method_lower.end(),
@@ -997,7 +999,8 @@ public:
 
 		fprintf(this->out_file, this->client_main_method_call_format.c_str(),
 				req.c_str(), method_lower.c_str(), method_lower.c_str(),
-				method.c_str(), method_lower.c_str(), method_lower.c_str()); 
+				suffix.c_str(), method.c_str(), method_lower.c_str(),
+				method_lower.c_str());
 	}
 
 /*
@@ -1633,14 +1636,14 @@ int main()
 )";
 
 	std::string client_main_service_format = R"(
-	%s::%sClient client(ip, port);
+	%s::%sClient client%s(ip, port);
 )";
 
 	std::string client_main_method_call_format = R"(
 	// example for RPC method call
 	%s %s_req;
 	//%s_req.set_message("Hello, srpc!");
-	client.%s(&%s_req, %s_done);
+	client%s.%s(&%s_req, %s_done);
 )";
 
 /*
