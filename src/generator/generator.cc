@@ -425,25 +425,32 @@ void Generator::generate_client_cpp_file(const idl_info& cur_info, const std::st
 	}
 
 	this->printer.print_client_main_begin();
+	int id = 0;
 
 	for (const auto& desc : cur_info.desc_list)
 	{
 		if (desc.block_type != "service")
 			continue;
 
+		std::string suffix;
+		if (id != 0)
+			suffix = std::to_string(id);
+		id++;
+
 		if (this->is_thrift)
 			this->printer.print_client_main_service("Thrift",
-										cur_info.package_name, desc.block_name);
+								cur_info.package_name, desc.block_name, suffix);
 		else
 			this->printer.print_client_main_service("SRPC",
-										cur_info.package_name, desc.block_name);
+								cur_info.package_name, desc.block_name, suffix);
 		auto rpc_it = desc.rpcs.cbegin();
 		if (rpc_it != desc.rpcs.cend())
 		{
 			this->printer.print_client_main_method_call(cur_info.package_name,
 														desc.block_name,
 														rpc_it->method_name,
-														rpc_it->request_name);
+														rpc_it->request_name,
+														suffix);
 			rpc_it++;
 
 			//if (rpc_it == desc.rpcs.end())
