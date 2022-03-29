@@ -246,8 +246,8 @@ bool Generator::generate_thrift_type_file(idl_info& cur_info)
 	}
 
 	this->printer.print_thrift_include(cur_info);
-	this->printer.print_thrift_typedef(cur_info);
 	this->printer.print_thrift_struct_declaration(cur_info);
+	this->printer.print_thrift_typedef(cur_info);
 
 	for (auto& desc : cur_info.desc_list)
 	{
