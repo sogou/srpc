@@ -55,18 +55,21 @@ public:
 	}
 
 	size_t get_filters_size() const { return this->filters.size(); }
-	RPCModuleType get_module_type() const { return this->module_type; }
+	enum RPCModuleType get_module_type() const { return this->module_type; }
 
 	bool client_task_begin(SubTask *task, const RPCModuleData& data);
 	bool server_task_begin(SubTask *task, const RPCModuleData& data);
 	bool client_task_end(SubTask *task, RPCModuleData& data);
 	bool server_task_end(SubTask *task, RPCModuleData& data);
 
-	RPCModule(RPCModuleType module_type) { this->module_type = module_type; }
+	RPCModule(enum RPCModuleType module_type)
+	{
+		this->module_type = module_type;
+	}
 	virtual ~RPCModule() {}
 
 private:
-	RPCModuleType module_type;
+	enum RPCModuleType module_type;
 	std::mutex mutex;
 	std::list<RPCFilter *> filters;
 };

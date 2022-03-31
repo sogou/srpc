@@ -14,8 +14,8 @@
   limitations under the License.
 */
 
-#ifndef __RPC_SPAN_POLICIES_H__
-#define __RPC_SPAN_POLICIES_H__
+#ifndef __RPC_FILTER_SPAN_H__
+#define __RPC_FILTER_SPAN_H__
 
 #include <time.h>
 #include <mutex>
