@@ -47,12 +47,12 @@ private:
 	virtual bool filter(RPCModuleData& data) = 0;
 
 public:
-	RPCFilter(int module_type)
+	RPCFilter(RPCModuleType module_type)
 	{
 		this->module_type = module_type;
 	}
 
-	int get_module_type() const { return this->module_type; }
+	RPCModuleType get_module_type() const { return this->module_type; }
 
 	virtual bool client_begin(SubTask *task, const RPCModuleData& data)
 	{
@@ -72,7 +72,7 @@ public:
 	}
 
 private:
-	int module_type;
+	RPCModuleType module_type;
 };
 
 } // end namespace srpc

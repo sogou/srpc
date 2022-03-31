@@ -13,7 +13,7 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_LIST})
 
 set(SRC
 	rpc_module.cc
-	rpc_span_policies.cc
+	rpc_filter_span.cc
 	${PROTO_SRCS} ${PROTO_HDRS}
 )
 
