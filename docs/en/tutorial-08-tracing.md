@@ -57,7 +57,7 @@ As what we saw on the screen, the client reported span_id: **04d070f537f17d00** 
 
 ### 3. About Parameters
 
-How long to collect a trace, and the number of reported retries and other parameters can be specified through the constructor parameters of `RPCSpanOpenTelemetry`. Code reference: [src/module/rpc_span_policies.h](https://github.com/sogou/srpc/blob/master/src/module/rpc_span_policies.h#L238)
+How long to collect a trace, and the number of reported retries and other parameters can be specified through the constructor parameters of `RPCSpanOpenTelemetry`. Code reference: [src/module/rpc_filter_span.h](https://github.com/sogou/srpc/blob/master/src/module/rpc_filter_span.h#L238)
 
 The default value is to collect up to 1000 trace information per second, and features such as transferring tracing information through the srpc framework transparently have also been implemented, which also conform to the specifications. 
 

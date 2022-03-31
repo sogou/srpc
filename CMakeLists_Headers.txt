@@ -12,10 +12,10 @@ set(SRC_HEADERS
 	src/thrift/rpc_thrift_enum.h
 	src/thrift/rpc_thrift_idl.h
 	src/thrift/rpc_thrift_idl.inl
-	src/module/rpc_span_policies.h
-	src/module/rpc_module_span.h
 	src/module/rpc_module.h
+	src/module/rpc_module_span.h
 	src/module/rpc_filter.h
+	src/module/rpc_filter_span.h
 	src/rpc_basic.h
 	src/rpc_buffer.h
 	src/rpc_client.h

@@ -2,7 +2,7 @@
 #include <limits.h>
 #include "workflow/WFTask.h"
 #include "workflow/HttpUtil.h"
-#include "rpc_span_policies.h"
+#include "rpc_filter_span.h"
 #include "opentelemetry_trace_service.pb.h"
 
 namespace srpc

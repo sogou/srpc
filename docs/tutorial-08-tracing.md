@@ -58,7 +58,7 @@ int main()
 
 ### 3. 参数
 
-多久收集一份trace信息、上报请求的重试次数、以及其他参数，都可以通过`RPCSpanOpenTelemetry`的构造函数指定。代码参考：[src/module/rpc_span_policies.h](https://github.com/sogou/srpc/blob/master/src/module/rpc_span_policies.h#L238)
+多久收集一份trace信息、上报请求的重试次数、以及其他参数，都可以通过`RPCSpanOpenTelemetry`的构造函数指定。代码参考：[src/module/rpc_filter_span.h](https://github.com/sogou/srpc/blob/master/src/module/rpc_filter_span.h#L238)
 
 默认每秒收集1000条trace信息，并且透传tracing信息等其他功能也已遵循上述规范实现。
 
