@@ -8,7 +8,6 @@ proto_library(
         "src/message/rpc_meta.proto",
         "src/message/rpc_meta_brpc.proto",
         "src/message/rpc_meta_trpc.proto",
-        "src/message/rpc_span.proto",
     ],
     strip_import_prefix = "src/message",
 )
