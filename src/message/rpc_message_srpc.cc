@@ -27,6 +27,7 @@
 #include "rpc_meta.pb.h"
 #include "rpc_message_srpc.h"
 #include "rpc_zero_copy_stream.h"
+#include "rpc_module_span.h"
 
 namespace srpc
 {
@@ -261,18 +262,21 @@ bool SRPCMessage::get_attachment_nocopy(const char **attachment, size_t *len) co
 bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
+	KeyValue *info;
 
 	for (const auto& kv : data)
 	{
-		if (kv.first == "trace_id")
+		if (kv.first == SRPC_TRACE_ID)
 		{
-			meta->mutable_span()->set_trace_id(kv.second.c_str(),
-											   SRPC_TRACEID_SIZE);
+			info = meta->add_trans_info();
+			info->set_key(SRPC_TRACE_ID);
+			info->set_byte_value(kv.second.c_str(), SRPC_TRACEID_SIZE);
 		}
-		else if (kv.first == "span_id")
+		else if (kv.first == SRPC_SPAN_ID)
 		{
-			meta->mutable_span()->set_span_id(kv.second.c_str(),
-											  SRPC_SPANID_SIZE);
+			info = meta->add_trans_info();
+			info->set_key(SRPC_SPAN_ID);
+			info->set_byte_value(kv.second.c_str(), SRPC_SPANID_SIZE);
 		}
 	}
 
@@ -282,14 +286,30 @@ bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
-	if (!meta->has_span())
-		return false;
+	KeyValue *info;
+	int flag = 0;
 
-	data["trace_id"] = meta->mutable_span()->trace_id();
-	data["span_id"] = meta->mutable_span()->span_id();
+	for (int i = 0; i < meta->trans_info_size() && flag != 5; i++)
+	{
+		info = meta->mutable_trans_info(i);
 
-	if (meta->mutable_span()->has_parent_span_id())
-		data["parent_span_id"] = meta->mutable_span()->parent_span_id();
+		if (info->key() == SRPC_TRACE_ID)
+		{
+			 // if (info->has_byte_value())
+			data[SRPC_TRACE_ID] = info->byte_value();
+			flag |= 1;
+		}
+		else if (info->key() == SRPC_SPAN_ID)
+		{
+			data[SRPC_SPAN_ID] = info->byte_value();
+			flag |= (1 << 1);
+		}
+		else if (info->key() == SRPC_PARENT_SPAN_ID)
+		{
+			data[SRPC_PARENT_SPAN_ID] = info->byte_value();
+			flag |= (1 << 2);
+		}
+	}
 
 	return true;
 }
@@ -956,14 +976,14 @@ static bool __set_meta_module_data(const RPCModuleData& data,
 
 	while (it != data.end() && flag != 3)
 	{
-		if (it->first == "trace_id")
+		if (it->first == SRPC_TRACE_ID)
 		{
 			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
 			TRACE_ID_BIN_TO_HEX((uint64_t *)it->second.c_str(), trace_id_buf);
 			http_msg->set_header_pair("Trace-Id", trace_id_buf);
 			flag |= 1;
 		}
-		else if (it->first == "span_id")
+		else if (it->first == SRPC_SPAN_ID)
 		{
 			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
 			SPAN_ID_BIN_TO_HEX((uint64_t *)it->second.c_str(), span_id_buf);
@@ -991,7 +1011,7 @@ static bool __get_meta_module_data(RPCModuleData& data,
 		{
 			uint64_t trace_id[2];
 			TRACE_ID_HEX_TO_BIN(value.c_str(), trace_id);
-			data["trace_id"] = std::string((char *)trace_id, SRPC_TRACEID_SIZE);
+			data[SRPC_TRACE_ID] = std::string((char *)trace_id, SRPC_TRACEID_SIZE);
 			flag |= 1;
 		}
 		else if (strcasecmp(name.c_str(), "Span-Id") == 0 &&
@@ -999,7 +1019,7 @@ static bool __get_meta_module_data(RPCModuleData& data,
 		{
 			uint64_t span_id[1];
 			SPAN_ID_HEX_TO_BIN(value.c_str(), span_id);
-			data["span_id"] = std::string((char *)span_id, SRPC_SPANID_SIZE);
+			data[SRPC_SPAN_ID] = std::string((char *)span_id, SRPC_SPANID_SIZE);
 			flag |= (1 << 1);
 		}
 	}

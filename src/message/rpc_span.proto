@@ -1,8 +1,0 @@
-syntax="proto2";
-
-message Span {
-	required bytes trace_id = 1;
-	required bytes span_id = 2;
-	optional bytes parent_span_id = 3;
-};
-
