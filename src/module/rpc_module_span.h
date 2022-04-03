@@ -44,7 +44,7 @@ const char *const SRPC_FINISH_TIMESTAMP	= "srpc.finish_time";
 const char *const SRPC_DURATION			= "srpc.duration";
 
 // span tags
-const char *const SRPC_SPAN_KIND		= "span.kind";
+const char *const SRPC_SPAN_KIND		= "span.span.kind";
 const char *const SRPC_SPAN_KIND_CLIENT	= "srpc.client";
 const char *const SRPC_SPAN_KIND_SERVER	= "srpc.server";
 const char *const SRPC_SERVICE_NAME		= "srpc.service.name";
