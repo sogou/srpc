@@ -14,10 +14,11 @@
   limitations under the License.
 */
 
-#include "rpc_message.h"
-#include <workflow/WFTask.h>
 #include <mutex>
 #include <condition_variable>
+#include <workflow/WFTask.h>
+#include "rpc_message.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -31,6 +32,26 @@ struct ThriftReceiver
 	T output;
 	bool is_done = false;
 };
+
+static void srpc_log_format(std::string& key, std::string& value,
+							const RPCLogVector& fields)
+{
+	if (fields.size() == 0)
+		return;
+
+	char buffer[100];
+	snprintf(buffer, 100, "%s%c%lld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS());
+	key = std::move(buffer);
+	value = "{\"";
+
+	for (auto& field : fields)
+	{
+		value = value + std::move(field.first) + "\":\""
+			  + std::move(field.second) + "\",";
+	}
+
+	value[value.length() - 1] = '}';
+}
 
 template<class RPCREQ, class RPCRESP>
 class RPCContextImpl : public RPCContext
@@ -196,9 +217,43 @@ public:
 		return false;
 	}
 
-	void log(const RPCLogVector& fields) override { }
+	void log(const RPCLogVector& fields) override
+	{
+		if (this->is_server_task() && module_data_)
+		{
+			std::string key;
+			std::string value;
+			srpc_log_format(key, value, fields);
+			module_data_->emplace(std::move(key), std::move(value));
+		}
+	}
 
-	void baggage(const std::string& key, const std::string& value) override { }
+	bool set_baggage(const std::string& key, const std::string& value) override
+	{
+		if (this->is_server_task() && module_data_)
+		{
+			const auto it = module_data_->emplace(key, value);
+			return it.second;
+		}
+
+		return false;
+	}
+
+	bool get_baggage(const std::string& key, std::string& value) override
+	{
+		if (module_data_)
+		{
+			const auto it = module_data_->find(key);
+
+			if (it != module_data_->cend())
+			{
+				value = it->second;
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	void set_json_add_whitespace(bool on) override
 	{
@@ -227,7 +282,13 @@ public:
 	//void noreply() override;
 	//WFConnection *get_connection() override;
 
-	RPCContextImpl(WFNetworkTask<RPCREQ, RPCRESP> *task) : task_(task) { }
+public:
+	RPCContextImpl(WFNetworkTask<RPCREQ, RPCRESP> *task,
+				   RPCModuleData *module_data) :
+		task_(task),
+		module_data_(module_data)
+	{
+	}
 
 protected:
 	bool is_server_task() const
@@ -238,6 +299,9 @@ protected:
 
 protected:
 	WFNetworkTask<RPCREQ, RPCRESP> *task_;
+
+private:
+	RPCModuleData *module_data_;
 };
 
 } // namespace srpc

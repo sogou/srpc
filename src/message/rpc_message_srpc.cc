@@ -266,17 +266,21 @@ bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 
 	for (const auto& kv : data)
 	{
+		info = meta->add_trans_info();
 		if (kv.first == SRPC_TRACE_ID)
 		{
-			info = meta->add_trans_info();
 			info->set_key(SRPC_TRACE_ID);
 			info->set_byte_value(kv.second.c_str(), SRPC_TRACEID_SIZE);
 		}
 		else if (kv.first == SRPC_SPAN_ID)
 		{
-			info = meta->add_trans_info();
 			info->set_key(SRPC_SPAN_ID);
 			info->set_byte_value(kv.second.c_str(), SRPC_SPANID_SIZE);
+		}
+		else
+		{
+			info->set_key(kv.first);
+			info->set_byte_value(kv.second);
 		}
 	}
 
@@ -287,28 +291,19 @@ bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
 	KeyValue *info;
-	int flag = 0;
 
-	for (int i = 0; i < meta->trans_info_size() && flag != 5; i++)
+	for (int i = 0; i < meta->trans_info_size(); i++)
 	{
 		info = meta->mutable_trans_info(i);
 
 		if (info->key() == SRPC_TRACE_ID)
-		{
-			 // if (info->has_byte_value())
 			data[SRPC_TRACE_ID] = info->byte_value();
-			flag |= 1;
-		}
 		else if (info->key() == SRPC_SPAN_ID)
-		{
 			data[SRPC_SPAN_ID] = info->byte_value();
-			flag |= (1 << 1);
-		}
 		else if (info->key() == SRPC_PARENT_SPAN_ID)
-		{
 			data[SRPC_PARENT_SPAN_ID] = info->byte_value();
-			flag |= (1 << 2);
-		}
+		else
+			data[info->key()] = info->byte_value();
 	}
 
 	return true;
