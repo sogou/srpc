@@ -17,6 +17,7 @@ if (NOT "$ENV{CPLUS_INCLUDE_PATH}" STREQUAL "")
 endif ()
 
 find_package(OpenSSL REQUIRED)
+find_package(srpc REQUIRED CONFIG HINTS ..)
 
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
@@ -115,7 +116,7 @@ else ()
 		set(LZ4_LIB lz4)
 	endif ()
 
-	set(SRPC_LIB srpc ${SNAPPY_LIB} ${LZ4_LIB})
+	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z ${SNAPPY_LIB} ${LZ4_LIB})
 endif ()
 
 foreach(src ${TEST_LIST})
