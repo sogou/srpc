@@ -25,7 +25,7 @@ else ()
 	set (HAVE_SYS_UIO_H_01 true)
 endif ()
 
-if(NOT VCPKG_TOOLCHAIN)
+if (NOT VCPKG_TOOLCHAIN)
 
 	# Try to find the package if workflow is not installed, otherwise proceed with find_package()
 	if (NOT WORKFLOW_INSTALLED)
@@ -41,6 +41,12 @@ if(NOT VCPKG_TOOLCHAIN)
 #		if (${Snappy_CONSIDERED_VERSIONS} VERSION_LESS 1.1.6)
 #			message(FATAL_ERROR "Snappy version is less than 1.1.6")
 #		endif ()
+	else ()
+		set(SNAPPY_LIB snappy)
+	endif ()
+
+	if (LZ4_INSTALLED)
+		set(LZ4_LIB lz4)
 	endif ()
 
 else()
@@ -80,59 +86,80 @@ add_dependencies(thrift LINK_HEADERS)
 add_dependencies(compress LINK_HEADERS)
 add_dependencies(message LINK_HEADERS)
 
-add_library(
-	${PROJECT_NAME} STATIC
-	${SRC}
-	$<TARGET_OBJECTS:module>
-	$<TARGET_OBJECTS:thrift>
-	$<TARGET_OBJECTS:compress>
-	$<TARGET_OBJECTS:message>
-)
-add_dependencies(${PROJECT_NAME} LINK_HEADERS)
+
 if (WIN32)
+	add_library(
+		${PROJECT_NAME} STATIC
+		${SRC}
+		$<TARGET_OBJECTS:module>
+		$<TARGET_OBJECTS:thrift>
+		$<TARGET_OBJECTS:compress>
+		$<TARGET_OBJECTS:message>
+	)
+
+	add_dependencies(${PROJECT_NAME} LINK_HEADERS)
+
 	target_compile_definitions(
 		${PROJECT_NAME} PRIVATE
 		strdup=_strdup
 		strcasecmp=_stricmp
 		strncasecmp=_strnicmp
 	)
-endif ()
 
-install(
-	TARGETS ${PROJECT_NAME}
-	ARCHIVE
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	COMPONENT devel
-)
-
-if (APPLE)
-	set(LIBSO ${LIB_DIR}/libsrpc.a)
-else ()
-	set(LIBSO ${LIB_DIR}/libsrpc.so)
-	add_custom_target(
-		SCRIPT_SHARED_LIB ALL
-		COMMAND ${CMAKE_COMMAND} -E echo 'GROUP ( libsrpc.a AS_NEEDED ( libz.so libworkflow.so libprotobuf.so ) ) ' > ${LIBSO}
+	install(
+		TARGETS ${PROJECT_NAME}
+		ARCHIVE
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		COMPONENT devel
 	)
-	add_dependencies(SCRIPT_SHARED_LIB ${PROJECT_NAME})
+
+else ()
+	set(STATIC_LIB_NAME ${PROJECT_NAME}-static)
+	set(SHARED_LIB_NAME ${PROJECT_NAME}-shared)
+
+	add_library(
+		${STATIC_LIB_NAME} STATIC
+		${SRC}
+		$<TARGET_OBJECTS:module>
+		$<TARGET_OBJECTS:thrift>
+		$<TARGET_OBJECTS:compress>
+		$<TARGET_OBJECTS:message>
+	)
+
+	add_library(
+		${SHARED_LIB_NAME} SHARED
+		${SRC}
+		$<TARGET_OBJECTS:module>
+		$<TARGET_OBJECTS:thrift>
+		$<TARGET_OBJECTS:compress>
+		$<TARGET_OBJECTS:message>
+	)
+
+	target_link_libraries(${SHARED_LIB_NAME} 
+						  OpenSSL::SSL
+						  OpenSSL::Crypto
+						  pthread
+						  protobuf
+						  workflow
+						  z ${SNAPPY_LIB} ${LZ4_LIB})
+		
+	set_target_properties(${STATIC_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+	set_target_properties(${SHARED_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+
+	add_dependencies(${STATIC_LIB_NAME} LINK_HEADERS)
+	add_dependencies(${SHARED_LIB_NAME} LINK_HEADERS)
+
+	install(
+		TARGETS ${STATIC_LIB_NAME}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		COMPONENT devel
+	)
+
+	install(
+		TARGETS ${SHARED_LIB_NAME}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		COMPONENT devel
+	)
+
 endif ()
-
-install(
-	FILES ${LIBSO}
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	COMPONENT devel
-)
-
-install (
-	TARGETS ${CMAKE_PROJECT_NAME} EXPORT ${CMAKE_PROJECT_NAME}-targets
-	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-install (
-	EXPORT ${CMAKE_PROJECT_NAME}-targets
-	FILE ${CMAKE_PROJECT_NAME}-targets.cmake
-	DESTINATION "${CMAKE_CONFIG_INSTALL_DIR}"
-)
-
 
