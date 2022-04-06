@@ -116,6 +116,7 @@ if (WIN32)
 else ()
 	set(STATIC_LIB_NAME ${PROJECT_NAME}-static)
 	set(SHARED_LIB_NAME ${PROJECT_NAME}-shared)
+	link_directories(${OPENSSL_LINK_DIR} ${WORKFLOW_LIB_DIR} ${Protobuf_LIB_DIR})
 
 	add_library(
 		${STATIC_LIB_NAME} STATIC
