@@ -19,6 +19,7 @@ if (NOT "$ENV{CPLUS_INCLUDE_PATH}" STREQUAL "")
 endif ()
 
 find_package(OpenSSL REQUIRED)
+find_package(srpc REQUIRED CONFIG HINTS ..)
 
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
@@ -104,7 +105,7 @@ if (APPLE)
 elseif (WIN32)
 	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto protobuf::libprotobuf ZLIB::ZLIB)
 else ()
-	set(SRPC_LIB srpc ${SNAPPY_LIB} ${LZ4_LIB})
+	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z ${SNAPPY_LIB} ${LZ4_LIB})
 endif ()
 
 foreach(src ${TUTORIAL_PB_LIST})
