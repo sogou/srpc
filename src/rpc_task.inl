@@ -120,7 +120,7 @@ public:
 	void log(const RPCLogVector& fields);
 
 	// Baggage Items, which are just key:value pairs that cross process boundaries
-	void set_baggage(const std::string& key, const std::string& value);
+	void add_baggage(const std::string& key, const std::string& value);
 	bool get_baggage(const std::string& key, std::string& value);
 
 	bool set_http_header(const std::string& name, const std::string& value);
@@ -642,10 +642,10 @@ void RPCClientTask<RPCREQ, RPCRESP>::log(const RPCLogVector& fields)
 }
 
 template<class RPCREQ, class RPCRESP>
-void RPCClientTask<RPCREQ, RPCRESP>::set_baggage(const std::string& key,
+void RPCClientTask<RPCREQ, RPCRESP>::add_baggage(const std::string& key,
 												 const std::string& value)
 {
-	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
+	module_data_[key] = value;
 }
 
 template<class RPCREQ, class RPCRESP>

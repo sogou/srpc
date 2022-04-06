@@ -118,14 +118,14 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 
 	for (const auto& it : data)
 	{
-		if (strncmp(it.first.c_str(), SRPC_SPAN_LOG, 8) == 0)
+		if (strncmp(it.first.c_str(), SRPC_SPAN_LOG, strlen(SRPC_SPAN_LOG)) == 0)
 			ret += snprintf(str + ret, len - ret,
 							"\n%s trace_id: %s span_id: %s"
 							" timestamp: %s %s",
 							"[ANNOTATION]",
 							trace_id_buf,
 							span_id_buf,
-							it.first.c_str() + 9,
+							it.first.c_str() + strlen(SRPC_SPAN_LOG) + 1,
 							it.second.c_str());
 	}
 

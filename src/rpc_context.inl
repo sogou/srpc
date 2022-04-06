@@ -217,7 +217,7 @@ public:
 		return false;
 	}
 
-	void log(const RPCLogVector& fields) override
+	bool log(const RPCLogVector& fields) override
 	{
 		if (this->is_server_task() && module_data_)
 		{
@@ -225,15 +225,19 @@ public:
 			std::string value;
 			srpc_log_format(key, value, fields);
 			module_data_->emplace(std::move(key), std::move(value));
+
+			return true;
 		}
+
+		return false;
 	}
 
-	bool set_baggage(const std::string& key, const std::string& value) override
+	bool add_baggage(const std::string& key, const std::string& value) override
 	{
 		if (this->is_server_task() && module_data_)
 		{
-			const auto it = module_data_->emplace(key, value);
-			return it.second;
+			(*module_data_)[key] = value;
+			return true;
 		}
 
 		return false;
