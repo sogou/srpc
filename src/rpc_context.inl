@@ -33,26 +33,6 @@ struct ThriftReceiver
 	bool is_done = false;
 };
 
-static void srpc_log_format(std::string& key, std::string& value,
-							const RPCLogVector& fields)
-{
-	if (fields.size() == 0)
-		return;
-
-	char buffer[100];
-	snprintf(buffer, 100, "%s%c%lld", SRPC_SPAN_LOG, ' ', GET_CURRENT_MS());
-	key = std::move(buffer);
-	value = "{\"";
-
-	for (auto& field : fields)
-	{
-		value = value + std::move(field.first) + "\":\""
-			  + std::move(field.second) + "\",";
-	}
-
-	value[value.length() - 1] = '}';
-}
-
 template<class RPCREQ, class RPCRESP>
 class RPCContextImpl : public RPCContext
 {
@@ -223,7 +203,7 @@ public:
 		{
 			std::string key;
 			std::string value;
-			srpc_log_format(key, value, fields);
+			RPCCommon::log_format(key, value, fields);
 			module_data_->emplace(std::move(key), std::move(value));
 
 			return true;

@@ -395,32 +395,6 @@ inline int RPCClientTask<RPCREQ, RPCRESP>::__serialize_input(const IDL *in)
 	return -1;
 }
 
-static bool addr_to_string(const struct sockaddr *addr,
-						   char *ip_str, socklen_t len,
-						   unsigned short *port)
-{
-	const char *ret = NULL;
-
-	if (addr->sa_family == AF_INET)
-	{
-		struct sockaddr_in *sin = (struct sockaddr_in *)addr;
-
-		ret = inet_ntop(AF_INET, &sin->sin_addr, ip_str, len);
-		*port = ntohs(sin->sin_port);
-	}
-	else if (addr->sa_family == AF_INET6)
-	{
-		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)addr;
-
-		ret = inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, len);
-		*port = ntohs(sin6->sin6_port);
-	}
-	else
-		errno = EINVAL;
-
-	return ret != NULL;
-}
-
 template<class RPCREQ, class RPCRESP>
 inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
@@ -610,8 +584,11 @@ bool RPCClientTask<RPCREQ, RPCRESP>::get_remote(std::string& ip,
 	ip.resize(INET6_ADDRSTRLEN + 1);
 
 	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
-		return addr_to_string((struct sockaddr *)&addr, (char *)ip.c_str(),
-							  INET6_ADDRSTRLEN + 1, port);
+	{
+		return RPCCommon::addr_to_string((struct sockaddr *)&addr,
+										 (char *)ip.c_str(),
+										 INET6_ADDRSTRLEN + 1, port);
+	}
 
 	return false;
 }
@@ -626,8 +603,11 @@ bool RPCServerTask<RPCREQ, RPCRESP>::get_remote(std::string& ip,
 	ip.resize(INET6_ADDRSTRLEN + 1);
 
 	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
-		return addr_to_string((struct sockaddr *)&addr, (char *)ip.c_str(),
-							  INET6_ADDRSTRLEN + 1, port);
+	{
+		return RPCCommon::addr_to_string((struct sockaddr *)&addr,
+										 (char *)ip.c_str(),
+										 INET6_ADDRSTRLEN + 1, port);
+	}
 
 	return false;
 }
@@ -637,7 +617,7 @@ void RPCClientTask<RPCREQ, RPCRESP>::log(const RPCLogVector& fields)
 {
 	std::string key;
 	std::string value;
-	srpc_log_format(key, value, fields);
+	RPCCommon::log_format(key, value, fields);
 	module_data_.insert(std::make_pair(std::move(key), std::move(value)));
 }
 

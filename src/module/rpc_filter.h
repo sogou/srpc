@@ -27,7 +27,6 @@ namespace srpc
 {
 
 using RPCModuleData = std::map<std::string, std::string>;
-using RPCLogVector = std::vector<std::pair<std::string, std::string>>;
 
 static RPCModuleData global_empty_map;
 

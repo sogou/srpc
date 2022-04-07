@@ -16,13 +16,6 @@
 
 #ifndef __RPC_CONTEXT_H__
 #define __RPC_CONTEXT_H__
-
-#ifdef _WIN32
-#include <workflow/PlatformSocket.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#endif
 #include <string>
 #include <functional>
 #include <workflow/Workflow.h>

@@ -21,11 +21,13 @@
 #include <chrono>
 #include <google/protobuf/message.h>
 #include "rpc_buffer.h"
+#include <vector>
 
 #ifdef _WIN32
 #include <workflow/PlatformSocket.h>
 #else
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #endif
 
 namespace srpc
@@ -37,7 +39,6 @@ static constexpr unsigned short	SRPC_DEFAULT_PORT		= 1412;
 static constexpr const char	   *SRPC_SSL_SCHEME			= "srpcs";
 static constexpr unsigned short	SRPC_SSL_DEFAULT_PORT	= 6462;
 
-static constexpr int			SRPC_COMPRESS_TYPE_MAX	= 10;
 static constexpr size_t			RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
 static constexpr int			SRPC_MODULE_MAX			= 5;
 static constexpr size_t			SRPC_SPANID_SIZE		= 8;
@@ -81,6 +82,7 @@ static inline uint64_t ntohll(uint64_t x)
 #define SRPC_JSON_OPTION_PRINT_PRIMITIVE	(1<<6)
 
 using ProtobufIDLMessage = google::protobuf::Message;
+using RPCLogVector = std::vector<std::pair<std::string, std::string>>;
 
 enum RPCDataType
 {
@@ -131,7 +133,8 @@ enum RPCCompressType
 	RPCCompressSnappy	=	1,
 	RPCCompressGzip		=	2,
 	RPCCompressZlib		=	3,
-	RPCCompressLz4		=	4
+	RPCCompressLz4		=	4,
+	RPCCompressMax		=	5
 };
 
 enum RPCModuleType
@@ -139,6 +142,15 @@ enum RPCModuleType
 	RPCModuleSpan		=	0,
 	RPCModuleMonitor	=	1,
 	RPCModuleEmpty		=	2
+};
+
+class RPCCommon
+{
+public:
+	static void log_format(std::string& key, std::string& value,
+						   const RPCLogVector& fields);
+	static bool addr_to_string(const struct sockaddr *addr, char *ip_str,
+							   socklen_t len, unsigned short *port);
 };
 
 static inline long long GET_CURRENT_MS()
