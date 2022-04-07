@@ -262,25 +262,25 @@ bool SRPCMessage::get_attachment_nocopy(const char **attachment, size_t *len) co
 bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
-	KeyValue *info;
+	RPCMetaKeyValue *meta_kv;
 
 	for (const auto& kv : data)
 	{
-		info = meta->add_trans_info();
+		meta_kv = meta->add_trans_info();
 		if (kv.first == SRPC_TRACE_ID)
 		{
-			info->set_key(SRPC_TRACE_ID);
-			info->set_byte_value(kv.second.c_str(), SRPC_TRACEID_SIZE);
+			meta_kv->set_key(SRPC_TRACE_ID);
+			meta_kv->set_bytes_value(kv.second.c_str(), SRPC_TRACEID_SIZE);
 		}
 		else if (kv.first == SRPC_SPAN_ID)
 		{
-			info->set_key(SRPC_SPAN_ID);
-			info->set_byte_value(kv.second.c_str(), SRPC_SPANID_SIZE);
+			meta_kv->set_key(SRPC_SPAN_ID);
+			meta_kv->set_bytes_value(kv.second.c_str(), SRPC_SPANID_SIZE);
 		}
 		else
 		{
-			info->set_key(kv.first);
-			info->set_byte_value(kv.second);
+			meta_kv->set_key(kv.first);
+			meta_kv->set_bytes_value(kv.second);
 		}
 	}
 
@@ -290,20 +290,20 @@ bool SRPCMessage::set_meta_module_data(const RPCModuleData& data)
 bool SRPCMessage::get_meta_module_data(RPCModuleData& data) const
 {
 	RPCMeta *meta = static_cast<RPCMeta *>(this->meta);
-	KeyValue *info;
+	RPCMetaKeyValue *meta_kv;
 
 	for (int i = 0; i < meta->trans_info_size(); i++)
 	{
-		info = meta->mutable_trans_info(i);
+		meta_kv = meta->mutable_trans_info(i);
 
-		if (info->key() == SRPC_TRACE_ID)
-			data[SRPC_TRACE_ID] = info->byte_value();
-		else if (info->key() == SRPC_SPAN_ID)
-			data[SRPC_SPAN_ID] = info->byte_value();
-		else if (info->key() == SRPC_PARENT_SPAN_ID)
-			data[SRPC_PARENT_SPAN_ID] = info->byte_value();
+		if (meta_kv->key() == SRPC_TRACE_ID)
+			data[SRPC_TRACE_ID] = meta_kv->bytes_value();
+		else if (meta_kv->key() == SRPC_SPAN_ID)
+			data[SRPC_SPAN_ID] = meta_kv->bytes_value();
+		else if (meta_kv->key() == SRPC_PARENT_SPAN_ID)
+			data[SRPC_PARENT_SPAN_ID] = meta_kv->bytes_value();
 		else
-			data[info->key()] = info->byte_value();
+			data[meta_kv->key()] = meta_kv->bytes_value();
 	}
 
 	return true;
