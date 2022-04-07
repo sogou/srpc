@@ -24,7 +24,7 @@ namespace srpc
 
 int RPCCompressor::add(RPCCompressType type)
 {
-	if (type >= SRPC_COMPRESS_TYPE_MAX || type <= RPCCompressNone)
+	if (type >= RPCCompressMax || type <= RPCCompressNone)
 		return -2;
 
 	int ret = 0;

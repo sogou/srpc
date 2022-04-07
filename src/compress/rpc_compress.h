@@ -109,7 +109,7 @@ private:
 		this->add(RPCCompressLz4);
 	}
 
-	CompressHandler handler[SRPC_COMPRESS_TYPE_MAX];
+	CompressHandler handler[RPCCompressMax];
 };
 
 ////////
@@ -117,7 +117,7 @@ private:
 
 inline int RPCCompressor::add_handler(int type, CompressHandler&& handler)
 {
-	if (type >= SRPC_COMPRESS_TYPE_MAX || type <= RPCCompressNone)
+	if (type >= RPCCompressMax || type <= RPCCompressNone)
 		return -2;
 
 	if (!handler.compress || !handler.decompress || !handler.lease_size)
@@ -138,7 +138,7 @@ inline int RPCCompressor::add_handler(int type, CompressHandler&& handler)
 
 inline const CompressHandler *RPCCompressor::find_handler(int type) const
 {
-	if (type >= SRPC_COMPRESS_TYPE_MAX || type <= RPCCompressNone)
+	if (type >= RPCCompressMax || type <= RPCCompressNone)
 	{
 		return NULL;
 	}
@@ -157,7 +157,7 @@ inline int RPCCompressor::parse_from_compressed(const char *buf, size_t buflen,
 												char *msg, size_t msglen,
 												int type) const
 {
-	if (type >= SRPC_COMPRESS_TYPE_MAX
+	if (type >= RPCCompressMax
 		|| type <= RPCCompressNone
 		|| !this->handler[type].decompress)
 	{
@@ -170,7 +170,7 @@ inline int RPCCompressor::parse_from_compressed(const char *buf, size_t buflen,
 inline int RPCCompressor::parse_from_compressed(RPCBuffer *src, RPCBuffer *dest,
 												int type) const
 {
-	if (type >= SRPC_COMPRESS_TYPE_MAX
+	if (type >= RPCCompressMax
 		|| type <= RPCCompressNone
 		|| !this->handler[type].decompress_iovec)
 	{
@@ -184,7 +184,7 @@ inline int RPCCompressor::serialize_to_compressed(const char *msg, size_t msglen
 												  char *buf, size_t buflen,
 												  int type) const
 {
-	if (type >= SRPC_COMPRESS_TYPE_MAX
+	if (type >= RPCCompressMax
 		|| type <= RPCCompressNone
 		|| !this->handler[type].compress)
 	{
@@ -197,7 +197,7 @@ inline int RPCCompressor::serialize_to_compressed(const char *msg, size_t msglen
 inline int RPCCompressor::serialize_to_compressed(RPCBuffer *src, RPCBuffer *dest,
 												  int type) const
 {
-	if (type >= SRPC_COMPRESS_TYPE_MAX
+	if (type >= RPCCompressMax
 		|| type <= RPCCompressNone
 		|| !this->handler[type].compress)
 	{
@@ -209,7 +209,7 @@ inline int RPCCompressor::serialize_to_compressed(RPCBuffer *src, RPCBuffer *des
 
 inline int RPCCompressor::lease_compressed_size(int type, size_t origin_size) const
 {
-	if (type >= SRPC_COMPRESS_TYPE_MAX
+	if (type >= RPCCompressMax
 		|| type <= RPCCompressNone
 		|| !this->handler[type].lease_size)
 	{
@@ -221,7 +221,7 @@ inline int RPCCompressor::lease_compressed_size(int type, size_t origin_size) co
 
 inline void RPCCompressor::clear()
 {
-	for (int i = 0; i < SRPC_COMPRESS_TYPE_MAX; i++)
+	for (int i = 0; i < RPCCompressMax; i++)
 	{
 		//this->handler[i].type = RPCCompressNone;
 		this->handler[i].compress = nullptr;

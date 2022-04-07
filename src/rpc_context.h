@@ -16,13 +16,6 @@
 
 #ifndef __RPC_CONTEXT_H__
 #define __RPC_CONTEXT_H__
-
-#ifdef _WIN32
-#include <workflow/PlatformSocket.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#endif
 #include <string>
 #include <functional>
 #include <workflow/Workflow.h>
@@ -76,8 +69,15 @@ public:
 	virtual bool set_http_code(int code) = 0;
 	virtual bool set_http_header(const std::string& name, const std::string& value) = 0;
 	virtual bool add_http_header(const std::string& name, const std::string& value) = 0;
-	virtual void log(const RPCLogVector& fields) = 0;
-	virtual void baggage(const std::string& key, const std::string& value) = 0;
+
+	virtual bool log(const RPCLogVector& fields) = 0;
+
+	// Refer to : https://opentelemetry.io/docs/reference/specification/baggage/api
+	// corresponding to SetValue(), GetValue(), RemoveValue()
+	virtual bool add_baggage(const std::string& key, const std::string& value) = 0;
+	virtual bool get_baggage(const std::string& key, std::string& value) = 0;
+	//virtual bool remove_baggage(const std::string& key) = 0;
+
 	//virtual void noreply();
 	//virtual WFConnection *get_connection();
 

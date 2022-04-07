@@ -14,10 +14,11 @@
   limitations under the License.
 */
 
-#include "rpc_message.h"
-#include <workflow/WFTask.h>
 #include <mutex>
 #include <condition_variable>
+#include <workflow/WFTask.h>
+#include "rpc_message.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -196,9 +197,47 @@ public:
 		return false;
 	}
 
-	void log(const RPCLogVector& fields) override { }
+	bool log(const RPCLogVector& fields) override
+	{
+		if (this->is_server_task() && module_data_)
+		{
+			std::string key;
+			std::string value;
+			RPCCommon::log_format(key, value, fields);
+			module_data_->emplace(std::move(key), std::move(value));
 
-	void baggage(const std::string& key, const std::string& value) override { }
+			return true;
+		}
+
+		return false;
+	}
+
+	bool add_baggage(const std::string& key, const std::string& value) override
+	{
+		if (this->is_server_task() && module_data_)
+		{
+			(*module_data_)[key] = value;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool get_baggage(const std::string& key, std::string& value) override
+	{
+		if (module_data_)
+		{
+			const auto it = module_data_->find(key);
+
+			if (it != module_data_->cend())
+			{
+				value = it->second;
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	void set_json_add_whitespace(bool on) override
 	{
@@ -227,7 +266,13 @@ public:
 	//void noreply() override;
 	//WFConnection *get_connection() override;
 
-	RPCContextImpl(WFNetworkTask<RPCREQ, RPCRESP> *task) : task_(task) { }
+public:
+	RPCContextImpl(WFNetworkTask<RPCREQ, RPCRESP> *task,
+				   RPCModuleData *module_data) :
+		task_(task),
+		module_data_(module_data)
+	{
+	}
 
 protected:
 	bool is_server_task() const
@@ -238,6 +283,9 @@ protected:
 
 protected:
 	WFNetworkTask<RPCREQ, RPCRESP> *task_;
+
+private:
+	RPCModuleData *module_data_;
 };
 
 } // namespace srpc

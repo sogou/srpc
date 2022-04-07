@@ -33,52 +33,30 @@ namespace srpc
 {
 
 // follows the basic conventions of RPC part in opentracing
-const char *const SRPC_METHOD_NAME		= "operation";
-const char *const SRPC_COMPONENT		= "component";
-const char *const SRPC_COMPONENT_SRPC	= "srpc";
-const char *const SRPC_SPAN_ID			= "span_id";
-const char *const SRPC_TRACE_ID			= "trace_id";
-const char *const SRPC_PARENT_SPAN_ID	= "parent_span_id";
-const char *const SRPC_START_TIMESTAMP	= "start_time";
-const char *const SRPC_FINISH_TIMESTAMP	= "finish_time";
-const char *const SRPC_DURATION			= "duration";
+const char *const SRPC_METHOD_NAME		= "srpc.operation";
+const char *const SRPC_COMPONENT		= "srpc.component";
+const char *const SRPC_COMPONENT_SRPC	= "srpc.srpc";
+const char *const SRPC_SPAN_ID			= "srpc.span_id";
+const char *const SRPC_TRACE_ID			= "srpc.trace_id";
+const char *const SRPC_PARENT_SPAN_ID	= "srpc.parent_span_id";
+const char *const SRPC_START_TIMESTAMP	= "srpc.start_time";
+const char *const SRPC_FINISH_TIMESTAMP	= "srpc.finish_time";
+const char *const SRPC_DURATION			= "srpc.duration";
 
 // span tags
-const char *const SRPC_SPAN_KIND		= "span.kind";
-const char *const SRPC_SPAN_KIND_CLIENT	= "client";
-const char *const SRPC_SPAN_KIND_SERVER	= "server";
-const char *const SRPC_SERVICE_NAME		= "service.name";
-const char *const SRPC_STATE			= "state";
-const char *const SRPC_ERROR			= "error";
-const char *const SRPC_REMOTE_IP		= "peer.ip";
-const char *const SRPC_REMOTE_PORT		= "peer.port";
-const char *const SRPC_SAMPLING_PRIO	= "sampling.priority";
+const char *const SRPC_SPAN_KIND		= "srpc.span.kind";
+const char *const SRPC_SPAN_KIND_CLIENT	= "srpc.client";
+const char *const SRPC_SPAN_KIND_SERVER	= "srpc.server";
+const char *const SRPC_SERVICE_NAME		= "srpc.service.name";
+const char *const SRPC_STATE			= "srpc.state";
+const char *const SRPC_ERROR			= "srpc.error";
+const char *const SRPC_REMOTE_IP		= "srpc.peer.ip";
+const char *const SRPC_REMOTE_PORT		= "srpc.peer.port";
+const char *const SRPC_SAMPLING_PRIO	= "srpc.sampling.priority";
 
 // SRPC ext tags
-const char *const SRPC_DATA_TYPE		= "data.type";
-const char *const SRPC_COMPRESS_TYPE	= "compress.type";
-
-template<class RPCREQ, class RPCRESP>
-class RPCSpanContext : public RPCContextImpl<RPCREQ, RPCRESP>
-{
-public:
-	void log(const RPCLogVector& fields) override
-	{
-		auto *task = static_cast<RPCServerTask<RPCREQ, RPCRESP> *>(this->task_);
-		task->log(fields);
-	}
-
-	void baggage(const std::string& key, const std::string& value) override
-	{
-		auto *task = static_cast<RPCServerTask<RPCREQ, RPCRESP> *>(this->task_);
-		task->baggage(key, value);
-	}
-
-	RPCSpanContext(RPCServerTask<RPCREQ, RPCRESP> *task) :
-		RPCContextImpl<RPCREQ, RPCRESP>(task)
-	{
-	}
-};
+const char *const SRPC_DATA_TYPE		= "srpc.data.type";
+const char *const SRPC_COMPRESS_TYPE	= "srpc.compress.type";
 
 template<class RPCTYPE>
 class RPCSpanModule : public RPCModule
@@ -88,8 +66,6 @@ public:
 									  typename RPCTYPE::RESP>;
 	using SERVER_TASK = RPCServerTask<typename RPCTYPE::REQ,
 									  typename RPCTYPE::RESP>;
-	using SPAN_CONTEXT = RPCSpanContext<typename RPCTYPE::REQ,
-										typename RPCTYPE::RESP>;
 
 	bool client_begin(SubTask *task, const RPCModuleData& data) override;
 	bool client_end(SubTask *task, RPCModuleData& data) override;
@@ -275,10 +251,6 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 		module_data[SRPC_REMOTE_IP] = std::move(ip);
 		module_data[SRPC_REMOTE_PORT] = std::to_string(port);
 	}
-
-	SPAN_CONTEXT *span_ctx = new SPAN_CONTEXT(server_task);
-	delete server_task->worker.ctx;
-	server_task->worker.ctx = span_ctx;
 
 	return true;
 }

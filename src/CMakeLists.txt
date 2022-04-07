@@ -73,6 +73,7 @@ add_subdirectory(generator)
 
 set(SRC
 	rpc_buffer.cc
+	rpc_basic.cc
 	rpc_global.cc
 )
 
