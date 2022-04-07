@@ -20,7 +20,7 @@ jobs:
         cd protobuf
         sh autogen.sh
         ./configure
-        make
+        make -j4
         sudo make install
         cd ..
         export LD_LIBRARY_PATH=/usr/local/lib/:$LD_LIBRARY_PATH
@@ -34,7 +34,7 @@ jobs:
       run: git submodule update --init --recursive
 
     - name: make
-      run: make
+      run: make -j4
 
     - name: make tutorial
-      run: make tutorial
+      run: make tutorial -j4
