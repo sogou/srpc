@@ -64,7 +64,7 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 		}
 	}
 
-	return req.ByteSize();
+	return req.ByteSizeLong();
 }
 
 static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)

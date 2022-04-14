@@ -364,7 +364,7 @@ inline int SRPCMessage::encode(struct iovec vectors[], int max, size_t size_limi
 
 inline bool SRPCMessage::serialize_meta()
 {
-	this->meta_len = this->meta->ByteSize();
+	this->meta_len = this->meta->ByteSizeLong();
 	this->meta_buf = new char[this->meta_len];
 	return this->meta->SerializeToArray(this->meta_buf, (int)this->meta_len);
 }

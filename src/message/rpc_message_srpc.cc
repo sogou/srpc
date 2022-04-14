@@ -443,7 +443,7 @@ int SRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 	if (!pb_msg)
 		return RPCStatusOK;
 
-	RPCOutputStream output_stream(this->buf, pb_msg->ByteSize());
+	RPCOutputStream output_stream(this->buf, pb_msg->ByteSizeLong());
 
 	if (data_type == RPCDataProtobuf)
 	{

@@ -1177,8 +1177,8 @@ rpc_buf_t *req_buf, rpc_buf_t *resp_buf)
 	%s pb_resp;
 	pb_req.ParseFromArray(req_buf->buf, req_buf->len);
 	%s(task, &pb_req, &pb_resp);
-	resp_buf->buf = malloc(pb_resp.ByteSize());
-	resp_buf->len = pb_resp.ByteSize();
+	resp_buf->buf = malloc(pb_resp.ByteSizeLong());
+	resp_buf->len = pb_resp.ByteSizeLong();
 	pb_resp.SerializeToArray(resp_buf->buf, resp_buf->len);
 }
 )";

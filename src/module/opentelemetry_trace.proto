@@ -233,71 +233,8 @@ message Span {
 // programming environments, including REST APIs and RPC APIs.
 message Status {
   // IMPORTANT: Backward compatibility notes:
-  //
-  // To ensure any pair of senders and receivers continues to correctly signal and
-  // interpret erroneous situations, the senders and receivers MUST follow these rules:
-  //
-  // 1. Old senders and receivers that are not aware of `code` field will continue using
-  // the `deprecated_code` field to signal and interpret erroneous situation.
-  //
-  // 2. New senders, which are aware of the `code` field MUST set both the
-  // `deprecated_code` and `code` fields according to the following rules:
-  //
-  //   if code==STATUS_CODE_UNSET then `deprecated_code` MUST be
-  //   set to DEPRECATED_STATUS_CODE_OK.
-  //
-  //   if code==STATUS_CODE_OK then `deprecated_code` MUST be
-  //   set to DEPRECATED_STATUS_CODE_OK.
-  //
-  //   if code==STATUS_CODE_ERROR then `deprecated_code` MUST be
-  //   set to DEPRECATED_STATUS_CODE_UNKNOWN_ERROR.
-  //
-  // These rules allow old receivers to correctly interpret data received from new senders.
-  //
-  // 3. New receivers MUST look at both the `code` and `deprecated_code` fields in order
-  // to interpret the overall status:
-  //
-  //   If code==STATUS_CODE_UNSET then the value of `deprecated_code` is the
-  //   carrier of the overall status according to these rules:
-  //
-  //     if deprecated_code==DEPRECATED_STATUS_CODE_OK then the receiver MUST interpret
-  //     the overall status to be STATUS_CODE_UNSET.
-  //
-  //     if deprecated_code!=DEPRECATED_STATUS_CODE_OK then the receiver MUST interpret
-  //     the overall status to be STATUS_CODE_ERROR.
-  //
-  //   If code!=STATUS_CODE_UNSET then the value of `deprecated_code` MUST be
-  //   ignored, the `code` field is the sole carrier of the status.
-  //
-  // These rules allow new receivers to correctly interpret data received from old senders.
-
-  enum DeprecatedStatusCode {
-    DEPRECATED_STATUS_CODE_OK                  = 0;
-    DEPRECATED_STATUS_CODE_CANCELLED           = 1;
-    DEPRECATED_STATUS_CODE_UNKNOWN_ERROR       = 2;
-    DEPRECATED_STATUS_CODE_INVALID_ARGUMENT    = 3;
-    DEPRECATED_STATUS_CODE_DEADLINE_EXCEEDED   = 4;
-    DEPRECATED_STATUS_CODE_NOT_FOUND           = 5;
-    DEPRECATED_STATUS_CODE_ALREADY_EXISTS      = 6;
-    DEPRECATED_STATUS_CODE_PERMISSION_DENIED   = 7;
-    DEPRECATED_STATUS_CODE_RESOURCE_EXHAUSTED  = 8;
-    DEPRECATED_STATUS_CODE_FAILED_PRECONDITION = 9;
-    DEPRECATED_STATUS_CODE_ABORTED             = 10;
-    DEPRECATED_STATUS_CODE_OUT_OF_RANGE        = 11;
-    DEPRECATED_STATUS_CODE_UNIMPLEMENTED       = 12;
-    DEPRECATED_STATUS_CODE_INTERNAL_ERROR      = 13;
-    DEPRECATED_STATUS_CODE_UNAVAILABLE         = 14;
-    DEPRECATED_STATUS_CODE_DATA_LOSS           = 15;
-    DEPRECATED_STATUS_CODE_UNAUTHENTICATED     = 16;
-  };
-
   // The deprecated status code. This is an optional field.
-  //
-  // This field is deprecated and is replaced by the `code` field below. See backward
-  // compatibility notes below. According to our stability guarantees this field
-  // will be removed in 12 months, on Oct 22, 2021. All usage of old senders and
-  // receivers that do not understand the `code` field MUST be phased out by then.
-  DeprecatedStatusCode deprecated_code = 1 [deprecated=true];
+  // DeprecatedStatusCode deprecated_code = 1 [deprecated=true];
 
   // A developer-facing human readable error message.
   string message = 2;
