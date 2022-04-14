@@ -414,7 +414,7 @@ bool TRPCRequest::serialize_meta()
 	meta->set_version(TrpcProtoVersion::TRPC_PROTO_V1);
 	meta->set_call_type(TrpcCallType::TRPC_UNARY_CALL);
 
-	this->meta_len = meta->ByteSize();
+	this->meta_len = meta->ByteSizeLong();
 	this->meta_buf = new char[this->meta_len];
 	return this->meta->SerializeToArray(this->meta_buf, (int)this->meta_len);
 }
@@ -425,7 +425,7 @@ bool TRPCResponse::serialize_meta()
 	meta->set_version(TrpcProtoVersion::TRPC_PROTO_V1);
 	meta->set_call_type(TrpcCallType::TRPC_UNARY_CALL);
 
-	this->meta_len = meta->ByteSize();
+	this->meta_len = meta->ByteSizeLong();
 	this->meta_buf = new char[this->meta_len];
 	if (this->srpc_status_code != RPCStatusOK)
 	{
@@ -676,7 +676,7 @@ int TRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 	bool is_resp = (meta != NULL);
 
 	int data_type = this->get_data_type();
-	RPCOutputStream output_stream(this->message, pb_msg->ByteSize());
+	RPCOutputStream output_stream(this->message, pb_msg->ByteSizeLong());
 	int ret;
 
 	if (data_type == RPCDataProtobuf)

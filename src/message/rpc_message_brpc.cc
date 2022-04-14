@@ -203,7 +203,7 @@ int BRPCMessage::append(const void *buf, size_t *size, size_t size_limit)
 
 bool BRPCRequest::serialize_meta()
 {
-	this->meta_len = meta->ByteSize();
+	this->meta_len = meta->ByteSizeLong();
 	this->meta_buf = new char[this->meta_len];
 	return this->meta->SerializeToArray(this->meta_buf, (int)this->meta_len);
 }
@@ -212,7 +212,7 @@ bool BRPCResponse::serialize_meta()
 {
 	BrpcMeta *meta = static_cast<BrpcMeta *>(this->meta);
 
-	this->meta_len = meta->ByteSize();
+	this->meta_len = meta->ByteSizeLong();
 	this->meta_buf = new char[this->meta_len];
 	if (this->srpc_status_code != RPCStatusOK)
 	{
@@ -408,8 +408,8 @@ int BRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 
 	BrpcMeta *meta = static_cast<BrpcMeta *>(this->meta);
 	bool is_resp = !meta->has_request();
-	int msg_len = pb_msg->ByteSize();
-	RPCOutputStream stream(this->message, pb_msg->ByteSize());
+	int msg_len = pb_msg->ByteSizeLong();
+	RPCOutputStream stream(this->message, pb_msg->ByteSizeLong());
 	int ret = pb_msg->SerializeToZeroCopyStream(&stream) ? 0 : -1;
 
 	if (ret < 0)
