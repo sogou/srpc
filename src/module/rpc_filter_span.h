@@ -55,12 +55,12 @@ public:
 						size_t report_interval_msec) :
 		stat_interval(1), // default 1 msec
 		spans_per_sec(spans_per_second),
-		last_collect_timestamp(0L),
+		last_collect_timestamp(0),
 		spans_second_count(0),
 		spans_interval_count(0),
 		report_threshold(report_threshold),
 		report_interval(report_interval_msec),
-		last_report_timestamp(0L)
+		last_report_timestamp(0)
 	{
 		this->spans_per_interval = (this->spans_per_sec + 999) / 1000;
 	}
@@ -100,12 +100,12 @@ private:
 	int stat_interval;
 	size_t spans_per_sec;
 	size_t spans_per_interval;
-	std::atomic<long long> last_collect_timestamp;
+	long long last_collect_timestamp;
 	std::atomic<size_t> spans_second_count;
 	std::atomic<size_t> spans_interval_count;
 	size_t report_threshold; // spans to report at most
 	size_t report_interval;
-	std::atomic<long long> last_report_timestamp;
+	long long last_report_timestamp;
 };
 
 class RPCSpanLogTask : public WFGenericTask
