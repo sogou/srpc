@@ -13,14 +13,14 @@ using namespace opentelemetry::proto::trace::v1;
 using namespace opentelemetry::proto::common::v1;
 using namespace opentelemetry::proto::resource::v1;
 
-static size_t rpc_span_pb_format(RPCModuleData& data,
-	const std::unordered_map<std::string, std::string>& attributes,
-	ExportTraceServiceRequest& req)
+static InstrumentationLibrarySpans *
+rpc_span_fill_pb_request(const std::string& service_name,
+		const std::unordered_map<std::string, std::string>& attributes,
+		ExportTraceServiceRequest *req)
 {
-	ResourceSpans *resource_span = req.add_resource_spans();
-	InstrumentationLibrarySpans *ins_lib;
-	ins_lib = resource_span->add_instrumentation_library_spans();
-	Resource *resource = resource_span->mutable_resource();
+	ResourceSpans *rs = req->add_resource_spans();
+	InstrumentationLibrarySpans *spans = rs->add_instrumentation_library_spans();
+	Resource *resource = rs->mutable_resource();
 
 	for (const auto& attr : attributes)
 	{
@@ -30,12 +30,18 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 		value->set_string_value(attr.second);
 	}
 
-	Span *span = ins_lib->add_spans();
-
 	KeyValue *attribute = resource->add_attributes();
-	attribute->set_key(SRPC_SERVICE_NAME);
+	attribute->set_key("service.name");
 	AnyValue *value = attribute->mutable_value();
-	value->set_string_value(data[SRPC_SERVICE_NAME]);
+	value->set_string_value(service_name);
+
+	return spans;
+}
+
+static void rpc_span_fill_pb_span(RPCModuleData& data,
+								  InstrumentationLibrarySpans *spans)
+{
+	Span *span = spans->add_spans();
 
 	span->set_span_id(data[SRPC_SPAN_ID].c_str(), SRPC_SPANID_SIZE);
 	span->set_trace_id(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE);
@@ -63,8 +69,6 @@ static size_t rpc_span_pb_format(RPCModuleData& data,
 						1000000 * atoll(data[SRPC_FINISH_TIMESTAMP].c_str()));
 		}
 	}
-
-	return req.ByteSizeLong();
 }
 
 static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
@@ -132,11 +136,11 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	return ret;
 }
 
-bool RPCSpanFilterPolicy::filter(RPCModuleData& span)
+bool RPCSpanFilterPolicy::collect(RPCModuleData& span)
 {
 	long long timestamp = GET_CURRENT_MS();
 
-	if (timestamp < this->last_timestamp + this->stat_interval &&
+	if (timestamp < this->last_collect_timestamp + this->stat_interval &&
 		this->spans_interval_count < this->spans_per_interval &&
 		this->spans_second_count < this->spans_per_sec)
 	{
@@ -144,21 +148,38 @@ bool RPCSpanFilterPolicy::filter(RPCModuleData& span)
 		this->spans_second_count++;
 		return true;
 	}
-	else if (timestamp >= this->last_timestamp + this->stat_interval &&
+	else if (timestamp >= this->last_collect_timestamp + this->stat_interval &&
 			this->spans_per_sec)
 	{
 		this->spans_interval_count = 0;
 
-		if (timestamp / 1000 > this->last_timestamp / 1000) // next second
+		if (timestamp / 1000 > this->last_collect_timestamp / 1000) // next second
 			this->spans_second_count = 0;
 
-		this->last_timestamp = timestamp;
+		this->last_collect_timestamp = timestamp;
 		if (this->spans_second_count < this->spans_per_sec)
 		{
 			this->spans_second_count++;
 			this->spans_interval_count++;
 			return true;
 		}
+	}
+
+	return false;
+}
+
+bool RPCSpanFilterPolicy::report(size_t count)
+{
+	long long timestamp = GET_CURRENT_MS();
+
+	if (this->last_report_timestamp == 0)
+		this->last_report_timestamp = timestamp;
+
+	if (timestamp > this->last_report_timestamp + (long long)this->report_interval ||
+		count >= this->report_threshold)
+	{
+		this->last_report_timestamp = timestamp;
+		return true;
 	}
 
 	return false;
@@ -192,16 +213,63 @@ SubTask *RPCSpanRedis::create(RPCModuleData& span)
 	return task;
 }
 
+RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url) :
+	RPCFilter(RPCModuleSpan),
+	url(url + SPAN_OTLP_TRACES_PATH),
+	redirect_max(SPAN_HTTP_REDIRECT_MAX),
+	retry_max(SPAN_HTTP_RETRY_MAX),
+	filter_policy(SPANS_PER_SECOND_DEFAULT,
+				  REPORT_THREHOLD_DEFAULT,
+				  REPORT_INTERVAL_DEFAULT),
+	report_status(false),
+	report_span_count(0)
+{
+	this->report_req = new ExportTraceServiceRequest;
+}
+
+RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url,
+										   unsigned int redirect_max,
+										   unsigned int retry_max,
+										   size_t spans_per_second,
+										   size_t report_threshold,
+										   size_t report_interval) :
+	RPCFilter(RPCModuleSpan),
+	url(url + SPAN_OTLP_TRACES_PATH),
+	redirect_max(redirect_max),
+	retry_max(retry_max),
+	filter_policy(spans_per_second, report_threshold, report_interval),
+	report_status(false),
+	report_span_count(0)
+{
+	this->report_req = new ExportTraceServiceRequest;
+}
+
+RPCSpanOpenTelemetry::~RPCSpanOpenTelemetry()
+{
+	delete this->report_req;
+}
+
 SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 {
-	auto iter = span.find(SRPC_TRACE_ID);
-	if (iter == span.end())
-		return WFTaskFactory::create_empty_task();
+	std::string *output = new std::string;
+	SubTask *next = NULL;
+	ExportTraceServiceRequest *req = (ExportTraceServiceRequest *)this->report_req;
 
-	ExportTraceServiceRequest req;
-	this->attributes_mutex.lock();
-	rpc_span_pb_format(span, this->attributes, req);
-	this->attributes_mutex.unlock();
+	this->mutex.lock();
+	if (!this->report_status)
+		next = WFTaskFactory::create_empty_task();
+	else
+	{
+		req->SerializeToString(output);
+		this->report_status = false;
+		this->report_span_count = 0;
+		req->clear_resource_spans();
+		this->report_map.clear();
+	}
+	this->mutex.unlock();
+
+	if (next)
+		return next;
 
 	WFHttpTask *task = WFTaskFactory::create_http_task(this->url,
 													   this->redirect_max,
@@ -214,9 +282,7 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 	http_req->set_method(HttpMethodPost);
 	http_req->add_header_pair("Content-Type", "application/x-protobuf");
 
-	task->user_data = new std::string;	
-	std::string *output = (std::string *)task->user_data;
-	req.SerializeToString(output);
+	task->user_data = output;
 	http_req->append_output_body_nocopy(output->c_str(), output->length());
 
 	return task;
@@ -225,19 +291,51 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 void RPCSpanOpenTelemetry::add_attributes(const std::string& key,
 										  const std::string& value)
 {
-	this->attributes_mutex.lock();
+	this->mutex.lock();
 	this->attributes.insert(std::make_pair(key, value));
-	this->attributes_mutex.unlock();
+	this->mutex.unlock();
 }
 
 size_t RPCSpanOpenTelemetry::clear_attributes()
 {
 	size_t ret;
 
-	this->attributes_mutex.lock();
+	this->mutex.lock();
 	ret = this->attributes.size();
 	this->attributes.clear();
-	this->attributes_mutex.unlock();
+	this->mutex.unlock();
+
+	return ret;
+}
+
+bool RPCSpanOpenTelemetry::filter(RPCModuleData& data)
+{
+	std::unordered_map<std::string, google::protobuf::Message *>::iterator it;
+	InstrumentationLibrarySpans *spans;
+	bool ret;
+	const std::string& service_name = data[SRPC_SERVICE_NAME];
+
+	this->mutex.lock();
+	if (this->filter_policy.collect(data))
+	{
+		++this->report_span_count;
+		it = report_map.find(service_name);
+		if (it == report_map.end())
+		{
+			spans = rpc_span_fill_pb_request(service_name, this->attributes,
+							(ExportTraceServiceRequest *)this->report_req);
+			this->report_map.insert({service_name, spans});
+		}
+		else
+			spans = (InstrumentationLibrarySpans *)it->second;
+
+		rpc_span_fill_pb_span(data, spans);
+	}
+
+	ret = this->filter_policy.report(this->report_span_count);
+	if (ret)
+		this->report_status = true;
+	this->mutex.unlock();
 
 	return ret;
 }
