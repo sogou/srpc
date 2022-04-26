@@ -44,16 +44,23 @@ static constexpr unsigned int	SPANS_PER_SECOND_DEFAULT	= 1000;
 static constexpr const char	   *SPAN_OTLP_TRACES_PATH		= "/v1/traces";
 static constexpr unsigned int	SPAN_HTTP_REDIRECT_MAX		= 0;
 static constexpr unsigned int	SPAN_HTTP_RETRY_MAX			= 1;
+static constexpr size_t			REPORT_THREHOLD_DEFAULT		= 100;
+static constexpr size_t			REPORT_INTERVAL_DEFAULT		= 1000; /* msec */
 
 class RPCSpanFilterPolicy
 {
 public:
-	RPCSpanFilterPolicy(size_t spans_per_second) :
+	RPCSpanFilterPolicy(size_t spans_per_second,
+						size_t report_threshold,
+						size_t report_interval_msec) :
 		stat_interval(1), // default 1 msec
 		spans_per_sec(spans_per_second),
-		last_timestamp(0L),
+		last_collect_timestamp(0),
 		spans_second_count(0),
-		spans_interval_count(0)
+		spans_interval_count(0),
+		report_threshold(report_threshold),
+		report_interval(report_interval_msec),
+		last_report_timestamp(0)
 	{
 		this->spans_per_interval = (this->spans_per_sec + 999) / 1000;
 	}
@@ -69,18 +76,36 @@ public:
 		if (msec <= 0)
 			msec = 1;
 		this->stat_interval = msec;
-		this->spans_per_interval = (this->spans_per_sec * msec + 999 ) / 1000;
+		this->spans_per_interval = (this->spans_per_sec * msec + 999) / 1000;
 	}
 
-	bool filter(RPCModuleData& span);
+	void set_report_threshold(size_t threshold)
+	{
+		if (threshold <= 0)
+			threshold = 1;
+		report_threshold = threshold;
+	}
+
+	void set_report_interval(int msec)
+	{
+		if (msec <= 0)
+			msec = 1;
+		this->report_interval = msec;
+	}
+
+	bool collect(RPCModuleData& span);
+	bool report(size_t count);
 
 private:
 	int stat_interval;
 	size_t spans_per_sec;
 	size_t spans_per_interval;
-	std::atomic<long long> last_timestamp;
+	long long last_collect_timestamp;
 	std::atomic<size_t> spans_second_count;
 	std::atomic<size_t> spans_interval_count;
+	size_t report_threshold; // spans to report at most
+	size_t report_interval;
+	long long last_report_timestamp;
 };
 
 class RPCSpanLogTask : public WFGenericTask
@@ -116,11 +141,17 @@ class RPCSpanDefault : public RPCFilter
 public:
 	RPCSpanDefault() :
 		RPCFilter(RPCModuleSpan),
-		filter_policy(SPANS_PER_SECOND_DEFAULT) {}
+		filter_policy(SPANS_PER_SECOND_DEFAULT,
+					  REPORT_THREHOLD_DEFAULT,
+					  REPORT_INTERVAL_DEFAULT)
+	{}
 
 	RPCSpanDefault(size_t spans_per_second) :
 		RPCFilter(RPCModuleSpan),
-		filter_policy(spans_per_second) {}
+		filter_policy(spans_per_second,
+					  REPORT_THREHOLD_DEFAULT,
+					  REPORT_INTERVAL_DEFAULT)
+	{}
 
 private:
 	SubTask *create(RPCModuleData& span) override
@@ -130,7 +161,7 @@ private:
 
 	bool filter(RPCModuleData& span) override
 	{
-		return this->filter_policy.filter(span);
+		return this->filter_policy.collect(span);
 	}
 
 public:
@@ -154,7 +185,9 @@ public:
 	RPCSpanRedis(const std::string& url) :
 		RPCFilter(RPCModuleSpan),
 		retry_max(SPAN_REDIS_RETRY_MAX),
-		filter_policy(SPANS_PER_SECOND_DEFAULT)
+		filter_policy(SPANS_PER_SECOND_DEFAULT,
+					  REPORT_THREHOLD_DEFAULT,
+					  REPORT_INTERVAL_DEFAULT)
 	{}
 
 	RPCSpanRedis(const std::string& url, int retry_max,
@@ -162,7 +195,9 @@ public:
 		RPCFilter(RPCModuleSpan),
 		redis_url(url),
 		retry_max(retry_max),
-		filter_policy(spans_per_second)
+		filter_policy(spans_per_second,
+					  REPORT_THREHOLD_DEFAULT,
+					  REPORT_INTERVAL_DEFAULT)
 	{}
 
 private:
@@ -174,7 +209,7 @@ private:
 
 	bool filter(RPCModuleData& span) override
 	{
-		return this->filter_policy.filter(span);
+		return this->filter_policy.collect(span);
 	}
 
 public:
@@ -215,37 +250,29 @@ private:
 	int retry_max;
 
 	RPCSpanFilterPolicy filter_policy;
-	std::mutex attributes_mutex;
+	std::mutex mutex;
 	std::unordered_map<std::string, std::string> attributes;
+	google::protobuf::Message *report_req;
+	std::unordered_map<std::string, google::protobuf::Message *> report_map;
+	bool report_status;
+	size_t report_span_count;
 
 private:
 	SubTask *create(RPCModuleData& span) override;
 
-	bool filter(RPCModuleData& span) override
-	{
-		return this->filter_policy.filter(span);
-	}
+	bool filter(RPCModuleData& span) override;
 
 public:
-	RPCSpanOpenTelemetry(const std::string& url) :
-		RPCFilter(RPCModuleSpan),
-		url(url + SPAN_OTLP_TRACES_PATH),
-		redirect_max(SPAN_HTTP_REDIRECT_MAX),
-		retry_max(SPAN_HTTP_RETRY_MAX),
-		filter_policy(SPANS_PER_SECOND_DEFAULT)
-	{}
+	RPCSpanOpenTelemetry(const std::string& url);
 
 	RPCSpanOpenTelemetry(const std::string& url,
 						 unsigned int redirect_max,
 						 unsigned int retry_max,
-						 size_t spans_per_second) :
-		RPCFilter(RPCModuleSpan),
-		url(url + SPAN_OTLP_TRACES_PATH),
-		redirect_max(redirect_max),
-		retry_max(retry_max),
-		filter_policy(spans_per_second)
-	{
-	}
+						 size_t spans_per_second,
+						 size_t report_threshold,
+						 size_t report_interval);
+
+	virtual ~RPCSpanOpenTelemetry();
 };
 
 
