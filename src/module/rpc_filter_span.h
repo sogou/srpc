@@ -140,14 +140,14 @@ class RPCSpanDefault : public RPCFilter
 {
 public:
 	RPCSpanDefault() :
-		RPCFilter(RPCModuleSpan),
+		RPCFilter(RPCModuleTypeSpan),
 		filter_policy(SPANS_PER_SECOND_DEFAULT,
 					  REPORT_THREHOLD_DEFAULT,
 					  REPORT_INTERVAL_DEFAULT)
 	{}
 
 	RPCSpanDefault(size_t spans_per_second) :
-		RPCFilter(RPCModuleSpan),
+		RPCFilter(RPCModuleTypeSpan),
 		filter_policy(spans_per_second,
 					  REPORT_THREHOLD_DEFAULT,
 					  REPORT_INTERVAL_DEFAULT)
@@ -183,7 +183,7 @@ class RPCSpanRedis : public RPCFilter
 {
 public:
 	RPCSpanRedis(const std::string& url) :
-		RPCFilter(RPCModuleSpan),
+		RPCFilter(RPCModuleTypeSpan),
 		retry_max(SPAN_REDIS_RETRY_MAX),
 		filter_policy(SPANS_PER_SECOND_DEFAULT,
 					  REPORT_THREHOLD_DEFAULT,
@@ -192,7 +192,7 @@ public:
 
 	RPCSpanRedis(const std::string& url, int retry_max,
 				 size_t spans_per_second) :
-		RPCFilter(RPCModuleSpan),
+		RPCFilter(RPCModuleTypeSpan),
 		redis_url(url),
 		retry_max(retry_max),
 		filter_policy(spans_per_second,
@@ -274,7 +274,6 @@ public:
 
 	virtual ~RPCSpanOpenTelemetry();
 };
-
 
 } // end namespace srpc
 

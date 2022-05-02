@@ -73,59 +73,9 @@ public:
 	bool server_end(SubTask *task, RPCModuleData& data) override;
 
 public:
-	RPCSpanModule() : RPCModule(RPCModuleSpan)
+	RPCSpanModule() : RPCModule(RPCModuleTypeSpan)
 	{
 	}
-};
-
-template<class RPCTYPE>
-class RPCMonitorModule : public RPCModule
-{
-public:
-	bool client_begin(SubTask *task, const RPCModuleData& data) override
-	{
-		return true;
-	}
-	bool client_end(SubTask *task, RPCModuleData& data) override
-	{
-		return true;
-	}
-	bool server_begin(SubTask *task, const RPCModuleData& data) override
-	{
-		return true;
-	}
-	bool server_end(SubTask *task, RPCModuleData& data) override
-	{
-		return true;
-	}
-
-public:
-	RPCMonitorModule() : RPCModule(RPCModuleMonitor) { }
-};
-
-template<class RPCTYPE>
-class RPCEmptyModule : public RPCModule
-{
-public:
-	bool client_begin(SubTask *task, const RPCModuleData& data) override
-	{
-		return true;
-	}
-	bool client_end(SubTask *task, RPCModuleData& data) override
-	{
-		return true;
-	}
-	bool server_begin(SubTask *task, const RPCModuleData& data) override
-	{
-		return true;
-	}
-	bool server_end(SubTask *task, RPCModuleData& data) override
-	{
-		return true;
-	}
-
-public:
-	RPCEmptyModule() : RPCModule(RPCModuleEmpty) { }
 };
 
 ////////// impl

@@ -214,7 +214,7 @@ SubTask *RPCSpanRedis::create(RPCModuleData& span)
 }
 
 RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url) :
-	RPCFilter(RPCModuleSpan),
+	RPCFilter(RPCModuleTypeSpan),
 	url(url + SPAN_OTLP_TRACES_PATH),
 	redirect_max(SPAN_HTTP_REDIRECT_MAX),
 	retry_max(SPAN_HTTP_RETRY_MAX),
@@ -233,7 +233,7 @@ RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url,
 										   size_t spans_per_second,
 										   size_t report_threshold,
 										   size_t report_interval) :
-	RPCFilter(RPCModuleSpan),
+	RPCFilter(RPCModuleTypeSpan),
 	url(url + SPAN_OTLP_TRACES_PATH),
 	redirect_max(redirect_max),
 	retry_max(retry_max),
@@ -340,5 +340,5 @@ bool RPCSpanOpenTelemetry::filter(RPCModuleData& data)
 	return ret;
 }
 
-}
+} // end namespace srpc
 

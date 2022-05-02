@@ -134,14 +134,15 @@ enum RPCCompressType
 	RPCCompressGzip		=	2,
 	RPCCompressZlib		=	3,
 	RPCCompressLz4		=	4,
-	RPCCompressMax		=	5
+	RPCCompressMax		=	5,
 };
 
 enum RPCModuleType
 {
-	RPCModuleSpan		=	0,
-	RPCModuleMonitor	=	1,
-	RPCModuleEmpty		=	2
+	RPCModuleTypeEmpty		=	0,
+	RPCModuleTypeSpan		=	1,
+	RPCModuleTypeMetrics	=	2,
+	RPCModuleTypeLog		=	3,
 };
 
 class RPCCommon

@@ -74,11 +74,13 @@ set(SRC
 )
 
 add_subdirectory(module)
+add_subdirectory(var)
 add_subdirectory(thrift)
 add_subdirectory(compress)
 add_subdirectory(message)
 
 add_dependencies(module LINK_HEADERS)
+add_dependencies(var LINK_HEADERS)
 add_dependencies(thrift LINK_HEADERS)
 add_dependencies(compress LINK_HEADERS)
 add_dependencies(message LINK_HEADERS)
@@ -89,6 +91,7 @@ if (WIN32)
 		${PROJECT_NAME} STATIC
 		${SRC}
 		$<TARGET_OBJECTS:module>
+		$<TARGET_OBJECTS:var>
 		$<TARGET_OBJECTS:thrift>
 		$<TARGET_OBJECTS:compress>
 		$<TARGET_OBJECTS:message>
@@ -119,6 +122,7 @@ else ()
 		${STATIC_LIB_NAME} STATIC
 		${SRC}
 		$<TARGET_OBJECTS:module>
+		$<TARGET_OBJECTS:var>
 		$<TARGET_OBJECTS:thrift>
 		$<TARGET_OBJECTS:compress>
 		$<TARGET_OBJECTS:message>
@@ -128,6 +132,7 @@ else ()
 		${SHARED_LIB_NAME} SHARED
 		${SRC}
 		$<TARGET_OBJECTS:module>
+		$<TARGET_OBJECTS:var>
 		$<TARGET_OBJECTS:thrift>
 		$<TARGET_OBJECTS:compress>
 		$<TARGET_OBJECTS:message>
