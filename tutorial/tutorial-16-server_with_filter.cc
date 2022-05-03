@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2020 sogou, Inc.
+  Copyright (c) 2022 sogou, Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #include "echo_pb.srpc.h"
 #include "workflow/WFFacilities.h"
 #include "srpc/rpc_types.h"
+#include "srpc/rpc_filter_metrics.h"
 
 using namespace srpc;
 
@@ -32,6 +33,12 @@ public:
 
 		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
 				req->DebugString().c_str(), resp->DebugString().c_str());
+
+		RPCVarFactory::gauge<int>("request_count")->increase();
+		RPCVarFactory::counter<int>("request_method")->add({{"protocol", "srpc"},
+															{"method", "Echo"}})->increase();
+		RPCVarFactory::histogram<double>("request_latency")->observe(rand() % 11);
+		RPCVarFactory::summary<int>("request_body_size")->observe(req->ByteSizeLong());
 	}
 };
 
@@ -51,6 +58,17 @@ int main()
 
 	server.add_service(&impl);
 
+	RPCMetricsPull filter;
+	filter.init(8080); /* export port for prometheus */
+	server.add_filter(&filter);
+
+	filter.create_gauge<int>("request_count", "request count");
+	filter.create_counter<int>("request_method", "request method info");
+	filter.create_histogram<double>("request_latency", "request latency",
+									{0.1, 1.0, 10.0});
+	filter.create_summary<int>("request_body_size", "request size count",
+							   {{0.5, 0.05}, {0.9, 0.01}});
+
 	if (server.start(1412) == 0)
 	{
 		wait_group.wait();
@@ -59,6 +77,7 @@ int main()
 	else
 		perror("server start");
 
+	filter.deinit();
 	google::protobuf::ShutdownProtobufLibrary();
 	return 0;
 }

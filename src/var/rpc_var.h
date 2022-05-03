@@ -119,6 +119,42 @@ public:
 //	friend class RPCVarFactory;
 };
 
+class RPCVarCollector
+{
+public:
+	virtual void collect_gauge(RPCVar *gauge, int64_t data) = 0;
+	virtual void collect_gauge(RPCVar *gauge, double data) = 0;
+
+	virtual void collect_counter_each(RPCVar *counter, const std::string& label,
+									  int64_t data) = 0;
+	virtual void collect_counter_each(RPCVar *counter, const std::string& label,
+									  double data) = 0;
+
+	virtual void collect_summary_each(RPCVar *summary, double quantile,
+									  int64_t quantile_out,
+									  size_t available_count) = 0;
+	virtual void collect_summary_sum(RPCVar *summary, int64_t sum,
+									 size_t count) = 0;
+
+	virtual void collect_summary_each(RPCVar *summary, double quantile,
+									  double quantile_out,
+									  size_t available_count) = 0;
+	virtual void collect_summary_sum(RPCVar *summary, double sum,
+									 size_t count) = 0;
+
+	virtual void collect_histogram_each(RPCVar *histogram,
+										int64_t bucket_boudary,
+										size_t current_count) = 0;
+	virtual void collect_histogram_sum(RPCVar *histogram, int64_t sum,
+									   size_t count) = 0;
+
+	virtual void collect_histogram_each(RPCVar *histogram,
+										double bucket_boudary,
+										size_t current_count) = 0;
+	virtual void collect_histogram_sum(RPCVar *histogram, double sum,
+									   size_t count) = 0;
+};
+
 class RPCVar
 {
 public:
@@ -128,10 +164,10 @@ public:
 	const std::string get_type_str() const { return type_string(this->type); }
 
 	virtual RPCVar *create(bool with_data) = 0;
-	virtual void collect(const void *ptr) = 0;
 	virtual bool reduce(const void *ptr, size_t sz) = 0;
 	virtual size_t get_size() const = 0;
 	virtual const void *get_data() const = 0;
+	virtual void collect(RPCVarCollector *collector) = 0;
 
 public:
 	RPCVar(std::string name, std::string help, RPCVarType type) :

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2021 Sogou, Inc.
+  Copyright (c) 2022 Sogou, Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 #include <utility>
 #include <string>
 #include <vector>
-#include "map"
+#include <map>
+#include <unordered_map>
 
 #include "time_window_quantiles.h"
 
@@ -45,6 +46,11 @@ public:
 		this->data += *data;
 //		fprintf(stderr, "reduce data=%d *ptr=%d\n", this->data, *(int *)ptr);
 		return true;
+	}
+
+	void collect(RPCVarCollector *collector) override
+	{
+		collector->collect_gauge(this, this->data);
 	}
 
 public:
@@ -88,6 +94,7 @@ public:
 	GaugeVar<TYPE> *add(const LABEL_MAP& labels);
 
 	bool reduce(const void *ptr, size_t sz) override;
+	void collect(RPCVarCollector *collector) override;
 
 	size_t get_size() const override { return this->data.size(); }
 	const void *get_data() const override { return &this->data; }
@@ -138,6 +145,7 @@ public:
 	bool observe_multi(const std::vector<TYPE>& multi, const TYPE sum);
 
 	bool reduce(const void *ptr, size_t sz) override;
+	void collect(RPCVarCollector *collector) override;
 
 	size_t get_size() const override { return this->bucket_counts.size(); }
 	const void *get_data() const override { return this; }
@@ -193,6 +201,7 @@ public:
 	void observe(const TYPE value);
 
 	bool reduce(const void *ptr, size_t sz) override;
+	void collect(RPCVarCollector *collector) override;
 
 	size_t get_size() const override { return this->quantiles.size(); }
 	const void *get_data() const override { return this; }
@@ -299,22 +308,14 @@ bool CounterVar<TYPE>::reduce(const void *ptr, size_t)
 
 	return true;
 }
-/*
+
 template<typename TYPE>
-std::string CounterVar<TYPE>::collect()
+void CounterVar<TYPE>::collect(RPCVarCollector *collector)
 {
-	std::string ret;
-
-	for (auto it = this->data.begin();
-		 it != this->data.end(); it++)
-	{
-		ret += this->name + "{" + it->first + "}" + " " +
-			   it->second->data_str() + "\n";
-	}
-
-	return std::move(ret);
+	for (auto it = this->data.begin(); it != this->data.end(); it++)
+		collector->collect_counter_each(this, it->first, it->second->get());
 }
-*/
+
 template<typename TYPE>
 bool CounterVar<TYPE>::label_to_str(const LABEL_MAP& labels, std::string& str)
 {
@@ -328,60 +329,6 @@ bool CounterVar<TYPE>::label_to_str(const LABEL_MAP& labels, std::string& str)
 
 	return true;
 }
-
-template<typename TYPE>
-bool SummaryVar<TYPE>::reduce(const void *ptr, size_t sz)
-{
-	if (sz != this->quantiles.size())
-		return false;
-
-	SummaryVar<TYPE> *data = (SummaryVar<TYPE> *)ptr;
-
-	TimeWindowQuantiles<TYPE> *src = data->get_quantile_values();
-	size_t available_count;
-	TYPE get_val;
-
-	for (size_t i = 0; i < sz; i ++)
-	{
-		available_count = src->get(this->quantiles[i].quantile, &get_val);
-		this->quantile_out[i] += get_val * available_count;
-		this->available_count[i] += available_count;
-	}
-
-	this->sum += data->get_sum();
-	this->count += data->get_count();
-
-	return true;
-}
-
-/*
-template<typename TYPE>
-std::string SummaryVar<TYPE>::collect()
-{
-	std::string ret;
-
-	for (size_t i = 0; i < this->quantiles.size(); i++)
-	{
-		ret += this->name + "{quantile=\"" +
-			   std::to_string(this->quantiles[i].quantile) + "\"} ";
-
-		if (this->quantile_out[i] == std::numeric_limits<TYPE>::quiet_NaN())
-			ret += "NaN";
-		else
-			ret += std::to_string(this->quantile_out[i] /
-								  this->available_count[i]);
-		ret += "\n";
-	}
-
-	ret += this->name + "_sum " + std::to_string(this->sum) + "\n";
-	ret += this->name + "_count " + std::to_string(this->count) + "\n";
-
-	this->quantile_out.clear();
-	this->available_count.clear();
-
-	return std::move(ret);
-}
-*/
 
 template<typename TYPE>
 void HistogramVar<TYPE>::observe(const TYPE value)
@@ -434,31 +381,178 @@ bool HistogramVar<TYPE>::reduce(const void *ptr, size_t sz)
 
 	return true;
 }
-/*
+
 template<typename TYPE>
-std::string HistogramVar<TYPE>::collect()
+void HistogramVar<TYPE>::collect(RPCVarCollector *collector)
 {
-	std::string ret;
 	size_t i = 0;
 	size_t current = 0;
 
 	for (; i < this->bucket_boundaries.size(); i++)
 	{
 		current += this->bucket_counts[i];
-		ret += this->name + "_bucket{le=\"" +
-			   std::to_string(this->bucket_boundaries[i]) + "\"} " +
-			   std::to_string(current) + "\n";
+		collector->collect_histogram_each(this, this->bucket_boundaries[i],
+										  current);
 	}
 
 	current += this->bucket_counts[i];
-	ret += this->name + "_bucket{le=\"+Inf\"} " +
-		   std::to_string(current) + "\n";
+	collector->collect_histogram_each(this, std::numeric_limits<TYPE>::max(),
+									  current);
 
-	ret += this->name + "_sum " + std::to_string(this->sum) + "\n";
-	ret += this->name + "_count " + std::to_string(this->count) + "\n";
-
-	return std::move(ret);
+	collector->collect_histogram_sum(this, this->sum, this->count);
 }
-*/
+
+template<typename TYPE>
+void SummaryVar<TYPE>::observe(const TYPE value)
+{
+	this->quantile_values.insert(value);
+	this->sum += value;
+	this->count++;
+}
+
+template<typename TYPE>
+bool SummaryVar<TYPE>::reduce(const void *ptr, size_t sz)
+{
+	if (sz != this->quantiles.size())
+		return false;
+
+	SummaryVar<TYPE> *data = (SummaryVar<TYPE> *)ptr;
+
+	TimeWindowQuantiles<TYPE> *src = data->get_quantile_values();
+	size_t available_count;
+	TYPE get_val;
+
+	for (size_t i = 0; i < sz; i ++)
+	{
+		available_count = src->get(this->quantiles[i].quantile, &get_val);
+		this->quantile_out[i] += get_val * available_count;
+		this->available_count[i] += available_count;
+	}
+
+	this->sum += data->get_sum();
+	this->count += data->get_count();
+
+	return true;
+}
+
+template<typename TYPE>
+void SummaryVar<TYPE>::collect(RPCVarCollector *collector)
+{
+	for (size_t i = 0; i < this->quantiles.size(); i++)
+	{
+		collector->collect_summary_each(this, this->quantiles[i].quantile,
+										this->quantile_out[i],
+										this->available_count[i]);
+	}
+
+	collector->collect_summary_sum(this, this->sum, this->count);
+	this->quantile_out.clear();
+	this->available_count.clear();
+}
+
+template<>
+inline void GaugeVar<int>::collect(RPCVarCollector *collector)
+{
+	collector->collect_gauge(this, (int64_t)this->data);
+}
+
+template<>
+inline void GaugeVar<float>::collect(RPCVarCollector *collector)
+{
+	collector->collect_gauge(this, (double)this->data);
+}
+
+template<>
+inline void CounterVar<int>::collect(RPCVarCollector *collector)
+{
+	for (auto it = this->data.begin(); it != this->data.end(); it++)
+	{
+		collector->collect_counter_each(this, it->first,
+										(int64_t)it->second->get());
+	}
+}
+
+template<>
+inline void CounterVar<float>::collect(RPCVarCollector *collector)
+{
+	for (auto it = this->data.begin(); it != this->data.end(); it++)
+	{
+		collector->collect_counter_each(this, it->first,
+										(double)it->second->get());
+	}
+}
+
+template<>
+inline void SummaryVar<int>::collect(RPCVarCollector *collector)
+{
+	for (size_t i = 0; i < this->quantiles.size(); i++)
+	{
+		collector->collect_summary_each(this, this->quantiles[i].quantile,
+										(int64_t)this->quantile_out[i],
+										this->available_count[i]);
+	}
+
+	collector->collect_summary_sum(this, (int64_t)this->sum, this->count);
+	this->quantile_out.clear();
+	this->available_count.clear();
+}
+
+template<>
+inline void SummaryVar<float>::collect(RPCVarCollector *collector)
+{
+	for (size_t i = 0; i < this->quantiles.size(); i++)
+	{
+		collector->collect_summary_each(this, this->quantiles[i].quantile,
+										(double)this->quantile_out[i],
+										this->available_count[i]);
+	}
+
+	collector->collect_summary_sum(this, (double)this->sum, this->count);
+	this->quantile_out.clear();
+	this->available_count.clear();
+}
+
+template<>
+inline void HistogramVar<int>::collect(RPCVarCollector *collector)
+{
+	size_t i = 0;
+	size_t current = 0;
+
+	for (; i < this->bucket_boundaries.size(); i++)
+	{
+		current += this->bucket_counts[i];
+		collector->collect_histogram_each(this,
+										  (int64_t)this->bucket_boundaries[i],
+										  current);
+	}
+
+	current += this->bucket_counts[i];
+	collector->collect_histogram_each(this, std::numeric_limits<int64_t>::max(),
+									  current);
+
+	collector->collect_histogram_sum(this, (int64_t)this->sum, this->count);
+}
+
+template<>
+inline void HistogramVar<float>::collect(RPCVarCollector *collector)
+{
+	size_t i = 0;
+	size_t current = 0;
+
+	for (; i < this->bucket_boundaries.size(); i++)
+	{
+		current += this->bucket_counts[i];
+		collector->collect_histogram_each(this,
+										  (double)this->bucket_boundaries[i],
+										  current);
+	}
+
+	current += this->bucket_counts[i];
+	collector->collect_histogram_each(this, std::numeric_limits<double>::max(),
+									  current);
+
+	collector->collect_histogram_sum(this, (double)this->sum, this->count);
+}
+
 } // end namespace srpc
 
