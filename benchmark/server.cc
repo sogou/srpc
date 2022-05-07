@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
 	}
 	else if (argc != 3)
 	{
-		fprintf(stderr, "Usage: %s <PORT> <srpc|brpc|thrift> [proc num (1/2/4/8)]\n", argv[0]);
+		fprintf(stderr, "Usage: %s <PORT> <srpc|brpc|thrift> [proc num (1/2/4/8/16)]\n", argv[0]);
 		abort();
 	}
 
