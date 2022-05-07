@@ -3,6 +3,16 @@
 #include "benchmark_pb.srpc.h"
 #include "benchmark_thrift.srpc.h"
 #include "workflow/WFFacilities.h"
+#ifdef _WIN32
+#include "workflow/PlatformSocket.h"
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif
+
 
 using namespace srpc;
 
@@ -72,7 +82,26 @@ static void sig_handler(int signo)
 	wait_group.done();
 }
 
-static void run_srpc_server(unsigned short port)
+static inline int create_bind_socket(unsigned short port)
+{
+	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	if (sockfd >= 0)
+	{
+		struct sockaddr_in sin = { };
+		sin.sin_family = AF_INET;
+		sin.sin_port = htons(port);
+		sin.sin_addr.s_addr = htonl(INADDR_ANY);
+		if (bind(sockfd, (struct sockaddr *)&sin, sizeof sin) >= 0)
+			return sockfd;
+
+		close(sockfd);
+	}
+
+	return -1;
+}
+
+static void run_srpc_server(unsigned short port, int proc_num)
 {
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
@@ -84,17 +113,30 @@ static void run_srpc_server(unsigned short port)
 	server.add_service(&pb_impl);
 	server.add_service(&thrift_impl);
 
-	if (server.start(port) == 0)
+	int sockfd = create_bind_socket(port);
+
+	if (sockfd < 0)
+	{
+		perror("create socket");
+		exit(1);
+	}
+
+	while ((proc_num /= 2) != 0)
+		fork();
+
+	if (server.serve(sockfd) == 0)
 	{
 		wait_group.wait();
 		server.stop();
 	}
 	else
 		perror("server start");
+
+	close(sockfd);
 }
 
 template<class SERVER>
-static void run_pb_server(unsigned short port)
+static void run_pb_server(unsigned short port, int proc_num)
 {
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
@@ -104,17 +146,30 @@ static void run_pb_server(unsigned short port)
 	BenchmarkPBServiceImpl pb_impl;
 	server.add_service(&pb_impl);
 
-	if (server.start(port) == 0)
+	int sockfd = create_bind_socket(port);
+
+	if (sockfd < 0)
+	{
+		perror("create socket");
+		exit(1);
+	}
+
+	while ((proc_num /= 2) != 0)
+		fork();
+
+	if (server.serve(sockfd) == 0)
 	{
 		wait_group.wait();
 		server.stop();
 	}
 	else
 		perror("server start");
+
+	close(sockfd);
 }
 
 template<class SERVER>
-static void run_thrift_server(unsigned short port)
+static void run_thrift_server(unsigned short port, int proc_num)
 {
 	RPCServerParams params = RPC_SERVER_PARAMS_DEFAULT;
 	params.max_connections = 2048;
@@ -124,21 +179,45 @@ static void run_thrift_server(unsigned short port)
 	BenchmarkThriftServiceImpl thrift_impl;
 	server.add_service(&thrift_impl);
 
-	if (server.start(port) == 0)
+	int sockfd = create_bind_socket(port);
+
+	if (sockfd < 0)
+	{
+		perror("create socket");
+		exit(1);
+	}
+
+	while ((proc_num /= 2) != 0)
+		fork();
+
+	if (server.serve(sockfd) == 0)
 	{
 		wait_group.wait();
 		server.stop();
 	}
 	else
 		perror("server start");
+
+	close(sockfd);
 }
 
 int main(int argc, char* argv[])
 {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
-	if (argc != 3)
+	int proc_num = 1;
+
+	if (argc == 4)
 	{
-		fprintf(stderr, "Usage: %s <PORT> <srpc|brpc|thrift>\n", argv[0]);
+		proc_num = atoi(argv[3]);
+		if (proc_num != 1 && proc_num != 2 && proc_num != 4 && proc_num != 8 && proc_num != 16)
+		{
+			fprintf(stderr, "Usage: %s <PORT> <srpc|brpc|thrift> [proc num (1/2/4/8/16)]\n", argv[0]);
+			abort();
+		}
+	}
+	else if (argc != 3)
+	{
+		fprintf(stderr, "Usage: %s <PORT> <srpc|brpc|thrift> [proc num (1/2/4/8)]\n", argv[0]);
 		abort();
 	}
 
@@ -154,15 +233,15 @@ int main(int argc, char* argv[])
 	std::string server_type = argv[2];
 
 	if (server_type == "srpc")
-		run_srpc_server(port);
+		run_srpc_server(port, proc_num);
 	else if (server_type == "brpc")
-		run_pb_server<BRPCServer>(port);
+		run_pb_server<BRPCServer>(port, proc_num);
 	else if (server_type == "thrift")
-		run_thrift_server<ThriftServer>(port);
+		run_thrift_server<ThriftServer>(port, proc_num);
 	else if (server_type == "srpc_http")
-		run_pb_server<SRPCHttpServer>(port);
+		run_pb_server<SRPCHttpServer>(port, proc_num);
 	else if (server_type == "thrift_http")
-		run_thrift_server<ThriftHttpServer>(port);
+		run_thrift_server<ThriftHttpServer>(port, proc_num);
 	else
 		abort();
 
