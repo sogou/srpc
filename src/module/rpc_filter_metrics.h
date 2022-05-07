@@ -33,37 +33,43 @@
 namespace srpc
 {
 
+using MetricsGauge = GaugeVar<double>;
+using MetricsCounter = CounterVar<double>;
+using MetricsHistogram = HistogramVar<double>;
+using MetricsSummary = SummaryVar<double>;
+
 class RPCMetricsFilter : public RPCFilter
 {
 public:
-	RPCMetricsFilter() : RPCFilter(RPCModuleTypeMetrics) {}
+	RPCMetricsFilter() : RPCFilter(RPCModuleTypeMetrics) { }
 
-	template<typename TYPE>
-	GaugeVar<TYPE> *create_gauge(const std::string& name,
-								 const std::string& help);
+	MetricsGauge *create_gauge(const std::string& name,
+							   const std::string& help);
 
-	template<typename TYPE>
-	CounterVar<TYPE> *create_counter(const std::string& name,
-									 const std::string& help);
+	MetricsCounter *create_counter(const std::string& name,
+								   const std::string& help);
 
-	template<typename TYPE>
-	HistogramVar<TYPE> *create_histogram(const std::string& name,
-										 const std::string& help,
-										 const std::vector<TYPE>& bucket);
+	MetricsHistogram *create_histogram(const std::string& name,
+									   const std::string& help,
+									   const std::vector<double>& bucket);
 
-	template<typename TYPE>
-	SummaryVar<TYPE> *create_summary(const std::string& name,
-									 const std::string& help,
-									 const std::vector<struct Quantile>& quantile);
+	MetricsSummary *create_summary(const std::string& name,
+								   const std::string& help,
+								   const std::vector<struct Quantile>& quantile);
 
-	template<typename TYPE>
-	SummaryVar<TYPE> *create_summary(const std::string& name,
+	MetricsSummary *create_summary(const std::string& name,
 									 const std::string& help,
 									 const std::vector<struct Quantile>& quantile,
 									 const std::chrono::milliseconds max_age,
 									 int age_bucket);
-private:
-	virtual bool expose() = 0;
+	// thread local api
+	MetricsGauge *gauge(const std::string& name);
+	MetricsCounter *counter(const std::string& name);
+	MetricsHistogram *histogram(const std::string& name);
+	MetricsSummary *summary(const std::string& name);
+
+protected:
+	void reduce(std::unordered_map<std::string, RPCVar*>& out);
 
 protected:
 	std::mutex mutex;
@@ -73,7 +79,7 @@ protected:
 class RPCMetricsPull : public RPCMetricsFilter
 {
 public:
-	bool init(short port); // pull port for Prometheus
+	bool init(unsigned short port); // pull port for Prometheus
 	void deinit();
 
 public:
@@ -87,7 +93,7 @@ private:
 
 	bool filter(RPCModuleData& data) override
 	{
-		return false; // will not collect by filter_policy.collect(data);
+		return false; // will not collect by policy.collect(data);
 	}
 
 private:
@@ -96,31 +102,15 @@ private:
 	public:
 		Collector(std::string& output) : report_output(output) { }
 
-		void collect_gauge(RPCVar *gauge, int64_t data) override;
 		void collect_gauge(RPCVar *gauge, double data) override;
 
 		void collect_counter_each(RPCVar *counter, const std::string& label,
-								  int64_t data) override;
-		void collect_counter_each(RPCVar *counter, const std::string& label,
 								  double data) override;
-
-		void collect_histogram_each(RPCVar *histogram,
-									int64_t bucket_boudaries,
-									size_t current_count)override;
-		void collect_histogram_sum(RPCVar *histogram, int64_t sum,
-								   size_t count) override;
-
 		void collect_histogram_each(RPCVar *histogram,
 									double bucket_boudaries,
 									size_t current_count) override;
 		void collect_histogram_sum(RPCVar *histogram, double sum,
 								   size_t count) override;
-
-		void collect_summary_each(RPCVar *summary, double quantile,
-								  int64_t quantile_out,
-								  size_t available_count) override;
-		void collect_summary_sum(RPCVar *summary, int64_t sum,
-								 size_t count) override;
 		void collect_summary_each(RPCVar *summary, double quantile,
 								  double quantile_out,
 								  size_t available_count) override;
@@ -132,31 +122,74 @@ private:
 	};
 
 private:
-	bool expose() override;
+	bool expose();
 	void pull(WFHttpTask *task);
 	std::string report_output;
 	Collector collector;
 	WFHttpServer server;
 };
 
+class RPCFilterPolicy
+{
+public:
+	RPCFilterPolicy(size_t report_threshold,
+					size_t report_interval_msec) :
+		report_threshold(report_threshold),
+		report_interval(report_interval_msec),
+		last_report_timestamp(0)
+	{ }
+	
+	void set_report_threshold(size_t threshold)
+	{
+		if (threshold <= 0)
+			threshold = 1;
+		this->report_threshold = threshold;
+	}
+
+	void set_report_interval(int msec)
+	{
+		if (msec <= 0)
+			msec = 1;
+		this->report_interval = msec;
+	}
+
+	bool report(size_t count);
+
+private:
+	size_t report_threshold; // metrics to report at most
+	size_t report_interval;
+	long long last_report_timestamp;
+};
+
 class RPCMetricsOTel : public RPCMetricsFilter
 {
 public:
-	RPCMetricsOTel(/* policy params */);
-	virtual ~RPCMetricsOTel()
+	void set_report_threshold(size_t threshold)
 	{
-		delete this->report_req;
+		this->policy.set_report_threshold(threshold);
 	}
+
+	void set_report_interval(int msec)
+	{
+		this->policy.set_report_interval(msec);
+	}
+
+	// for client level attributes, such as ProviderID
+	void add_attributes(const std::string& key, const std::string& value);
+	size_t clear_attributes();
+
+public:
+	RPCMetricsOTel(const std::string& url);
+
+	RPCMetricsOTel(const std::string& url, unsigned int redirect_max,
+				   unsigned int retry_max, size_t report_threshold,
+				   size_t report_interval);
 
 private:
-	SubTask *create(RPCModuleData& data) override
-	{
-		return WFTaskFactory::create_empty_task();
-	}
-
+	SubTask *create(RPCModuleData& data) override;
 	bool filter(RPCModuleData& data) override
 	{
-		return false; // TODO: this->filter_policy.collect(data);
+		return this->policy.report(++this->report_counts);
 	}
 
 private:
@@ -164,24 +197,15 @@ private:
 	{
 	public:
 		Collector() { }
-		void set_report_req(google::protobuf::Message *req)
+		void set_current_message(google::protobuf::Message *var_msg)
 		{
-			this->report_req = req;
+			this->current_msg = var_msg;
 		}
 
-		void collect_gauge(RPCVar *gauge, int64_t data) override;
 		void collect_gauge(RPCVar *gauge, double data) override;
 
 		void collect_counter_each(RPCVar *counter, const std::string& label,
-								  int64_t data) override;
-		void collect_counter_each(RPCVar *counter, const std::string& label,
 								  double data) override;
-
-		void collect_histogram_each(RPCVar *histogram,
-									int64_t bucket_boudary,
-									size_t current_count)override;
-		void collect_histogram_sum(RPCVar *histogram, int64_t sum,
-								   size_t count) override;
 
 		void collect_histogram_each(RPCVar *histogram,
 									double bucket_boudary,
@@ -190,29 +214,31 @@ private:
 								   size_t count) override;
 
 		void collect_summary_each(RPCVar *summary, double quantile,
-								  int64_t quantile_out,
-								  size_t available_count) override;
-		void collect_summary_sum(RPCVar *summary, int64_t sum,
-								 size_t count) override;
-		void collect_summary_each(RPCVar *summary, double quantile,
 								  double quantile_out,
 								  size_t available_count) override;
 		void collect_summary_sum(RPCVar *summary, double sum,
 								 size_t count) override;
 
 	private:
-		google::protobuf::Message *report_req;
+		google::protobuf::Message *current_msg;
 	};
 
 private:
-	bool expose() override;
+	bool expose(google::protobuf::Message *metrics);
+
+private:
+	std::string url;
+	int redirect_max;
+	int retry_max;
 	Collector collector;
-	google::protobuf::Message *report_req;
+	RPCFilterPolicy policy;
+	bool report_status;
+	size_t report_counts;
+	std::mutex mutex;
+	std::unordered_map<std::string, std::string> attributes;
 };
 
 } // end namespace srpc
-
-#include "rpc_filter_metrics.inl"
 
 #endif
 

@@ -23,7 +23,6 @@ set(SRC_HEADERS
 	src/module/rpc_filter.h
 	src/module/rpc_filter_span.h
 	src/module/rpc_filter_metrics.h
-	src/module/rpc_filter_metrics.inl
 	src/rpc_basic.h
 	src/rpc_buffer.h
 	src/rpc_client.h

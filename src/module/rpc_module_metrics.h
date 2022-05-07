@@ -35,16 +35,28 @@ public:
 
 	bool client_begin(SubTask *task, const RPCModuleData& data) override
 	{
+		auto *client_task = static_cast<CLIENT_TASK *>(task);
+		auto *req = client_task->get_req();
+		RPCModuleData& module_data = *(client_task->mutable_module_data());	
+		module_data[OTLP_SERVICE_NAME_KEY] = req->get_service_name();
 		return true;
 	}
+
 	bool client_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;
 	}
+
 	bool server_begin(SubTask *task, const RPCModuleData& data) override
 	{
+		auto *server_task = static_cast<SERVER_TASK *>(task);
+		auto *req = server_task->get_req();
+		RPCModuleData& module_data = *(server_task->mutable_module_data());
+		
+		module_data[OTLP_SERVICE_NAME_KEY] = req->get_service_name();
 		return true;
 	}
+
 	bool server_end(SubTask *task, RPCModuleData& data) override
 	{
 		return true;

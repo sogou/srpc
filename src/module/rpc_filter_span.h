@@ -41,11 +41,7 @@ static constexpr unsigned int	SPAN_REDIS_RETRY_MAX		= 0;
 static constexpr const char	   *SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
 static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT	= 4 * 1024 * 1024;
 static constexpr unsigned int	SPANS_PER_SECOND_DEFAULT	= 1000;
-static constexpr const char	   *SPAN_OTLP_TRACES_PATH		= "/v1/traces";
-static constexpr unsigned int	SPAN_HTTP_REDIRECT_MAX		= 0;
-static constexpr unsigned int	SPAN_HTTP_RETRY_MAX			= 1;
-static constexpr size_t			REPORT_THREHOLD_DEFAULT		= 100;
-static constexpr size_t			REPORT_INTERVAL_DEFAULT		= 1000; /* msec */
+static constexpr const char	   *OTLP_TRACES_PATH			= "/v1/traces";
 
 class RPCSpanFilterPolicy
 {
@@ -83,7 +79,7 @@ public:
 	{
 		if (threshold <= 0)
 			threshold = 1;
-		report_threshold = threshold;
+		this->report_threshold = threshold;
 	}
 
 	void set_report_interval(int msec)
@@ -142,15 +138,15 @@ public:
 	RPCSpanDefault() :
 		RPCFilter(RPCModuleTypeSpan),
 		filter_policy(SPANS_PER_SECOND_DEFAULT,
-					  REPORT_THREHOLD_DEFAULT,
-					  REPORT_INTERVAL_DEFAULT)
+					  RPC_REPORT_THREHOLD_DEFAULT,
+					  RPC_REPORT_INTERVAL_DEFAULT)
 	{}
 
 	RPCSpanDefault(size_t spans_per_second) :
 		RPCFilter(RPCModuleTypeSpan),
 		filter_policy(spans_per_second,
-					  REPORT_THREHOLD_DEFAULT,
-					  REPORT_INTERVAL_DEFAULT)
+					  RPC_REPORT_THREHOLD_DEFAULT,
+					  RPC_REPORT_INTERVAL_DEFAULT)
 	{}
 
 private:
@@ -186,8 +182,8 @@ public:
 		RPCFilter(RPCModuleTypeSpan),
 		retry_max(SPAN_REDIS_RETRY_MAX),
 		filter_policy(SPANS_PER_SECOND_DEFAULT,
-					  REPORT_THREHOLD_DEFAULT,
-					  REPORT_INTERVAL_DEFAULT)
+					  RPC_REPORT_THREHOLD_DEFAULT,
+					  RPC_REPORT_INTERVAL_DEFAULT)
 	{}
 
 	RPCSpanRedis(const std::string& url, int retry_max,
@@ -196,8 +192,8 @@ public:
 		redis_url(url),
 		retry_max(retry_max),
 		filter_policy(spans_per_second,
-					  REPORT_THREHOLD_DEFAULT,
-					  REPORT_INTERVAL_DEFAULT)
+					  RPC_REPORT_THREHOLD_DEFAULT,
+					  RPC_REPORT_INTERVAL_DEFAULT)
 	{}
 
 private:
@@ -240,6 +236,16 @@ public:
 		this->filter_policy.set_stat_interval(msec);
 	}
 
+	void set_report_threshold(size_t threshold)
+	{
+		this->filter_policy.set_report_threshold(threshold);
+	}
+
+	void set_report_interval(int msec)
+	{
+		this->filter_policy.set_report_interval(msec);
+	}
+
 	// for client level attributes, such as ProviderID
 	void add_attributes(const std::string& key, const std::string& value);
 	size_t clear_attributes();
@@ -259,7 +265,6 @@ private:
 
 private:
 	SubTask *create(RPCModuleData& span) override;
-
 	bool filter(RPCModuleData& span) override;
 
 public:
