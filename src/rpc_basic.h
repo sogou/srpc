@@ -166,6 +166,12 @@ static inline long long GET_CURRENT_MS_STEADY()
 			std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
+static inline unsigned long long GET_CURRENT_NS()
+{
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(
+		std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
 static inline void TRACE_ID_BIN_TO_HEX(const uint64_t trace_id[2],
 									   char hex[SRPC_TRACEID_SIZE * 2 + 1])
 {

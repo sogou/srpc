@@ -39,6 +39,7 @@ public:
 	static SummaryVar<TYPE> *summary(const std::string& name);
 
 	static RPCVar *var(const std::string& name);
+	static bool check_name_format(const std::string& name);
 };
 
 template<typename TYPE>

@@ -388,6 +388,7 @@ void HistogramVar<TYPE>::collect(RPCVarCollector *collector)
 	size_t i = 0;
 	size_t current = 0;
 
+	collector->collect_histogram_begin(this);
 	for (; i < this->bucket_boundaries.size(); i++)
 	{
 		current += this->bucket_counts[i];
@@ -399,7 +400,7 @@ void HistogramVar<TYPE>::collect(RPCVarCollector *collector)
 	collector->collect_histogram_each(this, std::numeric_limits<TYPE>::max(),
 									  current);
 
-	collector->collect_histogram_sum(this, this->sum, this->count);
+	collector->collect_histogram_end(this, this->sum, this->count);
 }
 
 template<typename TYPE>
@@ -438,6 +439,8 @@ bool SummaryVar<TYPE>::reduce(const void *ptr, size_t sz)
 template<typename TYPE>
 void SummaryVar<TYPE>::collect(RPCVarCollector *collector)
 {
+	collector->collect_summary_begin(this);
+
 	for (size_t i = 0; i < this->quantiles.size(); i++)
 	{
 		collector->collect_summary_each(this, this->quantiles[i].quantile,
@@ -445,7 +448,7 @@ void SummaryVar<TYPE>::collect(RPCVarCollector *collector)
 										this->available_count[i]);
 	}
 
-	collector->collect_summary_sum(this, this->sum, this->count);
+	collector->collect_summary_end(this, this->sum, this->count);
 	this->quantile_out.clear();
 	this->available_count.clear();
 }

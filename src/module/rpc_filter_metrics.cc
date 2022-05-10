@@ -50,6 +50,12 @@ MetricsSummary *RPCMetricsFilter::summary(const std::string& name)
 MetricsGauge *RPCMetricsFilter::create_gauge(const std::string& name,
 											 const std::string& help)
 {
+	if (RPCVarFactory::check_name_format(name) == false)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+
 	this->mutex.lock();
 	const auto it = var_names.insert(name);
 	this->mutex.unlock();
@@ -68,6 +74,12 @@ MetricsGauge *RPCMetricsFilter::create_gauge(const std::string& name,
 MetricsCounter *RPCMetricsFilter::create_counter(const std::string& name,
 												 const std::string& help)
 {
+	if (RPCVarFactory::check_name_format(name) == false)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+
 	this->mutex.lock();
 	const auto it = var_names.insert(name);
 	this->mutex.unlock();
@@ -87,6 +99,12 @@ MetricsHistogram *RPCMetricsFilter::create_histogram(const std::string& name,
 													 const std::string& help,
 													 const std::vector<double>& bucket)
 {
+	if (RPCVarFactory::check_name_format(name) == false)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+
 	this->mutex.lock();
 	const auto it = var_names.insert(name);
 	this->mutex.unlock();
@@ -106,6 +124,12 @@ MetricsSummary *RPCMetricsFilter::create_summary(const std::string& name,
 												 const std::string& help,
 								const std::vector<struct Quantile>& quantile)
 {
+	if (RPCVarFactory::check_name_format(name) == false)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+
 	this->mutex.lock();
 	const auto it = var_names.insert(name);
 	this->mutex.unlock();
@@ -130,6 +154,12 @@ MetricsSummary *RPCMetricsFilter::create_summary(const std::string& name,
 								const std::chrono::milliseconds max_age,
 								int age_bucket)
 {
+	if (RPCVarFactory::check_name_format(name) == false)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+
 	this->mutex.lock();
 	const auto it = var_names.insert(name);
 	this->mutex.unlock();
@@ -253,7 +283,7 @@ void RPCMetricsPull::Collector::collect_histogram_each(RPCVar *histogram,
 	this->report_output += std::to_string(current_count) + "\n";
 }
 
-void RPCMetricsPull::Collector::collect_histogram_sum(RPCVar *histogram,
+void RPCMetricsPull::Collector::collect_histogram_end(RPCVar *histogram,
 													  double sum,
 													  size_t count)
 {
@@ -277,7 +307,7 @@ void RPCMetricsPull::Collector::collect_summary_each(RPCVar *summary,
 	this->report_output += "\n";
 }
 
-void RPCMetricsPull::Collector::collect_summary_sum(RPCVar *summary,
+void RPCMetricsPull::Collector::collect_summary_end(RPCVar *summary,
 													double sum,
 													size_t count)
 {
@@ -327,6 +357,12 @@ RPCMetricsOTel::RPCMetricsOTel(const std::string& url) :
 	report_status(false),
 	report_counts(0)
 {
+}
+
+RPCMetricsOTel::Collector::~Collector()
+{
+	for (const auto& kv : this->label_map)
+		delete kv.second;
 }
 
 void RPCMetricsOTel::add_attributes(const std::string& key,
@@ -430,6 +466,7 @@ bool RPCMetricsOTel::expose(google::protobuf::Message *msg)
 		}
 
 		this->collector.set_current_message(current_var);
+		this->collector.set_current_nano(GET_CURRENT_NS());
 		var->collect(&this->collector);
 	}
 
@@ -444,24 +481,101 @@ void RPCMetricsOTel::Collector::collect_gauge(RPCVar *gauge, double data)
 	Gauge *report_gauge = static_cast<Gauge *>(this->current_msg);
 	NumberDataPoint *data_points = report_gauge->add_data_points();
 	data_points->set_as_double(data);
+	data_points->set_time_unix_nano(this->current_timestamp_nano);
+}
+
+void RPCMetricsOTel::Collector::add_counter_label(const std::string& label)
+{
+	const char *key;
+	const char *value;
+	size_t key_len;
+	size_t lpos;
+	size_t rpos;
+	size_t pos = -1;
+
+	LABEL_MAP *m = new LABEL_MAP();
+
+	do {
+		pos++;
+		lpos = label.find_first_of('=', pos);
+		key = label.data() + pos;
+		key_len = lpos - pos;
+
+		rpos = label.find_first_of(',', lpos + 1);
+		pos = rpos;
+		if (rpos == std::string::npos)
+			rpos = label.length();
+		value = label.data() + lpos + 2;
+//		value_len = rpos - lpos - 3;
+
+		m->emplace(std::string{key, key_len}, std::string{value, rpos - lpos - 3});
+	} while (pos != std::string::npos);
+
+	this->label_map.emplace(label, m);
 }
 
 void RPCMetricsOTel::Collector::collect_counter_each(RPCVar *counter,
 													 const std::string& label,
 													 double data)
 {
+	Sum *report_sum = static_cast<Sum *>(this->current_msg);
+	NumberDataPoint *data_points = report_sum->add_data_points();
+	std::map<std::string, LABEL_MAP *>::iterator it = this->label_map.find(label);
+	std::string key;
+	std::string value;
+
+	if (it == this->label_map.end())
+	{
+		this->add_counter_label(label);
+		it = this->label_map.find(label);
+	}
+
+	for (const auto& kv : *(it->second))
+	{
+		KeyValue *attribute = data_points->add_attributes();
+		attribute->set_key(kv.first);
+		AnyValue *value = attribute->mutable_value();
+		value->set_string_value(kv.second);
+	}
+
+	data_points->set_as_double(data);
+	data_points->set_time_unix_nano(this->current_timestamp_nano);
+}
+
+void RPCMetricsOTel::Collector::collect_histogram_begin(RPCVar *histogram)
+{
+	Histogram *report_histogram = static_cast<Histogram *>(this->current_msg);
+	HistogramDataPoint *data_points = report_histogram->add_data_points();
+	this->current_msg = data_points;
+	data_points->set_time_unix_nano(this->current_timestamp_nano);
 }
 
 void RPCMetricsOTel::Collector::collect_histogram_each(RPCVar *histogram,
 													   double bucket_boundary,
 													   size_t current_count)
 {
+	HistogramDataPoint *data_points = static_cast<HistogramDataPoint *>(this->current_msg);
+	data_points->add_bucket_counts(current_count);
+
+	if (bucket_boundary != std::numeric_limits<double>::max())
+		data_points->add_explicit_bounds(bucket_boundary);
 }
 
-void RPCMetricsOTel::Collector::collect_histogram_sum(RPCVar *histogram,
+void RPCMetricsOTel::Collector::collect_histogram_end(RPCVar *histogram,
 													  double sum,
 													  size_t count)
 {
+	HistogramDataPoint *data_points = static_cast<HistogramDataPoint *>(this->current_msg);
+	data_points->set_sum(sum);
+	data_points->set_count(count);
+}
+
+void RPCMetricsOTel::Collector::collect_summary_begin(RPCVar *summary)
+{
+	Summary *report_summary = static_cast<Summary *>(this->current_msg);
+	SummaryDataPoint *data_points = report_summary->add_data_points();
+	this->current_msg = data_points;
+	data_points->set_time_unix_nano(this->current_timestamp_nano);
 }
 
 void RPCMetricsOTel::Collector::collect_summary_each(RPCVar *summary,
@@ -469,12 +583,23 @@ void RPCMetricsOTel::Collector::collect_summary_each(RPCVar *summary,
 													 double quantile_out,
 													 size_t available_count)
 {
+	SummaryDataPoint *data_points = static_cast<SummaryDataPoint *>(this->current_msg);
+	SummaryDataPoint::ValueAtQuantile *vaq = data_points->add_quantile_values();
+	vaq->set_quantile(quantile);
+
+	if (quantile_out == std::numeric_limits<double>::quiet_NaN())
+		vaq->set_value(0);
+	else
+		vaq->set_value(quantile_out / available_count);
 }
 
-void RPCMetricsOTel::Collector::collect_summary_sum(RPCVar *summary,
+void RPCMetricsOTel::Collector::collect_summary_end(RPCVar *summary,
 													double sum,
 													size_t count)
 {
+	SummaryDataPoint *data_points = static_cast<SummaryDataPoint *>(this->current_msg);
+	data_points->set_sum(sum);
+	data_points->set_count(count);
 }
 
 } // end namespace srpc

@@ -40,5 +40,19 @@ RPCVar *RPCVarFactory::var(const std::string& name)
 	return NULL;
 }
 
+// a~z, A~Z, _
+bool RPCVarFactory::check_name_format(const std::string& name)
+{
+	for (size_t i = 0; i < name.length(); i++)
+	{
+		if ((name.at(i) < 65 || name.at(i) > 90) &&
+			(name.at(i) < 97 || name.at(i) > 122) &&
+			name.at(i) != 95)
+		return false;
+	}
+
+	return true;
+}
+
 } // end namespace srpc
 

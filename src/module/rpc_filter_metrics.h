@@ -19,6 +19,7 @@
 
 #include <string>
 #include <set>
+#include <map>
 #include <vector>
 #include <mutex>
 #include <chrono>
@@ -106,15 +107,19 @@ private:
 
 		void collect_counter_each(RPCVar *counter, const std::string& label,
 								  double data) override;
+
+		void collect_histogram_begin(RPCVar *histogram) override { }
 		void collect_histogram_each(RPCVar *histogram,
-									double bucket_boudaries,
+									double bucket_boudary,
 									size_t current_count) override;
-		void collect_histogram_sum(RPCVar *histogram, double sum,
+		void collect_histogram_end(RPCVar *histogram, double sum,
 								   size_t count) override;
+
+		void collect_summary_begin(RPCVar *summary) override { }
 		void collect_summary_each(RPCVar *summary, double quantile,
 								  double quantile_out,
 								  size_t available_count) override;
-		void collect_summary_sum(RPCVar *summary, double sum,
+		void collect_summary_end(RPCVar *summary, double sum,
 								 size_t count) override;
 
 	private:
@@ -197,9 +202,16 @@ private:
 	{
 	public:
 		Collector() { }
+		virtual ~Collector();
+
 		void set_current_message(google::protobuf::Message *var_msg)
 		{
 			this->current_msg = var_msg;
+		}
+
+		void set_current_nano(unsigned long long ns)
+		{
+			this->current_timestamp_nano = ns;
 		}
 
 		void collect_gauge(RPCVar *gauge, double data) override;
@@ -207,20 +219,28 @@ private:
 		void collect_counter_each(RPCVar *counter, const std::string& label,
 								  double data) override;
 
+		void collect_histogram_begin(RPCVar *histogram) override;
 		void collect_histogram_each(RPCVar *histogram,
 									double bucket_boudary,
 									size_t current_count) override;
-		void collect_histogram_sum(RPCVar *histogram, double sum,
+		void collect_histogram_end(RPCVar *histogram, double sum,
 								   size_t count) override;
 
+		void collect_summary_begin(RPCVar *summary) override;
 		void collect_summary_each(RPCVar *summary, double quantile,
 								  double quantile_out,
 								  size_t available_count) override;
-		void collect_summary_sum(RPCVar *summary, double sum,
+		void collect_summary_end(RPCVar *summary, double sum,
 								 size_t count) override;
 
 	private:
+		void add_counter_label(const std::string& label);
+
+	private:
+		using LABEL_MAP = std::map<std::string, std::string>;
 		google::protobuf::Message *current_msg;
+		unsigned long long current_timestamp_nano;
+		std::map<std::string, LABEL_MAP *> label_map;
 	};
 
 private:
@@ -235,7 +255,7 @@ private:
 	bool report_status;
 	size_t report_counts;
 	std::mutex mutex;
-	std::unordered_map<std::string, std::string> attributes;
+	std::map<std::string, std::string> attributes;
 };
 
 } // end namespace srpc
