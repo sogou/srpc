@@ -66,11 +66,11 @@ public:
 	{
 		return true;
 	}
-	virtual bool client_end(SubTask *task, const RPCModuleData& data)
+	virtual bool client_end(SubTask *task, RPCModuleData& data)
 	{
 		return true;
 	}
-	virtual bool server_end(SubTask *task, const RPCModuleData& data)
+	virtual bool server_end(SubTask *task, RPCModuleData& data)
 	{
 		return true;
 	}

@@ -35,11 +35,7 @@ public:
 		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
 				req->DebugString().c_str(), resp->DebugString().c_str());
 
-		filter.gauge("request_count")->increase();
-		filter.counter("request_method")->add({{"protocol", "srpc"},
-											   {"method", "Echo"}})->increase();
-		filter.histogram("request_latency")->observe(rand() % 11);
-		filter.summary("request_body_size")->observe(req->ByteSizeLong());
+		filter.histogram("echo_request_size")->observe(req->ByteSizeLong());
 	}
 };
 
@@ -60,14 +56,9 @@ int main()
 	server.add_service(&impl);
 
 	filter.init(8080); /* export port for prometheus */
+	filter.create_histogram("echo_request_size", "Echo request size",
+							{1, 10, 100});
 	server.add_filter(&filter);
-
-	filter.create_gauge("request_count", "request count");
-	filter.create_counter("request_method", "request method info");
-	filter.create_histogram("request_latency", "request latency",
-							{0.1, 1.0, 10.0});
-	filter.create_summary("request_body_size", "request size count",
-						  {{0.5, 0.05}, {0.9, 0.01}});
 
 	if (server.start(1412) == 0)
 	{

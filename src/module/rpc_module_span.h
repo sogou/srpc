@@ -33,30 +33,25 @@ namespace srpc
 {
 
 // follows the basic conventions of RPC part in opentracing
-const char *const SRPC_METHOD_NAME		= "srpc.operation";
-const char *const SRPC_COMPONENT		= "srpc.component";
-const char *const SRPC_COMPONENT_SRPC	= "srpc.srpc";
-const char *const SRPC_SPAN_ID			= "srpc.span_id";
-const char *const SRPC_TRACE_ID			= "srpc.trace_id";
-const char *const SRPC_PARENT_SPAN_ID	= "srpc.parent_span_id";
-const char *const SRPC_START_TIMESTAMP	= "srpc.start_time";
-const char *const SRPC_FINISH_TIMESTAMP	= "srpc.finish_time";
-const char *const SRPC_DURATION			= "srpc.duration";
+static constexpr char const *SRPC_COMPONENT			= "srpc.component";
+static constexpr char const *SRPC_COMPONENT_SRPC	= "srpc.srpc";
+static constexpr char const *SRPC_SPAN_ID			= "srpc.span_id";
+static constexpr char const *SRPC_TRACE_ID			= "srpc.trace_id";
+static constexpr char const *SRPC_PARENT_SPAN_ID	= "srpc.parent_span_id";
 
 // span tags
-const char *const SRPC_SPAN_KIND		= "srpc.span.kind";
-const char *const SRPC_SPAN_KIND_CLIENT	= "srpc.client";
-const char *const SRPC_SPAN_KIND_SERVER	= "srpc.server";
-const char *const SRPC_SERVICE_NAME		= "srpc.service.name";
-const char *const SRPC_STATE			= "srpc.state";
-const char *const SRPC_ERROR			= "srpc.error";
-const char *const SRPC_REMOTE_IP		= "srpc.peer.ip";
-const char *const SRPC_REMOTE_PORT		= "srpc.peer.port";
-const char *const SRPC_SAMPLING_PRIO	= "srpc.sampling.priority";
+static constexpr char const *SRPC_SPAN_KIND			= "srpc.span.kind";
+static constexpr char const *SRPC_SPAN_KIND_CLIENT	= "srpc.client";
+static constexpr char const *SRPC_SPAN_KIND_SERVER	= "srpc.server";
+static constexpr char const *SRPC_STATE				= "srpc.state";
+static constexpr char const *SRPC_ERROR				= "srpc.error";
+static constexpr char const *SRPC_REMOTE_IP			= "srpc.peer.ip";
+static constexpr char const *SRPC_REMOTE_PORT		= "srpc.peer.port";
+static constexpr char const *SRPC_SAMPLING_PRIO		= "srpc.sampling.priority";
 
 // SRPC ext tags
-const char *const SRPC_DATA_TYPE		= "srpc.data.type";
-const char *const SRPC_COMPRESS_TYPE	= "srpc.compress.type";
+static constexpr char const *SRPC_DATA_TYPE			= "srpc.data.type";
+static constexpr char const *SRPC_COMPRESS_TYPE		= "srpc.compress.type";
 
 template<class RPCTYPE>
 class RPCSpanModule : public RPCModule
@@ -120,8 +115,8 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 	module_data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 	module_data[SRPC_COMPRESS_TYPE] =
 							std::to_string(req->get_compress_type());
-	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS());
-
+	if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
+		module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
 	return true; // always success
 }
 
@@ -134,14 +129,14 @@ bool RPCSpanModule<RPCTYPE>::client_end(SubTask *task,
 	auto *client_task = static_cast<CLIENT_TASK *>(task);
 	auto *resp = client_task->get_resp();
 	RPCModuleData& module_data = *(client_task->mutable_module_data());
-	long long end_time = GET_CURRENT_MS();
+	unsigned long long end_time = GET_CURRENT_NS();
 
 	for (auto kv : module_data)
 		data[kv.first] = module_data[kv.first];
 
 	data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
 	data[SRPC_DURATION] = std::to_string(end_time -
-						atoll(data[SRPC_START_TIMESTAMP].c_str()));
+						atoll(data[SRPC_START_TIMESTAMP].data()));
 	data[SRPC_STATE] = std::to_string(resp->get_status_code());
 	data[SRPC_ERROR] = std::to_string(resp->get_error());
 	if (client_task->get_remote(ip, &port))
@@ -191,7 +186,8 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
 	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
-	module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_MS());
+	if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
+		module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
 
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
 	module_data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_SERVER;
@@ -212,11 +208,11 @@ bool RPCSpanModule<RPCTYPE>::server_end(SubTask *task,
 	auto *server_task = static_cast<SERVER_TASK *>(task);
 	auto *resp = server_task->get_resp();
 	RPCModuleData& module_data = *(server_task->mutable_module_data());
-	long long end_time = GET_CURRENT_MS();
+	unsigned long long end_time = GET_CURRENT_NS();
 
 	module_data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
 	module_data[SRPC_DURATION] = std::to_string(end_time -
-						atoll(module_data[SRPC_START_TIMESTAMP].c_str()));
+						atoll(module_data[SRPC_START_TIMESTAMP].data()));
 	module_data[SRPC_STATE] = std::to_string(resp->get_status_code());
 	module_data[SRPC_ERROR] = std::to_string(resp->get_error());
 

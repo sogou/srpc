@@ -27,9 +27,15 @@
 namespace srpc
 {
 
-static constexpr char const *SRPC_SPAN_LOG		= "srpc.log";
-static constexpr char const *SRPC_SPAN_EVENT	= "event";
-static constexpr char const *SRPC_SPAN_MESSAGE	= "message";
+static constexpr char const *SRPC_SPAN_LOG			= "srpc.log";
+static constexpr char const *SRPC_SPAN_EVENT		= "event";
+static constexpr char const *SRPC_SPAN_MESSAGE		= "message";
+
+static constexpr char const *SRPC_START_TIMESTAMP	= "srpc.start_time";
+static constexpr char const *SRPC_FINISH_TIMESTAMP	= "srpc.finish_time";
+static constexpr char const *SRPC_DURATION			= "srpc.duration";
+static constexpr char const *SRPC_SERVICE_NAME		= "srpc.service.name";
+static constexpr char const *SRPC_METHOD_NAME		= "srpc.operation";
 
 //for SnowFlake: u_id = [timestamp][group][machine][sequence]
 static constexpr int SRPC_TIMESTAMP_BITS		= 38;

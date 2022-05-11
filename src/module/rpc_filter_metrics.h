@@ -42,8 +42,6 @@ using MetricsSummary = SummaryVar<double>;
 class RPCMetricsFilter : public RPCFilter
 {
 public:
-	RPCMetricsFilter() : RPCFilter(RPCModuleTypeMetrics) { }
-
 	MetricsGauge *create_gauge(const std::string& name,
 							   const std::string& help);
 
@@ -68,6 +66,13 @@ public:
 	MetricsCounter *counter(const std::string& name);
 	MetricsHistogram *histogram(const std::string& name);
 	MetricsSummary *summary(const std::string& name);
+
+	// filter api
+	bool client_end(SubTask *task, RPCModuleData& data) override;
+	bool server_end(SubTask *task, RPCModuleData& data) override;
+
+public:
+	RPCMetricsFilter();
 
 protected:
 	void reduce(std::unordered_map<std::string, RPCVar*>& out);

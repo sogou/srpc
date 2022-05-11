@@ -17,15 +17,60 @@
 namespace srpc
 {
 
-static constexpr size_t			METRICS_DEFAULT_MAX_AGE		= 60;
-static constexpr size_t			METRICS_DEFAULT_AGE_BUCKET	= 5;
-static constexpr const char	   *METRICS_PULL_METRICS_PATH	= "/metrics";
-static constexpr const char	   *OTLP_METRICS_PATH	= "/v1/metrics";
+static constexpr size_t		 METRICS_DEFAULT_MAX_AGE	= 60;
+static constexpr size_t		 METRICS_DEFAULT_AGE_BUCKET	= 5;
+static constexpr const char	*METRICS_PULL_METRICS_PATH	= "/metrics";
+static constexpr const char	*OTLP_METRICS_PATH			= "/v1/metrics";
+static constexpr const char *METRICS_REQUEST_COUNT		= "total_request_count";
+static constexpr const char *METRICS_REQUEST_METHOD		= "total_request_method";
+static constexpr const char *METRICS_REQUEST_LATENCY	= "total_request_latency";
+//static constexpr const char *METRICS_REQUEST_SIZE		= "total_request_size";
+//static constexpr const char *METRICS_RESPONSE_SIZE	= "total_response_size";
 
 using namespace opentelemetry::proto::collector::metrics::v1;
 using namespace opentelemetry::proto::metrics::v1;
 using namespace opentelemetry::proto::common::v1;
 using namespace opentelemetry::proto::resource::v1;
+
+RPCMetricsFilter::RPCMetricsFilter() :
+	RPCFilter(RPCModuleTypeMetrics)
+{
+	this->create_gauge(METRICS_REQUEST_COUNT, "total request count");
+	this->create_counter(METRICS_REQUEST_METHOD, "request method statistics");
+//	this->create_histogram(METRICS_REQUEST_SIZE, "total request body size",
+//						   {256, 512, 1024, 16384});
+//	this->create_histogram(METRICS_RESPONSE_SIZE, "total response body size",
+//						   {256, 512, 1024, 16384});
+	this->create_summary(METRICS_REQUEST_LATENCY, "request latency nano seconds",
+						 {{0.5, 0.05}, {0.9, 0.01}});
+}
+
+bool RPCMetricsFilter::client_end(SubTask *task, RPCModuleData& data)
+{
+
+	this->gauge(METRICS_REQUEST_COUNT)->increase();
+	this->counter(METRICS_REQUEST_METHOD)->add(
+				{{"service", data[SRPC_SERVICE_NAME]},
+				 {"method",  data[SRPC_METHOD_NAME] }})->increase();
+//	this->histogram(METRICS_REQUEST_SIZE)->observe(atoll(data[SRPC_REQUEST_SIZE].data()));
+//	this->histogram(METRICS_RESPONSE_SIZE)->observe(atoll(data[SRPC_RESPONSE_SIZE].data()));
+	this->summary(METRICS_REQUEST_LATENCY)->observe(atoll(data[SRPC_DURATION].data()));
+
+	return true;
+}
+
+bool RPCMetricsFilter::server_end(SubTask *task, RPCModuleData& data)
+{
+	this->gauge(METRICS_REQUEST_COUNT)->increase();
+	this->counter(METRICS_REQUEST_METHOD)->add(
+				{{"service", data[SRPC_SERVICE_NAME]},
+				 {"method",  data[SRPC_METHOD_NAME] }})->increase();
+//	this->histogram(METRICS_REQUEST_SIZE)->observe(atoll(data[SRPC_REQUEST_SIZE].data()));
+//	this->histogram(METRICS_RESPONSE_SIZE)->observe(atoll(data[SRPC_RESPONSE_SIZE].data()));
+	this->summary(METRICS_REQUEST_LATENCY)->observe(atoll(data[SRPC_DURATION].data()));
+
+	return true;
+}
 
 MetricsGauge *RPCMetricsFilter::gauge(const std::string& name)
 {
@@ -274,7 +319,7 @@ void RPCMetricsPull::Collector::collect_histogram_each(RPCVar *histogram,
 	this->report_output += histogram->get_name();
 	if (bucket_boundary != std::numeric_limits<double>::max())
 	{
-		this->report_output += histogram->get_name() + "_bucket{le=\"" +
+		this->report_output += "_bucket{le=\"" +
 							   std::to_string(bucket_boundary) + "\"}";
 	}
 	else
@@ -405,7 +450,7 @@ SubTask *RPCMetricsOTel::create(RPCModuleData& data)
 	KeyValue *attribute = resource->add_attributes();
 	attribute->set_key(OTLP_SERVICE_NAME_KEY);
 	AnyValue *value = attribute->mutable_value();
-	value->set_string_value(data[OTLP_SERVICE_NAME_KEY]);
+	value->set_string_value(data[SRPC_SERVICE_NAME]);
 
 	this->expose(metrics);
 

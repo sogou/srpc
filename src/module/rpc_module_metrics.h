@@ -38,12 +38,26 @@ public:
 		auto *client_task = static_cast<CLIENT_TASK *>(task);
 		auto *req = client_task->get_req();
 		RPCModuleData& module_data = *(client_task->mutable_module_data());	
-		module_data[OTLP_SERVICE_NAME_KEY] = req->get_service_name();
+
+		module_data[SRPC_SERVICE_NAME] = req->get_service_name();
+		module_data[SRPC_METHOD_NAME] = req->get_method_name();
+		if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
+			module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
+
 		return true;
 	}
 
 	bool client_end(SubTask *task, RPCModuleData& data) override
 	{
+		auto *client_task = static_cast<CLIENT_TASK *>(task);
+		RPCModuleData& module_data = *(client_task->mutable_module_data());
+
+		if (module_data.find(SRPC_DURATION) == module_data.end())
+		{
+			module_data[SRPC_DURATION] = std::to_string(GET_CURRENT_NS() -
+						atoll(module_data[SRPC_START_TIMESTAMP].data()));
+		}
+
 		return true;
 	}
 
@@ -52,13 +66,26 @@ public:
 		auto *server_task = static_cast<SERVER_TASK *>(task);
 		auto *req = server_task->get_req();
 		RPCModuleData& module_data = *(server_task->mutable_module_data());
-		
-		module_data[OTLP_SERVICE_NAME_KEY] = req->get_service_name();
+
+		module_data[SRPC_SERVICE_NAME] = req->get_service_name();
+		module_data[SRPC_METHOD_NAME] = req->get_method_name();
+		if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
+			module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
+
 		return true;
 	}
 
 	bool server_end(SubTask *task, RPCModuleData& data) override
 	{
+		auto *server_task = static_cast<SERVER_TASK *>(task);
+		RPCModuleData& module_data = *(server_task->mutable_module_data());
+
+		if (module_data.find(SRPC_DURATION) == module_data.end())
+		{
+			module_data[SRPC_DURATION] = std::to_string(GET_CURRENT_NS() -
+						atoll(module_data[SRPC_START_TIMESTAMP].data()));
+		}
+
 		return true;
 	}
 

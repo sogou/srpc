@@ -59,15 +59,9 @@ static void rpc_span_fill_pb_span(RPCModuleData& data,
 				span->set_kind(Span_SpanKind_SPAN_KIND_SERVER);
 		}
 		else if (iter.first.compare(SRPC_START_TIMESTAMP) == 0)
-		{
-			span->set_start_time_unix_nano(
-						1000000 * atoll(data[SRPC_START_TIMESTAMP].c_str()));
-		}
+			span->set_start_time_unix_nano(atoll(data[SRPC_START_TIMESTAMP].data()));
 		else if (iter.first.compare(SRPC_FINISH_TIMESTAMP) == 0)
-		{
-			span->set_end_time_unix_nano(
-						1000000 * atoll(data[SRPC_FINISH_TIMESTAMP].c_str()));
-		}
+			span->set_end_time_unix_nano(atoll(data[SRPC_FINISH_TIMESTAMP].data()));
 	}
 }
 
