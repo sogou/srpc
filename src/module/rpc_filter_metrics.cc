@@ -493,6 +493,7 @@ bool RPCMetricsOTel::expose(google::protobuf::Message *msg)
 
 		switch(var->get_type())
 		{
+		default:
 		case VAR_GAUGE:
 			current_var = m->mutable_gauge();
 			break;
@@ -505,8 +506,6 @@ bool RPCMetricsOTel::expose(google::protobuf::Message *msg)
 		case VAR_SUMMARY:
 			current_var = m->mutable_summary();
 			break;
-		default:
-			return false;
 		}
 
 		this->collector.set_current_message(current_var);
