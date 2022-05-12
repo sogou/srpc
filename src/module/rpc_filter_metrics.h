@@ -28,44 +28,39 @@
 #include "workflow/WFTaskFactory.h"
 #include "workflow/WFHttpServer.h"
 #include "rpc_basic.h"
-#include "rpc_var_factory.h"
+#include "rpc_var.h"
 #include "rpc_module_metrics.h"
 
 namespace srpc
 {
 
-using MetricsGauge = GaugeVar<double>;
-using MetricsCounter = CounterVar<double>;
-using MetricsHistogram = HistogramVar<double>;
-using MetricsSummary = SummaryVar<double>;
-
 class RPCMetricsFilter : public RPCFilter
 {
 public:
-	MetricsGauge *create_gauge(const std::string& name,
+	GaugeVar *create_gauge(const std::string& name,
+						   const std::string& help);
+
+	CounterVar *create_counter(const std::string& name,
 							   const std::string& help);
 
-	MetricsCounter *create_counter(const std::string& name,
-								   const std::string& help);
-
-	MetricsHistogram *create_histogram(const std::string& name,
-									   const std::string& help,
-									   const std::vector<double>& bucket);
-
-	MetricsSummary *create_summary(const std::string& name,
+	HistogramVar *create_histogram(const std::string& name,
 								   const std::string& help,
-								   const std::vector<struct Quantile>& quantile);
+								   const std::vector<double>& bucket);
 
-	MetricsSummary *create_summary(const std::string& name,
-									 const std::string& help,
-									 const std::vector<struct Quantile>& quantile,
-									 const std::chrono::milliseconds max_age,
-									 int age_bucket);
+	SummaryVar *create_summary(const std::string& name,
+							   const std::string& help,
+							   const std::vector<struct Quantile>& quantile);
+
+	SummaryVar *create_summary(const std::string& name,
+							   const std::string& help,
+							   const std::vector<struct Quantile>& quantile,
+							   const std::chrono::milliseconds max_age,
+							   int age_bucket);
 	// thread local api
-	MetricsGauge *gauge(const std::string& name);
-	MetricsCounter *counter(const std::string& name);
-	MetricsHistogram *histogram(const std::string& name);
-	MetricsSummary *summary(const std::string& name);
+	GaugeVar *gauge(const std::string& name);
+	CounterVar *counter(const std::string& name);
+	HistogramVar *histogram(const std::string& name);
+	SummaryVar *summary(const std::string& name);
 
 	// filter api
 	bool client_end(SubTask *task, RPCModuleData& data) override;

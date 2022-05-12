@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2021 Sogou, Inc.
+  Copyright (c) 2022 Sogou, Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,13 +21,19 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <map>
 #include <unordered_map>
+#include "time_window_quantiles.h"
 
 namespace srpc
 {
 
 class RPCVar;
 class RPCVarLocal;
+class GaugeVar;
+class CounterVar;
+class HistogramVar;
+class SummaryVar;
 
 enum RPCVarType
 {
@@ -55,6 +61,21 @@ static std::string type_string(RPCVarType type)
 	return "";
 }
 
+class RPCVarFactory
+{
+public:
+	// thread local api
+	static GaugeVar *gauge(const std::string& name);
+
+	static CounterVar *counter(const std::string& name);
+
+	static HistogramVar *histogram(const std::string& name);
+
+	static SummaryVar *summary(const std::string& name);
+
+	static RPCVar *var(const std::string& name);
+	static bool check_name_format(const std::string& name);
+};
 class RPCVarGlobal
 {
 public:
@@ -176,9 +197,135 @@ protected:
 	RPCVarType type;
 };
 
-} // end namespace srpc
+class GaugeVar : public RPCVar
+{
+public:
+	void increase() { ++this->data; }
+	void decrease() { --this->data; }
+	size_t get_size() const override { return sizeof(double); }
+	const void *get_data() const override { return &this->data; }
 
-#include "rpc_var.inl"
+	virtual double get() const { return this->data; }
+	virtual void set(double var) { this->data = var; }
+
+	RPCVar *create(bool with_data) override;
+
+	bool reduce(const void *ptr, size_t sz) override
+	{
+		this->data += *(double *)ptr;
+//		fprintf(stderr, "reduce data=%d *ptr=%d\n", this->data, *(double *)ptr);
+		return true;
+	}
+
+	void collect(RPCVarCollector *collector) override
+	{
+		collector->collect_gauge(this, this->data);
+	}
+
+public:
+	GaugeVar(const std::string& name, const std::string& help) :
+		RPCVar(name, help, VAR_GAUGE)
+	{
+		this->data = 0;
+	}
+
+private:
+	double data;
+};
+
+class CounterVar : public RPCVar
+{
+public:
+	using LABEL_MAP = std::map<std::string, std::string>;
+	GaugeVar *add(const LABEL_MAP& labels);
+
+	RPCVar *create(bool with_data) override;
+	bool reduce(const void *ptr, size_t sz) override;
+	void collect(RPCVarCollector *collector) override;
+
+	size_t get_size() const override { return this->data.size(); }
+	const void *get_data() const override { return &this->data; }
+
+	static bool label_to_str(const LABEL_MAP& labels, std::string& str);
+
+public:
+	CounterVar(const std::string& name, const std::string& help) :
+		RPCVar(name, help, VAR_COUNTER)
+	{
+	}
+
+	~CounterVar();
+private:
+	std::unordered_map<std::string, GaugeVar *> data;
+};
+
+class HistogramVar : public RPCVar
+{
+public:
+	void observe(double value);
+	bool observe_multi(const std::vector<double>& multi, double sum);
+
+	RPCVar *create(bool with_data) override;
+	bool reduce(const void *ptr, size_t sz) override;
+	void collect(RPCVarCollector *collector) override;
+
+	size_t get_size() const override { return this->bucket_counts.size(); }
+	const void *get_data() const override { return this; }
+
+	double get_sum() const { return this->sum; }
+	size_t get_count() const { return this->count; }
+	const std::vector<size_t> *get_bucket_counts() const
+	{
+		return &this->bucket_counts;
+	}
+
+public:
+	HistogramVar(const std::string& name, const std::string& help,
+				 const std::vector<double>& bucket);
+
+private:
+	std::vector<double> bucket_boundaries;
+	std::vector<size_t> bucket_counts;
+	double sum;
+	size_t count;
+};
+
+class SummaryVar : public RPCVar
+{
+public:
+	void observe(double value);
+
+	RPCVar *create(bool with_data) override;
+	bool reduce(const void *ptr, size_t sz) override;
+	void collect(RPCVarCollector *collector) override;
+
+	size_t get_size() const override { return this->quantiles.size(); }
+	const void *get_data() const override { return this; }
+
+	double get_sum() const { return this->sum; }
+	size_t get_count() const { return this->count; }
+	TimeWindowQuantiles<double> *get_quantile_values()
+	{
+		return &this->quantile_values;
+	}
+
+public:
+	SummaryVar(const std::string& name, const std::string& help,
+			   const std::vector<struct Quantile>& quantile,
+			   const std::chrono::milliseconds max_age, int age_bucket);
+
+private:
+	const std::vector<struct Quantile> quantiles;
+	double sum;
+	size_t count;
+	std::chrono::milliseconds max_age;
+	int age_buckets;
+	TimeWindowQuantiles<double> quantile_values;
+	std::vector<double> quantile_out;
+	std::vector<size_t> available_count;
+};
+
+} // end namespace srpc
 
 #endif
 

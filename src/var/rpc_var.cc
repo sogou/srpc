@@ -23,6 +23,62 @@
 namespace srpc
 {
 
+GaugeVar *RPCVarFactory::gauge(const std::string& name)
+{
+	return static_cast<GaugeVar *>(RPCVarFactory::var(name));
+}
+
+CounterVar *RPCVarFactory::counter(const std::string& name)
+{
+	return static_cast<CounterVar *>(RPCVarFactory::var(name));
+}
+
+HistogramVar *RPCVarFactory::histogram(const std::string& name)
+{
+	return static_cast<HistogramVar *>(RPCVarFactory::var(name));
+}
+
+SummaryVar *RPCVarFactory::summary(const std::string& name)
+{
+	return static_cast<SummaryVar *>(RPCVarFactory::var(name));
+}
+
+RPCVar *RPCVarFactory::var(const std::string& name)
+{
+	RPCVar *var;
+	RPCVar *new_var;
+	RPCVarLocal *local = RPCVarLocal::get_instance();
+	auto it = local->vars.find(name);
+	if (it != local->vars.end())
+		return it->second;
+
+	var = RPCVarGlobal::get_instance()->find(name);
+
+	if (var)
+	{
+		new_var = var->create(false);
+		local->add(name, new_var);
+		return new_var;
+	}
+
+	return NULL;
+}
+
+// a~z, A~Z, _
+bool RPCVarFactory::check_name_format(const std::string& name)
+{
+	for (size_t i = 0; i < name.length(); i++)
+	{
+		if ((name.at(i) < 65 || name.at(i) > 90) &&
+			(name.at(i) < 97 || name.at(i) > 122) &&
+			name.at(i) != 95)
+		return false;
+	}
+
+	return true;
+}
+
+
 void RPCVar::format_name()
 {
 	//TODO: change aaa.bbb AAA.BBB to aaa_bbb
@@ -108,6 +164,273 @@ RPCVar *RPCVarGlobal::find(const std::string& name)
 
 	global_var->mutex.unlock();
 	return ret;
+}
+
+///////////// var impl
+
+RPCVar *GaugeVar::create(bool with_data)
+{
+	GaugeVar *var = new GaugeVar(this->name, this->help);
+
+	if (with_data)
+		var->data = this->data;
+
+	return var;
+}
+
+CounterVar::~CounterVar()
+{
+	for (auto it = this->data.begin(); it != this->data.end(); it++)
+		delete it->second;
+}
+
+RPCVar *CounterVar::create(bool with_data)
+{
+	CounterVar *var = new CounterVar(this->name, this->help);
+
+	if (with_data)
+	{
+		for (auto it = this->data.begin();
+			 it != this->data.end(); it++)
+		{
+			this->data.insert(std::make_pair(it->first,
+								 (GaugeVar *)it->second->create(true)));
+		}
+	}
+
+	return var;
+}
+
+bool CounterVar::label_to_str(const LABEL_MAP& labels, std::string& str)
+{
+	for (auto it = labels.begin(); it != labels.end(); it++)
+	{
+		if (it != labels.begin())
+			str += ",";
+		//TODO: check label name regex is "[a-zA-Z_:][a-zA-Z0-9_:]*"
+		str += it->first + "=\"" + it->second + "\"";
+	}
+
+	return true;
+}
+
+GaugeVar *CounterVar::add(const LABEL_MAP& labels)
+{
+	std::string label_str;
+	GaugeVar *var;
+
+	if (!this->label_to_str(labels, label_str))
+		return NULL;
+
+	auto it = this->data.find(label_str);
+
+	if (it == this->data.end())
+	{
+		var = new GaugeVar(label_str, "");
+		this->data.insert(std::make_pair(label_str, var));
+	}
+	else
+		var = it->second;
+
+	return var;
+}
+
+bool CounterVar::reduce(const void *ptr, size_t)
+{
+	std::unordered_map<std::string, GaugeVar *> *data;
+	data = (std::unordered_map<std::string, GaugeVar *> *)ptr;
+
+	for (auto it = data->begin(); it != data->end(); it++)
+	{
+		auto my_it = this->data.find(it->first);
+
+		if (my_it == this->data.end())
+		{
+			GaugeVar *var = (GaugeVar *)it->second->create(true);
+			this->data.insert(std::make_pair(it->first, var));
+		}
+		else
+			my_it->second->reduce(it->second->get_data(),
+								  it->second->get_size());
+	}
+
+	return true;
+}
+
+void CounterVar::collect(RPCVarCollector *collector)
+{
+	for (auto it = this->data.begin(); it != this->data.end(); it++)
+		collector->collect_counter_each(this, it->first, it->second->get());
+}
+
+void HistogramVar::observe(double value)
+{
+	size_t i = 0;
+
+	for (; i < this->bucket_boundaries.size(); i++)
+	{
+		if (value <= this->bucket_boundaries[i])
+			break;
+	}
+
+	this->bucket_counts[i]++;
+	this->sum += value;
+	this->count++;
+}
+
+HistogramVar::HistogramVar(const std::string& name, const std::string& help,
+						   const std::vector<double>& bucket) :
+	RPCVar(name, help, VAR_HISTOGRAM),
+	bucket_boundaries(bucket),
+	bucket_counts(bucket.size() + 1)
+{
+	this->sum = 0;
+	this->count = 0;
+}
+
+RPCVar *HistogramVar::create(bool with_data)
+{
+	HistogramVar *var = new HistogramVar(this->name, this->help,
+										 this->bucket_boundaries);
+	if (with_data)
+	{
+		var->bucket_counts = this->bucket_counts;
+		var->sum = this->sum;
+		var->count = this->count;
+	}
+
+	return var;
+}
+
+bool HistogramVar::observe_multi(const std::vector<double>& multi, double sum)
+{
+	if (multi.size() != this->bucket_counts.size())
+		return false;
+
+	for (size_t i = 0; i < multi.size(); i ++)
+	{
+		this->bucket_counts[i] += multi[i];
+		this->count += multi[i];
+	}
+	this->sum += sum;
+
+	return true;
+}
+
+bool HistogramVar::reduce(const void *ptr, size_t sz)
+{
+	if (sz != this->bucket_boundaries.size() + 1)
+		return false;
+
+	const HistogramVar *data = (const HistogramVar *)ptr;
+	const std::vector<size_t> *src_bucket_counts = data->get_bucket_counts();
+
+	for (size_t i = 0; i < sz; i++)
+		this->bucket_counts[i] += (*src_bucket_counts)[i];
+
+	this->bucket_counts[sz] += (*src_bucket_counts)[sz];
+	this->sum += data->get_sum();
+	this->count += data->get_count();
+
+	return true;
+}
+
+void HistogramVar::collect(RPCVarCollector *collector)
+{
+	size_t i = 0;
+	size_t current = 0;
+
+	collector->collect_histogram_begin(this);
+	for (; i < this->bucket_boundaries.size(); i++)
+	{
+		current += this->bucket_counts[i];
+		collector->collect_histogram_each(this, this->bucket_boundaries[i],
+										  current);
+	}
+
+	current += this->bucket_counts[i];
+	collector->collect_histogram_each(this, std::numeric_limits<double>::max(),
+									  current);
+
+	collector->collect_histogram_end(this, this->sum, this->count);
+}
+
+
+SummaryVar::SummaryVar(const std::string& name, const std::string& help,
+					   const std::vector<struct Quantile>& quantile,
+					   const std::chrono::milliseconds max_age, int age_bucket) :
+	RPCVar(name, help, VAR_SUMMARY),
+	quantiles(quantile),
+	quantile_values(&this->quantiles, max_age, age_bucket)
+{
+	this->sum = 0;
+	this->count = 0;
+	this->max_age = max_age;
+	this->age_buckets = age_bucket;
+	this->quantile_out.resize(quantile.size(), 0);
+	this->available_count.resize(quantile.size(), 0);
+}
+
+RPCVar *SummaryVar::create(bool with_data)
+{
+	SummaryVar *var = new SummaryVar(this->name, this->help,
+									 this->quantiles, this->max_age,
+									 this->age_buckets);
+	if (with_data)
+	{
+		var->sum = this->sum;
+		var->count = this->count;
+		var->quantile_values = this->quantile_values;
+	}
+
+	return var;
+}
+
+void SummaryVar::observe(double value)
+{
+	this->quantile_values.insert(value);
+	this->sum += value;
+	this->count++;
+}
+
+bool SummaryVar::reduce(const void *ptr, size_t sz)
+{
+	if (sz != this->quantiles.size())
+		return false;
+
+	SummaryVar *data = (SummaryVar *)ptr;
+
+	TimeWindowQuantiles<double> *src = data->get_quantile_values();
+	size_t available_count;
+	double get_val;
+
+	for (size_t i = 0; i < sz; i ++)
+	{
+		available_count = src->get(this->quantiles[i].quantile, &get_val);
+		this->quantile_out[i] += get_val * available_count;
+		this->available_count[i] += available_count;
+	}
+
+	this->sum += data->get_sum();
+	this->count += data->get_count();
+
+	return true;
+}
+
+void SummaryVar::collect(RPCVarCollector *collector)
+{
+	collector->collect_summary_begin(this);
+
+	for (size_t i = 0; i < this->quantiles.size(); i++)
+	{
+		collector->collect_summary_each(this, this->quantiles[i].quantile,
+										this->quantile_out[i],
+										this->available_count[i]);
+	}
+
+	collector->collect_summary_end(this, this->sum, this->count);
+	this->quantile_out.clear();
+	this->available_count.clear();
 }
 
 } // end namespace srpc

@@ -14,8 +14,6 @@ set(SRC_HEADERS
 	src/thrift/rpc_thrift_idl.inl
 	src/var/ckms_quantiles.h
 	src/var/time_window_quantiles.h
-	src/var/rpc_var_factory.h
-	src/var/rpc_var.inl
 	src/var/rpc_var.h
 	src/module/rpc_module.h
 	src/module/rpc_module_span.h

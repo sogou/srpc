@@ -5,13 +5,13 @@
 #include <vector>
 #include <mutex>
 #include <chrono>
-#include "rpc_basic.h"
 #include "workflow/HttpMessage.h"
 #include "workflow/HttpUtil.h"
 #include "workflow/WFTaskFactory.h"
 #include "workflow/WFHttpServer.h"
+#include "rpc_basic.h"
+#include "rpc_var.h"
 #include "rpc_filter_metrics.h"
-#include "rpc_var_factory.h"
 #include "opentelemetry_metrics_service.pb.h"
 
 namespace srpc
@@ -72,27 +72,51 @@ bool RPCMetricsFilter::server_end(SubTask *task, RPCModuleData& data)
 	return true;
 }
 
-MetricsGauge *RPCMetricsFilter::gauge(const std::string& name)
+GaugeVar *RPCMetricsFilter::gauge(const std::string& name)
 {
-	return RPCVarFactory::gauge<double>(name);
+	return RPCVarFactory::gauge(name);
 }
 
-MetricsCounter *RPCMetricsFilter::counter(const std::string& name)
+CounterVar *RPCMetricsFilter::counter(const std::string& name)
 {
-	return RPCVarFactory::counter<double>(name);
+	return RPCVarFactory::counter(name);
 }
 
-MetricsHistogram *RPCMetricsFilter::histogram(const std::string& name)
+HistogramVar *RPCMetricsFilter::histogram(const std::string& name)
 {
-	return RPCVarFactory::histogram<double>(name);
+	return RPCVarFactory::histogram(name);
 }
 
-MetricsSummary *RPCMetricsFilter::summary(const std::string& name)
+SummaryVar *RPCMetricsFilter::summary(const std::string& name)
 {
-	return RPCVarFactory::summary<double>(name);
+	return RPCVarFactory::summary(name);
 }
 
-MetricsGauge *RPCMetricsFilter::create_gauge(const std::string& name,
+GaugeVar *RPCMetricsFilter::create_gauge(const std::string& name,
+										 const std::string& help)
+{
+	if (RPCVarFactory::check_name_format(name) == false)
+	{
+		errno = EINVAL;
+		return NULL;
+	}
+
+	this->mutex.lock();
+	const auto it = var_names.insert(name);
+	this->mutex.unlock();
+
+	if (!it.second)
+	{
+		errno = EEXIST;
+		return NULL;
+	}
+
+	GaugeVar *gauge = new GaugeVar(name, help);
+	RPCVarLocal::get_instance()->add(name, gauge);
+	return gauge;
+}
+
+CounterVar *RPCMetricsFilter::create_counter(const std::string& name,
 											 const std::string& help)
 {
 	if (RPCVarFactory::check_name_format(name) == false)
@@ -111,38 +135,14 @@ MetricsGauge *RPCMetricsFilter::create_gauge(const std::string& name,
 		return NULL;
 	}
 
-	MetricsGauge *gauge = new MetricsGauge(name, help);
-	RPCVarLocal::get_instance()->add(name, gauge);
-	return gauge;
-}
-
-MetricsCounter *RPCMetricsFilter::create_counter(const std::string& name,
-												 const std::string& help)
-{
-	if (RPCVarFactory::check_name_format(name) == false)
-	{
-		errno = EINVAL;
-		return NULL;
-	}
-
-	this->mutex.lock();
-	const auto it = var_names.insert(name);
-	this->mutex.unlock();
-
-	if (!it.second)
-	{
-		errno = EEXIST;
-		return NULL;
-	}
-
-	MetricsCounter *counter = new MetricsCounter(name, help);
+	CounterVar *counter = new CounterVar(name, help);
 	RPCVarLocal::get_instance()->add(name, counter);
 	return counter;
 }
 
-MetricsHistogram *RPCMetricsFilter::create_histogram(const std::string& name,
-													 const std::string& help,
-													 const std::vector<double>& bucket)
+HistogramVar *RPCMetricsFilter::create_histogram(const std::string& name,
+												 const std::string& help,
+												 const std::vector<double>& bucket)
 {
 	if (RPCVarFactory::check_name_format(name) == false)
 	{
@@ -160,13 +160,13 @@ MetricsHistogram *RPCMetricsFilter::create_histogram(const std::string& name,
 		return NULL;
 	}
 
-	MetricsHistogram *histogram = new MetricsHistogram(name, help, bucket);
+	HistogramVar *histogram = new HistogramVar(name, help, bucket);
 	RPCVarLocal::get_instance()->add(name, histogram);
 	return histogram;
 }
 
-MetricsSummary *RPCMetricsFilter::create_summary(const std::string& name,
-												 const std::string& help,
+SummaryVar *RPCMetricsFilter::create_summary(const std::string& name,
+											 const std::string& help,
 								const std::vector<struct Quantile>& quantile)
 {
 	if (RPCVarFactory::check_name_format(name) == false)
@@ -185,7 +185,7 @@ MetricsSummary *RPCMetricsFilter::create_summary(const std::string& name,
 		return NULL;
 	}
 
-	MetricsSummary *summary = new MetricsSummary(name, help, quantile,
+	SummaryVar *summary = new SummaryVar(name, help, quantile,
 								std::chrono::seconds(METRICS_DEFAULT_MAX_AGE),
 								METRICS_DEFAULT_AGE_BUCKET);
 
@@ -193,8 +193,8 @@ MetricsSummary *RPCMetricsFilter::create_summary(const std::string& name,
 	return summary;
 }
 
-MetricsSummary *RPCMetricsFilter::create_summary(const std::string& name,
-												 const std::string& help,
+SummaryVar *RPCMetricsFilter::create_summary(const std::string& name,
+											 const std::string& help,
 								const std::vector<struct Quantile>& quantile,
 								const std::chrono::milliseconds max_age,
 								int age_bucket)
@@ -215,8 +215,7 @@ MetricsSummary *RPCMetricsFilter::create_summary(const std::string& name,
 		return NULL;
 	}
 
-	MetricsSummary *summary = new MetricsSummary(name, help, quantile, max_age,
-												 age_bucket);
+	SummaryVar *summary = new SummaryVar(name, help, quantile, max_age, age_bucket);
 	RPCVarLocal::get_instance()->add(name, summary);
 	return summary;
 }
@@ -320,7 +319,7 @@ void RPCMetricsPull::Collector::collect_histogram_each(RPCVar *histogram,
 	if (bucket_boundary != std::numeric_limits<double>::max())
 	{
 		this->report_output += "_bucket{le=\"" +
-							   std::to_string(bucket_boundary) + "\"}";
+							   std::to_string(bucket_boundary) + "\"} ";
 	}
 	else
 		this->report_output += "_bucket{le=\"+Inf\"} ";
