@@ -134,14 +134,15 @@ enum RPCCompressType
 	RPCCompressGzip		=	2,
 	RPCCompressZlib		=	3,
 	RPCCompressLz4		=	4,
-	RPCCompressMax		=	5
+	RPCCompressMax		=	5,
 };
 
 enum RPCModuleType
 {
-	RPCModuleSpan		=	0,
-	RPCModuleMonitor	=	1,
-	RPCModuleEmpty		=	2
+	RPCModuleTypeEmpty		=	0,
+	RPCModuleTypeSpan		=	1,
+	RPCModuleTypeMetrics	=	2,
+	RPCModuleTypeLog		=	3,
 };
 
 class RPCCommon
@@ -163,6 +164,12 @@ static inline long long GET_CURRENT_MS_STEADY()
 {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(
 			std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+static inline unsigned long long GET_CURRENT_NS()
+{
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(
+		std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 static inline void TRACE_ID_BIN_TO_HEX(const uint64_t trace_id[2],

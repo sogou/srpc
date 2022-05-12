@@ -31,7 +31,7 @@ rpc_span_fill_pb_request(const std::string& service_name,
 	}
 
 	KeyValue *attribute = resource->add_attributes();
-	attribute->set_key("service.name");
+	attribute->set_key(OTLP_SERVICE_NAME_KEY);
 	AnyValue *value = attribute->mutable_value();
 	value->set_string_value(service_name);
 
@@ -59,15 +59,9 @@ static void rpc_span_fill_pb_span(RPCModuleData& data,
 				span->set_kind(Span_SpanKind_SPAN_KIND_SERVER);
 		}
 		else if (iter.first.compare(SRPC_START_TIMESTAMP) == 0)
-		{
-			span->set_start_time_unix_nano(
-						1000000 * atoll(data[SRPC_START_TIMESTAMP].c_str()));
-		}
+			span->set_start_time_unix_nano(atoll(data[SRPC_START_TIMESTAMP].data()));
 		else if (iter.first.compare(SRPC_FINISH_TIMESTAMP) == 0)
-		{
-			span->set_end_time_unix_nano(
-						1000000 * atoll(data[SRPC_FINISH_TIMESTAMP].c_str()));
-		}
+			span->set_end_time_unix_nano(atoll(data[SRPC_FINISH_TIMESTAMP].data()));
 	}
 }
 
@@ -214,13 +208,13 @@ SubTask *RPCSpanRedis::create(RPCModuleData& span)
 }
 
 RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url) :
-	RPCFilter(RPCModuleSpan),
-	url(url + SPAN_OTLP_TRACES_PATH),
-	redirect_max(SPAN_HTTP_REDIRECT_MAX),
-	retry_max(SPAN_HTTP_RETRY_MAX),
+	RPCFilter(RPCModuleTypeSpan),
+	url(url + OTLP_TRACES_PATH),
+	redirect_max(OTLP_HTTP_REDIRECT_MAX),
+	retry_max(OTLP_HTTP_RETRY_MAX),
 	filter_policy(SPANS_PER_SECOND_DEFAULT,
-				  REPORT_THREHOLD_DEFAULT,
-				  REPORT_INTERVAL_DEFAULT),
+				  RPC_REPORT_THREHOLD_DEFAULT,
+				  RPC_REPORT_INTERVAL_DEFAULT),
 	report_status(false),
 	report_span_count(0)
 {
@@ -233,8 +227,8 @@ RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url,
 										   size_t spans_per_second,
 										   size_t report_threshold,
 										   size_t report_interval) :
-	RPCFilter(RPCModuleSpan),
-	url(url + SPAN_OTLP_TRACES_PATH),
+	RPCFilter(RPCModuleTypeSpan),
+	url(url + OTLP_TRACES_PATH),
 	redirect_max(redirect_max),
 	retry_max(retry_max),
 	filter_policy(spans_per_second, report_threshold, report_interval),
@@ -313,7 +307,7 @@ bool RPCSpanOpenTelemetry::filter(RPCModuleData& data)
 	std::unordered_map<std::string, google::protobuf::Message *>::iterator it;
 	InstrumentationLibrarySpans *spans;
 	bool ret;
-	const std::string& service_name = data[SRPC_SERVICE_NAME];
+	const std::string& service_name = data[OTLP_SERVICE_NAME_KEY];
 
 	this->mutex.lock();
 	if (this->filter_policy.collect(data))
@@ -340,5 +334,5 @@ bool RPCSpanOpenTelemetry::filter(RPCModuleData& data)
 	return ret;
 }
 
-}
+} // end namespace srpc
 

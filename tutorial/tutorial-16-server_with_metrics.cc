@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2020 sogou, Inc.
+  Copyright (c) 2022 sogou, Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #include "echo_pb.srpc.h"
 #include "workflow/WFFacilities.h"
 #include "srpc/rpc_types.h"
+#include "srpc/rpc_filter_metrics.h"
 
 using namespace srpc;
 
@@ -32,7 +33,14 @@ public:
 
 		printf("Server Echo()\nget_req:\n%s\nset_resp:\n%s\n",
 				req->DebugString().c_str(), resp->DebugString().c_str());
+
+		this->filter->histogram("echo_request_size")->observe(req->ByteSizeLong());
 	}
+
+	void set_filter(RPCMetricsPull *filter) { this->filter = filter; }
+
+private:
+	RPCMetricsPull *filter;
 };
 
 static void sig_handler(int signo)
@@ -48,7 +56,14 @@ int main()
 
 	SRPCServer server;
 	ExampleServiceImpl impl;
+	RPCMetricsPull filter;
 
+	filter.init(8080); /* export port for prometheus */
+	filter.create_histogram("echo_request_size", "Echo request size",
+							{1, 10, 100});
+	impl.set_filter(&filter);
+
+	server.add_filter(&filter);
 	server.add_service(&impl);
 
 	if (server.start(1412) == 0)
@@ -59,6 +74,7 @@ int main()
 	else
 		perror("server start");
 
+	filter.deinit();
 	google::protobuf::ShutdownProtobufLibrary();
 	return 0;
 }

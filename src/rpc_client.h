@@ -22,6 +22,7 @@
 #include "rpc_options.h"
 #include "rpc_global.h"
 #include "rpc_module_span.h"
+#include "rpc_module_metrics.h"
 
 namespace srpc
 {
@@ -142,14 +143,11 @@ void RPCClient<RPCTYPE>::add_filter(RPCFilter *filter)
 		{
 			switch (type)
 			{
-			case RPCModuleSpan:
+			case RPCModuleTypeSpan:
 				module = new RPCSpanModule<RPCTYPE>();
 				break;
-			case RPCModuleMonitor:
-				module = new RPCMonitorModule<RPCTYPE>();
-				break;
-			case RPCModuleEmpty:
-				module = new RPCEmptyModule<RPCTYPE>();
+			case RPCModuleTypeMetrics:
+				module = new RPCMetricsModule<RPCTYPE>();
 				break;
 			default:
 				break;
