@@ -70,7 +70,7 @@ public:
 	RPCMetricsFilter();
 
 protected:
-	void reduce(std::unordered_map<std::string, RPCVar*>& out);
+	void reduce(std::unordered_map<std::string, RPCVar *>& out);
 
 protected:
 	std::mutex mutex;
