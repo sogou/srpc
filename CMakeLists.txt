@@ -99,10 +99,12 @@ add_subdirectory(src)
 include(CMakePackageConfigHelpers)
 set(CONFIG_INC_DIR ${INC_DIR})
 set(CONFIG_LIB_DIR ${LIB_DIR})
-if(NOT VCPKG_TOOLCHAIN)
-	set(CONFIG_BIN_DIR ${BIN_DIR})	
-else()
+
+if (VCPKG_TOOLCHAIN AND EXISTS "${CMAKE_INSTALL_PREFIX}/tools/srpc")
 	set(CONFIG_BIN_DIR ${CMAKE_INSTALL_PREFIX}/tools/srpc)
+	message("Install with VCPKG toolchain. Dir ${CMAKE_INSTALL_PREFIX}/tools/srpc.")
+else()
+	set(CONFIG_BIN_DIR ${BIN_DIR})
 endif()
 
 configure_package_config_file(

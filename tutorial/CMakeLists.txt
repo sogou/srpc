@@ -102,11 +102,40 @@ set(TUTORIAL_PB_LIST
 )
 
 if (APPLE)
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		)
 elseif (WIN32)
-	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto protobuf::libprotobuf ZLIB::ZLIB)
+	set(SRPC_LIB
+		srpc
+		workflow
+		ws2_32
+		wsock32
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf::libprotobuf
+		ZLIB::ZLIB
+		Snappy::snappy
+		LZ4::LZ4
+		)
 else ()
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z ${SNAPPY_LIB} ${LZ4_LIB})
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		${SNAPPY_LIB}
+		${LZ4_LIB}
+		)
 endif ()
 
 foreach(src ${TUTORIAL_PB_LIST})
