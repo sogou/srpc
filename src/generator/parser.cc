@@ -20,6 +20,14 @@
 #include "parser.h"
 #include "thrift/rpc_thrift_enum.h"
 
+#ifndef MAXPATHLEN
+# ifdef MAX_PATH
+#  define MAXPATHLEN	MAX_PATH
+# else
+#  define MAXPATHLEN	260
+# endif
+#endif
+
 #define LINE_LENGTH_MAX 2048
 
 static std::string gen_param_var(const std::string& type_name, size_t& cur,
