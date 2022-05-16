@@ -15,10 +15,17 @@
 */
 
 #include <ctype.h>
-#include <unistd.h>
-#include <sys/param.h>
 #include "parser.h"
 #include "thrift/rpc_thrift_enum.h"
+
+#ifndef _WIN32
+#include <unistd.h>
+#include <sys/param.h>
+#else
+#define MAXPATHLEN 4096
+#include <direct.h>
+#endif
+
 
 #define LINE_LENGTH_MAX 2048
 
