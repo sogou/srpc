@@ -1,4 +1,4 @@
-[English version](/docs/en/tutorial-01-idl.md)
+[English version](/docs/en/docs-01-idl.md)
 
 ## RPC IDL
 - 描述文件

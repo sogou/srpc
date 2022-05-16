@@ -74,14 +74,14 @@ make
 
 ## Tutorial
 
-* [Step 1: Design IDL description file](/docs/en/tutorial-01-idl.md)
-* [Step 2: Implement ServiceIMPL](/docs/en/tutorial-02-service.md)
-* [Step 3: Start the Server](/docs/en/tutorial-03-server.md)
-* [Step 4: Use the Client](/docs/en/tutorial-04-client.md)
-* [Step 5: Understand asynchrous Context](/docs/en/tutorial-05-context.md)
-* [Step 6: Use it together with the Workflow](/docs/en/tutorial-06-workflow.md)
-* [Step 7: Common Usage of HTTP](/docs/en/tutorial-07-http.md)
-* [Step 8: Report Tracing to OpenTelemetry](/docs/en/tutorial-08-tracing.md)
+* [Step 1: Design IDL description file](/docs/en/docs-01-idl.md)
+* [Step 2: Implement ServiceIMPL](/docs/en/docs-02-service.md)
+* [Step 3: Start the Server](/docs/en/docs-03-server.md)
+* [Step 4: Use the Client](/docs/en/docs-04-client.md)
+* [Step 5: Understand asynchrous Context](/docs/en/docs-05-context.md)
+* [Step 6: Use it together with the Workflow](/docs/en/docs-06-workflow.md)
+* [Step 7: Common Usage of HTTP](/docs/en/docs-07-http.md)
+* [Step 8: Report Tracing to OpenTelemetry](/docs/en/docs-08-tracing.md)
 
 Easy to compile tutorial with these commands:
 

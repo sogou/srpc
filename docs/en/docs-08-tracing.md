@@ -1,4 +1,4 @@
-[中文版](/docs/tutorial-08-tracing.md)
+[中文版](/docs/docs-08-tracing.md)
 
 ## Report Tracing to OpenTelemetry
 **SRPC** supports generating and reporting tracing and spans, which can be reported in multiple ways, including exporting data locally or to [OpenTelemetry](https://opentelemetry.io).

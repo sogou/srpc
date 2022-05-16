@@ -22,12 +22,17 @@
 #include <limits>
 #include <stdio.h>
 #include <string>
-#include <sys/types.h>
-#include <arpa/inet.h>
 #include "workflow/WFTask.h"
 #include "rpc_basic.h"
 #include "rpc_module.h"
 #include "rpc_context.h"
+
+#ifdef _WIN32
+#include <workflow/PlatformSocket.h>
+#else
+#include <sys/types.h>
+#include <arpa/inet.h>
+#endif
 
 namespace srpc
 {

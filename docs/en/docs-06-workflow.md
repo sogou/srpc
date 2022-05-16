@@ -1,14 +1,17 @@
-[English version](/docs/en/tutorial-06-workflow.md)
+[中文版](/docs/docs-06-workflow.md)
 
-## 与workflow异步框架的结合
+## Integrating with the asynchronous Workflow framework
+
 ### 1. Server
-下面我们通过一个具体例子来呈现
-- Echo RPC在接收到请求时，向下游发起一次http请求
-- 对下游请求完成后，我们将http response的body信息填充到response的message里，回复给客户端
-- 我们不希望阻塞/占据着Handler的线程，所以对下游的请求一定是一次异步请求
-- 首先，我们通过Workflow框架的工厂``WFTaskFactory::create_http_task``创建一个异步任务http_task
-- 然后，我们利用RPCContext的``ctx->get_series()``获取到ServerTask所在的SeriesWork
-- 最后，我们使用SeriesWork的``push_back``接口将http_task放到SeriesWork的后面
+
+You can follow the detailed example below:
+
+- Echo RPC sends an HTTP request to the upstream modules when it receives the request.
+- After the request to the upstream modules is completed, the server populates the body of HTTP response into the message of the response and send a reply to the client.
+- We don't want to block/occupy the handler thread, so the request to the upstream must be asynchronous.
+- First, we can use `WFTaskFactory::create_http_task()` of the factory of Workflow to create an asynchronous http_task.
+- Then, we use `ctx->get_series()` of the RPCContext to get the SeriesWork of the current ServerTask.
+- Finally, we use the `push_back()` interface of the SeriesWork to append the http\_task to the SeriesWork.
 
 ~~~cpp
 class ExampleServiceImpl : public Example::Service
@@ -39,12 +42,14 @@ public:
 ~~~
 
 ### 2. Client
-下面我们通过一个具体例子来呈现
-- 我们并行发出两个请求，1个是rpc请求，1个是http请求
-- 两个请求都结束后，我们再发起一次计算任务，计算两个数的平方和
-- 首先，我们通过RPC Client的``create_Echo_task``创建一个rpc异步请求的网络任务rpc_task
-- 然后，我们通过Workflow框架的工厂``WFTaskFactory::create_http_task``和``WFTaskFactory::create_go_task``分别创建异步网络任务http_task，和异步计算任务calc_task
-- 最后，我们利用串并联流程图，乘号代表并行、大于号代表串行，将3个异步任务组合起来执行start
+
+You can follow the detailed example below:
+
+- We send two requests in parallel. One is an RPC request and the other is an HTTP request.
+- After both requests are finished, we initiate a calculation task again to calculate the sum of the squares of the two numbers.
+- First, use `create_Echo_task()` of the RPC Client to create an rpc\_task, which is an asynchronous RPC network request.
+- Then, use `WFTaskFactory::create_http_task` and `WFTaskFactory::create_go_task` in the the factory of Workflow to create an asynchronous network task http\_task and an asynchronous computing task calc\_task respectively.
+- Finally, use the serial-parallel graph to organize three asynchronous tasks, in which the multiplication sign indicates parallel tasks and the greater than sign indicates serial tasks and then execute ``start()``.
 
 ~~~cpp
 void calc(int x, int y)
@@ -103,33 +108,33 @@ int main()
 ~~~
 
 ### 3. Upstream
-SRPC可以直接使用Workflow的任何组件，最常用的就是[Upstream](https://github.com/sogou/workflow/blob/master/docs/about-upstream.md)，SRPC的任何一种client都可以使用Upstream。
+SRPC can directly use any component of Workflow, the most commonly used is [Upstream](https://github.com/sogou/workflow/blob/master/docs/en/about-upstream.md), any kind of client of SRPC can use Upstream.
 
-我们通过参数来看看如何构造可以使用Upstream的client：
+You may use the example below to construct a client that can use Upstream through parameters:
 
 ```cpp
 #include "workflow/UpstreamManager.h"
 
 int main()
 {
-    // 1. 创建upstream并添加实例
+    // 1. create upstream and add server instances
     UpstreamManager::upstream_create_weighted_random("echo_server", true);
     UpstreamManager::upstream_add_server("echo_server", "127.0.0.1:1412");
     UpstreamManager::upstream_add_server("echo_server", "192.168.10.10");
     UpstreamManager::upstream_add_server("echo_server", "internal.host.com");
 
-    // 2. 构造参数，填上upstream的名字
+    // 2. create params and fill upstream name
     RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
-    client_params.host = "srpc::echo_server"; // 这个scheme只用于upstream URI解析
-    client_params.port = 1412; // 这个port只用于upstream URI解析，不影响具体实例的选取
+    client_params.host = "srpc::echo_server"; // this scheme only used when upstream URI parsing
+    client_params.port = 1412; // this port only used when upstream URI parsing and will not affect the select of instances
 
-    // 3. 用参数创建client，其他用法与示例类似
+    // 3. construct client by params, the rest of usage is similar as other tutorials
     Example::SRPCClient client(&client_params);
 
     ...
 ```
 
-如果使用了ConsistentHash或者Manual方式创建upstream，则我们往往需要对不同的task进行区分、以供选取算法使用。这时候可以使用client task上的`int set_uri_fragment(const std::string& fragment);`接口，设置请求级相关的信息。
+If we use the **ConsistentHash** or **Manual** upstream, we often need to distinguish different tasks for the selection algorithm. At this time, we may use the `int set_uri_fragment(const std::string& fragment);` interface on the client task to set request-level related information.
 
-这个域的是URI里的fragment，语义请参考[RFC3689 3.5-Fragment](https://datatracker.ietf.org/doc/html/rfc3986#section-3.5)，任何需要用到fragment的功能（如其他选取策略里附带的其他信息），都可以利用这个域。
+This field is the fragment in the URI. For the semantics, please refer to [RFC3689 3.5-Fragment](https://datatracker.ietf.org/doc/html/rfc3986#section-3.5), any infomation that needs to use the fragment (such as other information included in some other selection policy), you may use this field as well.
 
