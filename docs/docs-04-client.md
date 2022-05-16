@@ -1,4 +1,4 @@
-[English version](/docs/en/tutorial-04-client.md)
+[English version](/docs/en/docs-04-client.md)
 
 ## RPC Client
 - 每一个Client对应着一个确定的目标/一个确定的集群

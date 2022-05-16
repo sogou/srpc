@@ -1,4 +1,4 @@
-[中文版](/docs/tutorial-03-server.md)
+[中文版](/docs/docs-03-server.md)
 
 ## RPC Server
 

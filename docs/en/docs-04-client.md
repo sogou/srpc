@@ -1,4 +1,4 @@
-[中文版](/docs/tutorial-04-client.md)
+[中文版](/docs/docs-04-client.md)
 
 ## RPC Client
 

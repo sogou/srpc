@@ -1,4 +1,4 @@
-[中文版](/docs/tutorial-02-service.md)
+[中文版](/docs/docs-02-service.md)
 
 ## RPC Service
 

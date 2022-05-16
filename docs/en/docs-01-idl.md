@@ -1,4 +1,4 @@
-[中文版](/docs/tutorial-01-idl.md)
+[中文版](/docs/docs-01-idl.md)
 
 ## RPC IDL
 

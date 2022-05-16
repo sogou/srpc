@@ -1,4 +1,4 @@
-[English version](/docs/en/tutorial-08-tracing.md)
+[English version](/docs/en/docs-08-tracing.md)
 
 ## 上报Tracing到OpenTelemetry
 **SRPC**支持产生和上报链路信息trace和span，并且可以通过多种途径进行上报，其中包括本地导出数据和上报到[OpenTelemetry](https://opentelemetry.io).

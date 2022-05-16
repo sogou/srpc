@@ -1,4 +1,4 @@
-[中文版](/docs/tutorial-06-workflow.md)
+[中文版](/docs/docs-06-workflow.md)
 
 ## Integrating with the asynchronous Workflow framework
 

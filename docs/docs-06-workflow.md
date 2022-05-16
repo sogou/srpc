@@ -1,4 +1,4 @@
-[English version](/docs/en/tutorial-06-workflow.md)
+[English version](/docs/en/docs-06-workflow.md)
 
 ## 与workflow异步框架的结合
 ### 1. Server
