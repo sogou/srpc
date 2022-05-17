@@ -49,7 +49,6 @@ endif ()
 #	find_package(Workflow REQUIRED)
 #endif()
 
-find_package(srpc REQUIRED CONFIG HINTS ..)
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}

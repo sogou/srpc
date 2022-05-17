@@ -24,6 +24,8 @@ find_package(srpc REQUIRED CONFIG HINTS ..)
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
 	find_package(Protobuf CONFIG REQUIRED)
+	find_library(LZ4_LIBRARY NAMES lz4)
+	find_package(Snappy CONFIG REQUIRED)
 else ()
 	find_package(Protobuf REQUIRED)
 endif ()
@@ -53,7 +55,6 @@ find_package(ZLIB REQUIRED)
 #	find_package(Workflow REQUIRED)
 #endif()
 
-find_package(srpc REQUIRED CONFIG HINTS ..)
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}

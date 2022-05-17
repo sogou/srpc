@@ -25,7 +25,7 @@ else ()
 	set (HAVE_SYS_UIO_H_01 true)
 endif ()
 
-if (VCPKG_TOOLCHAIN AND EXISTS "${CMAKE_INSTALL_PREFIX}/tools/srpc")
+if (WITH_VCPKG_TOOLCHAIN)
 	find_package(Workflow REQUIRED CONFIG)
 else ()
 	# Try to find the package if workflow is not installed, otherwise proceed with find_package()

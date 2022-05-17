@@ -8,7 +8,7 @@ set(SRC
 
 set_property(SOURCE rpc_compress_snappy.cc APPEND PROPERTY COMPILE_OPTIONS "-fno-rtti")
 
-if (VCPKG_TOOLCHAIN AND EXISTS "${CMAKE_INSTALL_PREFIX}/tools/srpc")
+if (WITH_VCPKG_TOOLCHAIN)
 	add_library(${PROJECT_NAME} OBJECT ${SRC})
 	target_link_libraries(${PROJECT_NAME} lz4 snappy)
 else ()
