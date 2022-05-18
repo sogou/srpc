@@ -122,7 +122,7 @@ elseif (WIN32)
 		protobuf::libprotobuf
 		ZLIB::ZLIB
 		Snappy::snappy
-		LZ4::LZ4
+		${LZ4_LIBRARY}
 		)
 	set(GTEST_LIB GTest::gtest GTest::gtest_main)
 else ()

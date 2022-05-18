@@ -123,7 +123,7 @@ elseif (WIN32)
 		protobuf::libprotobuf
 		ZLIB::ZLIB
 		Snappy::snappy
-		LZ4::LZ4
+		${LZ4_LIBRARY}
 		)
 else ()
 	set(SRPC_LIB

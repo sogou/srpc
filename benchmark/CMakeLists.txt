@@ -23,6 +23,8 @@ find_package(OpenSSL REQUIRED)
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
 	find_package(Protobuf CONFIG REQUIRED)
+	find_library(LZ4_LIBRARY NAMES lz4)
+	find_package(Snappy CONFIG REQUIRED)
 else ()
 	find_package(Protobuf REQUIRED)
 endif ()
@@ -106,7 +108,7 @@ elseif (WIN32)
 		protobuf::libprotobuf
 		ZLIB::ZLIB
 		Snappy::snappy
-		LZ4::LZ4
+		${LZ4_LIBRARY}
 		)
 else ()
 	set(SRPC_LIB
