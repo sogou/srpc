@@ -388,7 +388,6 @@ RPCMetricsOTel::RPCMetricsOTel(const std::string& url,
 	redirect_max(redirect_max),
 	retry_max(retry_max),
 	policy(report_threshold, report_interval_msec),
-	report_status(false),
 	report_counts(0)
 {
 }
@@ -398,7 +397,6 @@ RPCMetricsOTel::RPCMetricsOTel(const std::string& url) :
 	redirect_max(OTLP_HTTP_REDIRECT_MAX),
 	retry_max(OTLP_HTTP_RETRY_MAX),
 	policy(RPC_REPORT_THREHOLD_DEFAULT, RPC_REPORT_INTERVAL_DEFAULT),
-	report_status(false),
 	report_counts(0)
 {
 }

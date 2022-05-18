@@ -44,7 +44,7 @@ static void do_echo_pb(CLIENT *client, int idx)
 
 		if (++query_count % 100 > 0)
 		{
-			client->echo_pb(&req, [client, ns_st, &latency_list, &mutex](EmptyPBMsg *response, RPCContext *ctx) {
+			client->echo_pb(&req, [ns_st, &latency_list, &mutex](EmptyPBMsg *response, RPCContext *ctx) {
 				if (ctx->success())
 				{
 					//printf("%s\n", ctx->get_remote_ip().c_str());
@@ -65,7 +65,7 @@ static void do_echo_pb(CLIENT *client, int idx)
 		}
 		else
 		{
-			client->slow_pb(&req, [client, ns_st](EmptyPBMsg *response, RPCContext *ctx) {
+			client->slow_pb(&req, [](EmptyPBMsg *response, RPCContext *ctx) {
 				slow_count++;
 				if (!ctx->success())
 					printf("status[%d] error[%d] errmsg:%s\n", ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
@@ -93,7 +93,7 @@ static void do_echo_thrift(CLIENT *client, int idx)
 
 		if (++query_count % 100 > 0)
 		{
-			client->echo_thrift(&req, [client, ns_st, &latency_list, &mutex](BenchmarkThrift::echo_thriftResponse *response, RPCContext *ctx) {
+			client->echo_thrift(&req, [ns_st, &latency_list, &mutex](BenchmarkThrift::echo_thriftResponse *response, RPCContext *ctx) {
 				if (ctx->success())
 				{
 					//printf("%s\n", ctx->get_remote_ip().c_str());
@@ -114,7 +114,7 @@ static void do_echo_thrift(CLIENT *client, int idx)
 		}
 		else
 		{
-			client->slow_thrift(&slow_req, [client, ns_st](BenchmarkThrift::slow_thriftResponse *response, RPCContext *ctx) {
+			client->slow_thrift(&slow_req, [](BenchmarkThrift::slow_thriftResponse *response, RPCContext *ctx) {
 				slow_count++;
 				if (!ctx->success())
 					printf("status[%d] error[%d] errmsg:%s\n", ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());

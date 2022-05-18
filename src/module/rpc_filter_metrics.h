@@ -252,7 +252,6 @@ private:
 	int retry_max;
 	Collector collector;
 	RPCFilterPolicy policy;
-	bool report_status;
 	size_t report_counts;
 	std::mutex mutex;
 	std::map<std::string, std::string> attributes;
