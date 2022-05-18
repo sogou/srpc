@@ -49,7 +49,6 @@ endif ()
 #	find_package(Workflow REQUIRED)
 #endif()
 
-find_package(srpc REQUIRED CONFIG HINTS ..)
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
@@ -103,9 +102,28 @@ add_custom_target(
 set(GTEST_LIB GTest::GTest GTest::Main)
 
 if (APPLE)
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		)
 elseif (WIN32)
-	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto)
+	set(SRPC_LIB
+		srpc
+		workflow
+		ws2_32
+		wsock32
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf::libprotobuf
+		ZLIB::ZLIB
+		Snappy::snappy
+		${LZ4_LIBRARY}
+		)
 	set(GTEST_LIB GTest::gtest GTest::gtest_main)
 else ()
 	if (SNAPPY_INSTALLED)
@@ -116,7 +134,17 @@ else ()
 		set(LZ4_LIB lz4)
 	endif ()
 
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z ${SNAPPY_LIB} ${LZ4_LIB})
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		${SNAPPY_LIB}
+		${LZ4_LIB}
+		)
 endif ()
 
 foreach(src ${TEST_LIST})

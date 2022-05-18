@@ -24,6 +24,8 @@ find_package(srpc REQUIRED CONFIG HINTS ..)
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
 	find_package(Protobuf CONFIG REQUIRED)
+	find_library(LZ4_LIBRARY NAMES lz4)
+	find_package(Snappy CONFIG REQUIRED)
 else ()
 	find_package(Protobuf REQUIRED)
 endif ()
@@ -53,7 +55,6 @@ find_package(ZLIB REQUIRED)
 #	find_package(Workflow REQUIRED)
 #endif()
 
-find_package(srpc REQUIRED CONFIG HINTS ..)
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
@@ -102,11 +103,40 @@ set(TUTORIAL_PB_LIST
 )
 
 if (APPLE)
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		)
 elseif (WIN32)
-	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto protobuf::libprotobuf ZLIB::ZLIB)
+	set(SRPC_LIB
+		srpc
+		workflow
+		ws2_32
+		wsock32
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf::libprotobuf
+		ZLIB::ZLIB
+		Snappy::snappy
+		${LZ4_LIBRARY}
+		)
 else ()
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z ${SNAPPY_LIB} ${LZ4_LIB})
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		${SNAPPY_LIB}
+		${LZ4_LIB}
+		)
 endif ()
 
 foreach(src ${TUTORIAL_PB_LIST})

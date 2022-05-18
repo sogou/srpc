@@ -25,8 +25,9 @@ else ()
 	set (HAVE_SYS_UIO_H_01 true)
 endif ()
 
-if (NOT VCPKG_TOOLCHAIN)
-
+if (WITH_VCPKG_TOOLCHAIN)
+	find_package(Workflow REQUIRED CONFIG)
+else ()
 	# Try to find the package if workflow is not installed, otherwise proceed with find_package()
 	if (NOT WORKFLOW_INSTALLED)
 		find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
@@ -44,9 +45,6 @@ if (NOT VCPKG_TOOLCHAIN)
 	if (LZ4_INSTALLED)
 		set(LZ4_LIB lz4)
 	endif ()
-
-else()
-	find_package(Workflow REQUIRED CONFIG)
 endif()
 
 include_directories(

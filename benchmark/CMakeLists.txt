@@ -23,6 +23,8 @@ find_package(OpenSSL REQUIRED)
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
 	find_package(Protobuf CONFIG REQUIRED)
+	find_library(LZ4_LIBRARY NAMES lz4)
+	find_package(Snappy CONFIG REQUIRED)
 else ()
 	find_package(Protobuf REQUIRED)
 endif ()
@@ -86,16 +88,40 @@ else ()
 endif ()
 
 if (APPLE)
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		)
 elseif (WIN32)
-	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto)
+	set(SRPC_LIB
+		srpc
+		workflow
+		ws2_32
+		wsock32
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf::libprotobuf
+		ZLIB::ZLIB
+		Snappy::snappy
+		${LZ4_LIBRARY}
+		)
 else ()
-	if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy/cmake)
-		set(SRPC_LIB srpc snappy lz4)
-		set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf snappy lz4 z)
-	else ()
-		set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
-	endif ()
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		${SNAPPY_LIB}
+		${LZ4_LIB}
+		)
 endif ()
 
 add_executable(server server.cc ${PROTO_SRCS} ${PROTO_HDRS})

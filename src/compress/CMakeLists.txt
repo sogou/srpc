@@ -8,8 +8,10 @@ set(SRC
 
 set_property(SOURCE rpc_compress_snappy.cc APPEND PROPERTY COMPILE_OPTIONS "-fno-rtti")
 
-if (NOT VCPKG_TOOLCHAIN)
-
+if (WITH_VCPKG_TOOLCHAIN)
+	add_library(${PROJECT_NAME} OBJECT ${SRC})
+	target_link_libraries(${PROJECT_NAME} lz4 snappy)
+else ()
 	if (SNAPPY_INSTALLED)
 		set(SNAPPY_LIB snappy)
 	else ()
@@ -47,15 +49,5 @@ if (NOT VCPKG_TOOLCHAIN)
 		${SNAPPY_SRC}
 		${LZ4_SRC}
 	)
-
-#	if ("${SNAPPY_INSTALLED}${LZ4_INSTALLED}")
-#		target_link_libraries(${PROJECT_NAME} ${SNAPPY_LIB} ${LZ4_LIB})
-#	endif()
-else()
-	add_library(
-		${PROJECT_NAME} OBJECT
-		${SRC}
-	)
-	target_link_libraries(${PROJECT_NAME} lz4 snappy)
 endif()
 
