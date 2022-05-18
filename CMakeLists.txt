@@ -5,6 +5,12 @@ set(CMAKE_SKIP_RPATH TRUE)
 project(srpc
 	VERSION 0.9.6
 	LANGUAGES C CXX)
+	
+###Options
+
+if (WIN32)
+	option(SRPC_BUILD_STATIC_RUNTIME "Use static runtime" ON)
+endif ()
 
 #### CHECK
 
@@ -101,6 +107,24 @@ foreach(header_file ${INCLUDE_HEADERS})
 	list(GET arr -1 file_name)
 	makeLink(${PROJECT_SOURCE_DIR}/${header_file} ${INC_DIR}/${PROJECT_NAME}/${file_name} LINK_HEADERS)
 endforeach()
+
+if (WIN32)
+	if (SRPC_BUILD_STATIC_RUNTIME)
+		set(CompilerFlags
+				CMAKE_CXX_FLAGS
+				CMAKE_CXX_FLAGS_DEBUG
+				CMAKE_CXX_FLAGS_RELEASE
+				CMAKE_CXX_FLAGS_MINSIZEREL
+				CMAKE_C_FLAGS
+				CMAKE_C_FLAGS_DEBUG
+				CMAKE_C_FLAGS_RELEASE
+				CMAKE_C_FLAGS_MINSIZEREL
+				)
+		foreach(CompilerFlag ${CompilerFlags})
+			string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+		endforeach ()
+	endif ()
+endif ()
 
 add_subdirectory(src)
 

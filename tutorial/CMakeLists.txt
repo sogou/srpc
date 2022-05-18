@@ -6,6 +6,12 @@ project(srpc_tutorial
 		LANGUAGES C CXX
 )
 
+###Options
+
+if (WIN32)
+	option(SRPC_TUTORIAL_BUILD_STATIC_RUNTIME "Use static runtime" ON)
+endif ()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 if (NOT "$ENV{LIBRARY_PATH}" STREQUAL "")
@@ -63,6 +69,8 @@ include_directories(
 	${SRPC_INCLUDE_DIR}
 )
 
+
+
 if (WIN32)
 	link_directories(${SRPC_LIB_DIR} ${WORKFLOW_LIB_DIR} ${Protobuf_LIB_DIR})
 	set(SRPC_GEN_PROGRAM ${SRPC_BIN_DIR}/Debug/srpc_generator.exe)
@@ -82,6 +90,25 @@ add_custom_target(
 	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/helloworld.proto ${PROJECT_SOURCE_DIR}
 	COMMENT "sprc generator..."
 )
+
+
+if (WIN32)
+	if (SRPC_TUTORIAL_BUILD_STATIC_RUNTIME)
+		set(CompilerFlags
+				CMAKE_CXX_FLAGS
+				CMAKE_CXX_FLAGS_DEBUG
+				CMAKE_CXX_FLAGS_RELEASE
+				CMAKE_CXX_FLAGS_MINSIZEREL
+				CMAKE_C_FLAGS
+				CMAKE_C_FLAGS_DEBUG
+				CMAKE_C_FLAGS_RELEASE
+				CMAKE_C_FLAGS_MINSIZEREL
+				)
+		foreach(CompilerFlag ${CompilerFlags})
+			string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+		endforeach ()
+	endif ()
+endif ()
 
 if (WIN32)
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   /MP /wd4200")
