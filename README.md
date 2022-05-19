@@ -72,6 +72,37 @@ cd srpc
 make
 ~~~
 
+### Installation(Debian Linux):
+srpc has been packaged for Debian. It is currently in Debian sid (unstable) but will eventually be placed into the stable repository.
+
+In order to access the unstable repository, you will need to edit your /etc/apt/sources.list file.
+
+sources.list has the format: `deb <respository server/mirror> <repository name> <sub branches of the repo>`
+
+Simply add the 'unstable' sub branch to your repo:
+~~~~sh
+deb http://deb.debian.org/ main contrib non-free 
+
+--> 
+
+deb http://deb.debian.org/ unstable main contrib non-free
+~~~~
+
+Once that is added, update your repo list and then you should be able to install it:
+~~~~sh
+sudo apt-get update
+~~~~
+
+To install the srpc library for development purposes:
+~~~~sh
+sudo apt-get install libsrpc-dev
+~~~~
+
+To install the srpc library for deployment:
+~~~~sh
+sudo apt-get install libsrpc
+~~~~
+
 ## Tutorial
 
 * [Step 1: Design IDL description file](/docs/en/docs-01-idl.md)
