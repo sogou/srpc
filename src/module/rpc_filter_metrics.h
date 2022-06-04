@@ -117,8 +117,7 @@ private:
 
 		void collect_summary_begin(RPCVar *summary) override { }
 		void collect_summary_each(RPCVar *summary, double quantile,
-								  double quantile_out,
-								  size_t available_count) override;
+								  double quantile_out) override;
 		void collect_summary_end(RPCVar *summary, double sum,
 								 size_t count) override;
 
@@ -228,8 +227,7 @@ private:
 
 		void collect_summary_begin(RPCVar *summary) override;
 		void collect_summary_each(RPCVar *summary, double quantile,
-								  double quantile_out,
-								  size_t available_count) override;
+								  double quantile_out) override;
 		void collect_summary_end(RPCVar *summary, double sum,
 								 size_t count) override;
 

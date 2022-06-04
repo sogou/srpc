@@ -47,7 +47,6 @@ RPCMetricsFilter::RPCMetricsFilter() :
 
 bool RPCMetricsFilter::client_end(SubTask *task, RPCModuleData& data)
 {
-
 	this->gauge(METRICS_REQUEST_COUNT)->increase();
 	this->counter(METRICS_REQUEST_METHOD)->add(
 				{{"service", data[SRPC_SERVICE_NAME]},
@@ -335,15 +334,14 @@ void RPCMetricsPull::Collector::collect_histogram_end(RPCVar *histogram,
 
 void RPCMetricsPull::Collector::collect_summary_each(RPCVar *summary,
 													 double quantile,
-													 double quantile_out,
-													 size_t available_count)
+													 double quantile_out)
 {
 	this->report_output += summary->get_name() + "{quantile=\"" +
 						   std::to_string(quantile) + "\"} ";
-	if (available_count == 0)
+	if (quantile_out == 0)
 		this->report_output += "NaN";
 	else
-		this->report_output += std::to_string(quantile_out / available_count);
+		this->report_output += std::to_string(quantile_out);
 	this->report_output += "\n";
 }
 
@@ -617,17 +615,12 @@ void RPCMetricsOTel::Collector::collect_summary_begin(RPCVar *summary)
 
 void RPCMetricsOTel::Collector::collect_summary_each(RPCVar *summary,
 													 double quantile,
-													 double quantile_out,
-													 size_t available_count)
+													 double quantile_out)
 {
 	SummaryDataPoint *data_points = static_cast<SummaryDataPoint *>(this->current_msg);
 	SummaryDataPoint::ValueAtQuantile *vaq = data_points->add_quantile_values();
 	vaq->set_quantile(quantile);
-
-	if (available_count == 0)
-		vaq->set_value(0);
-	else
-		vaq->set_value(quantile_out / available_count);
+	vaq->set_value(quantile_out);
 }
 
 void RPCMetricsOTel::Collector::collect_summary_end(RPCVar *summary,

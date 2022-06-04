@@ -35,6 +35,9 @@ public:
 				req->DebugString().c_str(), resp->DebugString().c_str());
 
 		this->filter->histogram("echo_request_size")->observe(req->ByteSizeLong());
+
+		for (size_t i = 1; i <= 10; i++)
+			this->filter->summary("echo_test_quantiles")->observe(0.01 * i);
 	}
 
 	void set_filter(RPCMetricsPull *filter) { this->filter = filter; }
@@ -61,6 +64,8 @@ int main()
 	filter.init(8080); /* export port for prometheus */
 	filter.create_histogram("echo_request_size", "Echo request size",
 							{1, 10, 100});
+	filter.create_summary("echo_test_quantiles", "Test quantile",
+						  {{0.5, 0.05}, {0.9, 0.01}});
 	impl.set_filter(&filter);
 
 	server.add_filter(&filter);

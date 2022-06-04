@@ -157,8 +157,7 @@ public:
 
 	virtual void collect_summary_begin(RPCVar *summary) = 0;
 	virtual void collect_summary_each(RPCVar *summary, double quantile,
-									  double quantile_out,
-									  size_t available_count) = 0;
+									  double quantile_out) = 0;
 	virtual void collect_summary_end(RPCVar *summary, double sum,
 									 size_t count) = 0;
 };
@@ -315,14 +314,14 @@ public:
 			   const std::chrono::milliseconds max_age, int age_bucket);
 
 private:
-	const std::vector<struct Quantile> quantiles;
+	std::vector<struct Quantile> quantiles;
 	double sum;
 	size_t count;
+	size_t quantile_size;
 	std::chrono::milliseconds max_age;
 	int age_buckets;
 	TimeWindowQuantiles<double> quantile_values;
 	std::vector<double> quantile_out;
-	std::vector<size_t> available_count;
 };
 
 } // end namespace srpc

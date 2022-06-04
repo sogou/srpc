@@ -21,6 +21,7 @@ public:
 
 	size_t get(double quantile, TYPE *value);
 	void insert(TYPE value);
+	TYPE get_sum() { return this->ckms_quantiles[current_bucket].get_sum(); }
 
 private:
 	CKMSQuantiles<TYPE>& rotate();
