@@ -52,6 +52,7 @@ private:
 	TYPE get(double q);
 	void reset();
 	size_t get_count() const { return this->count; }
+	TYPE get_sum() const { return this->sum; }
 
  private:
 	double allowable_error(int rank);
@@ -61,6 +62,7 @@ private:
  private:
 	const std::vector<Quantile> *quantiles;
 
+	TYPE sum;
 	size_t count;
 	std::vector<Item> sample;
 	std::array<TYPE, 500> buffer;
@@ -82,7 +84,7 @@ CKMSQuantiles<TYPE>::CKMSQuantiles(const std::vector<Quantile> *q) :
 	quantiles(q)
 {
 	this->count = 0;
-	//this->buffer;
+	this->sum = 0;
 	this->buffer_count = 0;
 }
 
@@ -99,6 +101,7 @@ CKMSQuantiles<TYPE>& CKMSQuantiles<TYPE>::operator= (const CKMSQuantiles<TYPE>& 
 	{
 		this->quantiles = copy.quantiles;
 		this->count = copy.count;
+		this->sum = copy.sum;
 		this->sample = copy.sample;
 		this->buffer = copy.buffer;
 		this->buffer_count = copy.buffer_count;
@@ -110,6 +113,7 @@ CKMSQuantiles<TYPE>& CKMSQuantiles<TYPE>::operator= (const CKMSQuantiles<TYPE>& 
 template<typename TYPE>
 void CKMSQuantiles<TYPE>::insert(TYPE value)
 {
+	this->sum += value;
 	this->buffer[this->buffer_count] = value;
 	++this->buffer_count;
 
@@ -155,6 +159,7 @@ template<typename TYPE>
 void CKMSQuantiles<TYPE>::reset()
 {
 	this->count = 0;
+	this->sum = 0;
 	this->sample.clear();
 	this->buffer_count = 0;
 }

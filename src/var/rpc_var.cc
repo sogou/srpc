@@ -367,8 +367,13 @@ SummaryVar::SummaryVar(const std::string& name, const std::string& help,
 	this->count = 0;
 	this->max_age = max_age;
 	this->age_buckets = age_bucket;
-	this->quantile_out.resize(quantile.size(), 0);
-	this->available_count.resize(quantile.size(), 0);
+	this->quantile_size = this->quantiles.size(); // for output
+	if (this->quantiles[this->quantile_size - 1].quantile != 1.0)
+	{
+		struct Quantile q(1.0, 0.1);
+		this->quantiles.push_back(q);
+	}
+	this->quantile_out.resize(this->quantiles.size(), 0);
 }
 
 RPCVar *SummaryVar::create(bool with_data)
@@ -381,6 +386,8 @@ RPCVar *SummaryVar::create(bool with_data)
 		var->sum = this->sum;
 		var->count = this->count;
 		var->quantile_values = this->quantile_values;
+		var->quantile_size = this->quantile_size;
+		var->quantile_out = this->quantile_out;
 	}
 
 	return var;
@@ -389,8 +396,6 @@ RPCVar *SummaryVar::create(bool with_data)
 void SummaryVar::observe(double value)
 {
 	this->quantile_values.insert(value);
-	this->sum += value;
-	this->count++;
 }
 
 bool SummaryVar::reduce(const void *ptr, size_t sz)
@@ -401,18 +406,69 @@ bool SummaryVar::reduce(const void *ptr, size_t sz)
 	SummaryVar *data = (SummaryVar *)ptr;
 
 	TimeWindowQuantiles<double> *src = data->get_quantile_values();
-	size_t available_count;
 	double get_val;
+	size_t src_count = 0;
+	double src_value[this->quantile_size];
+	double src_sum = src->get_sum();
 
-	for (size_t i = 0; i < sz; i ++)
+	for (size_t i = 0; i < sz; i++)
 	{
-		available_count = src->get(this->quantiles[i].quantile, &get_val);
-		this->quantile_out[i] += get_val * available_count;
-		this->available_count[i] += available_count;
+		src_count = src->get(this->quantiles[i].quantile, &get_val);
+		src_value[i] = get_val;
 	}
 
-	this->sum += data->get_sum();
-	this->count += data->get_count();
+	double pilot;
+	double count = 0;
+	size_t src_idx = 0;
+	size_t dst_idx = 0;
+	size_t cnt, idx;
+	double range, value;
+	size_t total = this->count + src_count;
+	double out[this->quantile_size];
+
+	for (size_t i = 0; i < sz; i++)
+	{
+		pilot = this->quantiles[i].quantile * total;
+
+		while (count < pilot && src_idx < sz && dst_idx < sz)
+		{
+			if (this->quantile_out[dst_idx] <= src_value[src_idx])
+			{
+				value = this->quantile_out[dst_idx];
+				idx = dst_idx;
+				cnt = this->sum;
+				dst_idx++;
+			}
+			else
+			{
+				value = src_value[src_idx];
+				idx = src_idx;
+				cnt = src_sum;
+				src_idx++;
+			}
+
+			if (idx == 0)
+				range = this->quantiles[0].quantile;
+			else
+				range = this->quantiles[idx].quantile -
+						this->quantiles[idx - 1].quantile;
+
+			count += cnt * range;
+		}
+
+		if (count >= pilot)
+			out[i] = value;
+		else if (src_idx < sz)
+			out[i] = src_value[i];
+		else
+			out[i] = this->quantile_out[i];
+	}
+
+	for (size_t i = 0; i < sz; i++)
+		this->quantile_out[i] = out[i];
+
+	this->count = total;
+	this->sum += src_sum;
 
 	return true;
 }
@@ -421,16 +477,14 @@ void SummaryVar::collect(RPCVarCollector *collector)
 {
 	collector->collect_summary_begin(this);
 
-	for (size_t i = 0; i < this->quantiles.size(); i++)
+	for (size_t i = 0; i < this->quantile_size; i++)
 	{
 		collector->collect_summary_each(this, this->quantiles[i].quantile,
-										this->quantile_out[i],
-										this->available_count[i]);
+										this->quantile_out[i]);
 	}
 
 	collector->collect_summary_end(this, this->sum, this->count);
 	this->quantile_out.clear();
-	this->available_count.clear();
 }
 
 } // end namespace srpc
