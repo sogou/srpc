@@ -130,7 +130,7 @@ void RPCVarGlobal::del(const RPCVarLocal *var)
 	{
 		if (this->local_vars[i] == var)
 		{
-			for (size_t j = i; j < this->local_vars.size(); j++)
+			for (size_t j = i; j < this->local_vars.size() - 1; j++)
 				this->local_vars[j] = this->local_vars[j + 1];
 
 			break;
@@ -302,7 +302,7 @@ RPCVar *HistogramVar::create(bool with_data)
 	return var;
 }
 
-bool HistogramVar::observe_multi(const std::vector<double>& multi, double sum)
+bool HistogramVar::observe_multi(const std::vector<size_t>& multi, double sum)
 {
 	if (multi.size() != this->bucket_counts.size())
 		return false;
@@ -328,7 +328,6 @@ bool HistogramVar::reduce(const void *ptr, size_t sz)
 	for (size_t i = 0; i < sz; i++)
 		this->bucket_counts[i] += (*src_bucket_counts)[i];
 
-	this->bucket_counts[sz] += (*src_bucket_counts)[sz];
 	this->sum += data->get_sum();
 	this->count += data->get_count();
 
@@ -408,7 +407,7 @@ bool SummaryVar::reduce(const void *ptr, size_t sz)
 	TimeWindowQuantiles<double> *src = data->get_quantile_values();
 	double get_val;
 	size_t src_count = 0;
-	double src_value[this->quantile_size];
+	double *src_value = new double[sz]();
 	double src_sum = src->get_sum();
 
 	for (size_t i = 0; i < sz; i++)
@@ -418,13 +417,15 @@ bool SummaryVar::reduce(const void *ptr, size_t sz)
 	}
 
 	double pilot;
+	size_t cnt;
+	size_t idx;
+	double range;
 	double count = 0;
+	double value = 0;
 	size_t src_idx = 0;
 	size_t dst_idx = 0;
-	size_t cnt, idx;
-	double range, value;
 	size_t total = this->count + src_count;
-	double out[this->quantile_size];
+	double *out = new double[sz]();
 
 	for (size_t i = 0; i < sz; i++)
 	{
@@ -436,14 +437,14 @@ bool SummaryVar::reduce(const void *ptr, size_t sz)
 			{
 				value = this->quantile_out[dst_idx];
 				idx = dst_idx;
-				cnt = this->sum;
+				cnt = this->count;
 				dst_idx++;
 			}
 			else
 			{
 				value = src_value[src_idx];
 				idx = src_idx;
-				cnt = src_sum;
+				cnt = src_count;
 				src_idx++;
 			}
 
@@ -469,6 +470,9 @@ bool SummaryVar::reduce(const void *ptr, size_t sz)
 
 	this->count = total;
 	this->sum += src_sum;
+
+	delete[] out;
+	delete[] src_value;
 
 	return true;
 }

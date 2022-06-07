@@ -262,7 +262,9 @@ class HistogramVar : public RPCVar
 {
 public:
 	void observe(double value);
-	bool observe_multi(const std::vector<double>& multi, double sum);
+
+	// multi is the histogram count of each bucket, including +inf
+	bool observe_multi(const std::vector<size_t>& multi, double sum);
 
 	RPCVar *create(bool with_data) override;
 	bool reduce(const void *ptr, size_t sz) override;
