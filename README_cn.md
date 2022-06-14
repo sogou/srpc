@@ -6,8 +6,7 @@
 <a href="https://en.cppreference.com/"><img src="https://img.shields.io/badge/language-C++-black.svg?color=379c9c&style=flat-square"/></a>
 <a href="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"/></a>
 <a href="https://github.com/sogou/srpc/releases"><img src="https://img.shields.io/github/v/release/sogou/srpc?color=379c9c&logoColor=ffffff&style=flat-square"/></a>
-<a href="https://travis-ci.com/sogou/srpc"><img src="https://img.shields.io/travis/sogou/srpc/master?color=379c9c&style=flat-square"/></a>
-
+<a href="https://github.com/sogou/srpc/actions?query=workflow%3A%22ci+build%22++"><img src="https://img.shields.io/github/workflow/status/sogou/srpc/ci%20build?color=379c9c&style=flat-square"/></a>
 
 ## Introduction
 #### SPRC是全搜狗业务线上使用的企业级RPC系统，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。主要功能和特点：
