@@ -48,13 +48,14 @@
     * 可以把rpc任务放到任务流图中，回调函数里也可以拿到当前的任务流
     * workflow所支持的其他功能，包括upstream、计算调度、异步文件IO等
   * AOP模块化插件管理：
-    * 可对接[OpenTelemetry](https://opentelemetry.io)（tracing链路数据上报）
-    * 轻松上报其他云原生系统
+    * 可上报tracing和metrics到[OpenTelemetry](https://opentelemetry.io)
+    * 可上报监控到[Prometheus](https://prometheus.io)
+    * 轻松对接其他云原生系统
   * 支持srpc协议的Envoy-filter，满足Kubernetes用户的使用需求
   * [更多功能和层次介绍](docs/rpc.md)
 
 ## Installation
-  * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
+  * srpc默认会编译出静态库libsrpc.a和动态库libsrpc.so(或者dylib或dll)
   * srpc依赖workflow和protobuf3
     * protobuf需要用户自行安装v3.11.0或以上的版本
     * workflow可以通过git的submodule形式进行依赖
