@@ -51,14 +51,15 @@
   * You can put the RPC task into SeriesWork or ParallelWork, and you can also get the current SeriesWork in the callback.
   * You can also use other features supported by Workflow, including upstream, calculation scheduling, asynchronous file IO, etc.
 * AOP Modular Plugin Management:
-  * Able to connect to [OpenTelemetry](https://opentelemetry.io) (report Tracing)
+  * Able to report tracing and metrics to [OpenTelemetry](https://opentelemetry.io)
+  * Able to pull metrics by [Prometheus](https://prometheus.io)
   * Easy to report to other Cloud Native systems
 * srpc Envoy-filter for the users of Kubernetes
 * [More features and layers](/docs/en/rpc.md)
 
 ## Installation
 
-* srpc is a static library, libsrpc.a. You only need to add the libsrpc as a dependency in the development environment, and it is not required in the compiled binary release.
+* srpc will compile the static library libsrpc.a and dynamic library libsrpc.so (or dylib or dll).
 * srpc depends on Workflow and protobuf3.
   * For protobuf, you must install protobuf v3.11.0 or above by yourself.
   * For Workflow, it\`s added as dependency automatically via git submodule.
