@@ -45,3 +45,32 @@ int main()
 }
 ~~~
 
+### Client startup parameters
+
+Client can be started directly by passing in ip, port, or through client startup parameters.
+
+The above example:
+
+~~~cpp
+Example::SRPCClient client("127.0.0.1", 1412);
+~~~
+
+is equivalent to:
+
+~~~cpp
+struct RPCClientParams param = RPC_CLIENT_PARAMS_DEFAULT;
+param.host = "127.0.0.1";
+param.port = 1412;
+Example::SRPCClient client(&param);
+~~~
+
+also equivalent to:
+
+~~~cpp
+struct RPCClientParams param = RPC_CLIENT_PARAMS_DEFAULT;
+param.url = "srpc://127.0.0.1:1412";
+Example::SRPCClient client(&param);
+~~~
+
+Note that `RPC_CLIENT_PARAMS_DEFAULT` must be used to initialize the client's parameters, which contains a `RPCTaskParams`, including the default data_type, compress_type, retry_max and various timeouts. The specific struct can refer to [rpc_options.h](/src/rpc_options.h).
+

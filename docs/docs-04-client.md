@@ -42,3 +42,32 @@ int main()
 }
 ~~~
 
+### 启动参数
+
+Client可以直接通过传入ip、port启动，或者通过参数启动。
+
+上面的例子：
+
+~~~cpp
+Example::SRPCClient client("127.0.0.1", 1412);
+~~~
+
+等同于：
+
+~~~cpp
+struct RPCClientParams param = RPC_CLIENT_PARAMS_DEFAULT;
+param.host = "127.0.0.1";
+param.port = 1412;
+Example::SRPCClient client(&param);
+~~~
+
+也等同于：
+
+~~~cpp
+struct RPCClientParams param = RPC_CLIENT_PARAMS_DEFAULT;
+param.url = "srpc://127.0.0.1:1412";
+Example::SRPCClient client(&param);
+~~~
+
+注意这里一定要使用`RPC_CLIENT_PARAMS_DEFAULT`去初始化我们的参数，里边包含了一个`RPCTaskParams`，包括默认的data_type、compress_type、重试次数和多种超时，具体结构可以参考[rpc_options.h](/src/rpc_options.h)。
+
