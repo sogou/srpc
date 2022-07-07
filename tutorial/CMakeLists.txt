@@ -105,7 +105,7 @@ if (WIN32)
 				CMAKE_C_FLAGS_MINSIZEREL
 				)
 		foreach(CompilerFlag ${CompilerFlags})
-			string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+			#string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}") # MD is fine, or this line will make compile error
 		endforeach ()
 	endif ()
 endif ()
