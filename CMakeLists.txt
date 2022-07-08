@@ -121,7 +121,7 @@ if (WIN32)
 				CMAKE_C_FLAGS_MINSIZEREL
 				)
 		foreach(CompilerFlag ${CompilerFlags})
-			#string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}") # this line will make tutorial compile error
+			string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
 		endforeach ()
 	endif ()
 endif ()
