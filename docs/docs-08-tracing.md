@@ -18,7 +18,7 @@ int main()
 {                                                                        
     Example::SRPCClient client("127.0.0.1", 1412); 
 
-    RPCSpanOpenTelemetry span_otel("http://127.0.0.1:55358"); // jaeger http collector ip:port   
+    RPCSpanOpenTelemetry span_otel("http://127.0.0.1:4318");
     client.add_filter(&span_otel);
     ...
 ```
@@ -30,7 +30,7 @@ int main()
 {
     SRPCServer server;  
 
-    RPCSpanOpenTelemetry span_otel("http://127.0.0.1:55358");                            
+    RPCSpanOpenTelemetry span_otel("http://127.0.0.1:4318");
     server.add_filter(&span_otel);                                                 
 
     RPCSpanDefault span_log; // 这个插件会把本次请求的trace信息打到屏幕上                                                  

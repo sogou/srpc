@@ -430,13 +430,14 @@ SubTask *RPCMetricsOTel::create(RPCModuleData& data)
 	InstrumentationLibraryMetrics *metrics = rm->add_instrumentation_library_metrics();
 
 	this->mutex.lock();
-	for (const auto& attr : attributes)
+	for (const auto& attr : this->attributes)
 	{
 		KeyValue *attribute = resource->add_attributes();
 		attribute->set_key(attr.first);
 		AnyValue *value = attribute->mutable_value();
 		value->set_string_value(attr.second);
 	}	
+	this->mutex.unlock();
 
 	KeyValue *attribute = resource->add_attributes();
 	attribute->set_key(OTLP_SERVICE_NAME_KEY);

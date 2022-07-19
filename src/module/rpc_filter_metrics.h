@@ -23,6 +23,7 @@
 #include <vector>
 #include <mutex>
 #include <chrono>
+#include <atomic>
 #include <google/protobuf/message.h>
 #include "workflow/WFTask.h"
 #include "workflow/WFTaskFactory.h"
@@ -250,7 +251,7 @@ private:
 	int retry_max;
 	Collector collector;
 	RPCFilterPolicy policy;
-	size_t report_counts;
+	std::atomic<size_t> report_counts;
 	std::mutex mutex;
 	std::map<std::string, std::string> attributes;
 };
