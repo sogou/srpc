@@ -14,6 +14,7 @@
   limitations under the License.
 */
 
+#include <netinet/in.h>
 #include <mutex>
 #include <condition_variable>
 #include <workflow/WFTask.h>
@@ -54,13 +55,13 @@ public:
 			{
 				struct sockaddr_in *sin = (struct sockaddr_in *)(&addr);
 
-				inet_ntop(AF_INET, &sin->sin_addr, ip_str, addrlen);
+				inet_ntop(AF_INET, &sin->sin_addr, ip_str, INET_ADDRSTRLEN);
 			}
 			else if (addr.ss_family == AF_INET6)
 			{
 				struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)(&addr);
 
-				inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, addrlen);
+				inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, INET6_ADDRSTRLEN);
 			}
 		}
 
