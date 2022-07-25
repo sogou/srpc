@@ -264,7 +264,7 @@ bool Generator::generate_thrift_type_file(idl_info& cur_info)
 
 			this->printer.print_service_namespace_end(desc.block_name);
 		}
-		else if (desc.block_type == "struct")
+		else if (desc.block_type == "struct" || desc.block_type == "union")
 		{
 			this->thrift_replace_include(cur_info, desc.st.params);
 			this->printer.print_rpc_thrift_struct_class(desc.block_name, desc.st.params,cur_info);
