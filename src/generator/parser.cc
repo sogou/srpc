@@ -256,7 +256,8 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 						info.desc_list.emplace_back(std::move(desc));
 					}
-					else if (block_type == "struct" && this->is_thrift)
+					else if ((block_type == "struct" || block_type == "union") &&
+							 this->is_thrift)
 					{
 						succ = this->parse_struct_thrift(info.file_name_prefix,
 														 block, desc, info);
