@@ -14,7 +14,6 @@
   limitations under the License.
 */
 
-#include <netinet/in.h>
 #include <mutex>
 #include <condition_variable>
 #include <workflow/WFTask.h>
