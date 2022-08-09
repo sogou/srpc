@@ -17,7 +17,7 @@
 #ifndef __RPC_COMPRESS_SNAPPY_H__
 #define __RPC_COMPRESS_SNAPPY_H__
 
-#include "rpc_basic.h"
+#include "rpc_buffer.h"
 
 namespace srpc
 {
