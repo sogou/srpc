@@ -50,7 +50,7 @@ public:
 	static bool write_json(const void *data, ThriftBuffer *buffer);
 
 private:
-	ThriftDescriptorImpl<T, DATA, KEYIMPL, VALIMPL>():
+	ThriftDescriptorImpl():
 		ThriftDescriptor(ThriftDescriptorImpl<T, DATA, KEYIMPL, VALIMPL>::read,
 						 ThriftDescriptorImpl<T, DATA, KEYIMPL, VALIMPL>::write,
 						 ThriftDescriptorImpl<T, DATA, KEYIMPL, VALIMPL>::read_json,
@@ -671,7 +671,7 @@ public:
 	}
 
 private:
-	ThriftDescriptorImpl<T, TDT_STRUCT, void, void>():
+	ThriftDescriptorImpl():
 		ThriftDescriptor(ThriftDescriptorImpl<T, TDT_STRUCT, void, void>::read,
 						 ThriftDescriptorImpl<T, TDT_STRUCT, void, void>::write,
 						 ThriftDescriptorImpl<T, TDT_STRUCT, void, void>::read_json,
