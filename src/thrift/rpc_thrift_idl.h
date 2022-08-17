@@ -83,7 +83,7 @@ public:
 	}
 
 private:
-	ThriftElementsImpl<T>()
+	ThriftElementsImpl()
 	{
 		T::StaticElementsImpl(&this->elements);
 	}
