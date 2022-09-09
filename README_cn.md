@@ -68,6 +68,18 @@ cd srpc
 make
 ~~~
 
+### Installing srpc (vcpkg)
+  * 或者，你可以通过vcpkg包依赖管理器来构建和下载srpc
+ ~~~~sh or powershell
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh
+./vcpkg integrate install
+./vcpkg install srpc
+~~~~
+
+  * vcpkg当中的srpc由Microsoft的团队成员和社区贡献者一起维护并保持最新的版本。如果发现版本过时，随时向[vcpkg](https://github.com/Microsoft/vcpkg)提交一个issue或者 Pull Request.
+
 ## Tutorial
 
 * [第1步：设计IDL描述文件](docs/docs-01-idl.md)

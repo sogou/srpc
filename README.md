@@ -104,6 +104,18 @@ To install the srpc library for deployment:
 sudo apt-get install libsrpc
 ~~~~
 
+### Installing srpc (vcpkg)
+
+Alternatively, you can build and install srpc using [vcpkg](https://github.com/Microsoft/vcpkg/) dependency manager:
+~~~~sh or powershell
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh
+./vcpkg integrate install
+./vcpkg install srpc
+~~~~
+The srpc port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
+
 ## Tutorial
 
 * [Step 1: Design IDL description file](/docs/en/docs-01-idl.md)
