@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <limits>
+#include <cfloat>
 #include <string>
 #include <set>
 #include <vector>
@@ -311,7 +311,7 @@ void RPCMetricsPull::Collector::collect_histogram_each(RPCVar *histogram,
 													   size_t current_count)
 {
 	this->report_output += histogram->get_name();
-	if (bucket_boundary != std::numeric_limits<double>::max())
+	if (bucket_boundary != DBL_MAX)
 	{
 		this->report_output += "_bucket{le=\"" +
 							   std::to_string(bucket_boundary) + "\"} ";
@@ -593,7 +593,7 @@ void RPCMetricsOTel::Collector::collect_histogram_each(RPCVar *histogram,
 	HistogramDataPoint *data_points = static_cast<HistogramDataPoint *>(this->current_msg);
 	data_points->add_bucket_counts(current_count);
 
-	if (bucket_boundary != std::numeric_limits<double>::max())
+	if (bucket_boundary != DBL_MAX)
 		data_points->add_explicit_bounds(bucket_boundary);
 }
 
