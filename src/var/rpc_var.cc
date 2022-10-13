@@ -16,6 +16,7 @@
 
 #include <mutex>
 #include <string>
+#include <cfloat>
 #include <vector>
 #include <unordered_map>
 #include "rpc_var.h"
@@ -348,9 +349,7 @@ void HistogramVar::collect(RPCVarCollector *collector)
 	}
 
 	current += this->bucket_counts[i];
-	collector->collect_histogram_each(this, std::numeric_limits<double>::max(),
-									  current);
-
+	collector->collect_histogram_each(this, DBL_MAX, current);
 	collector->collect_histogram_end(this, this->sum, this->count);
 }
 
