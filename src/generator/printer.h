@@ -1485,16 +1485,13 @@ inline void %sClient::send_%s(%s)
 
 inline %s %sClient::recv_%s(%s)
 {
-	bool in_handler = false;
+	int cookie = 0;
 	auto *receiver = get_thread_sync_receiver_%s();
 	std::unique_lock<std::mutex> lock(receiver->mutex);
 
 	if (!receiver->is_done)
 	{
-		in_handler = WFGlobal::get_scheduler()->is_handler_thread();
-		if (in_handler)
-			WFGlobal::sync_operation_begin();
-
+		cookie = WFGlobal::sync_operation_begin();
 		while (!receiver->is_done)
 			receiver->cond.wait(lock);
 	}
@@ -1503,8 +1500,7 @@ inline %s %sClient::recv_%s(%s)
 	*get_thread_sync_ctx() = std::move(receiver->ctx);
 	auto res = std::move(receiver->output);
 	lock.unlock();
-	if (in_handler)
-		WFGlobal::sync_operation_end();
+	WFGlobal::sync_operation_end(cookie);
 
 	%s;
 }
