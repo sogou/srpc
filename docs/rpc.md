@@ -9,11 +9,10 @@
 |BRPC Std                   | PB        | tcp  | 二进制      |gzip/zlib/lz4/snappy| 支持        |  不支持  | 支持    |  支持       |
 |SRPC Std               | PB/Thrift | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
 |SRPC Std Http          | PB/Thrift | http | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
-|tRPC Std                   | PB        | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
 
 ## 基础概念
 - 通信层：TCP/TPC_SSL/HTTP/HTTPS/HTTP2
-- 协议层：Thrift-binary/BRPC-std/SRPC-std/tRPC-std
+- 协议层：Thrift-binary/BRPC-std/SRPC-std/SRPC-http/tRPC-std/tRPC-http
 - 压缩层：不压缩/gzip/zlib/lz4/snappy
 - 数据层：PB binary/Thrift binary/Json string
 - IDL序列化层：PB/Thrift serialization
