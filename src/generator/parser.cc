@@ -58,9 +58,14 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 	{
 		info.file_name = proto_file.substr(pos + 1);
 
-		getcwd(current_dir, MAXPATHLEN);
-		dir_prefix = current_dir;
-		dir_prefix += "/";
+		if (proto_file[0] == '/')
+			dir_prefix = proto_file.substr(0, pos + 1);
+		else
+		{
+			getcwd(current_dir, MAXPATHLEN);
+			dir_prefix = current_dir;
+			dir_prefix += "/";
+		}
 	}
 
 	pos = info.file_name.find_last_of('.');

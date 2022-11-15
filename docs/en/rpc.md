@@ -14,7 +14,7 @@
 ## Basic concepts
 
 - Communication layer: TCP/TPC\_SSL/HTTP/HTTPS/HTTP2
-- Protocol layer: Thrift-binary/BRPC-std/SRPC-http/tRPC-std/tRPC-http
+- Protocol layer: Thrift-binary/BRPC-std/SRPC-std/SRPC-http/tRPC-std/tRPC-http
 - Compression layer: no compression/gzip/zlib/lz4/snappy
 - Data layer: PB binary/Thrift binary/JSON string
 - IDL serialization layer: PB/Thrift serialization
