@@ -16,7 +16,7 @@ set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
 	find_package(Protobuf REQUIRED CONFIG)
 else ()
-	find_package(Protobuf 3.11.0 REQUIRED)
+	find_package(Protobuf 3.5.0 REQUIRED)
 endif ()
 
 if (WIN32)
