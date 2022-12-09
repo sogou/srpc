@@ -14,13 +14,24 @@ using namespace opentelemetry::proto::common::v1;
 using namespace opentelemetry::proto::resource::v1;
 
 static InstrumentationLibrarySpans *
-rpc_span_fill_pb_request(const std::string& service_name,
+rpc_span_fill_pb_request(const RPCModuleData& data,
 		const std::unordered_map<std::string, std::string>& attributes,
 		ExportTraceServiceRequest *req)
 {
 	ResourceSpans *rs = req->add_resource_spans();
 	InstrumentationLibrarySpans *spans = rs->add_instrumentation_library_spans();
 	Resource *resource = rs->mutable_resource();
+	KeyValue *attribute;
+	AnyValue *value;
+
+	auto iter = data.find(OTLP_METHOD_NAME);
+	if (iter != data.end())
+	{
+		attribute = resource->add_attributes();
+		attribute->set_key(OTLP_METHOD_NAME);
+		value = attribute->mutable_value();
+		value->set_string_value(iter->second);
+	}
 
 	for (const auto& attr : attributes)
 	{
@@ -30,10 +41,14 @@ rpc_span_fill_pb_request(const std::string& service_name,
 		value->set_string_value(attr.second);
 	}
 
-	KeyValue *attribute = resource->add_attributes();
-	attribute->set_key(OTLP_SERVICE_NAME_KEY);
-	AnyValue *value = attribute->mutable_value();
-	value->set_string_value(service_name);
+	iter = data.find(OTLP_SERVICE_NAME); // if attributes also set service.name, data takes precedence
+	if (iter != data.end())
+	{
+		attribute = resource->add_attributes();
+		attribute->set_key(OTLP_SERVICE_NAME);
+		value = attribute->mutable_value();
+		value->set_string_value(iter->second);
+	}
 
 	return spans;
 }
@@ -45,7 +60,7 @@ static void rpc_span_fill_pb_span(RPCModuleData& data,
 
 	span->set_span_id(data[SRPC_SPAN_ID].c_str(), SRPC_SPANID_SIZE);
 	span->set_trace_id(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE);
-	span->set_name(data[SRPC_METHOD_NAME]);
+	span->set_name(data[OTLP_METHOD_NAME]);
 
 	for (const auto& iter : data)
 	{
@@ -79,8 +94,8 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 									" method: %s start_time: %s",
 						  trace_id_buf,
 						  span_id_buf,
-						  data[SRPC_SERVICE_NAME].c_str(),
-						  data[SRPC_METHOD_NAME].c_str(),
+						  data[OTLP_SERVICE_NAME].c_str(),
+						  data[OTLP_METHOD_NAME].c_str(),
 						  data[SRPC_START_TIMESTAMP].c_str());
 
 	auto iter = data.find(SRPC_PARENT_SPAN_ID);
@@ -307,7 +322,8 @@ bool RPCSpanOpenTelemetry::filter(RPCModuleData& data)
 	std::unordered_map<std::string, google::protobuf::Message *>::iterator it;
 	InstrumentationLibrarySpans *spans;
 	bool ret;
-	const std::string& service_name = data[OTLP_SERVICE_NAME_KEY];
+	const std::string& service_name = data[OTLP_SERVICE_NAME];
+	fprintf(stderr, "filter() service_name=%s OTLP_SERVICE_NAME=%s\n", service_name.c_str(), OTLP_SERVICE_NAME);
 
 	this->mutex.lock();
 	if (this->filter_policy.collect(data))
@@ -316,7 +332,7 @@ bool RPCSpanOpenTelemetry::filter(RPCModuleData& data)
 		it = report_map.find(service_name);
 		if (it == report_map.end())
 		{
-			spans = rpc_span_fill_pb_request(service_name, this->attributes,
+			spans = rpc_span_fill_pb_request(data, this->attributes,
 							(ExportTraceServiceRequest *)this->report_req);
 			this->report_map.insert({service_name, spans});
 		}

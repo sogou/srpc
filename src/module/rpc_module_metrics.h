@@ -39,8 +39,8 @@ public:
 		auto *req = client_task->get_req();
 		RPCModuleData& module_data = *(client_task->mutable_module_data());	
 
-		module_data[SRPC_SERVICE_NAME] = req->get_service_name();
-		module_data[SRPC_METHOD_NAME] = req->get_method_name();
+		module_data[OTLP_SERVICE_NAME] = req->get_service_name();
+		module_data[OTLP_METHOD_NAME] = req->get_method_name();
 		if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
 			module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
 
@@ -67,8 +67,8 @@ public:
 		auto *req = server_task->get_req();
 		RPCModuleData& module_data = *(server_task->mutable_module_data());
 
-		module_data[SRPC_SERVICE_NAME] = req->get_service_name();
-		module_data[SRPC_METHOD_NAME] = req->get_method_name();
+		module_data[OTLP_SERVICE_NAME] = req->get_service_name();
+		module_data[OTLP_METHOD_NAME] = req->get_method_name();
 		if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
 			module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
 
