@@ -49,8 +49,8 @@ bool RPCMetricsFilter::client_end(SubTask *task, RPCModuleData& data)
 {
 	this->gauge(METRICS_REQUEST_COUNT)->increase();
 	this->counter(METRICS_REQUEST_METHOD)->add(
-				{{"service", data[SRPC_SERVICE_NAME]},
-				 {"method",  data[SRPC_METHOD_NAME] }})->increase();
+				{{"service", data[OTLP_SERVICE_NAME]},
+				 {"method",  data[OTLP_METHOD_NAME] }})->increase();
 	this->summary(METRICS_REQUEST_LATENCY)->observe(atoll(data[SRPC_DURATION].data()));
 
 	return true;
@@ -60,8 +60,8 @@ bool RPCMetricsFilter::server_end(SubTask *task, RPCModuleData& data)
 {
 	this->gauge(METRICS_REQUEST_COUNT)->increase();
 	this->counter(METRICS_REQUEST_METHOD)->add(
-				{{"service", data[SRPC_SERVICE_NAME]},
-				 {"method",  data[SRPC_METHOD_NAME] }})->increase();
+				{{"service", data[OTLP_SERVICE_NAME]},
+				 {"method",  data[OTLP_METHOD_NAME] }})->increase();
 	this->summary(METRICS_REQUEST_LATENCY)->observe(atoll(data[SRPC_DURATION].data()));
 
 	return true;
@@ -428,6 +428,17 @@ SubTask *RPCMetricsOTel::create(RPCModuleData& data)
 	ResourceMetrics *rm = req.add_resource_metrics();
 	Resource *resource = rm->mutable_resource();
 	InstrumentationLibraryMetrics *metrics = rm->add_instrumentation_library_metrics();
+	KeyValue *attribute;
+	AnyValue *value;
+
+	auto iter = data.find(OTLP_METHOD_NAME);
+	if (iter != data.end())
+	{
+		attribute = resource->add_attributes();
+		attribute->set_key(OTLP_METHOD_NAME);
+		value = attribute->mutable_value();
+		value->set_string_value(iter->second);
+	}
 
 	this->mutex.lock();
 	for (const auto& attr : this->attributes)
@@ -439,10 +450,14 @@ SubTask *RPCMetricsOTel::create(RPCModuleData& data)
 	}	
 	this->mutex.unlock();
 
-	KeyValue *attribute = resource->add_attributes();
-	attribute->set_key(OTLP_SERVICE_NAME_KEY);
-	AnyValue *value = attribute->mutable_value();
-	value->set_string_value(data[SRPC_SERVICE_NAME]);
+	iter = data.find(OTLP_SERVICE_NAME); // if attributes also set service.name, data takes precedence
+	if (iter != data.end())
+	{
+		attribute = resource->add_attributes();
+		attribute->set_key(OTLP_SERVICE_NAME);
+		value = attribute->mutable_value();
+		value->set_string_value(iter->second);
+	}
 
 	this->expose(metrics);
 

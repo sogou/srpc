@@ -115,14 +115,15 @@ bool RPCSpanModule<RPCTYPE>::client_begin(SubTask *task,
 	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
 	module_data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_CLIENT;
 
-	module_data[SRPC_SERVICE_NAME] = req->get_service_name();
-	module_data[SRPC_METHOD_NAME] = req->get_method_name();
+	module_data[OTLP_SERVICE_NAME] = req->get_service_name();
+	module_data[OTLP_METHOD_NAME] = req->get_method_name();
 	module_data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 	module_data[SRPC_COMPRESS_TYPE] =
 							std::to_string(req->get_compress_type());
 	if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
 		module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
-	return true; // always success
+
+	return true;
 }
 
 template<class RPCTYPE>
@@ -163,8 +164,8 @@ bool RPCSpanModule<RPCTYPE>::server_begin(SubTask *task,
 	auto *req = server_task->get_req();
 	RPCModuleData& module_data = *(server_task->mutable_module_data());
 
-	module_data[SRPC_SERVICE_NAME] = req->get_service_name();
-	module_data[SRPC_METHOD_NAME] = req->get_method_name();
+	module_data[OTLP_SERVICE_NAME] = req->get_service_name();
+	module_data[OTLP_METHOD_NAME] = req->get_method_name();
 	module_data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 	module_data[SRPC_COMPRESS_TYPE] =
 							std::to_string(req->get_compress_type());
