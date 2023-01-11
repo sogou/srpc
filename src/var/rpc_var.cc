@@ -89,22 +89,28 @@ RPCVarLocal::~RPCVarLocal()
 {
 	RPCVarGlobal *global_var = RPCVarGlobal::get_instance();
 
+	global_var->del(this);
 	global_var->dup(this->vars);
 
 	for (auto it = this->vars.begin(); it != this->vars.end(); it++)
 		delete it->second;
-
-	global_var->del(this);
 }
 
 void RPCVarGlobal::dup(const std::unordered_map<std::string, RPCVar *>& vars)
 {
+	RPCVarLocal *local;
+
+	this->mutex.lock();
 	if (this->local_vars.empty())
-		new RPCVarLocal();
+		local = NULL;
+	else
+		local = this->local_vars[0];
+	this->mutex.unlock();
 
-	RPCVarLocal *local = this->local_vars[0];
+	if (local == NULL)
+		local = new RPCVarLocal();
+
 	local->mutex.lock();
-
 	std::unordered_map<std::string, RPCVar*>& local_var = local->vars;
 
 	for (auto it = vars.begin(); it != vars.end(); it++)
