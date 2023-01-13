@@ -200,8 +200,8 @@ RPCVar *CounterVar::create(bool with_data)
 		for (auto it = this->data.begin();
 			 it != this->data.end(); it++)
 		{
-			this->data.insert(std::make_pair(it->first,
-								 (GaugeVar *)it->second->create(true)));
+			var->data.insert(std::make_pair(it->first,
+							(GaugeVar *)it->second->create(true)));
 		}
 	}
 
