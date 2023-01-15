@@ -76,7 +76,7 @@ add_custom_target(
 	BENCHMARK_GEN ALL
 	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/benchmark_pb.proto  ${PROJECT_SOURCE_DIR}
 	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/benchmark_thrift.thrift ${PROJECT_SOURCE_DIR}
-	COMMENT "sprc generator..."
+	COMMENT "srpc generator..."
 )
 
 if (WIN32)

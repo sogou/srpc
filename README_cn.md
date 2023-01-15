@@ -9,7 +9,7 @@
 <a href="https://github.com/sogou/srpc/actions?query=workflow%3A%22ci+build%22++"><img src="https://img.shields.io/github/workflow/status/sogou/srpc/ci%20build?color=379c9c&style=flat-square"/></a>
 
 ## Introduction
-#### SPRC是全搜狗业务线上使用的企业级RPC系统，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。主要功能和特点：
+#### SRPC是全搜狗业务线上使用的企业级RPC系统，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。主要功能和特点：
   * 底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，兼具：
     * 高性能、低延迟、轻量级
     * 低开发和接入门槛

@@ -160,7 +160,7 @@ Adn we can get the statistics calculated by `{service="Example",method="Echo"}`.
 
 #### (5) Reporting
 
-Reporting in SPRC filters is automatic, so users don't need to do anything. Next we will use a client to make some requests and check the format of data which will be reported.
+Reporting in SRPC filters is automatic, so users don't need to do anything. Next we will use a client to make some requests and check the format of data which will be reported.
 
 ~~~sh
 ./srpc_pb_client 
