@@ -96,7 +96,7 @@ add_custom_target(
 	SRPC_GEN ALL
 	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/test_pb.proto ${PROJECT_SOURCE_DIR}
 	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/test_thrift.thrift ${PROJECT_SOURCE_DIR}
-	COMMENT "sprc generator..."
+	COMMENT "srpc generator..."
 )
 
 set(GTEST_LIB GTest::GTest GTest::Main)

@@ -12,7 +12,7 @@
 
 ## Introduction
 
-#### SPRC is an enterprise-level RPC system used by almost all online services in Sogou. It handles tens of billions of requests every day, covering searches, recommendations, advertising system, and other types of services. Its main features include:
+#### SRPC is an enterprise-level RPC system used by almost all online services in Sogou. It handles tens of billions of requests every day, covering searches, recommendations, advertising system, and other types of services. Its main features include:
 
 * Base on [Sogou C++ Workflow](https://github.com/sogou/workflow), with the following features:
   * High performance, low latency, lightweight
