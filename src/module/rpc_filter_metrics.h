@@ -252,7 +252,6 @@ private:
 	Collector collector;
 	RPCFilterPolicy policy;
 	std::atomic<size_t> report_counts;
-	std::mutex mutex;
 	std::map<std::string, std::string> attributes;
 };
 
