@@ -271,8 +271,8 @@ public:
 	RPCSpanOpenTelemetry(const std::string& url);
 
 	RPCSpanOpenTelemetry(const std::string& url,
-						 unsigned int redirect_max,
-						 unsigned int retry_max,
+						 int redirect_max,
+						 int retry_max,
 						 size_t spans_per_second,
 						 size_t report_threshold,
 						 size_t report_interval);

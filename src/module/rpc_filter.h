@@ -57,6 +57,8 @@ public:
 		this->module_type = module_type;
 	}
 
+	virtual ~RPCFilter() { }
+
 	enum RPCModuleType get_module_type() const { return this->module_type; }
 
 	virtual bool client_begin(SubTask *task, const RPCModuleData& data)
