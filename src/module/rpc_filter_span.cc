@@ -119,7 +119,7 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	iter = data.find(SRPC_DURATION);
 	if (iter != data.end())
 	{
-		ret += snprintf(str + ret, len - ret, " duration: %s"
+		ret += snprintf(str + ret, len - ret, " duration: %s(ns)"
 											  " remote_ip: %s port: %s"
 											  " state: %s error: %s",
 						iter->second.c_str(),
@@ -323,7 +323,6 @@ bool RPCSpanOpenTelemetry::filter(RPCModuleData& data)
 	InstrumentationLibrarySpans *spans;
 	bool ret;
 	const std::string& service_name = data[OTLP_SERVICE_NAME];
-	fprintf(stderr, "filter() service_name=%s OTLP_SERVICE_NAME=%s\n", service_name.c_str(), OTLP_SERVICE_NAME);
 
 	this->mutex.lock();
 	if (this->filter_policy.collect(data))
