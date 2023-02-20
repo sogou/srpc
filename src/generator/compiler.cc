@@ -31,7 +31,7 @@ enum
 	TYPE_THRIFT = 1,
 };
 
-const char *SRPC_VERSION = "0.9.7";
+const char *SRPC_VERSION = "0.9.8";
 
 static int check_idl_type(const char *filename);
 const char *SRPC_GENERATOR_USAGE = "\
