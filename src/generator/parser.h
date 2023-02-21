@@ -80,7 +80,6 @@ public:
 	bool parse_include_file(const std::string& line, std::string& file_name);
 	bool check_multi_comments_begin(std::string& line);
 	bool check_multi_comments_end(std::string& line);
-	bool parse_dir_prefix(const std::string& file_name, char *dir_prefix);
 	int parse_pb_rpc_option(const std::string& line);
 	Parser(bool is_thrift) { this->is_thrift = is_thrift; }
 

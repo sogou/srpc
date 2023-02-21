@@ -524,14 +524,16 @@ public:
 	void print_server_main_begin()
 	{
 		fprintf(this->out_file, "%s", this->server_main_begin_format.c_str());
+		if (!this->is_thrift)
+			fprintf(this->out_file, "%s", this->main_pb_version_format.c_str());
+	}
 
+	void print_server_main_address()
+	{
 		if (this->is_thrift)
 			fprintf(this->out_file, this->server_main_ip_port_format.c_str(), "Thrift");
 		else
-		{
-			fprintf(this->out_file, "%s", this->main_pb_version_format.c_str());
 			fprintf(this->out_file, this->server_main_ip_port_format.c_str(), "SRPC");
-		}
 	}
 
 	void print_server_main_method(const std::string& service)
@@ -547,6 +549,10 @@ public:
 	void print_server_main_end()
 	{
 		fprintf(this->out_file, "%s", this->server_main_end_format.c_str());
+	}
+
+	void print_server_main_return()
+	{
 		if (!this->is_thrift)
 			fprintf(this->out_file, "%s", this->main_pb_shutdown_format.c_str());
 		fprintf(this->out_file, "%s", this->main_end_return_format.c_str());
@@ -963,6 +969,10 @@ public:
 		fprintf(this->out_file, "%s", this->client_main_begin_format.c_str());
 		if (!this->is_thrift)
 			fprintf(this->out_file, "%s", this->main_pb_version_format.c_str());
+	}
+
+	void print_client_main_address()
+	{
 		fprintf(this->out_file, "%s", this->client_main_ip_port_format.c_str());
 	}
 
@@ -1044,10 +1054,11 @@ public:
 
 	Printer(bool is_thrift) { this->is_thrift = is_thrift; }
 
-private:
+protected:
 	FILE *out_file;
 	bool is_thrift;
 
+private:
 	std::string thrift_include_format = R"(#pragma once
 #include "srpc/rpc_thrift_idl.h"
 )";
@@ -1068,8 +1079,7 @@ namespace %s
 using namespace %s;
 )";
 
-	std::string srpc_file_include_format = R"(
-#include "%s.srpc.h"
+	std::string srpc_file_include_format = R"(#include "%s.srpc.h"
 #include "workflow/WFFacilities.h"
 )";
 
