@@ -71,6 +71,7 @@ struct Descriptor
 struct idl_info
 {
 	std::string file_name;
+	std::string input_dir;
 	std::string absolute_file_path;
 	std::string file_name_prefix;
 	std::vector<std::string> package_name;
