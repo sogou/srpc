@@ -1,0 +1,58 @@
+###### origin correct
+
+./a.out test_proto/basic.proto path_a
+./a.out protobuf test_proto/basic.proto path_a
+./a.out thrift test_proto/a.thrift
+./a.out -v
+./a.out --version
+
+###### origin wrong
+
+./a.out protobuf test_proto/basic.proto
+./a.out thrift test_proto/basic.proto
+./a.out test_proto/basic.proto 
+./a.out thritf
+
+###### new correct
+
+./a.out -v test_proto/basic.proto path_a
+./a.out test_proto/basic.proto path_a -v
+./a.out protobuf test_proto/basic.proto path_a -v
+./a.out protobuf -i test_proto/basic.proto -d path_a
+./a.out protobuf -i test_proto/basic.proto --input_dir=path_a
+./a.out -i test_proto/basic.proto --input_dir=path_a
+./a.out test_proto/basic.proto --input_dir=path_a
+
+
+###### new wrong
+
+./a.out protobuf test_proto/basic.proto -v
+
+
+
+
+
+
+#############
+
+liyingxin@P_QZLIU-MB0 tools % ./a.out thrift test_proto/a.thrift ./
+idl_type = 1 idl_file_id = 2
+out_dir=./
+file_name=/Users/liyingxin/1412/srpc/srpc_tools/tools/test_proto/a.thrift
+
+liyingxin@P_QZLIU-MB0 tools % ./a.out thrift /test_proto/a.thrift ./
+idl_type = 1 idl_file_id = 2
+out_dir=./
+file_name=/test_proto/a.thrift
+
+liyingxin@P_QZLIU-MB0 tools % ./a.out /test_proto/a.thrift ./ 
+idl_type = 1 idl_file_id = 1
+out_dir=./
+file_name=/test_proto/a.thrif
+
+liyingxin@P_QZLIU-MB0 tools % ./a.out -v
+srpc_generator version 0.9.7
+
+liyingxin@P_QZLIU-MB0 tools % ./a.out --version
+srpc_generator version 0.9.7
+
