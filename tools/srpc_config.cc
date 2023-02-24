@@ -1,10 +1,31 @@
+/*
+  Copyright (c) 2022 Sogou, Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <string>
 #include <vector>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include "srpc_config.h"
+
+static constexpr const char *TEMPLATE_PATH_DEFAULT = "./template";
 
 std::vector<std::string> RPC_PROTOC_SKIP_FILES =
 { "config_simple.h", "config_simple.cc",
@@ -102,6 +123,53 @@ void usage_rpc(int argc, const char *argv[], const struct srpc_config *config)
 		   "    -p :    specify the path for idl_file to depend "
 		   "(default: template/rpc/)\n"
 		   , argv[0]);
+}
+
+int mkdir_p(const char *name, mode_t mode)
+{
+	int ret = mkdir(name, mode);
+	if (ret == 0 || errno != ENOENT)
+		return ret;
+
+	size_t len = strlen(name);
+	if (len > MAXPATHLEN)
+	{
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+
+	char path[MAXPATHLEN + 1] = {};
+	memcpy(path, name, len);
+
+	if (name[len - 1] != '/')
+	{
+		path[len] = '/';
+		len++;
+	}
+
+	bool has_valid = false;
+
+	for (int i = 0; i < len; i++)
+	{
+		if (path[i] != '/' && path[i] != '.') // simple check of valid path
+		{
+			has_valid = true;
+			continue;
+		}
+
+		if (path[i] == '/' && has_valid == true)
+		{
+			path[i] = '\0';
+			ret = mkdir(path, mode);
+			if (ret != 0 && errno != EEXIST)
+				return ret;
+
+			path[i] = '/';
+			has_valid = false;
+		}
+	}
+
+	return ret;
 }
 
 // proto: 0; thrift: 1; error: -1;

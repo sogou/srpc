@@ -1,3 +1,19 @@
+/*
+  Copyright (c) 2022 Sogou, Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 #ifndef __SRPC_CONFIG__
 #define __SRPC_CONFIG__
 
@@ -11,8 +27,6 @@
 #define MAXPATHLEN 4096
 #include <direct.h>
 #endif
-
-static constexpr const char *TEMPLATE_PATH_DEFAULT = "./template";
 
 struct srpc_config
 {
@@ -67,12 +81,12 @@ private:
 		void print_load_config();
 
 		void print_client_params();
-		void print_client_done_method_ctl(const std::vector<std::string>& package,
+		void print_client_done_method_ctl(const std::vector<std::string>& pkg,
 										  const std::string& service,
 										  const std::string& method,
 										  const std::string& response);
 		void print_client_main_service_ctl(const std::string& type,
-										   const std::vector<std::string>& package,
+										   const std::vector<std::string>& pkg,
 										   const std::string& service,
 										   const std::string& suffix);
 
@@ -140,6 +154,8 @@ void usage_http(int argc, const char *argv[]);
 void usage_db(int argc, const char *argv[], const struct srpc_config *config);
 void usage_kafka(int argc, const char *argv[]);
 void usage_rpc(int argc, const char *argv[], const struct srpc_config *config);
+
+int mkdir_p(const char *name, mode_t mode);
 
 #endif
 

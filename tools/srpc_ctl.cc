@@ -1,3 +1,19 @@
+/*
+  Copyright (c) 2022 Sogou, Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -26,7 +42,7 @@ static bool open_project_dir(struct srpc_config *config)
 		return false;
 	}
 
-	if (mkdir(config->output_path, 0755) != 0) // TODO: mkdir -p
+	if (mkdir_p(config->output_path, 0755) != 0)
 	{
 		perror("Error:\n      failed to make project ");
 		return false;
@@ -42,6 +58,8 @@ static bool open_project_dir(struct srpc_config *config)
 
 	printf("Success:\n      make project path \" %s \" done.\n\n",
 			config->output_path);
+	printf("Command:\n      cd %s\n      make -j\n\n", config->output_path);
+	printf("Execute:\n      ./server\n      ./client\n\n");
 	return true;
 }
 
@@ -546,7 +564,7 @@ void parse_rpc(int argc, const char *argv[], struct srpc_config *config)
 		else
 			get_path(config->specified_idl_file, idl_path, 1);
 
-		copy_path_files(idl_path, config); // TODO: copy dependent proto files
+		copy_path_files(idl_path, config); // TODO: copy relevant proto files
 
 		ControlGenerator gen(config);
 		struct GeneratorParams params;
