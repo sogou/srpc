@@ -16,7 +16,12 @@ set(generator_code
 	"../src/generator/generator.cc"
 	"../src/generator/parser.cc")
 
+set(srpc_ctl_code
+	"srpc_ctl.cc"
+	"srpc_config.cc"
+	"srpc_controller.cc")
+
 include_directories("../src/")
-add_executable(srpc-ctl srpc_ctl.cc srpc_config.cc ${generator_code})
+add_executable(srpc-ctl ${srpc_ctl_code} ${generator_code})
 target_link_libraries(srpc-ctl ${LIBRARY_NAME})
 

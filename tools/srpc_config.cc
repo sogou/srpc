@@ -35,32 +35,6 @@ std::vector<std::string> RPC_THRIFT_SKIP_FILES =
 { "config_simple.h", "config_simple.cc",
   "rpc.proto", "client_protobuf.cc", "server_protobuf.cc" };
 
-void usage(int argc, const char *argv[])
-{
-	printf("Description:\n"
-		   "    A handy generator for Workflow and SRPC project.\n\n"
-		   "Usage:\n"
-		   "    %s <COMMAND> <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Commands:\n"
-		   "    \"http\"  - create project with both client and server\n"
-		   "    \"rpc\"   - create project with both client and server\n"
-		   "    \"redis\" - create redis client\n"
-		   "    \"mysql\" - create mysql client\n"
-		   "    \"kafka\" - create kafka client\n"
-		   "    \"file\"  - create project with file service\n"
-		   "    \"extra\" - TODO\n"
-		   , argv[0]);
-}
-
-void usage_http(int argc, const char *argv[])
-{
-	printf("Usage:\n"
-		   "    %s http <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Flags:\n"
-		   "    -o :    project output path (default: CURRENT_PATH)\n"
-		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
-		   , argv[0]);
-}
 
 void usage_db(int argc, const char *argv[], const struct srpc_config *config)
 {
@@ -103,74 +77,7 @@ void usage_kafka(int argc, const char *argv[])
 		   , argv[0]);
 }
 
-void usage_rpc(int argc, const char *argv[], const struct srpc_config *config)
-{
-	printf("Usage:\n"
-		   "    %s rpc <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Flags:\n"
-		   "    -r :    rpc type [ SRPC | SRPCHttp | BRPC | Thrift | "
-		   "ThriftHttp | TRPC | TRPCHttp ] (default: SRPC)\n"
-		   "    -o :    project output path (default: CURRENT_PATH)\n"
-		   "    -s :    service name (default: PROJECT_NAME)\n"
-		   "    -i :    idl type [ protobuf | thrift ] (default: protobuf)\n"
-		   "    -x :    data type [ protobuf | thrift | json ] "
-		   "(default: idl type. json for http)\n"
-		   "    -c :    compress type [ gzip | zlib | snappy | lz4 ] "
-		   "(default: no compression)\n"
-		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
-		   "    -f :    specify the idl_file to generate codes "
-		   "(default: template/rpc/IDL_FILE)\n"
-		   "    -p :    specify the path for idl_file to depend "
-		   "(default: template/rpc/)\n"
-		   , argv[0]);
-}
 
-int mkdir_p(const char *name, mode_t mode)
-{
-	int ret = mkdir(name, mode);
-	if (ret == 0 || errno != ENOENT)
-		return ret;
-
-	size_t len = strlen(name);
-	if (len > MAXPATHLEN)
-	{
-		errno = ENAMETOOLONG;
-		return -1;
-	}
-
-	char path[MAXPATHLEN + 1] = {};
-	memcpy(path, name, len);
-
-	if (name[len - 1] != '/')
-	{
-		path[len] = '/';
-		len++;
-	}
-
-	bool has_valid = false;
-
-	for (int i = 0; i < len; i++)
-	{
-		if (path[i] != '/' && path[i] != '.') // simple check of valid path
-		{
-			has_valid = true;
-			continue;
-		}
-
-		if (path[i] == '/' && has_valid == true)
-		{
-			path[i] = '\0';
-			ret = mkdir(path, mode);
-			if (ret != 0 && errno != EEXIST)
-				return ret;
-
-			path[i] = '/';
-			has_valid = false;
-		}
-	}
-
-	return ret;
-}
 
 // proto: 0; thrift: 1; error: -1;
 static int check_file_idl_type(const char *filename)
@@ -197,47 +104,6 @@ srpc_config::srpc_config()
 	template_path = TEMPLATE_PATH_DEFAULT;
 }
 
-bool srpc_config::prepare_dependencies() const
-{
-	if (this->specified_depend_path == true)
-		return true;
-
-	std::string workflow_file = this->depend_path;
-	workflow_file += "workflow/workflow-config.cmake.in";
-	if (access(workflow_file.c_str(), 0) != 0)
-	{
-		std::string cmd = "cd ";
-		cmd += this->depend_path;
-		cmd += "&& git submodule init && git submodule update";
-		system(cmd.c_str());
-
-		if (access(workflow_file.c_str(), 0) != 0)
-		{
-			printf("Warning: Default dependencies path : %s does not have "
-					"Workflow or other third_party dependencies. "
-					"This may cause link error in project : %s . \n\n"
-					"Please check or specify srpc path with '-d' .\n\n"
-					"Or use the following command to pull srpc:\n"
-					"    \"git clone --recursive "
-					"https://github.com/sogou/srpc.git\"\n"
-					"    \"cd srpc && make\"\n\n",
-					this->depend_path, this->project_name);
-			return false;
-		}
-	}
-	std::string srpc_lib = this->depend_path;
-	srpc_lib += "_lib";
-
-	if (access(srpc_lib.c_str(), 0) != 0)
-	{
-		std::string cmd = "cd ";
-		cmd += this->depend_path;
-		cmd += " && make -j4";
-		system(cmd.c_str());
-	}
-
-	return true;
-}
 
 bool srpc_config::is_rpc_skip_file(const char *file_name) const
 {
@@ -271,81 +137,6 @@ bool srpc_config::is_rpc_skip_file(const char *file_name) const
 	}
 
 	return false;
-}
-
-bool srpc_config::prepare_project_path()
-{
-	if (*this->project_name == '-')
-		return false;
-
-	size_t path_len = strlen(this->output_path);
-
-	if (strlen(this->project_name) >= MAXPATHLEN - path_len - 2)
-	{
-		printf("Error:\n      project name \" %s \" is too long. limit %d.\n\n",
-				this->project_name, MAXPATHLEN);
-		return false;
-	}
-
-	snprintf(this->output_path + path_len, MAXPATHLEN - path_len, "/%s/",
-			 this->project_name);
-
-	return true;
-}
-
-bool srpc_config::prepare_args()
-{
-	if (this->prepare_project_path() == false)
-		return false;
-
-	if (this->type == COMMAND_RPC)
-	{
-		if (this->rpc_type == RPC_TYPE_MAX ||
-			this->idl_type == IDL_TYPE_MAX ||
-			this->data_type == DATA_TYPE_MAX ||
-			this->compress_type == COMPRESS_TYPE_MAX)
-		{
-			printf("Error:\n      Invalid rpc args.\n");
-			return false;
-		}
-
-		switch (this->rpc_type)
-		{
-		case RPC_TYPE_THRIFT:
-		case RPC_TYPE_THRIFT_HTTP:
-			if (this->idl_type == IDL_TYPE_PROTOBUF ||
-				this->data_type == DATA_TYPE_PROTOBUF)
-			{
-				printf("Error:\n      "
-					   "\" %s \" doesn`t support protobuf as idl or data type.\n",
-					   this->rpc_type_string());
-				return false;
-			}
-			if (this->idl_type == IDL_TYPE_DEFAULT)
-				this->idl_type = IDL_TYPE_THRIFT; // as default;
-			break;
-		case RPC_TYPE_BRPC:
-		case RPC_TYPE_TRPC:
-		case RPC_TYPE_TRPC_HTTP:
-			if (this->idl_type == IDL_TYPE_THRIFT ||
-				this->data_type == DATA_TYPE_THRIFT)
-			{
-				printf("Error:\n      "
-					   "\" %s \" does not support thrift as idl or data type.\n",
-					   this->rpc_type_string());
-				return false;
-			}
-		default:
-			if (this->idl_type == IDL_TYPE_DEFAULT)
-				this->idl_type = IDL_TYPE_PROTOBUF; // as default;
-			break;
-		}
-
-		if (this->prepare_specified_idl_file() == false)
-			return false;
-	}
-
-	return this->prepare_dependencies();
 }
 
 bool srpc_config::prepare_specified_idl_file()

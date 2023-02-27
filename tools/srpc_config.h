@@ -155,7 +155,5 @@ void usage_db(int argc, const char *argv[], const struct srpc_config *config);
 void usage_kafka(int argc, const char *argv[]);
 void usage_rpc(int argc, const char *argv[], const struct srpc_config *config);
 
-int mkdir_p(const char *name, mode_t mode);
-
 #endif
 
