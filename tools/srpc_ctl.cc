@@ -48,17 +48,6 @@ int main(int argc, const char *argv[])
 	{
 		ctl = new HttpController;
 	}
-/*
-	else if (strcasecmp(argv[1], "redis") == 0 ||
-			 strcasecmp(argv[1], "mysql") == 0)
-	{
-		ctl = new DBController;
-	}
-	else if (strcasecmp(argv[1], "kafka") == 0)
-	{
-		ctl = new KafkaController;
-	}
-*/
 	else if (strcasecmp(argv[1], "rpc") == 0)
 	{
 		ctl = new RPCController;
@@ -72,12 +61,13 @@ int main(int argc, const char *argv[])
 	if (ctl->parse_args(argc, argv) == true)
 	{
 		if (ctl->dependencies_and_dir() == true)
-			ctl->copy_template();
+		{
+			if (ctl->copy_files() == true)
+				ctl->print_success_info();
+		}
 	}
 	else
-	{
 		ctl->print_usage(argv[0]);
-	}
 
 	delete ctl;
 	return 0;

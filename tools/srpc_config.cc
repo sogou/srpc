@@ -25,7 +25,7 @@
 
 #include "srpc_config.h"
 
-static constexpr const char *TEMPLATE_PATH_DEFAULT = "./template";
+static constexpr const char *TEMPLATE_PATH_DEFAULT = "./template/";
 
 std::vector<std::string> RPC_PROTOC_SKIP_FILES =
 { "config_simple.h", "config_simple.cc",
@@ -102,41 +102,6 @@ srpc_config::srpc_config()
 	specified_idl_file = NULL;
 	specified_idl_path = NULL;
 	template_path = TEMPLATE_PATH_DEFAULT;
-}
-
-
-bool srpc_config::is_rpc_skip_file(const char *file_name) const
-{
-	size_t name_len = strlen(file_name);
-
-	if (this->specified_idl_file == NULL)
-	{
-		std::vector<std::string>& v = RPC_PROTOC_SKIP_FILES;
-		if (this->idl_type == IDL_TYPE_THRIFT)
-			v = RPC_THRIFT_SKIP_FILES;
-
-		for (size_t i = 0; i < v.size(); i++)
-		{
-			if (strncmp(file_name, v[i].data(), name_len) == 0)
-				return true;
-		}
-	}
-	else
-	{
-		for (auto &f : RPC_PROTOC_SKIP_FILES)
-		{
-			if (strncmp(file_name, f.data(), name_len) == 0)
-				return true;
-		}
-
-		for (auto &f : RPC_THRIFT_SKIP_FILES)
-		{
-			if (strncmp(file_name, f.data(), name_len) == 0)
-				return true;
-		}
-	}
-
-	return false;
 }
 
 bool srpc_config::prepare_specified_idl_file()

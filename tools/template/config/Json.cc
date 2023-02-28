@@ -1,5 +1,4 @@
 #include "Json.h"
-#include "workflow/json_parser.h"
 
 namespace wfrest
 {

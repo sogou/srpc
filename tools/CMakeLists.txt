@@ -19,7 +19,8 @@ set(generator_code
 set(srpc_ctl_code
 	"srpc_ctl.cc"
 	"srpc_config.cc"
-	"srpc_controller.cc")
+	"srpc_controller.cc"
+	"srpc_rpc_controller.cc")
 
 include_directories("../src/")
 add_executable(srpc-ctl ${srpc_ctl_code} ${generator_code})

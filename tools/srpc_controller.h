@@ -24,36 +24,50 @@ class CommandController
 public:
 	bool parse_args(int argc, const char **argv);
 	bool dependencies_and_dir();
-	bool copy_template();
-	
+	virtual bool copy_files();
+	virtual void print_success_info();
 	virtual void print_usage(const char *name) const = 0;
-	virtual bool get_opt(int argc, const char **argv);
-	virtual bool check_args();
-	virtual bool copy_files() { return true; }
 
-	bool copy_path_files(const char *path);
-	virtual bool generate_from_template(const char *file_name, char *format, size_t size) = 0;
+protected:
+	virtual bool check_args();
+
+private:
+	virtual bool get_opt(int argc, const char **argv) = 0;
 
 public:
 	CommandController() { }
 	virtual ~CommandController() { }
 
 protected:
-	bool get_path(const char *file, char *path, int depth);
+	using transform_function_t = bool (*)(const std::string&, FILE *,
+										  const struct srpc_config *);
+	struct file_info
+	{
+		std::string in_file;
+		std::string out_file;
+		transform_function_t transform;
+	};
+
+	std::vector<struct file_info> default_files;
+	struct srpc_config config;
 
 protected:
-	struct srpc_config config;
+	bool get_path(const char *file, char *path, int depth);
+	bool copy_single_file(const std::string& in_file,
+						  const std::string& out_file,
+						  transform_function_t transform);
 };
 
 class HttpController : public CommandController
 {
 public:
 	void print_usage(const char *name) const override;
-	bool copy_files() override;
-	bool generate_from_template(const char *file_name, char *format, size_t size) override;
+
+private:
+	bool get_opt(int argc, const char **argv) override;
 
 public:
-	HttpController() { this->config.type = COMMAND_HTTP; };
+	HttpController();
 	~HttpController() { };
 };
 
@@ -61,47 +75,18 @@ class RPCController : public CommandController
 {
 public:
 	void print_usage(const char *name) const override;
-	bool get_opt(int argc, const char **argv) override;
-	bool check_args() override;
 	bool copy_files() override;
-	bool generate_from_template(const char *file_name, char *format, size_t size) override;
+
+protected:
+	bool check_args() override;
+
+private:
+	bool get_opt(int argc, const char **argv) override;
 
 public:
-	RPCController() { this->config.type = COMMAND_RPC; };
+	RPCController();
 	~RPCController() { };
 };
-
-/*
-class DBController : public CommandController
-{
-public:
-	int parse(int argc, const char *argv[]);
-
-public:
-	DBController() { };
-	~DBController() { };
-};
-
-class KafkaController : public CommandController
-{
-public:
-	int parse(int argc, const char *argv[]);
-
-public:
-	KafkaController() { };
-	~KafkaController() { };
-};
-
-class ExtraController : public CommandController
-{
-public:
-	int parse(int argc, const char *argv[]);
-
-public:
-	ExtraController() { };
-	~ExtraController() { };
-};
-*/
 
 #endif
 

@@ -58,7 +58,6 @@ struct srpc_config
 	void set_idl_type(const char *optarg);
 	void set_data_type(const char *optarg);
 	void set_compress_type(const char *optarg);
-	bool is_rpc_skip_file(const char *file_name) const;
 };
 
 class ControlGenerator : public Generator
