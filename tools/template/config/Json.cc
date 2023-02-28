@@ -216,11 +216,17 @@ Json Json::parse(FILE* fp)
     char* buffer = (char*)malloc(length + 1);
     buffer[length] = '\0';
     size_t ret = fread(buffer, 1, length, fp);
+    Json js;
     if (ret != length)
     {
-        return Json(Empty());
+        js = Json(Empty());
     }
-    return Json(buffer, true);
+    else
+    {
+        js = Json(buffer, true);
+    }
+    free(buffer);
+    return js;
 }
 
 std::string Json::dump() const

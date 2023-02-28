@@ -23,22 +23,22 @@ static unsigned int default_select_route(const char *path, const char *query,
 }
 
 static void set_endpoint_params(const wfrest::Json& data,
-                                struct EndpointParams& params)
+                                struct EndpointParams *params)
 {
-    params = ENDPOINT_PARAMS_DEFAULT;
+    *params = ENDPOINT_PARAMS_DEFAULT;
 
     for (const auto& it : data)
     {
         if (it.key() == "max_connections")
-            params.max_connections = data["max_connections"];
+            params->max_connections = data["max_connections"];
         else if (it.key() == "connect_timeout")
-            params.connect_timeout = data["connect_timeout"];
+            params->connect_timeout = data["connect_timeout"];
         else if (it.key() == "response_timeout")
-            params.response_timeout = data["response_timeout"];
+            params->response_timeout = data["response_timeout"];
         else if (it.key() == "ssl_connect_timeout")
-            params.ssl_connect_timeout = data["ssl_connect_timeout"];
+            params->ssl_connect_timeout = data["ssl_connect_timeout"];
         else if (it.key() == "use_tls_sni")
-            params.use_tls_sni = data["use_tls_sni"];
+            params->use_tls_sni = data["use_tls_sni"];
         else
         {
             printf("[INFO][set_endpoint_params] Unknown key : %s\n",
@@ -58,12 +58,12 @@ static void load_global(const wfrest::Json& data)
         if (it.key() == "endpoint_params")
         {
             set_endpoint_params(data["endpoint_params"],
-                                settings.endpoint_params);
+                                &settings.endpoint_params);
         }
         else if (it.key() == "dns_server_params")
         {
             set_endpoint_params(data["dns_server_params"],
-                                settings.dns_server_params);
+                                &settings.dns_server_params);
         }
         else if (it.key() == "dns_ttl_default")
             settings.dns_ttl_default = data["dns_ttl_default"];
@@ -117,7 +117,7 @@ static bool load_upstream_server(const wfrest::Json& data,
             for (const auto& p : server["params"])
             {
                 if (p.key() == "endpoint_params")
-                    set_endpoint_params(p.value(), param.endpoint_params);
+                    set_endpoint_params(p.value(), &param.endpoint_params);
                 else if (p.key() == "weight")
                     param.weight = p.value().get<unsigned short>();
                 else if (p.key() == "max_fails")

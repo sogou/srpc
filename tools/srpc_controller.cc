@@ -145,20 +145,27 @@ bool CommandController::check_args()
 bool CommandController::dependencies_and_dir()
 {
 	struct srpc_config *config = &this->config;
-	
-	if (opendir(config->output_path) != NULL)
+	DIR *dir;
+
+	dir = opendir(config->output_path);
+	if (dir != NULL)
 	{
 		printf("Error:\n      project path \" %s \" EXISTS.\n\n",
 				config->output_path);
+		closedir(dir);
+
 		return false;
 	}
 
-	if (opendir(config->template_path) == NULL)
+	dir = opendir(config->template_path);
+	if (dir == NULL)
 	{
 		printf("Error:\n      template path \" %s \" does NOT exist.\n",
 				config->template_path);
+
 		return false;
 	}
+	closedir(dir);
 
 	if (config->specified_depend_path == false)
 	{

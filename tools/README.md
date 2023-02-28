@@ -1,6 +1,6 @@
-# srpc_tools
+# srpc-ctl
 
-### A handy generator for Workflow and SRPC framework
+### An easy tool to generate Workflow and SRPC project
 
 #### 1. COMPILE
 

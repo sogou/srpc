@@ -26,9 +26,6 @@ static void usage(const char *name)
 		   "Available Commands:\n"
 		   "    \"http\"  - create project with both client and server\n"
 		   "    \"rpc\"   - create project with both client and server\n"
-		   "    \"redis\" - create redis client\n"
-		   "    \"mysql\" - create mysql client\n"
-		   "    \"kafka\" - create kafka client\n"
 		   "    \"proxy\" - create proxy for some client and server protocol\n"
 		   "    \"file\"  - create project with file service\n"
 		   , name);

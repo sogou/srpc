@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
-set(Protobuf_ERROR_MSG "ERROR: Failed to find protobuf. Here are some sugguestions for installation.")
+set(Protobuf_ERROR_MSG "ERROR: Failed to find protobuf. Some suggestions for installation.")
 set(Protobuf_ERROR_MSG_LINUX "${Protobuf_ERROR_MSG}
 For Debian / Ubuntu ...:
     sudo apt-get update

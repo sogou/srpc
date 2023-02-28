@@ -232,8 +232,11 @@ bool RPCController::copy_files()
 		struct GeneratorParams params;
 		params.out_dir = config->output_path;
 		params.input_dir = config->specified_idl_path;
+		if (params.input_dir[params.input_dir.length() - 1] != '/')
+			params.input_dir += "/";
 
 		params.idl_file = config->specified_idl_file;
+
 		auto pos = params.idl_file.find_last_of('/');
 		if (pos != std::string::npos)
 			params.idl_file = params.idl_file.substr(pos + 1);
@@ -248,7 +251,7 @@ bool RPCController::copy_files()
 		ControlGenerator gen(config);
 		printf("Info: srpc-ctl generator begin.\n");
 		gen.generate(params);
-		printf("Info: srpc-ctl generator done.\n");
+		printf("Info: srpc-ctl generator done.\n\n");
 	}
 
 	return CommandController::copy_files();
@@ -306,7 +309,6 @@ bool RPCController::get_opt(int argc, const char **argv)
 
 	return true;
 }
-
 
 bool RPCController::check_args()
 {
