@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <signal.h>
 #include "%s.srpc.h"
 #include "workflow/WFFacilities.h"
@@ -7,6 +8,21 @@
 using namespace srpc;
 
 static WFFacilities::WaitGroup wait_group(1);
+static srpc::RPCConfig config;
+
+void sig_handler(int signo)
+{
+    wait_group.done();
+}
+
+void init()
+{
+    if (config.load("./config.json") == false)
+    {
+        perror("Load config failed");
+        exit(1);
+    }
+}
 
 class %sServiceImpl : public %s::Service
 {
@@ -18,22 +34,10 @@ public:
     }
 };
 
-static void sig_handler(int signo)
-{
-    wait_group.done();
-}
-
 int main()
 {
-    // 1. initialize
-    srpc::RPCConfig config;
-    if (config.load("./config.json") == false)
-    {
-        perror("Load config failed");
-        exit(1);
-    }
-
-    signal(SIGINT, sig_handler);
+    // 1. load config
+    init();
 
     // 2. start server
     %sServer server;

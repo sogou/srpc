@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <signal.h>
-#include "workflow/WFServer.h"
 #include "workflow/WFHttpServer.h"
 #include "workflow/WFFacilities.h"
 

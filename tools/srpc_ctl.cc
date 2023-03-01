@@ -49,6 +49,10 @@ int main(int argc, const char *argv[])
 	{
 		ctl = new RPCController;
 	}
+	else if (strcasecmp(argv[1], "proxy") == 0)
+	{
+		ctl = new ProxyController;
+	}
 	else
 	{
 		usage(argv[0]);

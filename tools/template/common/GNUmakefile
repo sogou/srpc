@@ -1,7 +1,5 @@
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 BUILD_DIR := build.cmake
-SERVER_OUTPUT := server
-CLIENT_OUTPUT := client
 
 .PHONY: all clean
 

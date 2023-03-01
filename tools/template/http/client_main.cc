@@ -1,15 +1,30 @@
-#include <netdb.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <string>
 #include "workflow/HttpMessage.h"
 #include "workflow/HttpUtil.h"
 #include "workflow/WFTaskFactory.h"
 #include "workflow/WFFacilities.h"
 
 #include "config/config.h"
+
+static WFFacilities::WaitGroup wait_group(1);
+static srpc::RPCConfig config;
+
+void sig_handler(int signo)
+{
+    wait_group.done();
+}
+
+void init()
+{
+    if (config.load("./config.json") == false)
+    {
+        perror("Load config failed");
+        exit(1);
+    }
+
+    signal(SIGINT, sig_handler);
+}
 
 void callback(WFHttpTask *task)
 {
@@ -60,25 +75,6 @@ void callback(WFHttpTask *task)
     fflush(stdout);
 
     fprintf(stderr, "\n");
-}
-
-static WFFacilities::WaitGroup wait_group(1);
-static srpc::RPCConfig config;
-
-void sig_handler(int signo)
-{
-    wait_group.done();
-}
-
-void init()
-{
-    if (config.load("./config.json") == false)
-    {
-        perror("Load config failed");
-        exit(1);
-    }
-
-    signal(SIGINT, sig_handler);
 }
 
 int main()

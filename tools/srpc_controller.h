@@ -68,7 +68,7 @@ private:
 
 public:
 	HttpController();
-	~HttpController() { };
+	~HttpController() { }
 };
 
 class RPCController : public CommandController
@@ -85,7 +85,24 @@ private:
 
 public:
 	RPCController();
-	~RPCController() { };
+	~RPCController() { }
+};
+
+class ProxyController : public CommandController
+{
+public:
+	void print_usage(const char *name) const override;
+	bool copy_files() override;
+
+protected:
+	bool check_args() override;
+
+private:
+	bool get_opt(int argc, const char **argv) override;
+
+public:
+	ProxyController();
+	~ProxyController() { }
 };
 
 #endif

@@ -5,16 +5,22 @@
 
 using namespace srpc;
 
-int main()
+static srpc::RPCConfig config;
+
+void init()
 {
-    // 1. initialize
-    srpc::RPCConfig config;
     if (config.load("./config.json") == false)
     {
         perror("Load config failed");
         exit(1);
     }
-    
+}
+
+int main()
+{
+    // 1. load config
+    init();
+
     // 2. start client
     RPCClientParams params = RPC_CLIENT_PARAMS_DEFAULT;
     params.host = config.client_host();

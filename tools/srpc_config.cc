@@ -248,6 +248,28 @@ void srpc_config::set_compress_type(const char *optarg)
 		this->compress_type = COMPRESS_TYPE_MAX;
 }
 
+const char *srpc_config::proxy_server_type_string() const
+{
+	if (strncasecmp(this->proxy_server_type, "http", 4) == 0)
+		return "Http";
+	else if (strncasecmp(this->proxy_server_type, "redis", 5) == 0)
+		return "Redis";
+	// TODO: else RPC types
+
+	return "Unknown type";
+}
+
+const char *srpc_config::proxy_client_type_string() const
+{
+	if (strncasecmp(this->proxy_client_type, "http", 4) == 0)
+		return "Http";
+	else if (strncasecmp(this->proxy_client_type, "redis", 5) == 0)
+		return "Redis";
+	// TODO: else RPC types
+
+	return "Unknown type";
+}
+
 ControlGenerator::ControlGenerator(const struct srpc_config *config) :
 	Generator(config->idl_type == IDL_TYPE_THRIFT ? true : false),
 	ctl_printer(config->idl_type == IDL_TYPE_THRIFT ? true : false),

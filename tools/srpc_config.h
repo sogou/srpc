@@ -44,6 +44,8 @@ struct srpc_config
 	const char *template_path;
 	char depend_path[MAXPATHLEN];
 	char output_path[MAXPATHLEN];
+	const char *proxy_server_type;
+	const char *proxy_client_type;
 
 	srpc_config();
 
@@ -58,6 +60,9 @@ struct srpc_config
 	void set_idl_type(const char *optarg);
 	void set_data_type(const char *optarg);
 	void set_compress_type(const char *optarg);
+
+	const char *proxy_server_type_string() const;
+	const char *proxy_client_type_string() const;
 };
 
 class ControlGenerator : public Generator
@@ -105,6 +110,7 @@ enum
 	COMMAND_MYSQL,
 	COMMAND_KAFKA,
 	COMMAND_RPC,
+	COMMAND_PROXY,
 	COMMAND_FILE,
 	COMMAND_EXTRA
 };

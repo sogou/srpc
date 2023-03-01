@@ -1,0 +1,14 @@
+{
+  "server":
+  {
+    "port": %s
+  },
+
+  "client":
+  {
+    "remote_host": "127.0.0.1",
+    "remote_port": %s,
+    "retry_max": 2
+  }
+}
+
