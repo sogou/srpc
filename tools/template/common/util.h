@@ -5,7 +5,8 @@
 #include <arpa/inet.h>
 #include "workflow/WFTaskFactory.h"
 
-void print_peer_address(%s *server_task)
+template <class TASK>
+void print_peer_address(TASK *server_task)
 {
     char addrstr[128];
     struct sockaddr_storage addr;

@@ -26,19 +26,32 @@
 
 #include "srpc_controller.h"
 
-static std::unordered_map<std::string, unsigned short> default_server_port = {
-	{"Http",  8080},
-	{"Redis", 6379},
-	{"Mysql", 3306},
-	{"SRPC",  1412},
+enum
+{
+	BASIC_TYPE = 1,
+	PROTOCOL_TYPE = 2,
+	THRIFT_TYPE = 3
 };
 
-static std::unordered_map<std::string, unsigned short> default_proxy_port = {
-	{"Http",  8888},
-	{"Redis", 6378},
-	{"Mysql", 3305},
-	{"SRPC",  1411},
-};
+static std::string default_server_port(const std::string& type)
+{
+	if (type.compare("Http") == 0)
+		return "8080";
+	if (type.compare("Redis") == 0)
+		return "6379";
+	// Add other protocol here
+	return "1412";
+}
+
+static std::string default_proxy_port(const std::string& type)
+{
+	if (type.compare("Http") == 0)
+		return "8888";
+	if (type.compare("Redis") == 0)
+		return "6378";
+	// Add other protocol here
+	return "1411";
+}
 
 static std::string client_redirect_codes(const std::string& type)
 {
@@ -100,8 +113,9 @@ static std::string server_process_codes(const std::string& type)
 {
 	if (type.compare("Http") == 0)
 		return std::string(R"(
-        printf("http server get request_uri: %s\n",
+        fprintf(stderr, "http server get request_uri: %s\n",
                task->get_req()->get_request_uri());
+        print_peer_address<WFHttpTask>(task);
 
         task->get_resp()->append_output_body("<html>Hello from server!</html>");
 )");
@@ -114,10 +128,10 @@ static std::string server_process_codes(const std::string& type)
         std::string cmd;
 
         if (req->parse_success() == false || req->get_command(cmd) == false)
-            return false;
+            return;
 
         fprintf(stderr, "redis server get cmd: [%s] from ", cmd.c_str());
-        print_peer_address(task);
+        print_peer_address<WFRedisTask>(task);
 
         val.set_status("OK"); // example: return OK to every requests
         resp->set_result(val);
@@ -125,10 +139,31 @@ static std::string server_process_codes(const std::string& type)
 
 	return std::string("Unknown type");
 }
-
-static std::string proxy_callback_response_codes(const std::string& type)
+static std::string proxy_process_request_codes(const std::string& server_type,
+											   const std::string& client_type)
 {
-	if (type.compare("Http") == 0)
+	if (server_type.compare(client_type) == 0)
+		return std::string(R"(
+    *client_task->get_req() = std::move(*req);
+)");
+	else
+		return std::string(R"(    {
+        // TODO: fill the client request to server request
+    }
+)");
+}
+
+static std::string proxy_callback_response_codes(const std::string& server_type,
+												 const std::string& client_type)
+{
+	if (server_type.compare(client_type) != 0)
+		return std::string(R"(
+    {
+        // fill the server response to client response
+    }
+)");
+
+	if (server_type.compare("Http") == 0)
 		return std::string(R"(
     {
         const void *body;
@@ -155,10 +190,9 @@ static std::string proxy_redirect_codes(const std::string& type)
 {
 	if (type.compare("Http") == 0)
 		return std::string(R"(
-                                                              config.redirect_max(),
-)");
+                                                              config.redirect_max(),)");
 
-	return std::string("\n");
+	return std::string("");
 }
 
 static bool is_workflow_protocol(const char *type)
@@ -170,53 +204,31 @@ static bool is_workflow_protocol(const char *type)
 	return false;
 }
 
-static bool proxy_cmake_transform(const std::string& format, FILE *out,
-								  const struct srpc_config *config)
-{
-	std::string path = config->depend_path;
-	path += "workflow";
-
-	size_t len = fprintf(out, format.c_str(), config->project_name, path.c_str());
-
-	return len > 0;
-}
-
-static bool proxy_util_transform(const std::string& format, FILE *out,
-								  const struct srpc_config *config)
-{
-	// TODO: RPC types
-	std::string task_type = "WF";
-	task_type += config->proxy_server_type_string();
-	task_type += "Task";
-
-	size_t len = fprintf(out, format.c_str(), task_type.c_str());
-
-	return len > 0;
-}
-
 static bool proxy_proxy_transform(const std::string& format, FILE *out,
 								  const struct srpc_config *config)
 {
 	std::string server_type = config->proxy_server_type_string();
 	std::string client_type = config->proxy_client_type_string();
-	std::string client_lower = client_type;
-	std::transform(client_lower.begin(), client_lower.end(),
-				   client_lower.begin(), ::tolower);
-	std::string server_port = std::to_string(default_server_port[server_type]);
-	std::string proxy_port = std::to_string(default_proxy_port[client_type]);
+	std::string server_lower = server_type;
+	std::transform(server_lower.begin(), server_lower.end(),
+				   server_lower.begin(), ::tolower);
+	std::string server_port = default_server_port(server_type);
+	std::string proxy_port = default_proxy_port(client_type);
 
-	size_t len = fprintf(out, format.c_str(), server_type.c_str(),
+	size_t len = fprintf(out, format.c_str(), client_type.c_str(),
 						 server_type.c_str(), server_type.c_str(),
 						 client_type.c_str(), client_type.c_str(),
-						 proxy_callback_response_codes(server_type).c_str(),
+						 proxy_callback_response_codes(server_type, client_type).c_str(),
 						 // process
 						 client_type.c_str(), client_type.c_str(),
-						 client_lower.c_str(),
-						 client_type.c_str(), client_lower.c_str(),
-						 proxy_redirect_codes(client_type).c_str(),
+						 server_lower.c_str(),
+						 server_type.c_str(), server_lower.c_str(),
+						 proxy_redirect_codes(server_type).c_str(),
+						 proxy_process_request_codes(server_type, client_type).c_str(),
 						 client_type.c_str(),
 						 // main
-						 client_type.c_str(), client_type.c_str());
+						 client_type.c_str(), server_type.c_str(),
+						 client_type.c_str());
 
 	return len > 0;
 }
@@ -228,7 +240,7 @@ static bool proxy_client_transform(const std::string& format, FILE *out,
 	std::string client_lower = client_type;
 	std::transform(client_lower.begin(), client_lower.end(),
 				   client_lower.begin(), ::tolower);
-	std::string proxy_port = std::to_string(default_proxy_port[client_type]);
+	std::string proxy_port = default_proxy_port(client_type);
 
 	size_t len = fprintf(out, format.c_str(),
 						 client_type.c_str(), client_lower.c_str(),
@@ -246,7 +258,7 @@ static bool proxy_server_transform(const std::string& format, FILE *out,
 								   const struct srpc_config *config)
 {
 	std::string server_type = config->proxy_server_type_string();
-	std::string server_port = std::to_string(default_server_port[server_type]);
+	std::string server_port = default_server_port(server_type);
 
 	size_t len = fprintf(out, format.c_str(),
 						 server_type.c_str(), server_port.c_str(),
@@ -260,11 +272,8 @@ static bool proxy_server_transform(const std::string& format, FILE *out,
 static bool proxy_config_transform(const std::string& format, FILE *out,
 								   const struct srpc_config *config)
 {
-	std::string server_port = config->proxy_server_type_string();
-	server_port = std::to_string(default_server_port[server_port]);
-
-	std::string proxy_port = config->proxy_client_type_string();
-	proxy_port = std::to_string(default_proxy_port[proxy_port]);
+	std::string server_port = default_server_port(config->proxy_server_type_string());
+	std::string proxy_port = default_proxy_port(config->proxy_client_type_string());
 
 	size_t len = fprintf(out, format.c_str(),
 						 proxy_port.c_str(), server_port.c_str());
@@ -272,18 +281,32 @@ static bool proxy_config_transform(const std::string& format, FILE *out,
 	return len > 0;
 }
 
+static bool proxy_rpc_proxy_transform(const std::string& format, FILE *out,
+									  const struct srpc_config *config)
+{
+	std::string server_type = config->proxy_server_type_string();
+	std::string client_type = config->proxy_client_type_string();
+
+	size_t len = fprintf(out, format.c_str(),
+						 config->project_name, // not support specified idl file
+						 config->project_name, config->project_name,
+						 config->project_name, server_type.c_str(),
+						 // main
+						 client_type.c_str(), config->project_name,
+						 client_type.c_str(), server_type.c_str());
+
+	return len > 0;
+}
+
 ProxyController::ProxyController()
 {
 	this->config.type = COMMAND_PROXY;
+	this->config.proxy_client_type = "Http";
+	this->config.proxy_server_type = "Http";
+
 	struct file_info info;
 
-	info = { "common/util.h", "util.h", proxy_util_transform };
-	this->default_files.push_back(info);
-
-	info = { "proxy/CMakeLists.txt", "CMakeLists.txt", proxy_cmake_transform };
-	this->default_files.push_back(info);
-
-	info = { "proxy/config.json", "config.json", proxy_config_transform };
+	info = { "proxy/proxy.conf", "proxy.conf", proxy_config_transform };
 	this->default_files.push_back(info);
 
 	info = { "common/GNUmakefile", "GNUmakefile", nullptr };
@@ -293,12 +316,6 @@ ProxyController::ProxyController()
 	this->default_files.push_back(info);
 
 	info = { "config/Json.cc", "config/Json.cc", nullptr };
-	this->default_files.push_back(info);
-
-	info = { "config/config_simple.h", "config/config.h", nullptr };
-	this->default_files.push_back(info);
-
-	info = { "config/config_simple.cc", "config/config.cc", nullptr };
 	this->default_files.push_back(info);
 }
 
@@ -316,13 +333,28 @@ void ProxyController::print_usage(const char *name) const
 		   , name);
 }
 
+void ProxyController::print_success_info() const
+{
+	printf("Success:\n      make project path \" %s \" done.\n\n",
+			this->config.output_path);
+	printf("Commands:\n      cd %s\n      make -j\n\n",
+			this->config.output_path);
+	printf("Execute:\n      ./server\n      ./proxy\n      ./client\n\n");
+}
+
 bool ProxyController::copy_files()
 {
 	struct file_info info;
 
-	if (is_workflow_protocol(config.proxy_client_type) &&
-		is_workflow_protocol(config.proxy_server_type))
+	if (is_workflow_protocol(this->config.proxy_client_type) &&
+		is_workflow_protocol(this->config.proxy_server_type))
 	{
+		info = { "common/CMakeLists.txt", "CMakeLists.txt", common_cmake_transform };
+		this->default_files.push_back(info);
+
+		info = { "common/util.h", "util.h", nullptr };
+		this->default_files.push_back(info);
+
 		info = { "proxy/proxy_main.cc", "proxy_main.cc", proxy_proxy_transform };
 		this->default_files.push_back(info);
 
@@ -331,10 +363,37 @@ bool ProxyController::copy_files()
 
 		info = { "proxy/server_main.cc", "server_main.cc", proxy_server_transform };
 		this->default_files.push_back(info);
+
+		info = { "config/config_simple.h", "config/config.h", nullptr };
+		this->default_files.push_back(info);
+
+		info = { "config/config_simple.cc", "config/config.cc", nullptr };
+		this->default_files.push_back(info);
 	}
 	else
 	{
-		//TODO: is rpc
+		std::string proxy_main = "proxy/proxy_main_";
+		if (this->config.idl_type == IDL_TYPE_PROTOBUF)
+			proxy_main += "proto.cc";
+		else
+			proxy_main += "thrift.cc";
+
+		info = { std::move(proxy_main), "proxy_main.cc", proxy_rpc_proxy_transform };
+		this->default_files.push_back(info);
+
+		info = { "rpc/CMakeLists.txt", "CMakeLists.txt", rpc_cmake_transform };
+		this->default_files.push_back(info);
+
+		info = { "config/config_full.h", "config/config.h", nullptr };
+		this->default_files.push_back(info);
+
+		info = { "config/config_full.cc", "config/config.cc", nullptr };
+		this->default_files.push_back(info);
+
+		if (this->config.specified_idl_file == NULL)
+			this->fill_rpc_default_files();
+		else
+			return false;// TODO: NOT supported yet
 	}
 
 	return CommandController::copy_files();
@@ -346,8 +405,7 @@ bool ProxyController::get_opt(int argc, const char **argv)
 	char c;
 	optind = 3;
 
-	while ((c = getopt(argc, (char * const *)argv,
-					   "o:c:s:d:")) != -1)
+	while ((c = getopt(argc, (char * const *)argv, "o:c:s:d:")) != -1)
 	{
 		switch (c)
 		{
@@ -375,52 +433,67 @@ bool ProxyController::get_opt(int argc, const char **argv)
 	return true;
 }
 
-static bool check_proxy_type(const char *type)
+static int check_proxy_type(const char *type)
 {
-	if (strncasecmp(type, "Http",       strlen("Http")      ) != 0 &&
-		strncasecmp(type, "Redis",      strlen("Redis")     ) != 0 &&
-		strncasecmp(type, "SRPC",       strlen("SRPC")      ) != 0 &&
-		strncasecmp(type, "SRPCHttp",   strlen("SRPCHttp")  ) != 0 &&
-		strncasecmp(type, "BRPC",       strlen("BRPC")      ) != 0 &&
-		strncasecmp(type, "Thrift",     strlen("Thrift")    ) != 0 &&
-		strncasecmp(type, "ThriftHttp", strlen("ThriftHttp")) != 0 &&
-		strncasecmp(type, "TRPC",       strlen("TRPC")      ) != 0 &&
-		strncasecmp(type, "TRPCHttp",   strlen("TRPCHttp")  ) != 0)
-	return false;
+	if (strncasecmp(type, "Http",  strlen("Http") ) == 0 ||
+		strncasecmp(type, "Redis", strlen("Redis")) == 0)
+		return BASIC_TYPE;
 
-	return true;
+	if (strncasecmp(type, "SRPC",     strlen("SRPC")    ) == 0 ||
+		strncasecmp(type, "SRPCHttp", strlen("SRPCHttp")) == 0 ||
+		strncasecmp(type, "BRPC",     strlen("BRPC")    ) == 0 ||
+		strncasecmp(type, "TRPC",     strlen("TRPC")    ) == 0 ||
+		strncasecmp(type, "TRPCHttp", strlen("TRPCHttp")) == 0)
+		return PROTOCOL_TYPE;
+
+	if (strncasecmp(type, "Thrift",     strlen("Thrift")    ) == 0 ||
+		strncasecmp(type, "ThriftHttp", strlen("ThriftHttp")) == 0)
+		return THRIFT_TYPE;
+
+	return -1;
 }
 
 bool ProxyController::check_args()
 {
+	int server_type = check_proxy_type(this->config.proxy_server_type);
+	int client_type = check_proxy_type(this->config.proxy_client_type);
+
 	if (CommandController::check_args() == false)
 		return false;
 
-	if (check_proxy_type(config.proxy_client_type) == false)
+	if (client_type < 0 || server_type < 0)
 	{
-		printf("Error:\n     Invalid client type :%s\n\n",
-			   config.proxy_client_type);
-		return false;
-	}
-
-	if (check_proxy_type(config.proxy_server_type) == false)
-	{
-		printf("Error:\n     Invalid server type :%s\n\n",
-			   config.proxy_server_type);
+		printf("Error:\n     Invalid type : %s, %s\n\n",
+			   this->config.proxy_server_type, this->config.proxy_client_type);
 		return false;
 	}
 
 	// TODO: temperarily only support workflow to workflow, rpc to rpc
-	const char *server_type = config.proxy_server_type;
-	const char *client_type = config.proxy_client_type;
-
-	if ((is_workflow_protocol(server_type) == true &&
-		is_workflow_protocol(client_type) == false) ||
-		(is_workflow_protocol(client_type) == true &&
-		is_workflow_protocol(server_type) == false))
+	if ((client_type == 1 && server_type > 1) ||
+		(server_type == 1 && client_type > 1))
 	{
 		printf("Error:\n     Temperarily not support %s and %s together\n\n",
-			   server_type, client_type);
+			   this->config.proxy_server_type, this->config.proxy_client_type);
+		return false;
+	}
+
+	// TODO: temperarily NOT support protobuf with thrift
+	if ((client_type == 2 && server_type == 3) ||
+		(server_type == 2 && client_type == 3))
+	{
+		printf("Error:\n     Temperarily not support %s and %s together\n\n",
+			   this->config.proxy_server_type, this->config.proxy_client_type);
+		return false;
+	}
+
+	if (client_type == 2)
+	{
+		this->config.idl_type = IDL_TYPE_PROTOBUF;
+	}
+	else if (client_type == 3)
+	{
+		// this->config.idl_type = IDL_TYPE_THRIFT;
+		printf("Error:\n     Temperarily not support IDL thrift.\n\n");
 		return false;
 	}
 

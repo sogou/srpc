@@ -102,6 +102,8 @@ srpc_config::srpc_config()
 	specified_idl_file = NULL;
 	specified_idl_path = NULL;
 	template_path = TEMPLATE_PATH_DEFAULT;
+	proxy_client_type = NULL;
+	proxy_server_type = NULL;
 }
 
 bool srpc_config::prepare_specified_idl_file()
@@ -192,82 +194,91 @@ const char *srpc_config::rpc_data_string() const
 	}
 }
 
-void srpc_config::set_rpc_type(const char *optarg)
+void srpc_config::set_rpc_type(const char *type)
 {
-	if (strcasecmp(optarg, "SRPC") == 0)
-		this->rpc_type = RPC_TYPE_SRPC;
-	else if (strcasecmp(optarg, "SRPCHttp") == 0)
+	if (strcasecmp(type, "SRPCHttp") == 0)
 		this->rpc_type = RPC_TYPE_SRPC_HTTP;
-	else if (strcasecmp(optarg, "BRPC") == 0)
+	else if (strcasecmp(type, "SRPC") == 0)
+		this->rpc_type = RPC_TYPE_SRPC;
+	else if (strcasecmp(type, "BRPC") == 0)
 		this->rpc_type = RPC_TYPE_BRPC;
-	else if (strcasecmp(optarg, "Thrift") == 0)
-		this->rpc_type = RPC_TYPE_THRIFT;
-	else if (strcasecmp(optarg, "ThriftHttp") == 0)
+	else if (strcasecmp(type, "ThriftHttp") == 0)
 		this->rpc_type = RPC_TYPE_THRIFT_HTTP;
-	else if (strcasecmp(optarg, "TRPC") == 0)
-		this->rpc_type = RPC_TYPE_TRPC;
-	else if (strcasecmp(optarg, "TRPC") == 0)
+	else if (strcasecmp(type, "Thrift") == 0)
+		this->rpc_type = RPC_TYPE_THRIFT;
+	else if (strcasecmp(type, "TRPCHttp") == 0)
 		this->rpc_type = RPC_TYPE_TRPC_HTTP;
+	else if (strcasecmp(type, "TRPC") == 0)
+		this->rpc_type = RPC_TYPE_TRPC;
 	else
 		this->rpc_type = RPC_TYPE_MAX;
 }
 
-void srpc_config::set_idl_type(const char *optarg)
+void srpc_config::set_idl_type(const char *type)
 {
-	if (strcasecmp(optarg, "protobuf") == 0)
+	if (strcasecmp(type, "protobuf") == 0)
 		this->idl_type = IDL_TYPE_PROTOBUF;
-	else if (strcasecmp(optarg, "thrift") == 0)
+	else if (strcasecmp(type, "thrift") == 0)
 		this->idl_type = IDL_TYPE_THRIFT;
 	else
 		this->idl_type = IDL_TYPE_MAX;
 }
 
-void srpc_config::set_data_type(const char *optarg)
+void srpc_config::set_data_type(const char *type)
 {
-	if (strcasecmp(optarg, "protobuf") == 0)
+	if (strcasecmp(type, "protobuf") == 0)
 		this->data_type = DATA_TYPE_PROTOBUF;
-	else if (strcasecmp(optarg, "thrift") == 0)
+	else if (strcasecmp(type, "thrift") == 0)
 		this->data_type = DATA_TYPE_THRIFT;
-	else if (strcasecmp(optarg, "json") == 0)
+	else if (strcasecmp(type, "json") == 0)
 		this->data_type = DATA_TYPE_JSON;
 	else
 		this->data_type = DATA_TYPE_MAX;
 }
 
-void srpc_config::set_compress_type(const char *optarg)
+void srpc_config::set_compress_type(const char *type)
 {
-	if (strcasecmp(optarg, "snappy") == 0)
+	if (strcasecmp(type, "snappy") == 0)
 		this->compress_type = COMPRESS_TYPE_SNAPPY;
-	else if (strcasecmp(optarg, "gzip") == 0)
+	else if (strcasecmp(type, "gzip") == 0)
 		this->compress_type = COMPRESS_TYPE_GZIP;
-	else if (strcasecmp(optarg, "zlib") == 0)
+	else if (strcasecmp(type, "zlib") == 0)
 		this->compress_type = COMPRESS_TYPE_ZLIB;
-	else if (strcasecmp(optarg, "lz4") == 0)
+	else if (strcasecmp(type, "lz4") == 0)
 		this->compress_type = COMPRESS_TYPE_LZ4;
 	else
 		this->compress_type = COMPRESS_TYPE_MAX;
 }
 
-const char *srpc_config::proxy_server_type_string() const
+static const char *proxy_type_string(const char *type)
 {
-	if (strncasecmp(this->proxy_server_type, "http", 4) == 0)
+	if (strcasecmp(type, "http") == 0)
 		return "Http";
-	else if (strncasecmp(this->proxy_server_type, "redis", 5) == 0)
+	else if (strcasecmp(type, "redis") == 0)
 		return "Redis";
-	// TODO: else RPC types
+	else if (strcasecmp(type, "SRPCHttp") == 0)
+		return "SRPCHttp";
+	else if (strcasecmp(type, "SRPC") == 0)
+		return "SRPC";
+	else if (strcasecmp(type, "BRPC") == 0)
+		return "BRPC";
+	else if (strcasecmp(type, "TRPCHttp") == 0)
+		return "TRPCHttp";
+	else if (strcasecmp(type, "TRPC") == 0)
+		return "TRPC";
+	// TODO: else THRIFT and THRIFTHttp
 
 	return "Unknown type";
 }
 
+const char *srpc_config::proxy_server_type_string() const
+{
+	return proxy_type_string(this->proxy_server_type);
+}
+
 const char *srpc_config::proxy_client_type_string() const
 {
-	if (strncasecmp(this->proxy_client_type, "http", 4) == 0)
-		return "Http";
-	else if (strncasecmp(this->proxy_client_type, "redis", 5) == 0)
-		return "Redis";
-	// TODO: else RPC types
-
-	return "Unknown type";
+	return proxy_type_string(this->proxy_client_type);
 }
 
 ControlGenerator::ControlGenerator(const struct srpc_config *config) :

@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -10,14 +11,24 @@
 
 #include "srpc_controller.h"
 
-static constexpr const char *DEPENDENCIES_ERROR = 
-"Warning: Default dependencies path : %s does not have \
-Workflow or other third_party dependencies. \
-This may cause link error in project : %s . \n\n\
-Please check or specify srpc path with '-d' .\n\n\
-Or use the following command to pull srpc:\n\
-    \"git clone --recursive https://github.com/sogou/srpc.git\"\n\
-    \"cd srpc && make\"\n\n";
+static constexpr const char *DEPENDENCIES_ERROR = R"(Warning:
+Default dependencies path : %s does not have
+Workflow or other third_party dependencies.
+This may cause link error in project : %s
+
+Please check or specify srpc path with '-d'
+
+Or use the following command to pull srpc:
+    "git clone --recursive https://github.com/sogou/srpc.git"
+    "cd srpc && make"
+)";
+
+static constexpr const char *CMAKE_PROTOC_CODES = R"(
+find_program(PROTOC "protoc")
+if(${PROTOC} STREQUAL "PROTOC-NOTFOUND")
+    message(FATAL_ERROR "Protobuf compiler is missing!")
+endif ()
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${IDL_FILE}))";
 
 static int mkdir_p(const char *name, mode_t mode)
 {
@@ -66,6 +77,26 @@ static int mkdir_p(const char *name, mode_t mode)
 	return ret;
 }
 
+const char *get_proxy_rpc_string(const char *type)
+{
+	if (strcasecmp(type, "SRPCHttp") == 0)
+		return "SRPCHttp";
+	if (strcasecmp(type, "SRPC") == 0)
+		return "SRPC";
+	if (strcasecmp(type, "BRPC") == 0)
+		return "BRPC";
+	if (strcasecmp(type, "ThriftHttp") == 0)
+		return "ThriftHttp";
+	if (strcasecmp(type, "Thrift") == 0)
+		return "Thrift";
+	if (strcasecmp(type, "TRPCHttp") == 0)
+		return "TRPCHttp";
+	if (strcasecmp(type, "TRPC") == 0)
+		return "TRPC";
+
+	return "Unknown type";
+}
+
 // path=/root/a/
 // file=b/c/d.txt
 // make the middle path and return the full file name
@@ -96,6 +127,93 @@ static std::string make_file_path(const char *path, const std::string& file)
 	file_name += file;
 
 	return file_name;
+}
+
+static std::string rpc_client_file_codes(const struct srpc_config *config)
+{
+	std::string ret;
+
+	if (config->compress_type != COMPRESS_TYPE_NONE)
+	{
+		ret += "\tparams.task_params.compress_type = ";
+		ret += config->rpc_compress_string();
+		ret += ";\n";
+	}
+
+	if (config->data_type != DATA_TYPE_DEFAULT)
+	{
+		ret += "\tparams.task_params.data_type = ";
+		ret += config->rpc_data_string();
+		ret += ";\n";
+	}
+
+	return ret;
+}
+
+static std::string rpc_server_file_codes(const struct srpc_config *config)
+{
+	std::string ret;
+
+	if (config->compress_type != COMPRESS_TYPE_NONE)
+	{
+		ret += "\t\tctx->set_compress_type(";
+		ret += config->rpc_compress_string();
+		ret += ");\n";
+	}
+
+	if (config->data_type != DATA_TYPE_DEFAULT)
+	{
+		ret += "\t\tctx->set_data_type(";
+		ret += config->rpc_data_string();
+		ret += ");\n";
+	}
+
+	ret += "\t\t";
+
+	return ret;
+}
+
+bool rpc_idl_transform(const std::string& format, FILE *out,
+					   const struct srpc_config *config)
+{
+	size_t len = fprintf(out, format.c_str(), config->service_name);
+
+	return len > 0;
+}
+
+bool rpc_client_transform(const std::string& format, FILE *out,
+						  const struct srpc_config *config)
+{
+	std::string prepare_params = rpc_client_file_codes(config);
+	const char *rpc_type;
+	if (config->type == COMMAND_PROXY)
+		rpc_type = get_proxy_rpc_string(config->proxy_client_type);
+	else
+		rpc_type = config->rpc_type_string();
+
+	size_t len = fprintf(out, format.c_str(),
+						 config->service_name, prepare_params.c_str(),
+						 config->service_name, rpc_type);
+	return len > 0;
+}
+
+bool rpc_server_transform(const std::string& format, FILE *out,
+						  const struct srpc_config *config)
+{
+	std::string prepare_ctx = rpc_server_file_codes(config);
+	const char *rpc_type;
+	if (config->type == COMMAND_PROXY)
+		rpc_type = get_proxy_rpc_string(config->proxy_server_type);
+	else
+		rpc_type = config->rpc_type_string();
+
+	size_t len = fprintf(out, format.c_str(),
+						 config->service_name, config->service_name,
+						 config->service_name, prepare_ctx.c_str(),
+						 config->rpc_type_string(), config->service_name,
+						 config->project_name, rpc_type);
+
+	return len > 0;
 }
 
 bool CommandController::parse_args(int argc, const char **argv)
@@ -321,7 +439,7 @@ bool CommandController::copy_files()
 	return ret;
 }
 
-void CommandController::print_success_info()
+void CommandController::print_success_info() const
 {
 	printf("Success:\n      make project path \" %s \" done.\n\n",
 			this->config.output_path);
@@ -330,13 +448,16 @@ void CommandController::print_success_info()
 	printf("Execute:\n      ./server\n      ./client\n\n");
 }
 
-static bool http_cmake_transform(const std::string& format, FILE *out,
-								 const struct srpc_config *config)
+bool common_cmake_transform(const std::string& format, FILE *out,
+							const struct srpc_config *config)
 {
 	std::string path = config->depend_path;
 	path += "workflow";
 
-	size_t len = fprintf(out, format.c_str(), config->project_name, path.c_str());
+	std::string is_proxy_str = config->type == COMMAND_PROXY ? " proxy" : "";
+
+	size_t len = fprintf(out, format.c_str(), config->project_name,
+						 path.c_str(), is_proxy_str.c_str());
 
 	return len > 0;
 }
@@ -349,7 +470,7 @@ HttpController::HttpController()
 	info = { "http/config.json", "config.json", nullptr };
 	this->default_files.push_back(info);
 
-	info = { "http/CMakeLists.txt", "CMakeLists.txt", http_cmake_transform };
+	info = { "common/CMakeLists.txt", "CMakeLists.txt", common_cmake_transform };
 	this->default_files.push_back(info);
 
 	info = { "http/client_main.cc", "client_main.cc", nullptr };
@@ -416,5 +537,84 @@ bool HttpController::get_opt(int argc, const char **argv)
 	}
 
 	return true;
+}
+
+void CommandController::fill_rpc_default_files()
+{
+		struct file_info info;
+		std::string idl_file_name, client_file_name, server_file_name;
+		std::string out_file_name = this->config.project_name;
+
+		if (this->config.idl_type == IDL_TYPE_PROTOBUF)
+		{
+			out_file_name += ".proto";
+			idl_file_name = "rpc/rpc.proto";
+			client_file_name = "rpc/client_protobuf.cc";
+			server_file_name = "rpc/server_protobuf.cc";
+		}
+		else
+		{
+			out_file_name += ".thrift";
+			idl_file_name = "rpc/rpc.thrift";
+			client_file_name = "rpc/client_thrift.cc";
+			server_file_name = "rpc/server_thrift.cc";
+		}
+
+		info = { idl_file_name , out_file_name, rpc_idl_transform };
+		this->default_files.push_back(info);
+
+		info = { client_file_name, "client_main.cc", rpc_client_transform };
+		this->default_files.push_back(info);
+
+		info = { server_file_name, "server_main.cc", rpc_server_transform };
+		this->default_files.push_back(info);
+
+		info = { "rpc/server.conf", "server.conf", nullptr };
+		this->default_files.push_back(info);
+
+		if (this->config.type == COMMAND_RPC)
+			info = { "rpc/client.conf", "client.conf", nullptr };
+		else
+			info = { "proxy/client_rpc.conf", "client.conf", nullptr };
+		this->default_files.push_back(info);
+}
+
+bool rpc_cmake_transform(const std::string& format, FILE *out,
+						 const struct srpc_config *config)
+{
+	std::string idl_file_name;
+
+	std::string srpc_path = config->depend_path;
+	std::string workflow_path = config->depend_path;
+	workflow_path += "workflow";
+
+	if (config->specified_idl_file != NULL)
+	{
+		idl_file_name = config->specified_idl_file;
+		size_t pos = idl_file_name.find_last_of('/');
+		if (pos != std::string::npos)
+			idl_file_name = idl_file_name.substr(pos + 1);
+	}
+	else if (config->idl_type == IDL_TYPE_PROTOBUF)
+	{
+		idl_file_name = config->project_name;
+		idl_file_name += ".proto";
+	}
+	else
+	{
+		idl_file_name = config->project_name;
+		idl_file_name += ".thrift";
+	}
+
+	std::string is_proxy_str = config->type == COMMAND_PROXY ? " proxy" : "";
+
+	size_t len = fprintf(out, format.c_str(), config->project_name,
+						 workflow_path.c_str(), srpc_path.c_str(),
+						 idl_file_name.c_str(),
+						 config->idl_type == IDL_TYPE_PROTOBUF ?
+						 CMAKE_PROTOC_CODES : "",
+						 is_proxy_str.c_str());
+
+	return len > 0;
 }
 

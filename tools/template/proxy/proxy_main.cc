@@ -17,7 +17,7 @@ void sig_handler(int signo)
 
 void init()
 {
-    if (config.load("./config.json") == false)
+    if (config.load("./proxy.conf") == false)
     {
         perror("Load config failed");
         exit(1);
@@ -35,9 +35,7 @@ void callback(WF%sTask *client_task)
     protocol::%sResponse *proxy_resp = (protocol::%sResponse *)series->get_context();
 
     // Copy the remote server's response, to proxy response.
-    if (state == WFT_STATE_SUCCESS)
-%s
-
+    if (state == WFT_STATE_SUCCESS)%s
     fprintf(stderr, "backend server state = %%d error = %%d. response client.\n",
             state, error);
 }
@@ -55,14 +53,13 @@ void process(WF%sTask *server_task)
                                                                 callback);
 
     // Copy user's request to the new task's request using std::move()
-    *client_task->get_req() = std::move(*req);
-
+%s
     SeriesWork *series = series_of(server_task);
     series->set_context(server_task->get_resp());
     series->push_back(client_task);
 
-    fprintf(stderr, "%s proxy get request from client: ");
-    print_peer_address(server_task);
+    fprintf(stderr, "proxy get request from client: ");
+    print_peer_address<WF%sTask>(server_task);
 }
 
 int main()
@@ -73,7 +70,7 @@ int main()
 
     if (proxy_server.start(config.server_port()) == 0)
     {
-        fprintf(stderr, "%s proxy server start, port %%u\n", config.server_port());
+        fprintf(stderr, "[%s]-[%s] proxy start, port %%u\n", config.server_port());
         wait_group.wait();
         proxy_server.stop();
     }

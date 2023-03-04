@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <signal.h>
-#include "%s.srpc.h"
+
 #include "workflow/WFFacilities.h"
 #include "srpc/rpc_types.h"
+
 #include "config/config.h"
+#include "%s.srpc.h"
 
 using namespace srpc;
 
@@ -17,7 +19,7 @@ void sig_handler(int signo)
 
 void init()
 {
-    if (config.load("./config.json") == false)
+    if (config.load("./server.conf") == false)
     {
         perror("Load config failed");
         exit(1);

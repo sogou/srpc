@@ -25,7 +25,7 @@ public:
 	bool parse_args(int argc, const char **argv);
 	bool dependencies_and_dir();
 	virtual bool copy_files();
-	virtual void print_success_info();
+	virtual void print_success_info() const;
 	virtual void print_usage(const char *name) const = 0;
 
 protected:
@@ -56,6 +56,7 @@ protected:
 	bool copy_single_file(const std::string& in_file,
 						  const std::string& out_file,
 						  transform_function_t transform);
+	void fill_rpc_default_files();
 };
 
 class HttpController : public CommandController
@@ -92,6 +93,7 @@ class ProxyController : public CommandController
 {
 public:
 	void print_usage(const char *name) const override;
+	void print_success_info() const override;
 	bool copy_files() override;
 
 protected:
@@ -104,6 +106,17 @@ public:
 	ProxyController();
 	~ProxyController() { }
 };
+
+bool common_cmake_transform(const std::string& format, FILE *out,
+							const struct srpc_config *config);
+bool rpc_idl_transform(const std::string& format, FILE *out,
+					   const struct srpc_config *config);
+bool rpc_client_transform(const std::string& format, FILE *out,
+						  const struct srpc_config *config);
+bool rpc_server_transform(const std::string& format, FILE *out,
+						  const struct srpc_config *config);
+bool rpc_cmake_transform(const std::string& format, FILE *out,
+						 const struct srpc_config *config);
 
 #endif
 

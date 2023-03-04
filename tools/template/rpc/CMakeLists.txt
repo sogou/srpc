@@ -79,7 +79,7 @@ link_directories(${OPENSSL_LINK_DIR} ${Protobuf_LIB_DIR}
                  ${WORKFLOW_LIB_DIR} ${SRPC_LIB_DIR})
 
 # Build two executable outputs
-set(PROJECT_OUTPUT server client)
+set(PROJECT_OUTPUT server client%s)
 foreach(output ${PROJECT_OUTPUT})
     add_executable(${output} ${output}_main.cc ${COMMON_CODE})
     target_link_libraries(${output} ${LIB})

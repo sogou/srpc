@@ -9,7 +9,7 @@ static srpc::RPCConfig config;
 
 void init()
 {
-    if (config.load("./config.json") == false)
+    if (config.load("./client.conf") == false)
     {
         perror("Load config failed");
         exit(1);
