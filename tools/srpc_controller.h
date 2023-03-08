@@ -109,6 +109,16 @@ public:
 
 bool common_cmake_transform(const std::string& format, FILE *out,
 							const struct srpc_config *config);
+
+bool basic_client_transform(const std::string& format, FILE *out,
+							const struct srpc_config *config);
+bool basic_server_transform(const std::string& format, FILE *out,
+							const struct srpc_config *config);
+bool basic_client_config_transform(const std::string& format, FILE *out,
+								   const struct srpc_config *config);
+bool basic_server_config_transform(const std::string& format, FILE *out,
+								   const struct srpc_config *config);
+
 bool rpc_idl_transform(const std::string& format, FILE *out,
 					   const struct srpc_config *config);
 bool rpc_client_transform(const std::string& format, FILE *out,

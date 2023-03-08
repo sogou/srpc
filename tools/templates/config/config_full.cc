@@ -3,6 +3,8 @@
 #include "workflow/WFGlobal.h"
 #include "workflow/UpstreamManager.h"
 #include "workflow/UpstreamPolicies.h"
+#include "srpc/rpc_filter_metrics.h"
+#include "srpc/rpc_filter_span.h"
 
 using namespace srpc;
 
@@ -138,7 +140,10 @@ static bool load_upstream_server(const wfrest::Json& data,
         params.push_back(param);
     }
     
-    return hosts.size() == 0 ? false : true;
+    if (hosts.size() == 0)
+        return false;
+    else
+        return true;
 }
 
 static void load_upstream(const wfrest::Json& data)
@@ -246,6 +251,10 @@ bool RPCConfig::load(const char *file)
             load_global(it.value());
         else if (it.key() == "upstream")
             load_upstream(it.value());
+        else if (it.key() == "metrics")
+            this->load_metrics();
+        else if (it.key() == "trace")
+            this->load_trace();
         else
             printf("[INFO][RPCConfig::load] Unknown key: %s\n", it.key().c_str());
     }
@@ -253,7 +262,226 @@ bool RPCConfig::load(const char *file)
     return true;
 };
 
+void RPCConfig::load_metrics()
+{
+    for (const auto& it : this->data["metrics"])
+    {
+        if (it.has("filter") == false)
+            continue;
+
+        std::string filter_name = it["filter"];
+
+        if (filter_name.compare("prometheus") == 0)
+        {
+            if (it.has("port") == false)
+                continue;
+
+            RPCMetricsPull *filter = new RPCMetricsPull();
+            unsigned short port = it["port"];
+            filter->init(port);
+            this->filters.push_back(filter);
+        }
+        else if (filter_name.compare("opentelemetry") == 0)
+        {
+            if (it.has("address") == false)
+                continue;
+
+            std::string url = it["address"];
+
+            unsigned int redirect_max = OTLP_HTTP_REDIRECT_MAX;
+            unsigned int retry_max = OTLP_HTTP_RETRY_MAX;
+            size_t report_threshold = RPC_REPORT_THREHOLD_DEFAULT;
+            size_t report_interval = RPC_REPORT_INTERVAL_DEFAULT;
+
+            if (it.has("redirect_max"))
+                redirect_max = it["redirect_max"];
+            if (it.has("retry_max"))
+                retry_max = it["retry_max"];
+            if (it.has("report_threshold"))
+                report_threshold = it["report_threshold"];
+            if (it.has("report_interval_ms"))
+                report_interval = it["report_interval_ms"];
+
+            RPCMetricsOTel *filter = new RPCMetricsOTel(url,
+                                                        redirect_max,
+                                                        retry_max,
+                                                        report_threshold,
+                                                        report_interval);
+
+            if (it.has("attributes"))
+            {
+                for (const auto& kv : it["attributes"])
+                {
+                    if (kv.has("key") == false || kv.has("value") == false)
+                        continue;
+
+                    filter->add_attributes(kv["key"], kv["value"]);
+                }
+            }
+
+            this->filters.push_back(filter);
+        }
+        else
+        {
+            printf("[ERROR][RPCConfig::load_metrics] Unknown metrics: %s\n",
+                   filter_name.c_str());
+        }
+    }
+}
+
+void RPCConfig::load_trace()
+{
+    for (const auto& it : this->data["trace"])
+    {
+        if (it.has("filter") == false)
+            continue;
+
+        std::string filter_name = it["filter"];
+        size_t spans_per_second = SPANS_PER_SECOND_DEFAULT;
+
+        if (filter_name.compare("default") == 0)
+        {
+            if (it.has("spans_per_second"))
+                spans_per_second = it["spans_per_second"];
+
+            auto *filter = new RPCSpanDefault(spans_per_second);
+            this->filters.push_back(filter);
+        }
+        else if (filter_name.compare("opentelemetry") == 0)
+        {
+            if (it.has("address") == false)
+                continue;
+
+            std::string url = it["address"];
+            unsigned int redirect_max = OTLP_HTTP_REDIRECT_MAX;
+            unsigned int retry_max = OTLP_HTTP_RETRY_MAX;
+            size_t report_threshold = RPC_REPORT_THREHOLD_DEFAULT;
+            size_t report_interval = RPC_REPORT_INTERVAL_DEFAULT;
+
+            if (it.has("redirect_max"))
+                redirect_max = it["redirect_max"];
+            if (it.has("retry_max"))
+                retry_max = it["retry_max"];
+            if (it.has("report_threshold"))
+                report_threshold = it["report_threshold"];
+            if (it.has("report_interval_ms"))
+                report_interval = it["report_interval_ms"];
+
+            auto *filter = new RPCSpanOpenTelemetry(url,
+                                                    redirect_max,
+                                                    retry_max,
+                                                    spans_per_second,
+                                                    report_threshold,
+                                                    report_interval);
+
+            if (it.has("attributes"))
+            {
+                for (const auto& kv : it["attributes"])
+                {
+                    if (kv.has("key") == false || kv.has("value") == false)
+                        continue;
+
+                    filter->add_attributes(kv["key"], kv["value"]);
+                }
+            }
+
+            this->filters.push_back(filter);
+        }
+        else
+        {
+            printf("[ERROR][RPCConfig::load_metrics] Unknown metrics: %s\n",
+                   filter_name.c_str());
+        }
+    }
+}
+
+void RPCConfig::load_filter(SRPCServer& server)
+{
+    for (auto *filter : this->filters)
+        server.add_filter(filter);
+}
+
+void RPCConfig::load_filter(SRPCClient& client)
+{
+    for (auto *filter : this->filters)
+        client.add_filter(filter);
+}
+
+void RPCConfig::load_filter(SRPCHttpServer& server)
+{
+    for (auto *filter : this->filters)
+        server.add_filter(filter);
+}
+
+void RPCConfig::load_filter(SRPCHttpClient& client)
+{
+    for (auto *filter : this->filters)
+        client.add_filter(filter);
+}
+
+void RPCConfig::load_filter(BRPCServer& server)
+{
+    for (auto *filter : this->filters)
+        server.add_filter(filter);
+}
+
+void RPCConfig::load_filter(BRPCClient& client)
+{
+    for (auto *filter : this->filters)
+        client.add_filter(filter);
+}
+
+void RPCConfig::load_filter(ThriftServer& server)
+{
+    for (auto *filter : this->filters)
+        server.add_filter(filter);
+}
+
+void RPCConfig::load_filter(ThriftClient& client)
+{
+    for (auto *filter : this->filters)
+        client.add_filter(filter);
+}
+
+void RPCConfig::load_filter(ThriftHttpServer& server)
+{
+    for (auto *filter : this->filters)
+        server.add_filter(filter);
+}
+
+void RPCConfig::load_filter(ThriftHttpClient& client)
+{
+    for (auto *filter : this->filters)
+        client.add_filter(filter);
+}
+
+void RPCConfig::load_filter(TRPCServer& server)
+{
+    for (auto *filter : this->filters)
+        server.add_filter(filter);
+}
+
+void RPCConfig::load_filter(TRPCClient& client)
+{
+    for (auto *filter : this->filters)
+        client.add_filter(filter);
+}
+
+void RPCConfig::load_filter(TRPCHttpServer& server)
+{
+    for (auto *filter : this->filters)
+        server.add_filter(filter);
+}
+
+void RPCConfig::load_filter(TRPCHttpClient& client)
+{
+    for (auto *filter : this->filters)
+        client.add_filter(filter);
+}
+
 RPCConfig::~RPCConfig()
 {
+    for (size_t i = 0; i < this->filters.size(); i++)
+        delete this->filters[i];
 }
 

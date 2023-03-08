@@ -77,7 +77,7 @@ static int mkdir_p(const char *name, mode_t mode)
 	return ret;
 }
 
-const char *get_proxy_rpc_string(const char *type)
+static const char *get_proxy_rpc_string(const char *type)
 {
 	if (strcasecmp(type, "SRPCHttp") == 0)
 		return "SRPCHttp";
@@ -156,19 +156,19 @@ static std::string rpc_server_file_codes(const struct srpc_config *config)
 
 	if (config->compress_type != COMPRESS_TYPE_NONE)
 	{
-		ret += "\t\tctx->set_compress_type(";
+		ret += "        ctx->set_compress_type(";
 		ret += config->rpc_compress_string();
 		ret += ");\n";
 	}
 
 	if (config->data_type != DATA_TYPE_DEFAULT)
 	{
-		ret += "\t\tctx->set_data_type(";
+		ret += "        ctx->set_data_type(";
 		ret += config->rpc_data_string();
 		ret += ");\n";
 	}
 
-	ret += "\t\t";
+	ret += "        ";
 
 	return ret;
 }
@@ -187,7 +187,7 @@ bool rpc_client_transform(const std::string& format, FILE *out,
 	std::string prepare_params = rpc_client_file_codes(config);
 	const char *rpc_type;
 	if (config->type == COMMAND_PROXY)
-		rpc_type = get_proxy_rpc_string(config->proxy_client_type);
+		rpc_type = get_proxy_rpc_string(config->proxy_client_type_string());
 	else
 		rpc_type = config->rpc_type_string();
 
@@ -203,14 +203,13 @@ bool rpc_server_transform(const std::string& format, FILE *out,
 	std::string prepare_ctx = rpc_server_file_codes(config);
 	const char *rpc_type;
 	if (config->type == COMMAND_PROXY)
-		rpc_type = get_proxy_rpc_string(config->proxy_server_type);
+		rpc_type = get_proxy_rpc_string(config->proxy_server_type_string());
 	else
 		rpc_type = config->rpc_type_string();
 
 	size_t len = fprintf(out, format.c_str(),
 						 config->service_name, config->service_name,
-						 config->service_name, prepare_ctx.c_str(),
-						 config->rpc_type_string(), config->service_name,
+						 prepare_ctx.c_str(), rpc_type,
 						 config->project_name, rpc_type);
 
 	return len > 0;
@@ -229,6 +228,12 @@ bool CommandController::parse_args(int argc, const char **argv)
 	this->config.service_name = argv[2];
 	if (get_path(__FILE__, this->config.depend_path, 2) == false)
 		return false;
+
+	if (get_path(__FILE__, this->config.template_path, 1) == false)
+		return false;
+
+	snprintf(this->config.template_path + strlen(this->config.template_path),
+			 MAXPATHLEN - strlen(this->config.template_path), "templates/");
 
 	if (this->get_opt(argc, argv) == false)
 		return false;
@@ -460,83 +465,6 @@ bool common_cmake_transform(const std::string& format, FILE *out,
 						 path.c_str(), is_proxy_str.c_str());
 
 	return len > 0;
-}
-
-HttpController::HttpController()
-{
-	this->config.type = COMMAND_HTTP;
-	struct file_info info;
-
-	info = { "http/config.json", "config.json", nullptr };
-	this->default_files.push_back(info);
-
-	info = { "common/CMakeLists.txt", "CMakeLists.txt", common_cmake_transform };
-	this->default_files.push_back(info);
-
-	info = { "http/client_main.cc", "client_main.cc", nullptr };
-	this->default_files.push_back(info);
-
-	info = { "http/server_main.cc", "server_main.cc", nullptr };
-	this->default_files.push_back(info);
-
-	info = { "http/server_example.h", "server_example.h", nullptr };
-	this->default_files.push_back(info);
-
-	info = {"common/GNUmakefile", "GNUmakefile", nullptr };
-	this->default_files.push_back(info);
-
-	info = { "config/Json.h", "config/Json.h", nullptr };
-	this->default_files.push_back(info);
-
-	info = { "config/Json.cc", "config/Json.cc", nullptr };
-	this->default_files.push_back(info);
-
-	info = {"config/config_simple.h", "config/config.h", nullptr};
-	this->default_files.push_back(info);
-
-	info = {"config/config_simple.cc", "config/config.cc", nullptr};
-	this->default_files.push_back(info);
-}
-
-void HttpController::print_usage(const char *name) const
-{
-	printf("Usage:\n"
-		   "    %s http <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Flags:\n"
-		   "    -o :    project output path (default: CURRENT_PATH)\n"
-		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
-		   , name);
-}
-
-bool HttpController::get_opt(int argc, const char **argv)
-{
-	struct srpc_config *config = &this->config;
-	char c;
-	optind = 3;
-
-	while ((c = getopt(argc, (char * const *)argv, "o:t:d:")) != -1)
-	{
-		switch (c)
-		{
-		case 'o':
-			if (sscanf(optarg, "%s", config->output_path) != 1)
-				return false;
-			break;
-		case 't':
-			config->template_path = optarg; // TODO:
-			break;
-		case 'd':
-			config->specified_depend_path = true;
-			memset(config->depend_path, 0, MAXPATHLEN);
-			if (sscanf(optarg, "%s", config->depend_path) != 1)
-				return false;
-		default:
-			printf("Error:\n     Unknown args : %s\n\n", argv[optind - 1]);
-			return false;
-		}
-	}
-
-	return true;
 }
 
 void CommandController::fill_rpc_default_files()

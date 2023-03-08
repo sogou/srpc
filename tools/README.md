@@ -21,7 +21,7 @@ Description:
     A handy generator for Workflow and SRPC project.
 
 Usage:
-    ./srpc-ctl <COMMAND> <PROJECT_NAME> [FLAGS]
+    ./srpc <COMMAND> <PROJECT_NAME> [FLAGS]
 
 Available Commands:
     "http"  - create project with both client and server
@@ -35,17 +35,17 @@ Available Commands:
 Execute this simple example
 
 ```sh
-./srpc-ctl http HTTP_EXAMPLE -o /root/
+./srpc http project_name1
 ```
 
-And we will get this on the screen, new project is in `/root/HTTP_EXAMPLE`.
+And we will get this on the screen, new project is in `./project_name1/`.
 
 ```
 Success:
-      make project path " /root/HTTP_EXAMPLE/ " done.
+      make project path " ./project_name1/ " done.
 
 Commands:
-      cd /root/HTTP_EXAMPLE/
+      cd ./project_name1/
       make -j
 
 Execute:
@@ -53,14 +53,41 @@ Execute:
       ./client
 ```
 
-And we can try accorrding to the suggestions above.
+Let's take a look at the project:
+
+```
+cd ./project_name1/ && tree
+```
+
+These files are generated.
+
+```
+.
+├── CMakeLists.txt
+├── GNUmakefile
+├── client.conf
+├── client_main.cc
+├── config
+│   ├── Json.cc
+│   ├── Json.h
+│   ├── config.cc
+│   ├── config.h
+│   └── util.h
+├── example.conf
+├── server.conf
+└── server_main.cc
+
+2 directories, 12 files
+```
+
+And we can try to make the project accorrding to the suggestions above.
 
 #### 4. HTTP COMMANDS
 
 commands for HTTP:
 
 ```
-./srpc-ctl http
+./srpc http
 ```
 
 will get the following instructions:
@@ -69,7 +96,7 @@ will get the following instructions:
 Missing: PROJECT_NAME
 
 Usage:
-    ./srpc-ctl http <PROJECT_NAME> [FLAGS]
+    ./srpc http <PROJECT_NAME> [FLAGS]
 
 Available Flags:
     -o :    project output path (default: CURRENT_PATH)
@@ -81,7 +108,7 @@ Available Flags:
 commands for RPCs:
 
 ```
-./srpc-ctl rpc
+./srpc rpc
 ```
 
 will get the following instructions:
@@ -90,7 +117,7 @@ will get the following instructions:
 Missing: PROJECT_NAME
 
 Usage:
-    ./srpc-ctl rpc <PROJECT_NAME> [FLAGS]
+    ./srpc rpc <PROJECT_NAME> [FLAGS]
 
 Available Flags:
     -r :    rpc type [ SRPC | SRPCHttp | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: SRPC)
@@ -107,13 +134,13 @@ Available Flags:
 We can specified our IDL files with the following command:
 
 ```
-./srpc-ctl rpc rpc_example -f test_proto/test.proto 
+./srpc rpc rpc_example -f test_proto/test.proto 
 ```
 
 And we can see the infomation when generating files, which is similar to srpc_genrator.
 
 ```
-Info: srpc-ctl generator begin.
+Info: srpc generator begin.
 proto file: [/root/srpc/tools/rpc_example/test.proto]
 Successfully parse service block [message] : EchoRequest
 Successfully parse service block [message] : EchoResponse
@@ -123,7 +150,7 @@ finish parsing proto file: [/root/srpc/tools/rpc_example/test.proto]
 [Generator] generate srpc files: /root/srpc/tools/rpc_example/test.srpc.h 
 [Generator Done]
 [Generator] generate server files: /root/srpc/tools/rpc_example/server_main.cc, client files: /root/srpc/tools/rpc_example/client_main.cc
-Info: srpc-ctl generator done.
+Info: srpc generator done.
 
 Success:
       make project path " /root/srpc/tools/rpc_example/ " done.
@@ -137,3 +164,70 @@ Execute:
       ./client
 ```
 
+#### 6. PROXY COMMANDS
+
+commands for RPCs:
+
+```
+./srpc proxy
+```
+
+will get the following instructions:
+
+```
+Missing: PROJECT_NAME
+
+Usage:
+    ./srpc proxy <PROJECT_NAME> [FLAGS]
+
+Available Flags:
+    -c :    client type for proxy [ Http | Redis | SRPC | SRPCHttp | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: Http)
+    -s :    server type for proxy [ Http | Redis | SRPC | SRPCHttp | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: Http)
+    -o :    project output path (default: CURRENT_PATH)
+    -d :    path of dependencies (default: COMPILE_PATH)
+```
+
+Let's make a project with diffrent protocol:
+
+```
+./srpc proxy srpc_trpc_proxy_example -c SRPC -s TRPC
+```
+```
+Success:
+      make project path " ./srpc_trpc_proxy_example/ " done.
+
+Commands:
+      cd ./srpc_trpc_proxy_example/
+      make -j
+
+Execute:
+      ./server
+      ./proxy
+      ./client
+```
+
+Check the files in directory:
+
+```
+cd srpc_trpc_proxy_example && tree
+```
+
+```
+.
+├── CMakeLists.txt
+├── GNUmakefile
+├── client.conf
+├── client_main.cc
+├── config
+│   ├── Json.cc
+│   ├── Json.h
+│   ├── config.cc
+│   └── config.h
+├── proxy.conf
+├── proxy_main.cc
+├── server.conf
+├── server_main.cc
+└── srpc_trpc_proxy_example.proto
+
+2 directories, 13 files
+```

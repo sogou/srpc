@@ -24,15 +24,19 @@ void init()
         perror("Load config failed");
         exit(1);
     }
+
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
 }
 
-class %sServiceImpl : public %s::Service
+class ServiceImpl : public %s::Service
 {
 public:
-    void Echo(EchoResult& _return, const std::string& message) override
+    void Echo(EchoRequest *req, EchoResponse *resp, RPCContext *ctx) override
     {
 %s// 4. delete the following codes and fill your logic
-        _return.message = "Hi back.";
+        fprintf(stderr, "get req: %%s\n", req->DebugString().c_str());
+        resp->set_message("Hi back");
     }
 };
 
@@ -43,7 +47,7 @@ int main()
 
     // 2. start server
     %sServer server;
-    %sServiceImpl impl;
+    ServiceImpl impl;
     server.add_service(&impl);
 
     config.load_filter(server);
@@ -51,7 +55,7 @@ int main()
     if (server.start(config.server_port()) == 0)
     {
         // 3. success and wait
-        printf("%s %s server start, port %%u\n", config.server_port());
+        fprintf(stderr, "%s %s server start, port %%u\n", config.server_port());
         wait_group.wait();
         server.stop();
     }

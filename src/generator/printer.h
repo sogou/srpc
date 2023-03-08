@@ -1602,7 +1602,9 @@ public:
 
 	std::string server_impl_method_format = R"(
 	void %s(%s *request, %s *response, srpc::RPCContext *ctx) override
-	{}
+	{
+		// TODO: fill server logic here
+	}
 )";
 
 	std::string server_main_begin_format = R"(

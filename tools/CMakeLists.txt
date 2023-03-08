@@ -20,6 +20,7 @@ set(srpc_ctl_code
 	"srpc_ctl.cc"
 	"srpc_config.cc"
 	"srpc_controller.cc"
+	"srpc_basic_controller.cc"
 	"srpc_rpc_controller.cc"
 	"srpc_proxy_controller.cc")
 

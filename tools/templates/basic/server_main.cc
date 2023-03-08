@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <signal.h>
-#include "workflow/WFHttpServer.h"
+#include "workflow/WF%sServer.h"
 #include "workflow/WFFacilities.h"
 
+#include "config/util.h"
 #include "config/config.h"
-#include "server_example.h"
 
 static WFFacilities::WaitGroup wait_group(1);
 static srpc::RPCConfig config;
@@ -16,30 +16,31 @@ void sig_handler(int signo)
 
 void init()
 {
-    if (config.load("./config.json") == false)
+    if (config.load("./server.conf") == false)
     {
         perror("Load config failed");
         exit(1);
     }
 
     signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
 }
 
-void process(WFHttpTask *server_task)
+void process(WF%sTask *task)
 {
     // delete the example codes and fill your logic
-    process_example(server_task);
+%s
 }
 
 int main()
 {
     init();
 
-    WFHttpServer server(process);
+    WF%sServer server(process);
 
     if (server.start(config.server_port()) == 0)
     {
-        printf("http server start, port %u\n", config.server_port());
+        fprintf(stderr, "%s server start, port %%u\n", config.server_port());
         wait_group.wait();
         server.stop();
     }

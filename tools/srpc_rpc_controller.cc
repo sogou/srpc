@@ -34,7 +34,10 @@ RPCController::RPCController()
 	info = { "rpc/CMakeLists.txt", "CMakeLists.txt", rpc_cmake_transform };
 	this->default_files.push_back(info);
 
-	info = { "common/config.json", "config.json", nullptr };
+	info = { "common/config.json", "client.conf", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "common/config.json", "server.conf", nullptr };
 	this->default_files.push_back(info);
 
 	info = { "common/GNUmakefile", "GNUmakefile", nullptr };
@@ -69,9 +72,9 @@ void RPCController::print_usage(const char *name) const
 		   "(default: no compression)\n"
 		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
 		   "    -f :    specify the idl_file to generate codes "
-		   "(default: template/rpc/IDL_FILE)\n"
+		   "(default: templates/rpc/IDL_FILE)\n"
 		   "    -p :    specify the path for idl_file to depend "
-		   "(default: template/rpc/)\n"
+		   "(default: templates/rpc/)\n"
 		   , name);
 }
 
@@ -145,7 +148,8 @@ bool RPCController::get_opt(int argc, const char **argv)
 			config->service_name = optarg;
 			break;
 		case 't':
-			config->template_path = optarg; // TODO: 
+			if (sscanf(optarg, "%s", config->template_path) != 1)
+				return false; //TODO:
 			break;
 		case 'd':
 			config->specified_depend_path = true;
@@ -174,7 +178,7 @@ bool RPCController::check_args()
 
 	struct srpc_config *config = &this->config;
 
-	if (config->rpc_type == RPC_TYPE_MAX ||
+	if (config->rpc_type == PROTOCOL_TYPE_MAX ||
 		config->idl_type == IDL_TYPE_MAX ||
 		config->data_type == DATA_TYPE_MAX ||
 		config->compress_type == COMPRESS_TYPE_MAX)
@@ -185,8 +189,8 @@ bool RPCController::check_args()
 
 	switch (config->rpc_type)
 	{
-	case RPC_TYPE_THRIFT:
-	case RPC_TYPE_THRIFT_HTTP:
+	case PROTOCOL_TYPE_THRIFT:
+	case PROTOCOL_TYPE_THRIFT_HTTP:
 		if (config->idl_type == IDL_TYPE_PROTOBUF ||
 			config->data_type == DATA_TYPE_PROTOBUF)
 		{
@@ -198,9 +202,9 @@ bool RPCController::check_args()
 		if (config->idl_type == IDL_TYPE_DEFAULT)
 			config->idl_type = IDL_TYPE_THRIFT; // as default;
 		break;
-	case RPC_TYPE_BRPC:
-	case RPC_TYPE_TRPC:
-	case RPC_TYPE_TRPC_HTTP:
+	case PROTOCOL_TYPE_BRPC:
+	case PROTOCOL_TYPE_TRPC:
+	case PROTOCOL_TYPE_TRPC_HTTP:
 		if (config->idl_type == IDL_TYPE_THRIFT ||
 			config->data_type == DATA_TYPE_THRIFT)
 		{

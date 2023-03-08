@@ -38,10 +38,10 @@ int main()
     client.Echo(&req, &resp, &ctx);
 
     if (ctx.success)
-        printf("%%s\n", resp.DebugString().c_str());
+        fprintf(stderr, "%%s\n", resp.DebugString().c_str());
     else
-        printf("status[%%d] error[%%d] errmsg:%%s\n",
-               ctx.status_code, ctx.error, ctx.errmsg.c_str());
+        fprintf(stderr, "status[%%d] error[%%d] errmsg:%%s\n",
+                ctx.status_code, ctx.error, ctx.errmsg.c_str());
 
     return 0;
 }

@@ -78,7 +78,7 @@ include_directories(${OPENSSL_INCLUDE_DIR} ${Protobuf_INCLUDE_DIR}
 link_directories(${OPENSSL_LINK_DIR} ${Protobuf_LIB_DIR}
                  ${WORKFLOW_LIB_DIR} ${SRPC_LIB_DIR})
 
-# Build two executable outputs
+# Build executable outputs
 set(PROJECT_OUTPUT server client%s)
 foreach(output ${PROJECT_OUTPUT})
     add_executable(${output} ${output}_main.cc ${COMMON_CODE})

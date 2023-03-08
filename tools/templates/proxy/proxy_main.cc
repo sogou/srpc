@@ -5,7 +5,7 @@
 #include "workflow/WFFacilities.h"
 
 #include "config/config.h"
-#include "util.h"
+#include "config/util.h"
 
 static WFFacilities::WaitGroup wait_group(1);
 static srpc::RPCConfig config;
@@ -24,6 +24,7 @@ void init()
     }
 
     signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
 }
 
 void callback(WF%sTask *client_task)

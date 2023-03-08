@@ -35,8 +35,8 @@ public:
     void Echo(EchoRequest *request, EchoResponse *response,
 			  RPCContext *context) override
     {
-        fprintf(stderr, "%s proxy get request from client: %%s",
-				context->get_remote_ip().c_str());
+        fprintf(stderr, "%s proxy get request from client. ip : %%s\n%%s\n",
+				context->get_remote_ip().c_str(), request->DebugString().c_str());
 
         // 5. process() : get request from client and send to remote server
         auto *task = this->client.create_Echo_task([response](EchoResponse *resp,

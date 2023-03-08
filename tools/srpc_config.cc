@@ -19,13 +19,9 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
-
 #include <sys/stat.h>
 #include <sys/types.h>
-
 #include "srpc_config.h"
-
-static constexpr const char *TEMPLATE_PATH_DEFAULT = "./template/";
 
 std::vector<std::string> RPC_PROTOC_SKIP_FILES =
 { "config_simple.h", "config_simple.cc",
@@ -34,7 +30,6 @@ std::vector<std::string> RPC_PROTOC_SKIP_FILES =
 std::vector<std::string> RPC_THRIFT_SKIP_FILES =
 { "config_simple.h", "config_simple.cc",
   "rpc.proto", "client_protobuf.cc", "server_protobuf.cc" };
-
 
 void usage_db(int argc, const char *argv[], const struct srpc_config *config)
 {
@@ -77,33 +72,58 @@ void usage_kafka(int argc, const char *argv[])
 		   , argv[0]);
 }
 
+const char *get_type_string(uint8_t type)
+{
+	switch (type)
+	{
+	case PROTOCOL_TYPE_HTTP:
+		return "Http";
+	case PROTOCOL_TYPE_REDIS:
+		return "Redis";
+	case PROTOCOL_TYPE_MYSQL:
+		return "MySQL";
+	case PROTOCOL_TYPE_KAFKA:
+		return "Kafka";
+	case PROTOCOL_TYPE_SRPC:
+		return "SRPC";
+	case PROTOCOL_TYPE_SRPC_HTTP:
+		return "SRPCHttp";
+	case PROTOCOL_TYPE_BRPC:
+		return "BRPC";
+	case PROTOCOL_TYPE_THRIFT:
+		return "Thrift";
+	case PROTOCOL_TYPE_THRIFT_HTTP:
+		return "ThriftHttp";
+	case PROTOCOL_TYPE_TRPC:
+		return "TRPC";
+	case PROTOCOL_TYPE_TRPC_HTTP:
+		return "TRPCHttp";
+	default:
+		return "Unknown type";
+	}
+}
 
-
-// proto: 0; thrift: 1; error: -1;
 static int check_file_idl_type(const char *filename)
 {
 	size_t len = strlen(filename);
 
 	if (len > 6 && strcmp(filename + len - 6, ".proto") == 0)
-		return 0;
+		return IDL_TYPE_PROTOBUF;
 	else if (len > 7 && strcmp(filename + len - 7, ".thrift") == 0)
-		return 1;
+		return IDL_TYPE_THRIFT;
 
-	return -1;
+	return IDL_TYPE_MAX;
 }
 
 srpc_config::srpc_config()
 {
-	rpc_type = RPC_TYPE_SRPC;
+	rpc_type = PROTOCOL_TYPE_SRPC;
 	idl_type = IDL_TYPE_DEFAULT;
 	data_type = DATA_TYPE_DEFAULT;
 	compress_type = COMPRESS_TYPE_NONE;
 	specified_depend_path = false;
 	specified_idl_file = NULL;
 	specified_idl_path = NULL;
-	template_path = TEMPLATE_PATH_DEFAULT;
-	proxy_client_type = NULL;
-	proxy_server_type = NULL;
 }
 
 bool srpc_config::prepare_specified_idl_file()
@@ -119,7 +139,8 @@ bool srpc_config::prepare_specified_idl_file()
 		return true;
 	}
 
-	if (check_file_idl_type(this->specified_idl_file) < 0)
+	this->idl_type = check_file_idl_type(this->specified_idl_file);
+	if (this->idl_type == IDL_TYPE_MAX)
 	{
 		printf("Error:\n      Invalid idl type. file : \" %s \"\n\n",
 				this->specified_idl_file);
@@ -141,25 +162,7 @@ bool srpc_config::prepare_specified_idl_file()
 
 const char *srpc_config::rpc_type_string() const
 {
-	switch (this->rpc_type)
-	{
-	case RPC_TYPE_SRPC:
-		return "SRPC";
-	case RPC_TYPE_SRPC_HTTP:
-		return "SRPCHttp";
-	case RPC_TYPE_BRPC:
-		return "BRPC";
-	case RPC_TYPE_THRIFT:
-		return "Thrift";
-	case RPC_TYPE_THRIFT_HTTP:
-		return "ThriftHttp";
-	case RPC_TYPE_TRPC:
-		return "TRPC";
-	case RPC_TYPE_TRPC_HTTP:
-		return "TRPCHttp";
-	default:
-		return "Unknown type";
-	}
+	return get_type_string(this->rpc_type);
 }
 
 const char *srpc_config::rpc_compress_string() const
@@ -197,21 +200,21 @@ const char *srpc_config::rpc_data_string() const
 void srpc_config::set_rpc_type(const char *type)
 {
 	if (strcasecmp(type, "SRPCHttp") == 0)
-		this->rpc_type = RPC_TYPE_SRPC_HTTP;
+		this->rpc_type = PROTOCOL_TYPE_SRPC_HTTP;
 	else if (strcasecmp(type, "SRPC") == 0)
-		this->rpc_type = RPC_TYPE_SRPC;
+		this->rpc_type = PROTOCOL_TYPE_SRPC;
 	else if (strcasecmp(type, "BRPC") == 0)
-		this->rpc_type = RPC_TYPE_BRPC;
+		this->rpc_type = PROTOCOL_TYPE_BRPC;
 	else if (strcasecmp(type, "ThriftHttp") == 0)
-		this->rpc_type = RPC_TYPE_THRIFT_HTTP;
+		this->rpc_type = PROTOCOL_TYPE_THRIFT_HTTP;
 	else if (strcasecmp(type, "Thrift") == 0)
-		this->rpc_type = RPC_TYPE_THRIFT;
+		this->rpc_type = PROTOCOL_TYPE_THRIFT;
 	else if (strcasecmp(type, "TRPCHttp") == 0)
-		this->rpc_type = RPC_TYPE_TRPC_HTTP;
+		this->rpc_type = PROTOCOL_TYPE_TRPC_HTTP;
 	else if (strcasecmp(type, "TRPC") == 0)
-		this->rpc_type = RPC_TYPE_TRPC;
+		this->rpc_type = PROTOCOL_TYPE_TRPC;
 	else
-		this->rpc_type = RPC_TYPE_MAX;
+		this->rpc_type = PROTOCOL_TYPE_MAX;
 }
 
 void srpc_config::set_idl_type(const char *type)
@@ -250,35 +253,14 @@ void srpc_config::set_compress_type(const char *type)
 		this->compress_type = COMPRESS_TYPE_MAX;
 }
 
-static const char *proxy_type_string(const char *type)
-{
-	if (strcasecmp(type, "http") == 0)
-		return "Http";
-	else if (strcasecmp(type, "redis") == 0)
-		return "Redis";
-	else if (strcasecmp(type, "SRPCHttp") == 0)
-		return "SRPCHttp";
-	else if (strcasecmp(type, "SRPC") == 0)
-		return "SRPC";
-	else if (strcasecmp(type, "BRPC") == 0)
-		return "BRPC";
-	else if (strcasecmp(type, "TRPCHttp") == 0)
-		return "TRPCHttp";
-	else if (strcasecmp(type, "TRPC") == 0)
-		return "TRPC";
-	// TODO: else THRIFT and THRIFTHttp
-
-	return "Unknown type";
-}
-
 const char *srpc_config::proxy_server_type_string() const
 {
-	return proxy_type_string(this->proxy_server_type);
+	return get_type_string(this->proxy_server_type);
 }
 
 const char *srpc_config::proxy_client_type_string() const
 {
-	return proxy_type_string(this->proxy_client_type);
+	return get_type_string(this->proxy_client_type);
 }
 
 ControlGenerator::ControlGenerator(const struct srpc_config *config) :
@@ -314,7 +296,7 @@ bool ControlGenerator::generate_client_cpp_file(const idl_info& info,
 	}
 
 	this->ctl_printer.print_client_main_begin();
-	this->ctl_printer.print_load_config();
+	this->ctl_printer.print_client_load_config();
 	this->ctl_printer.print_client_params();
 
 	int id = 0;
@@ -384,7 +366,7 @@ bool ControlGenerator::generate_server_cpp_file(const idl_info& info,
 	}
 
 	this->ctl_printer.print_server_main_begin();
-	this->ctl_printer.print_load_config();
+	this->ctl_printer.print_server_load_config();
 	this->ctl_printer.print_server_construct(this->config->rpc_type_string());
 
 	for (const auto& desc : info.desc_list)
@@ -410,7 +392,7 @@ static std::string ctl_include_format = R"(#include <stdio.h>
 static std::string ctl_load_config_format = R"(
 	// load config
 	srpc::RPCConfig config;
-	if (config.load("./config.json") == false)
+	if (config.load("./%s") == false)
 	{
 		perror("Load config failed");
 		exit(1);
@@ -431,11 +413,17 @@ static std::string ctl_client_main_params_format = R"(
 	config.load_filter(client%s);
 )";
 
+static std::string ctl_client_done_protobuf_format = R"(
+		// printf("%%s\n", response->DebugString().c_str());
+)";
+
 static std::string ctl_client_done_format = R"(
 static void %s_done(%s *response, srpc::RPCContext *context)
 {
 	if (context->success())
-		printf("%%s\n", response->DebugString().c_str());
+	{
+		// TODO: fill your logic to set response%s
+	}
 	else
 		printf("%s %s status[%%d] error[%%d] errmsg:%%s\n",
 			   context->get_status_code(), context->get_error(),
@@ -459,9 +447,14 @@ void ControlGenerator::ControlPrinter::print_clt_include()
 	fprintf(this->out_file, "%s", ctl_include_format.c_str());
 }
 
-void ControlGenerator::ControlPrinter::print_load_config()
+void ControlGenerator::ControlPrinter::print_client_load_config()
 {
-	fprintf(this->out_file, "%s", ctl_load_config_format.c_str());
+	fprintf(this->out_file, ctl_load_config_format.c_str(), "./client.conf");
+}
+
+void ControlGenerator::ControlPrinter::print_server_load_config()
+{
+	fprintf(this->out_file, ctl_load_config_format.c_str(), "./server.conf");
 }
 
 void ControlGenerator::ControlPrinter::print_client_params()
@@ -485,14 +478,18 @@ print_client_done_method_ctl(const std::vector<std::string>& package,
 				   method_lower.begin(), ::tolower);
 
 	std::string resp;
+	const char *set_resp_code = "";
 
 	if (this->is_thrift)
 		resp = make_thrift_package_prefix(package, service, response);
 	else
 		resp = make_package_prefix(package, response);
 
+	if (!this->is_thrift)
+		set_resp_code = ctl_client_done_protobuf_format.c_str();
+
 	fprintf(this->out_file, ctl_client_done_format.c_str(),
-			method_lower.c_str(), resp.c_str(),
+			method_lower.c_str(), resp.c_str(), set_resp_code,
 			service.c_str(), method.c_str(), service.c_str(), method.c_str());
 }
 
@@ -511,7 +508,7 @@ print_client_main_service_ctl(const std::string& type,
 void ControlGenerator::ControlPrinter::
 print_server_construct(const char *rpc_type)
 {
-	fprintf(this->out_file, "\t%sServer server;\n", rpc_type);
+	fprintf(this->out_file, "    %sServer server;\n", rpc_type);
 }
 
 void ControlGenerator::ControlPrinter::

@@ -30,7 +30,13 @@
 
 struct srpc_config
 {
-	uint16_t type;
+	uint8_t type;
+	const char *project_name;
+	const char *service_name;
+	char template_path[MAXPATHLEN];
+	char depend_path[MAXPATHLEN];
+	char output_path[MAXPATHLEN];
+	// rpc
 	uint8_t rpc_type;
 	uint8_t idl_type;
 	uint8_t data_type;
@@ -38,14 +44,9 @@ struct srpc_config
 	bool specified_depend_path;
 	const char *specified_idl_file;
 	const char *specified_idl_path;
-	const char *project_name;
-	const char *server_url;
-	const char *service_name;
-	const char *template_path;
-	char depend_path[MAXPATHLEN];
-	char output_path[MAXPATHLEN];
-	const char *proxy_server_type;
-	const char *proxy_client_type;
+	// proxy
+	uint8_t proxy_server_type;
+	uint8_t proxy_client_type;
 
 	srpc_config();
 
@@ -60,7 +61,6 @@ struct srpc_config
 	void set_idl_type(const char *optarg);
 	void set_data_type(const char *optarg);
 	void set_compress_type(const char *optarg);
-
 	const char *proxy_server_type_string() const;
 	const char *proxy_client_type_string() const;
 };
@@ -82,7 +82,8 @@ private:
 		ControlPrinter(bool is_thrift) : Printer(is_thrift) { }
 
 		void print_clt_include();
-		void print_load_config();
+		void print_server_load_config();
+		void print_client_load_config();
 
 		void print_client_params();
 		void print_client_done_method_ctl(const std::vector<std::string>& pkg,
@@ -117,14 +118,18 @@ enum
 
 enum
 {
-	RPC_TYPE_SRPC,
-	RPC_TYPE_SRPC_HTTP,
-	RPC_TYPE_BRPC,
-	RPC_TYPE_THRIFT,
-	RPC_TYPE_THRIFT_HTTP,
-	RPC_TYPE_TRPC,
-	RPC_TYPE_TRPC_HTTP,
-	RPC_TYPE_MAX
+	PROTOCOL_TYPE_HTTP = COMMAND_HTTP,
+	PROTOCOL_TYPE_REDIS = COMMAND_REDIS,
+	PROTOCOL_TYPE_MYSQL = COMMAND_MYSQL,
+	PROTOCOL_TYPE_KAFKA = COMMAND_KAFKA,
+	PROTOCOL_TYPE_SRPC = 22,
+	PROTOCOL_TYPE_SRPC_HTTP,
+	PROTOCOL_TYPE_BRPC,
+	PROTOCOL_TYPE_THRIFT,
+	PROTOCOL_TYPE_THRIFT_HTTP,
+	PROTOCOL_TYPE_TRPC,
+	PROTOCOL_TYPE_TRPC_HTTP,
+	PROTOCOL_TYPE_MAX
 };
 
 enum
@@ -159,6 +164,7 @@ void usage_http(int argc, const char *argv[]);
 void usage_db(int argc, const char *argv[], const struct srpc_config *config);
 void usage_kafka(int argc, const char *argv[]);
 void usage_rpc(int argc, const char *argv[], const struct srpc_config *config);
+const char *get_type_string(uint8_t type);
 
 #endif
 
