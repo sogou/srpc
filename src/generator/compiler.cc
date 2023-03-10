@@ -16,7 +16,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
 #include <string>
 
 #ifdef _WIN32
@@ -25,6 +24,7 @@
 #else
 #include <unistd.h>
 #include <sys/param.h>
+#include <getopt.h>
 #endif
 
 #include "generator.h"
@@ -53,7 +53,7 @@ static bool is_root(std::string& file);
 const char *SRPC_GENERATOR_USAGE = "\
 Usage:\n\
     %s [protobuf|thrift] <idl_file> <output_dir>\n\n\
-Available options:\n\
+Available options(linux):\n\
     -f, --idl_file      : IDL file name. If multiple files are imported, specify the top one. Will parse recursively.\n\
     -o, --output_dir    : Output directory.\n\
     -i, --input_dir     : Specify the directory in which to search for imports.\n\
@@ -68,7 +68,9 @@ int main(int argc, const char *argv[])
 
 	if (parse_origin(argc, argv, params, idl_type) == 0)
 	{
+#ifndef _WIN32
 		if (parse_getopt(argc, (char * const *)argv, params, idl_type) != 0)
+#endif
 			return 0;
 	}
 
@@ -195,6 +197,8 @@ int parse_getopt(int argc, char * const *argv,
 			break;
 		case 'i':
 			params.input_dir = optarg;
+			if (params.input_dir.at(params.input_dir.length() - 1) != '/')
+				params.input_dir += '/';
 			break;
 		case 's':
 			params.generate_skeleton = false;
@@ -251,3 +255,4 @@ bool is_root(std::string& file)
 
 	return false;
 }
+
