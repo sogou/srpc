@@ -36,7 +36,7 @@ enum
 static std::string default_server_port(uint8_t type)
 {
 	if (type == PROTOCOL_TYPE_HTTP)
-		return "80";
+		return "8080";
 	if (type == PROTOCOL_TYPE_REDIS)
 		return "6379";
 	if (type == PROTOCOL_TYPE_MYSQL)
@@ -135,7 +135,7 @@ static std::string proxy_redirect_codes(uint8_t type)
 	return std::string("");
 }
 
-static bool proxy_proxy_transform(const std::string& format, FILE *out,
+static bool proxy_basic_transform(const std::string& format, FILE *out,
 								  const struct srpc_config *config)
 {
 	const char *server_type = config->proxy_server_type_string();
@@ -156,7 +156,6 @@ static bool proxy_proxy_transform(const std::string& format, FILE *out,
 						 proxy_redirect_codes(config->proxy_server_type).c_str(),
 						 proxy_process_request_codes(config->proxy_server_type,
 													 config->proxy_client_type).c_str(),
-						 client_type,
 						 // main
 						 client_type, server_type, client_type);
 
@@ -255,7 +254,7 @@ bool ProxyController::copy_files()
 		info = { "common/util.h", "config/util.h", nullptr };
 		this->default_files.push_back(info);
 
-		info = { "proxy/proxy_main.cc", "proxy_main.cc", proxy_proxy_transform };
+		info = { "proxy/proxy_main.cc", "proxy_main.cc", proxy_basic_transform };
 		this->default_files.push_back(info);
 
 		info = { "basic/client_main.cc", "client_main.cc", basic_client_transform };
@@ -352,6 +351,7 @@ bool ProxyController::get_opt(int argc, const char **argv)
 			memset(config->depend_path, 0, MAXPATHLEN);
 			if (sscanf(optarg, "%s", config->depend_path) != 1)
 				return false;
+			break;
 		default:
 			printf("Error:\n     Unknown args : %s\n\n", argv[optind - 1]);
 			return false;

@@ -35,7 +35,7 @@ public:
     void Echo(EchoRequest *req, EchoResponse *resp, RPCContext *ctx) override
     {
 %s// 4. delete the following codes and fill your logic
-        fprintf(stderr, "get req: %%s\n", req->DebugString().c_str());
+        fprintf(stderr, "get req. %%s\n", req->DebugString().c_str());
         resp->set_message("Hi back");
     }
 };
@@ -55,10 +55,12 @@ int main()
     if (server.start(config.server_port()) == 0)
     {
         // 3. success and wait
-        fprintf(stderr, "%s %s server start, port %%u\n", config.server_port());
+        fprintf(stderr, "%s %s server started, port %%u\n", config.server_port());
         wait_group.wait();
         server.stop();
     }
+    else
+        perror("server start");
 
     return 0;
 }

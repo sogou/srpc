@@ -4,7 +4,7 @@
 
 ### 一个帮你生成Workflow和SRPC项目/脚手架的小工具。
 
-#### 1. 编译
+## 1. 编译
 
 先从github上把srpc项目拷贝下来，小工具代码在srpc/tools/目录下，执行`make`即可编译。
 
@@ -14,7 +14,7 @@ cd srpc/tools
 make
 ```
 
-#### 2. 用法
+## 2. 用法
 
 执行`./srpc`即可看到小工具的用法介绍：
 
@@ -37,7 +37,7 @@ Available Commands:
     "file"  - create project with file service
 ```
 
-#### 3. 入门
+## 3. 入门
 
 
 我们先从最简单的命令开始入门：
@@ -79,7 +79,7 @@ cd ./project_name1/ && tree
 │   ├── config.cc
 │   ├── config.h
 │   └── util.h
-├── example.conf
+├── full.conf
 ├── server.conf
 └── server_main.cc
 
@@ -88,7 +88,7 @@ cd ./project_name1/ && tree
 
 然后我们就可以根据上面执行`srpc`命令时所看到的指引，编译和执行这个项目。
 
-#### 4. HTTP
+## 4. HTTP
 
 创建HTTP项目的用法如下，可以创建http协议的server和client。其中server和client里的示例代码都可以自行改动，配置文件`server.conf`和`client.conf`里也可以指定基本的配置项，cmake编译文件都已经生成好了，整个项目可以直接拿走使用。
 
@@ -107,7 +107,7 @@ Available Flags:
     -d :    path of dependencies (default: COMPILE_PATH)
 ```
 
-#### 5. RPC
+## 5. RPC
 
 创建RPC项目的用法如下，包括了多种rpc协议，protobuf或thrift的文件：
 
@@ -166,7 +166,7 @@ Execute:
       ./client
 ```
 
-#### 6. REDIS
+## 6. REDIS
 
 创建REDIS协议的client和server，命令如下：
 
@@ -218,7 +218,7 @@ response: OK
  10 }
 ```
 
-#### 7. PROXY
+## 7. PROXY
 
 这个命令用于构建一个转发服务器，并且还有与其协议相关的server和client。
 
@@ -285,13 +285,14 @@ cd srpc_trpc_proxy_example && tree
 2 directories, 13 files
 ```
 
-分别在三个终端执行`./server` `./proxy` 和 `./client`，我们可以看到，client发送了一个trpc协议的请求"Hello, srpc!"给proxy，而proxy收到之后把请求用srpc协议发给了server。SRPC server填了回复"Hi back"并通过刚才的proxy路线转回给了client，期间转发纯异步，不会阻塞任何线程。
+分别在三个终端执行`./server` `./proxy` 和 `./client`，我们可以看到，client发送了trpc协议的请求"Hello, this is sync request!" 和一个异步请求Hello, this is async request!"给proxy，而proxy收到之后把请求用srpc协议发给了server。SRPC server填了回复"Hi back"并通过刚才的proxy路线转回给了client，期间转发纯异步，不会阻塞任何线程。
 
 ```
 ./server
 
 srpc_trpc_proxy_example TRPC server start, port 1412
-get req: message: "Hello, srpc!"
+get req: message: "Hello, this is sync request!"
+get req. message: "Hello, this is async request!"
 ```
 
 ```
@@ -299,15 +300,19 @@ get req: message: "Hello, srpc!"
 
 srpc_trpc_proxy_example [SRPC]-[TRPC] proxy start, port 1411
 srpc_trpc_proxy_example proxy get request from client. ip : 127.0.0.1
-message: "Hello, srpc!"
+message: "Hello, this is sync request!"
+srpc_trpc_proxy_example proxy get request from client. ip : 127.0.0.1
+message: "Hello, this is async request!"
 ```
 
 ```
 ./client
-message: "Hi back"
+
+sync resp. message: "Hi back"
+async resp. message: "Hi back"
 ```
 
-#### 8. FILE COMMAND
+## 8. FILE
 
 这是一个简单的文件服务器：
 

@@ -33,10 +33,10 @@ class ProxyServiceImpl : public %s::Service
 {
 public:
     void Echo(EchoRequest *request, EchoResponse *response,
-			  RPCContext *context) override
+              RPCContext *context) override
     {
         fprintf(stderr, "%s proxy get request from client. ip : %%s\n%%s\n",
-				context->get_remote_ip().c_str(), request->DebugString().c_str());
+                context->get_remote_ip().c_str(), request->DebugString().c_str());
 
         // 5. process() : get request from client and send to remote server
         auto *task = this->client.create_Echo_task([response](EchoResponse *resp,
@@ -78,7 +78,7 @@ int main()
     if (server.start(config.server_port()) == 0)
     {
         // 4. main thread success and wait
-        fprintf(stderr, "%s [%s]-[%s] proxy start, port %%u\n",
+        fprintf(stderr, "%s [%s]-[%s] proxy started, port %%u\n",
                 config.server_port());
         wait_group.wait();
         server.stop();

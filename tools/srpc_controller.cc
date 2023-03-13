@@ -185,15 +185,21 @@ bool rpc_client_transform(const std::string& format, FILE *out,
 						  const struct srpc_config *config)
 {
 	std::string prepare_params = rpc_client_file_codes(config);
+
 	const char *rpc_type;
 	if (config->type == COMMAND_PROXY)
 		rpc_type = get_proxy_rpc_string(config->proxy_client_type_string());
 	else
 		rpc_type = config->rpc_type_string();
 
+	const char *thrift_namespace = "";
+	if (config->idl_type == IDL_TYPE_THRIFT)
+		thrift_namespace = config->project_name;
+
 	size_t len = fprintf(out, format.c_str(),
 						 config->service_name, prepare_params.c_str(),
-						 config->service_name, rpc_type);
+						 config->service_name, rpc_type,
+						 thrift_namespace, thrift_namespace);
 	return len > 0;
 }
 
@@ -201,6 +207,7 @@ bool rpc_server_transform(const std::string& format, FILE *out,
 						  const struct srpc_config *config)
 {
 	std::string prepare_ctx = rpc_server_file_codes(config);
+
 	const char *rpc_type;
 	if (config->type == COMMAND_PROXY)
 		rpc_type = get_proxy_rpc_string(config->proxy_server_type_string());
@@ -223,7 +230,8 @@ bool CommandController::parse_args(int argc, const char **argv)
 		return false;
 	}
 
-	getcwd(this->config.output_path, MAXPATHLEN);
+//	getcwd(this->config.output_path, MAXPATHLEN);
+	memset(this->config.output_path, 0, MAXPATHLEN);
 	this->config.project_name = argv[2];
 	this->config.service_name = argv[2];
 	if (get_path(__FILE__, this->config.depend_path, 2) == false)
@@ -259,7 +267,13 @@ bool CommandController::check_args()
 		return false;
 	}
 
-	snprintf(this->config.output_path + path_len, MAXPATHLEN - path_len, "/%s/",
+	if (path_len != 0 && this->config.output_path[path_len - 1] != '/')
+	{
+		this->config.output_path[path_len] = '/';
+		path_len++;
+	}
+
+	snprintf(this->config.output_path + path_len, MAXPATHLEN - path_len, "%s/",
 			 this->config.project_name);
 
 	return true;
@@ -478,42 +492,42 @@ bool common_cmake_transform(const std::string& format, FILE *out,
 
 void CommandController::fill_rpc_default_files()
 {
-		struct file_info info;
-		std::string idl_file_name, client_file_name, server_file_name;
-		std::string out_file_name = this->config.project_name;
+	struct file_info info;
+	std::string idl_file_name, client_file_name, server_file_name;
+	std::string out_file_name = this->config.project_name;
 
-		if (this->config.idl_type == IDL_TYPE_PROTOBUF)
-		{
-			out_file_name += ".proto";
-			idl_file_name = "rpc/rpc.proto";
-			client_file_name = "rpc/client_protobuf.cc";
-			server_file_name = "rpc/server_protobuf.cc";
-		}
-		else
-		{
-			out_file_name += ".thrift";
-			idl_file_name = "rpc/rpc.thrift";
-			client_file_name = "rpc/client_thrift.cc";
-			server_file_name = "rpc/server_thrift.cc";
-		}
+	if (this->config.idl_type == IDL_TYPE_PROTOBUF)
+	{
+		out_file_name += ".proto";
+		idl_file_name = "rpc/rpc.proto";
+		client_file_name = "rpc/client_protobuf.cc";
+		server_file_name = "rpc/server_protobuf.cc";
+	}
+	else
+	{
+		out_file_name += ".thrift";
+		idl_file_name = "rpc/rpc.thrift";
+		client_file_name = "rpc/client_thrift.cc";
+		server_file_name = "rpc/server_thrift.cc";
+	}
 
-		info = { idl_file_name , out_file_name, rpc_idl_transform };
-		this->default_files.push_back(info);
+	info = { idl_file_name , out_file_name, rpc_idl_transform };
+	this->default_files.push_back(info);
 
-		info = { client_file_name, "client_main.cc", rpc_client_transform };
-		this->default_files.push_back(info);
+	info = { client_file_name, "client_main.cc", rpc_client_transform };
+	this->default_files.push_back(info);
 
-		info = { server_file_name, "server_main.cc", rpc_server_transform };
-		this->default_files.push_back(info);
+	info = { server_file_name, "server_main.cc", rpc_server_transform };
+	this->default_files.push_back(info);
 
-		info = { "rpc/server.conf", "server.conf", nullptr };
-		this->default_files.push_back(info);
+	info = { "rpc/server.conf", "server.conf", nullptr };
+	this->default_files.push_back(info);
 
-		if (this->config.type == COMMAND_RPC)
-			info = { "rpc/client.conf", "client.conf", nullptr };
-		else
-			info = { "proxy/client_rpc.conf", "client.conf", nullptr };
-		this->default_files.push_back(info);
+	if (this->config.type == COMMAND_RPC)
+		info = { "rpc/client.conf", "client.conf", nullptr };
+	else
+		info = { "proxy/client_rpc.conf", "client.conf", nullptr };
+	this->default_files.push_back(info);
 }
 
 bool rpc_cmake_transform(const std::string& format, FILE *out,

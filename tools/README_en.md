@@ -4,7 +4,7 @@
 
 ### An easy tool to generate Workflow and SRPC project
 
-#### 1. COMPILE
+## 1. COMPILE
 
 ```
 git clone --recursive https://github.com/sogou/srpc.git
@@ -12,7 +12,7 @@ cd srpc/tools
 make
 ```
 
-#### 2. USAGE
+## 2. USAGE
 
 ```
 ./srpc
@@ -33,7 +33,7 @@ Available Commands:
     "file"  - create project with file service
 ```
 
-#### 3. START
+## 3. START
 
 Execute this simple example
 
@@ -76,7 +76,7 @@ These files are generated.
 │   ├── config.cc
 │   ├── config.h
 │   └── util.h
-├── example.conf
+├── full.conf
 ├── server.conf
 └── server_main.cc
 
@@ -85,7 +85,7 @@ These files are generated.
 
 And we can try to make the project accorrding to the suggestions above.
 
-#### 4. HTTP COMMAND
+## 4. HTTP COMMAND
 
 commands for HTTP:
 
@@ -106,7 +106,7 @@ Available Flags:
     -d :    path of dependencies (default: COMPILE_PATH)
 ```
 
-#### 5. RPC COMMAND
+## 5. RPC COMMAND
 
 commands for RPCs:
 
@@ -167,7 +167,7 @@ Execute:
       ./client
 ```
 
-#### 6. REDIS COMMAND
+## 6. REDIS COMMAND
 
 commands for REDIS:
 
@@ -193,7 +193,7 @@ Make a project with the instructions, we can get the simple redis server and cli
 ```
 ./server
 
-Redis server start, port 6379
+Redis server started, port 6379
 redis server get cmd: [SET] from peer address: 127.0.0.1:60665, seq: 0.
 ```
 
@@ -219,7 +219,7 @@ If there is user name and password for redis server, client may fill them into c
  10 }
 ```
 
-#### 7. PROXY COMMAND
+## 7. PROXY COMMAND
 
 commands for PROXY:
 
@@ -287,13 +287,14 @@ cd srpc_trpc_proxy_example && tree
 2 directories, 13 files
 ```
 
-Execute `./server` `./proxy` and `./client` on the three sessions respectively, and we will see that the client sends a trpc protocol request "Hello, srpc!" to the proxy, and the proxy receives the request and send to server as srpc protocol. SRPC server fill the response "Hi back" and will finnally transfer back to client by proxy. 
+Execute `./server` `./proxy` and `./client` on the three sessions respectively, and we will see that the client sends trpc protocol requests "Hello, this is sync request!" and "Hello, this is async request!" to the proxy, and the proxy receives the request and send to server as srpc protocol. SRPC server fill the response "Hi back" and will finnally transfer back to client by proxy. 
 
 ```
 ./server
 
-srpc_trpc_proxy_example TRPC server start, port 1412
-get req: message: "Hello, srpc!"
+srpc_trpc_proxy_example TRPC server started, port 1412
+get req: message: "Hello, this is sync request!"
+get req. message: "Hello, this is async request!"
 ```
 
 ```
@@ -301,15 +302,19 @@ get req: message: "Hello, srpc!"
 
 srpc_trpc_proxy_example [SRPC]-[TRPC] proxy start, port 1411
 srpc_trpc_proxy_example proxy get request from client. ip : 127.0.0.1
-message: "Hello, srpc!"
+message: "Hello, this is sync request!"
+srpc_trpc_proxy_example proxy get request from client. ip : 127.0.0.1
+message: "Hello, this is async request!"
 ```
 
 ```
 ./client
-message: "Hi back"
+
+sync resp. message: "Hi back"
+async resp. message: "Hi back"
 ```
 
-#### 8. FILE COMMAND
+## 8. FILE COMMAND
 
 This is an example to make a file service. We try the command like the following:
 ```

@@ -408,10 +408,12 @@ static std::string ctl_server_main_end_format = R"(
 
 	if (server.start(config.server_port()) == 0)
 	{
-		printf("%s %s server start, port %%u\n", config.server_port());
+		printf("%s %s server started, port %%u\n", config.server_port());
 		wait_group.wait();
 		server.stop();
 	}
+	else
+		perror("server start");
 )";
 
 void ControlGenerator::ControlPrinter::print_clt_include()
