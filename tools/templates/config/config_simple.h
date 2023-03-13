@@ -16,6 +16,8 @@ public:
     const char *client_host() const { return this->c_host.c_str(); }
     int redirect_max() const { return this->c_redirect_max; }
     int retry_max() const { return this->c_retry_max; }
+    const char *client_user_name() const { return this->c_user_name.c_str(); }
+    const char *client_password() const { return this->c_password.c_str(); }
 
 public:
     RPCConfig() : s_port(0), c_port(0), c_redirect_max(0), c_retry_max(0) { }
@@ -31,6 +33,8 @@ private:
     unsigned short c_port;
     int c_redirect_max;
     int c_retry_max;
+    std::string c_user_name;
+    std::string c_password;
 };
 
 }

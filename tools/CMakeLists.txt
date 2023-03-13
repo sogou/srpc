@@ -25,6 +25,6 @@ set(srpc_ctl_code
 	"srpc_proxy_controller.cc")
 
 include_directories("../src/")
-add_executable(srpc-ctl ${srpc_ctl_code} ${generator_code})
-target_link_libraries(srpc-ctl ${LIBRARY_NAME})
+add_executable(srpc ${srpc_ctl_code} ${generator_code})
+target_link_libraries(srpc ${LIBRARY_NAME})
 

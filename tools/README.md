@@ -25,6 +25,7 @@ Usage:
 
 Available Commands:
     "http"  - create project with both client and server
+    "redis"  - create project with both client and server
     "rpc"   - create project with both client and server
     "proxy" - create proxy for some client and server protocol
     "file"  - create project with file service
@@ -164,7 +165,59 @@ Execute:
       ./client
 ```
 
-#### 6. PROXY COMMANDS
+#### 6. REDIS COMMANDS
+
+commands for REDIS:
+
+```
+./srpc redis
+```
+
+will get the following instructions:
+
+```
+Missing: PROJECT_NAME
+
+Usage:
+    ./srpc redis <PROJECT_NAME> [FLAGS]
+
+Available Flags:
+    -o :    project output path (default: CURRENT_PATH)
+    -d :    path of dependencies (default: COMPILE_PATH)
+```
+
+Make a project with the instructions, we can get the simple redis server and client. The client will send a basic command `SET k1 v1`, and the server will reply `OK` for every request.
+
+```
+./server
+
+Redis server start, port 6379
+redis server get cmd: [SET] from peer address: 127.0.0.1:60665, seq: 0.
+```
+
+```
+./client
+
+Redis client state = 0 error = 0
+response: OK
+```
+
+If there is user name and password for redis server, client may fill them into client.conf:
+
+```
+  1 {                                                                               
+  2   "client":                                                                     
+  3   {                                                                             
+  4     "remote_host": "127.0.0.1",                                                 
+  5     "remote_port": 6379,                                                        
+  6     "retry_max": 2,                                                             
+  7     "user_name": "root",                                                        
+  8     "password": ""                                                              
+  9   }                                                                             
+ 10 }
+```
+
+#### 7. PROXY COMMANDS
 
 commands for RPCs:
 

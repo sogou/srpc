@@ -225,6 +225,12 @@ void RPCConfig::load_client()
 
     if (this->data["client"].has("retry_max"))
         this->c_retry_max = this->data["client"]["retry_max"];
+
+    if (this->data["client"].has("user_name"))
+        this->c_user_name = this->data["client"]["user_name"].get<std::string>();
+
+    if (this->data["client"].has("password"))
+        this->c_password = this->data["client"]["password"].get<std::string>();
 }
 
 bool RPCConfig::load(const char *file)

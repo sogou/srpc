@@ -38,9 +38,8 @@ int main()
 {
     init();
 
-    std::string url = std::string("%s://") + config.client_host() + 
+    std::string url = std::string("%s://") + %sconfig.client_host() +
                       std::string(":") + std::to_string(config.client_port());
-
 
     WF%sTask *task = WFTaskFactory::create_%s_task(url,%s
                                                         config.retry_max(),

@@ -26,6 +26,8 @@
 
 #include "srpc_controller.h"
 
+using DEFAULT_FILES = std::vector<struct CommandController::file_info>;
+
 static std::string server_process_codes(uint8_t type)
 {
 	if (type == PROTOCOL_TYPE_HTTP)
@@ -69,28 +71,28 @@ static std::string client_redirect_codes(uint8_t type)
 static std::string client_task_callback_codes(uint8_t type)
 {
 	if (type == PROTOCOL_TYPE_HTTP)
-		return std::string(R"(	
-        if (state == WFT_STATE_SUCCESS) // print server response body
-        {
-            const void *body;
-            size_t body_len;
+		return std::string(R"(
+     if (state == WFT_STATE_SUCCESS) // print server response body
+     {
+        const void *body;
+        size_t body_len;
 
-            task->get_resp()->get_parsed_body(&body, &body_len);
-            fwrite(body, 1, body_len, stdout);
-            fflush(stdout);
-        }
+        task->get_resp()->get_parsed_body(&body, &body_len);
+        fwrite(body, 1, body_len, stdout);
+        fflush(stdout);
+     }
 )");
 
 	if (type == PROTOCOL_TYPE_REDIS)
 		return std::string(R"(
-        protocol::RedisResponse *resp = task->get_resp();
-        protocol::RedisValue val;
+    protocol::RedisResponse *resp = task->get_resp();
+    protocol::RedisValue val;
 
-        if (state == WFT_STATE_SUCCESS && resp->parse_success() == true)
-        {
-            resp->get_result(val);
-            fprintf(stderr, "response: %s\n", val.string_value().c_str());
-        }
+    if (state == WFT_STATE_SUCCESS && resp->parse_success() == true)
+    {
+        resp->get_result(val);
+        fprintf(stderr, "response: %s\n", val.string_value().c_str());
+    }
 )");
 
 	return std::string("Unknown type");
@@ -110,6 +112,16 @@ static std::string client_set_request_codes(uint8_t type)
 )");
 
 	return std::string("Unknown type");
+}
+
+static std::string username_passwd_codes(uint8_t type)
+{
+	if (type == PROTOCOL_TYPE_REDIS || type == PROTOCOL_TYPE_MYSQL)
+		return std::string(R"(config.client_user_name() +
+                      std::string(":") + config.client_password() +
+                      std::string("@") +)");
+
+	return std::string("");
 }
 
 static uint8_t get_protocol_type(const struct srpc_config *config, uint8_t type)
@@ -163,15 +175,21 @@ bool basic_client_config_transform(const std::string& format, FILE *out,
 {
 	unsigned short port;
 	std::string redirect_code;
+	std::string user_and_passwd;
 
 	if (get_client_protocol_type(config) == PROTOCOL_TYPE_HTTP)
 	{
 		port = 80;
-		redirect_code = R"(    "redirect_max": 2,
-)";
+		redirect_code = R"(
+    "redirect_max": 2,)";
 	}
 	else if (get_client_protocol_type(config) == PROTOCOL_TYPE_REDIS)
+	{
 		port = 6379;
+		user_and_passwd = R"(,
+    "user_name": "root",
+    "password": "")";
+	}
 	else if (get_client_protocol_type(config) == PROTOCOL_TYPE_MYSQL)
 		port = 3306;
 	else
@@ -181,7 +199,8 @@ bool basic_client_config_transform(const std::string& format, FILE *out,
 	if (config->type == COMMAND_PROXY)
 		port = port - 1;
 
-	size_t len = fprintf(out, format.c_str(), port, redirect_code.c_str());
+	size_t len = fprintf(out, format.c_str(), port,
+						 redirect_code.c_str(), user_and_passwd.c_str());
 
 	return len > 0;
 }
@@ -209,68 +228,58 @@ bool basic_client_transform(const std::string& format, FILE *out,
 
 	size_t len = fprintf(out, format.c_str(), type, type, type,
 						 client_task_callback_codes(client_type).c_str(),
-						 client_lower.c_str(), type, client_lower.c_str(),
+						 client_lower.c_str(),
+						 username_passwd_codes(client_type).c_str(),
+						 type, client_lower.c_str(),
 						 client_redirect_codes(client_type).c_str(),
 						 client_set_request_codes(client_type).c_str());
 
 	return len > 0;
 }
 
-HttpController::HttpController()
+static void basic_default_file_initialize(DEFAULT_FILES& files)
 {
-	this->config.type = COMMAND_HTTP;
-	struct file_info info;
+	struct CommandController::file_info info;
 
 	info = { "basic/server.conf", "server.conf", basic_server_config_transform };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = { "basic/client.conf", "client.conf", basic_client_config_transform };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = { "basic/server_main.cc", "server_main.cc", basic_server_transform };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = { "basic/client_main.cc", "client_main.cc", basic_client_transform };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = { "common/config.json", "example.conf", nullptr };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = { "common/util.h", "config/util.h", nullptr };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = { "common/CMakeLists.txt", "CMakeLists.txt", common_cmake_transform };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = {"common/GNUmakefile", "GNUmakefile", nullptr };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = { "config/Json.h", "config/Json.h", nullptr };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = { "config/Json.cc", "config/Json.cc", nullptr };
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = {"config/config_simple.h", "config/config.h", nullptr};
-	this->default_files.push_back(info);
+	files.push_back(info);
 
 	info = {"config/config_simple.cc", "config/config.cc", nullptr};
-	this->default_files.push_back(info);
+	files.push_back(info);
 }
 
-void HttpController::print_usage(const char *name) const
+static bool basic_get_opt(int argc, const char **argv, struct srpc_config *config)
 {
-	printf("Usage:\n"
-		   "    %s http <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Flags:\n"
-		   "    -o :    project output path (default: CURRENT_PATH)\n"
-		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
-		   , name);
-}
-
-bool HttpController::get_opt(int argc, const char **argv)
-{
-	struct srpc_config *config = &this->config;
 	char c;
 	optind = 3;
 
@@ -298,5 +307,47 @@ bool HttpController::get_opt(int argc, const char **argv)
 	}
 
 	return true;
+}
+
+static void basic_print_usage(const char *name, const char *command)
+{
+	printf("Usage:\n"
+		   "    %s %s <PROJECT_NAME> [FLAGS]\n\n"
+		   "Available Flags:\n"
+		   "    -o :    project output path (default: CURRENT_PATH)\n"
+		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
+		   , name, command);
+}
+
+HttpController::HttpController()
+{
+	this->config.type = COMMAND_HTTP;
+	basic_default_file_initialize(this->default_files);
+}
+
+void HttpController::print_usage(const char *name) const
+{
+	basic_print_usage(name, "http");
+}
+
+bool HttpController::get_opt(int argc, const char **argv)
+{
+	return basic_get_opt(argc, argv, &this->config);
+}
+
+RedisController::RedisController()
+{
+	this->config.type = COMMAND_REDIS;
+	basic_default_file_initialize(this->default_files);
+}
+
+void RedisController::print_usage(const char *name) const
+{
+	basic_print_usage(name, "redis");
+}
+
+bool RedisController::get_opt(int argc, const char **argv)
+{
+	return basic_get_opt(argc, argv, &this->config);
 }
 

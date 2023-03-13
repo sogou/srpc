@@ -43,6 +43,8 @@ public:
     int redirect_max() const { return this->c_redirect_max; }
     int retry_max() const { return this->c_retry_max; }
     const char *client_caller() const { return this->c_caller.c_str(); }
+    const char *client_user_name() const { return this->c_user_name.c_str(); }
+    const char *client_password() const { return this->c_password.c_str(); }
 
 public:
     RPCConfig() :
@@ -66,6 +68,8 @@ private:
     int c_redirect_max;
     int c_retry_max;
     std::string c_caller;
+    std::string c_user_name;
+    std::string c_password;
 };
 
 }

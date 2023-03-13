@@ -25,6 +25,7 @@ static void usage(const char *name)
 		   "    %s <COMMAND> <PROJECT_NAME> [FLAGS]\n\n"
 		   "Available Commands:\n"
 		   "    \"http\"  - create project with both client and server\n"
+		   "    \"redis\"  - create project with both client and server\n"
 		   "    \"rpc\"   - create project with both client and server\n"
 		   "    \"proxy\" - create proxy for some client and server protocol\n"
 		   "    \"file\"  - create project with file service\n"
@@ -44,6 +45,10 @@ int main(int argc, const char *argv[])
 	if (strcasecmp(argv[1], "http") == 0)
 	{
 		ctl = new HttpController;
+	}
+	else if (strcasecmp(argv[1], "redis") == 0)
+	{
+		ctl = new RedisController;
 	}
 	else if (strcasecmp(argv[1], "rpc") == 0)
 	{

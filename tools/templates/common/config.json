@@ -11,6 +11,8 @@
     "is_ssl" : false,
     "redirect_max": 2,
     "retry_max": 1,
+    "user_name": "root",
+	"password": "",
     "callee" : "rpc_client"
   },
 

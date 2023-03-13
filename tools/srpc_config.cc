@@ -31,34 +31,6 @@ std::vector<std::string> RPC_THRIFT_SKIP_FILES =
 { "config_simple.h", "config_simple.cc",
   "rpc.proto", "client_protobuf.cc", "server_protobuf.cc" };
 
-void usage_db(int argc, const char *argv[], const struct srpc_config *config)
-{
-	const char *name;
-	unsigned short port;
-
-	switch (config->type)
-	{
-	case COMMAND_REDIS:
-		name = "redis";
-		port = 6379;
-		break;
-	case COMMAND_MYSQL:
-		name = "mysql";
-		port = 3306;
-		break;
-	default:
-		return;
-	}
-
-	printf("Usage:\n"
-		   "    %s %s <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Flags:\n"
-		   "    -o :    project output path (default: CURRENT_PATH)\n"
-		   "    -h :    %s server url (default: %s://127.0.0.1:%u)\n"
-		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
-		   , argv[0], name, name, name, port);
-}
-
 void usage_kafka(int argc, const char *argv[])
 {
 	printf("Usage:\n"

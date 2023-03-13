@@ -38,7 +38,6 @@ public:
 	CommandController() { }
 	virtual ~CommandController() { }
 
-protected:
 	using transform_function_t = bool (*)(const std::string&, FILE *,
 										  const struct srpc_config *);
 	struct file_info
@@ -48,6 +47,7 @@ protected:
 		transform_function_t transform;
 	};
 
+protected:
 	std::vector<struct file_info> default_files;
 	struct srpc_config config;
 
@@ -70,6 +70,19 @@ private:
 public:
 	HttpController();
 	~HttpController() { }
+};
+
+class RedisController : public CommandController
+{
+public:
+	void print_usage(const char *name) const override;
+
+private:
+	bool get_opt(int argc, const char **argv) override;
+
+public:
+	RedisController();
+	~RedisController() { }
 };
 
 class RPCController : public CommandController
