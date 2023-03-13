@@ -11,5 +11,4 @@ base:
 	cd $(BUILD_DIR) && cmake $(ROOT_DIR)
 
 clean:
-	make -C $(BUILD_DIR) clean
 	rm -rf $(BUILD_DIR)

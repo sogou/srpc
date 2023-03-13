@@ -149,13 +149,14 @@ bool RPCController::get_opt(int argc, const char **argv)
 			break;
 		case 't':
 			if (sscanf(optarg, "%s", config->template_path) != 1)
-				return false; //TODO:
+				return false; // TODO:
 			break;
 		case 'd':
 			config->specified_depend_path = true;
 			memset(config->depend_path, 0, MAXPATHLEN);
 			if (sscanf(optarg, "%s", config->depend_path) != 1)
 				return false;
+			break;
 		case 'f':
 			config->specified_idl_file = optarg;
 			break;

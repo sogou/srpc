@@ -12,6 +12,5 @@ base:
 	cd $(BUILD_DIR) && cmake -D CMAKE_BUILD_TYPE=Debug $(ROOT_DIR)
 
 clean:
-	make -C $(BUILD_DIR) clean
 	rm -rf $(BUILD_DIR)
 

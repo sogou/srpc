@@ -40,10 +40,12 @@ int main()
 
     if (server.start(config.server_port()) == 0)
     {
-        fprintf(stderr, "%s server start, port %%u\n", config.server_port());
+        fprintf(stderr, "%s server started, port %%u\n", config.server_port());
         wait_group.wait();
         server.stop();
     }
+    else
+        perror("server start");
 
     return 0;
 }

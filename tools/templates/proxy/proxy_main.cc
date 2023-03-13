@@ -60,7 +60,7 @@ void process(WF%sTask *server_task)
     series->push_back(client_task);
 
     fprintf(stderr, "proxy get request from client: ");
-    print_peer_address<WF%sTask>(server_task);
+    print_peer_address(server_task);
 }
 
 int main()
@@ -71,10 +71,12 @@ int main()
 
     if (proxy_server.start(config.server_port()) == 0)
     {
-        fprintf(stderr, "[%s]-[%s] proxy start, port %%u\n", config.server_port());
+        fprintf(stderr, "[%s]-[%s] proxy started, port %%u\n", config.server_port());
         wait_group.wait();
         proxy_server.stop();
     }
+    else
+        perror("server start");
 
     return 0;
 }

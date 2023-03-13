@@ -34,7 +34,7 @@ static std::string server_process_codes(uint8_t type)
 		return std::string(R"(
     fprintf(stderr, "http server get request_uri: %s\n",
             task->get_req()->get_request_uri());
-    print_peer_address<WFHttpTask>(task);
+    print_peer_address(task);
 
     task->get_resp()->append_output_body("<html>Hello from server!</html>");
 )");
@@ -50,7 +50,7 @@ static std::string server_process_codes(uint8_t type)
             return;
 
         fprintf(stderr, "redis server get cmd: [%s] from ", cmd.c_str());
-        print_peer_address<WFRedisTask>(task);
+        print_peer_address(task);
 
         val.set_status("OK"); // example: return OK to every requests
         resp->set_result(val);
@@ -157,7 +157,7 @@ bool basic_server_config_transform(const std::string& format, FILE *out,
 	unsigned short port;
 
 	if (get_server_protocol_type(config) == PROTOCOL_TYPE_HTTP)
-		port = 80;
+		port = 8080;
 	else if (get_server_protocol_type(config) == PROTOCOL_TYPE_REDIS)
 		port = 6379;
 	else if (get_server_protocol_type(config) == PROTOCOL_TYPE_MYSQL)
@@ -179,7 +179,7 @@ bool basic_client_config_transform(const std::string& format, FILE *out,
 
 	if (get_client_protocol_type(config) == PROTOCOL_TYPE_HTTP)
 	{
-		port = 80;
+		port = 8080;
 		redirect_code = R"(
     "redirect_max": 2,)";
 	}
@@ -253,7 +253,7 @@ static void basic_default_file_initialize(DEFAULT_FILES& files)
 	info = { "basic/client_main.cc", "client_main.cc", basic_client_transform };
 	files.push_back(info);
 
-	info = { "common/config.json", "example.conf", nullptr };
+	info = { "common/config.json", "full.conf", nullptr };
 	files.push_back(info);
 
 	info = { "common/util.h", "config/util.h", nullptr };
@@ -300,6 +300,7 @@ static bool basic_get_opt(int argc, const char **argv, struct srpc_config *confi
 			memset(config->depend_path, 0, MAXPATHLEN);
 			if (sscanf(optarg, "%s", config->depend_path) != 1)
 				return false;
+			break;
 		default:
 			printf("Error:\n     Unknown args : %s\n\n", argv[optind - 1]);
 			return false;

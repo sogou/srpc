@@ -32,7 +32,7 @@ public:
     void Echo(EchoResult& _return, const std::string& message) override
     {
 %s// 4. delete the following codes and fill your logic
-        fprintf(stderr, "get req: %%s\n", message.c_str());
+        fprintf(stderr, "get req. %%s\n", message.c_str());
         _return.message = "Hi back.";
     }
 };
@@ -52,10 +52,12 @@ int main()
     if (server.start(config.server_port()) == 0)
     {
         // 3. success and wait
-        printf("%s %s server start, port %%u\n", config.server_port());
+        printf("%s %s server started, port %%u\n", config.server_port());
         wait_group.wait();
         server.stop();
     }
+    else
+        perror("server start");
 
     return 0;
 }
