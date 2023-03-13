@@ -1,12 +1,10 @@
-[English version](README_en.md)
+[中文版入口](README.md)
 
-# srpc小工具
+# srpc tools
 
-### 一个帮你生成Workflow和SRPC项目/脚手架的小工具。
+### An easy tool to generate Workflow and SRPC project
 
-#### 1. 编译
-
-先从github上把srpc项目拷贝下来，小工具代码在srpc/tools/目录下，执行`make`即可编译。
+#### 1. COMPILE
 
 ```
 git clone --recursive https://github.com/sogou/srpc.git
@@ -14,9 +12,7 @@ cd srpc/tools
 make
 ```
 
-#### 2. 用法
-
-执行`./srpc`即可看到小工具的用法介绍：
+#### 2. USAGE
 
 ```
 ./srpc
@@ -37,16 +33,15 @@ Available Commands:
     "file"  - create project with file service
 ```
 
-#### 3. 入门
+#### 3. START
 
-
-我们先从最简单的命令开始入门：
+Execute this simple example
 
 ```sh
 ./srpc http project_name1
 ```
 
-然后就可以看到屏幕上显示，项目建立在了新目录`./project_name1/`中，并且带有编译和执行的提示命令。
+And we will get this on the screen, new project is in `./project_name1/`.
 
 ```
 Success:
@@ -61,11 +56,13 @@ Execute:
       ./client
 ```
 
-打开目录，我们查看一下有什么文件：
+Let's take a look at the project:
 
 ```
 cd ./project_name1/ && tree
 ```
+
+These files are generated.
 
 ```
 .
@@ -86,15 +83,17 @@ cd ./project_name1/ && tree
 2 directories, 12 files
 ```
 
-然后我们就可以根据上面执行`srpc`命令时所看到的指引，编译和执行这个项目。
+And we can try to make the project accorrding to the suggestions above.
 
-#### 4. HTTP
+#### 4. HTTP COMMAND
 
-创建HTTP项目的用法如下，可以创建http协议的server和client。其中server和client里的示例代码都可以自行改动，配置文件`server.conf`和`client.conf`里也可以指定基本的配置项，cmake编译文件都已经生成好了，整个项目可以直接拿走使用。
+commands for HTTP:
 
 ```
 ./srpc http
 ```
+
+will get the following instructions:
 
 ```
 Missing: PROJECT_NAME
@@ -107,13 +106,15 @@ Available Flags:
     -d :    path of dependencies (default: COMPILE_PATH)
 ```
 
-#### 5. RPC
+#### 5. RPC COMMAND
 
-创建RPC项目的用法如下，包括了多种rpc协议，protobuf或thrift的文件：
+commands for RPCs:
 
 ```
 ./srpc rpc
 ```
+
+will get the following instructions:
 
 ```
 Missing: PROJECT_NAME
@@ -133,13 +134,13 @@ Available Flags:
     -p :    specify the path for idl_file to depend (default: template/rpc/)
 ```
 
-我们通过以下命令，试一下指定要创建的RPC项目所依赖的proto文件：
+We can specified our IDL files with the following command:
 
 ```
 ./srpc rpc rpc_example -f test_proto/test.proto 
 ```
 
-然后就可以看到一些生成代码多信息，这和原先使用`srpc_genrator`时所看到的是类似的。
+And we can see the infomation when generating files, which is similar to srpc_genrator.
 
 ```
 Info: srpc generator begin.
@@ -166,9 +167,9 @@ Execute:
       ./client
 ```
 
-#### 6. REDIS
+#### 6. REDIS COMMAND
 
-创建REDIS协议的client和server，命令如下：
+commands for REDIS:
 
 ```
 ./srpc redis
@@ -187,7 +188,7 @@ Available Flags:
     -d :    path of dependencies (default: COMPILE_PATH)
 ```
 
-根据以上指引我们创建了一个项目后，就可以得到最简单的redis server和client。client就简单地实现了发送`SET k1 v1`命令，而server无论收到什么都会简单地回复一个`OK`。我们可以用这简单的示例，改造一个可以请求任何redis协议服务的client，也可以构造一个简单的redis服务器。
+Make a project with the instructions, we can get the simple redis server and client. The client will send a basic command `SET k1 v1`, and the server will reply `OK` for every request.
 
 ```
 ./server
@@ -203,7 +204,7 @@ Redis client state = 0 error = 0
 response: OK
 ```
 
-如果client有填写用户名和密码的需求，可以填到`client.conf`中。我们打开这个配置文件看看：
+If there is user name and password for redis server, client may fill them into client.conf:
 
 ```
   1 {                                                                               
@@ -218,15 +219,15 @@ response: OK
  10 }
 ```
 
-#### 7. PROXY
+#### 7. PROXY COMMAND
 
-这个命令用于构建一个转发服务器，并且还有与其协议相关的server和client。
+commands for PROXY:
 
 ```
 ./srpc proxy
 ```
 
-执行上述命令，我们可以看到proxy命令的指引：
+will get the following instructions:
 
 ```
 Missing: PROJECT_NAME
@@ -241,7 +242,7 @@ Available Flags:
     -d :    path of dependencies (default: COMPILE_PATH)
 ```
 
-让我们来试一下，创建一个转发不同协议的项目：
+Let's make a project with diffrent protocol:
 
 ```
 ./srpc proxy srpc_trpc_proxy_example -c SRPC -s TRPC
@@ -259,7 +260,8 @@ Execute:
       ./proxy
       ./client
 ```
-查看新创建的项目中有什么文件：
+
+Check the files in directory:
 
 ```
 cd srpc_trpc_proxy_example && tree
@@ -285,7 +287,7 @@ cd srpc_trpc_proxy_example && tree
 2 directories, 13 files
 ```
 
-分别在三个终端执行`./server` `./proxy` 和 `./client`，我们可以看到，client发送了一个trpc协议的请求"Hello, srpc!"给proxy，而proxy收到之后把请求用srpc协议发给了server。SRPC server填了回复"Hi back"并通过刚才的proxy路线转回给了client，期间转发纯异步，不会阻塞任何线程。
+Execute `./server` `./proxy` and `./client` on the three sessions respectively, and we will see that the client sends a trpc protocol request "Hello, srpc!" to the proxy, and the proxy receives the request and send to server as srpc protocol. SRPC server fill the response "Hi back" and will finnally transfer back to client by proxy. 
 
 ```
 ./server
@@ -309,11 +311,12 @@ message: "Hi back"
 
 #### 8. FILE COMMAND
 
-这是一个简单的文件服务器：
-
+This is an example to make a file service. We try the command like the following:
 ```
 ./srpc file file_project
 ```
+
+will get the following infomation:
 
 ```
 Success:
@@ -330,7 +333,8 @@ Try file service:
       curl localhost:8080/index.html
       curl -i localhost:8080/a/b/
 ```
-我们通过上述命令创建之后，可以看看文件服务器的目录结构如下：
+
+Check the files in directories:
 
 ```
 .
@@ -352,7 +356,8 @@ Try file service:
 
 3 directories, 13 files
 ```
-打开`server.conf`，就可以看到我们为文件服务器添加的具体配置项：`root`和`error_page`。我们可以通过root去指定打开文件的根目录，以及通过error_page去关联具体的错误码和它们所要返回作body的页面名称。
+
+Also check the `server.conf`, we can see the `root` and `error_page` are added into file service. We can specify the root to find files for this service, and fill the page coresponding to the error codes.
 
 ```
   1 {
@@ -374,16 +379,16 @@ Try file service:
  17 }
 ```
 
-我们执行`make`进行编译，然后执行`./server`把文件服务器跑起来，然后用`curl`进行测试：
+After we execute `make` and run the server with `./server`, we can make requests with `curl`:
 
-示例1：在根目录`./html/`下读取文件`index.html`（即使请求localhost:8080，默认也是读index.html）。
+example 1: read the file `index.html` in root path `./html/`.
 ```
 curl localhost:8080/index.html
 
 <html>Hello from workflow and srpc file server!</html>
 ```
 
-示例2：读文件`/a/b/`，这个文件不存在，所以我们根据上面配置文件`server.conf`中所指定的，填入`404`错误码会返回页面`404.html`的内容。
+example 2: read the file `/a/b/`. This does't exist, so the error page `404.html` for `404` will be return as we fill them into `server.conf` above.
 
 ```
 curl -i localhost:8080/a/b/
@@ -395,7 +400,7 @@ Connection: Keep-Alive
 <html>This is not the web page you are looking for.</html>
 ```
 
-以下信息在server端可以看到：
+The log printed by server:
 
 ```
 ./server 

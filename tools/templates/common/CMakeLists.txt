@@ -18,14 +18,14 @@ find_library(Workflow_LIB workflow HINTS ${Workflow_DIR}/_lib)
 set(LIB ${Workflow_LIB} pthread OpenSSL::SSL OpenSSL::Crypto)
 
 # Add all the common codes here
-set(COMMON_CODE config/config.cc config/Json.cc)
+set(COMMON_CODE config/config.cc config/Json.cc%s)
 
 # Add header directories and library directories here
 include_directories(${OPENSSL_INCLUDE_DIR} ${WORKFLOW_INCLUDE_DIR})
 link_directories(${OPENSSL_LINK_DIR} ${WORKFLOW_LIB_DIR})
 
 # Build executable outputs
-set(PROJECT_OUTPUT server client%s)
+set(PROJECT_OUTPUT server%s)
 foreach(output ${PROJECT_OUTPUT})
     add_executable(${output} ${output}_main.cc ${COMMON_CODE})
     target_link_libraries(${output} ${LIB})

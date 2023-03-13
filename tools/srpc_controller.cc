@@ -459,10 +459,19 @@ bool common_cmake_transform(const std::string& format, FILE *out,
 	std::string path = config->depend_path;
 	path += "workflow";
 
-	std::string is_proxy_str = config->type == COMMAND_PROXY ? " proxy" : "";
+	std::string codes_str;
+	std::string executors_str;
+
+	if (config->type == COMMAND_FILE)
+		codes_str = " file_service.cc";
+	else
+		executors_str = " client";
+
+	if (config->type == COMMAND_PROXY)
+		executors_str += " proxy";
 
 	size_t len = fprintf(out, format.c_str(), config->project_name,
-						 path.c_str(), is_proxy_str.c_str());
+						 path.c_str(), codes_str.c_str(), executors_str.c_str());
 
 	return len > 0;
 }

@@ -18,11 +18,11 @@
 #include <stdlib.h>
 #include <string>
 #include <string.h>
-
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <unordered_map>
 
 #include "srpc_controller.h"
 
@@ -262,7 +262,7 @@ static void basic_default_file_initialize(DEFAULT_FILES& files)
 	info = { "common/CMakeLists.txt", "CMakeLists.txt", common_cmake_transform };
 	files.push_back(info);
 
-	info = {"common/GNUmakefile", "GNUmakefile", nullptr };
+	info = { "common/GNUmakefile", "GNUmakefile", nullptr };
 	files.push_back(info);
 
 	info = { "config/Json.h", "config/Json.h", nullptr };
@@ -271,10 +271,10 @@ static void basic_default_file_initialize(DEFAULT_FILES& files)
 	info = { "config/Json.cc", "config/Json.cc", nullptr };
 	files.push_back(info);
 
-	info = {"config/config_simple.h", "config/config.h", nullptr};
+	info = { "config/config_simple.h", "config/config.h", nullptr };
 	files.push_back(info);
 
-	info = {"config/config_simple.cc", "config/config.cc", nullptr};
+	info = { "config/config_simple.cc", "config/config.cc", nullptr };
 	files.push_back(info);
 }
 
@@ -349,5 +349,73 @@ void RedisController::print_usage(const char *name) const
 bool RedisController::get_opt(int argc, const char **argv)
 {
 	return basic_get_opt(argc, argv, &this->config);
+}
+
+FileServiceController::FileServiceController()
+{
+	this->config.type = COMMAND_FILE;
+
+	struct file_info info;
+
+	info = { "file/server.conf", "server.conf", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "file/server_main.cc", "server_main.cc", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "file/file_service.cc", "file_service.cc", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "file/file_service.h", "file_service.h", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "file/index.html", "html/index.html", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "file/404.html", "html/404.html", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "file/50x.html", "html/50x.html", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "common/CMakeLists.txt", "CMakeLists.txt", common_cmake_transform };
+	this->default_files.push_back(info);
+
+	info = { "common/GNUmakefile", "GNUmakefile", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "config/Json.h", "config/Json.h", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "config/Json.cc", "config/Json.cc", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "config/config_simple.h", "config/config.h", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "config/config_simple.cc", "config/config.cc", nullptr };
+	this->default_files.push_back(info);
+}
+
+void FileServiceController::print_usage(const char *name) const
+{
+	basic_print_usage(name, "file");
+}
+
+bool FileServiceController::get_opt(int argc, const char **argv)
+{
+	return basic_get_opt(argc, argv, &this->config);
+}
+
+void FileServiceController::print_success_info() const
+{
+	printf("Success:\n      make project path \" %s \" done.\n\n",
+			this->config.output_path);
+	printf("Commands:\n      cd %s\n      make -j\n\n",
+			this->config.output_path);
+	printf("Execute:\n      ./server\n\n");
+	printf("Try file service:\n");
+	printf("      curl localhost:8080/index.html\n");
+	printf("      curl -i localhost:8080/a/b/\n\n");
 }
 

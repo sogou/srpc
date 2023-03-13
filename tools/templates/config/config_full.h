@@ -1,6 +1,9 @@
 #ifndef _RPC_CONFIG_H_
 #define _RPC_CONFIG_H_
 
+#include <string>
+#include <vector>
+#include <unordered_map>
 #include "Json.h"
 #include "srpc/rpc_types.h"
 #include "srpc/rpc_define.h"
@@ -12,6 +15,8 @@ namespace srpc
 class RPCConfig
 {
 public:
+    using ErrorPageMap = std::unordered_map<int, std::string>;
+
     bool load(const char *file);
 
     void load_filter(SRPCServer& server);
@@ -36,6 +41,8 @@ public:
     void load_filter(TRPCHttpClient& client);
 
     unsigned short server_port() const { return this->s_port; }
+    const char *server_cert_file() const { return this->s_cert_file.c_str(); }
+    const char *server_file_key() const { return this->s_file_key.c_str(); }
     unsigned short client_port() const { return this->c_port; }
     const char *client_host() const { return this->c_host.c_str(); }
     bool client_is_ssl() const { return this->c_is_ssl; }
@@ -45,6 +52,8 @@ public:
     const char *client_caller() const { return this->c_caller.c_str(); }
     const char *client_user_name() const { return this->c_user_name.c_str(); }
     const char *client_password() const { return this->c_password.c_str(); }
+    const char *get_root_path() const { return this->root_path.c_str(); }
+    const ErrorPageMap& get_error_page() const { return this->error_page; }
 
 public:
     RPCConfig() :
@@ -61,6 +70,8 @@ private:
     wfrest::Json data;
     std::vector<RPCFilter *> filters;
     unsigned short s_port;
+    std::string s_cert_file;
+    std::string s_file_key;
     std::string c_host;
     unsigned short c_port;
     bool c_is_ssl;
@@ -70,6 +81,8 @@ private:
     std::string c_caller;
     std::string c_user_name;
     std::string c_password;
+    std::string root_path;
+    ErrorPageMap error_page;
 };
 
 }

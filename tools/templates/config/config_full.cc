@@ -212,6 +212,35 @@ void RPCConfig::load_server()
 {
     if (this->data["server"].has("port"))
         this->s_port = this->data["server"]["port"];
+
+    if (this->data["server"].has("root"))
+        this->root_path = this->data["server"]["root"].get<std::string>();
+
+    if (this->data["server"].has("cert_file"))
+        this->s_cert_file = this->data["server"]["cert_file"].get<std::string>();
+
+    if (this->data["server"].has("file_key"))
+        this->s_file_key = this->data["server"]["file_key"].get<std::string>();
+
+    if (this->data["server"].has("error_page"))
+    {
+        for (const auto& it : this->data["server"]["error_page"])
+        {
+            std::string page;
+
+            if (it.has("error") == true && it.has("error") == true)
+            {
+                page = it["page"].get<std::string>();
+                for (const auto& e : it["error"])
+                    this->error_page.insert(std::make_pair(e.get<int>(), page));
+            }
+            else
+            {
+                printf("[ERROR][load_file_service] Invalid error_page\n");
+                continue;
+            }
+        }
+    }
 }
 
 void RPCConfig::load_client()
