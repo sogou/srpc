@@ -58,24 +58,34 @@ RPCController::RPCController()
 
 void RPCController::print_usage(const char *name) const
 {
-	printf("Usage:\n"
-		   "    %s rpc <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Flags:\n"
-		   "    -r :    rpc type [ SRPC | SRPCHttp | BRPC | Thrift | "
+	printf(COLOR_PINK"Usage:\n"
+		   COLOR_INFO"    %s " COLOR_COMMAND "rpc "
+		   COLOR_INFO"<PROJECT_NAME> " COLOR_FLAG "[FLAGS]\n\n"
+		   COLOR_PINK"Available Flags:\n"
+		   COLOR_FLAG"    -r "
+		   COLOR_WHITE": rpc type [ SRPC | SRPCHttp | BRPC | Thrift | "
 		   "ThriftHttp | TRPC | TRPCHttp ] (default: SRPC)\n"
-		   "    -o :    project output path (default: CURRENT_PATH)\n"
-		   "    -s :    service name (default: PROJECT_NAME)\n"
-		   "    -i :    idl type [ protobuf | thrift ] (default: protobuf)\n"
-		   "    -x :    data type [ protobuf | thrift | json ] "
+		   COLOR_FLAG"    -o "
+		   COLOR_WHITE": project output path (default: CURRENT_PATH)\n"
+		   COLOR_FLAG"    -s "
+		   COLOR_WHITE": service name (default: PROJECT_NAME)\n"
+		   COLOR_FLAG"    -i "
+		   COLOR_WHITE": idl type [ protobuf | thrift ] (default: protobuf)\n"
+		   COLOR_FLAG"    -x "
+		   COLOR_WHITE": data type [ protobuf | thrift | json ] "
 		   "(default: idl type. json for http)\n"
-		   "    -c :    compress type [ gzip | zlib | snappy | lz4 ] "
+		   COLOR_FLAG"    -c "
+		   COLOR_WHITE": compress type [ gzip | zlib | snappy | lz4 ] "
 		   "(default: no compression)\n"
-		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
-		   "    -f :    specify the idl_file to generate codes "
+		   COLOR_FLAG"    -d "
+		   COLOR_WHITE": path of dependencies (default: COMPILE_PATH)\n"
+		   COLOR_FLAG"    -f "
+		   COLOR_WHITE": specify the idl_file to generate codes "
 		   "(default: templates/rpc/IDL_FILE)\n"
-		   "    -p :    specify the path for idl_file to depend "
+		   COLOR_FLAG"    -p "
+		   COLOR_WHITE": specify the path for idl_file to depend "
 		   "(default: templates/rpc/)\n"
-		   , name);
+		   COLOR_OFF, name);
 }
 
 bool RPCController::copy_files()
@@ -109,9 +119,9 @@ bool RPCController::copy_files()
 			return false;
 
 		ControlGenerator gen(config);
-		printf("Info: srpc-ctl generator begin.\n");
+		printf(COLOR_PURPLE"Info: srpc-ctl generator begin.\n" COLOR_OFF);
 		gen.generate(params);
-		printf("Info: srpc-ctl generator done.\n\n");
+		printf(COLOR_PURPLE"Info: srpc-ctl generator done.\n\n" COLOR_OFF);
 	}
 
 	return CommandController::copy_files();
@@ -164,7 +174,8 @@ bool RPCController::get_opt(int argc, const char **argv)
 			config->specified_idl_path = optarg;
 			break;
 		default:
-			printf("Error:\n     Unknown args : %s\n\n", argv[optind - 1]);
+			printf(COLOR_RED "Error:\n     Unknown args : "
+				   COLOR_BLUE "%s\n\n" COLOR_OFF, argv[optind - 1]);
 			return false;
 		}
 	}
@@ -184,7 +195,7 @@ bool RPCController::check_args()
 		config->data_type == DATA_TYPE_MAX ||
 		config->compress_type == COMPRESS_TYPE_MAX)
 	{
-		printf("Error:\n      Invalid rpc args.\n");
+		printf(COLOR_RED"Error:\n      Invalid rpc args.\n" COLOR_OFF);
 		return false;
 	}
 
@@ -195,8 +206,9 @@ bool RPCController::check_args()
 		if (config->idl_type == IDL_TYPE_PROTOBUF ||
 			config->data_type == DATA_TYPE_PROTOBUF)
 		{
-			printf("Error:\n      "
-				   "\" %s \" does NOT support protobuf as idl or data type.\n",
+			printf(COLOR_RED"Error:\n      "
+				   COLOR_BLUE"\" %s \" "
+				   COLOR_RED"does NOT support protobuf as idl or data type.\n" COLOR_OFF,
 				   config->rpc_type_string());
 			return false;
 		}
@@ -209,8 +221,9 @@ bool RPCController::check_args()
 		if (config->idl_type == IDL_TYPE_THRIFT ||
 			config->data_type == DATA_TYPE_THRIFT)
 		{
-			printf("Error:\n      "
-				   "\" %s \" does NOT support thrift as idl or data type.\n",
+			printf(COLOR_RED "Error:\n      "
+				   COLOR_BLUE "\" %s \" "
+				   COLOR_RED "does NOT support thrift as idl or data type.\n" COLOR_OFF,
 				   config->rpc_type_string());
 			return false;
 		}

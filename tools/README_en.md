@@ -2,7 +2,7 @@
 
 # srpc tools
 
-### An easy tool to generate Workflow and SRPC project
+### Simple generator for building Workflow and SRPC projects.
 
 ## 1. COMPILE
 
@@ -20,7 +20,7 @@ make
 
 ```
 Description:
-    A handy generator for Workflow and SRPC project.
+	Simple generator for building Workflow and SRPC projects.
 
 Usage:
     ./srpc <COMMAND> <PROJECT_NAME> [FLAGS]
