@@ -220,25 +220,33 @@ ProxyController::ProxyController()
 
 void ProxyController::print_usage(const char *name) const
 {
-	printf("Usage:\n"
-		   "    %s proxy <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Flags:\n"
-		   "    -c :    client type for proxy [ Http | Redis | SRPC | SRPCHttp"
+	printf(COLOR_PINK"Usage:\n"
+		   COLOR_INFO"    %s " COLOR_BLUE "proxy "
+		   COLOR_INFO "<PROJECT_NAME>" COLOR_FLAG " [FLAGS]\n\n"
+		   COLOR_PINK"Available Flags:\n"
+		   COLOR_FLAG"    -c :"
+		   COLOR_WHITE" client type for proxy [ Http | Redis | SRPC | SRPCHttp"
 		   " | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: Http)\n"
-		   "    -s :    server type for proxy [ Http | Redis | SRPC | SRPCHttp"
+		   COLOR_FLAG"    -s :"
+		   COLOR_WHITE" server type for proxy [ Http | Redis | SRPC | SRPCHttp"
 		   " | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: Http)\n"
-		   "    -o :    project output path (default: CURRENT_PATH)\n"
-		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
-		   , name);
+		   COLOR_FLAG"    -o :"
+		   COLOR_WHITE" project output path (default: CURRENT_PATH)\n"
+		   COLOR_FLAG"    -d :"
+		   COLOR_WHITE" path of dependencies (default: COMPILE_PATH)\n"
+		   COLOR_OFF, name);
 }
 
 void ProxyController::print_success_info() const
 {
-	printf("Success:\n      make project path \" %s \" done.\n\n",
-			this->config.output_path);
-	printf("Commands:\n      cd %s\n      make -j\n\n",
-			this->config.output_path);
-	printf("Execute:\n      ./server\n      ./proxy\n      ./client\n\n");
+	printf(COLOR_GREEN"Success:\n      make project path "
+		   COLOR_BLUE"\" %s \"" COLOR_GREEN " done.\n\n" COLOR_OFF,
+		   this->config.output_path);
+	printf(COLOR_PINK"Commands:\n"
+		   COLOR_BLUE "      cd %s\n      make -j\n\n" COLOR_OFF,
+		   this->config.output_path);
+	printf(COLOR_PINK"Execute:\n"
+		   COLOR_GREEN"      ./server\n      ./proxy\n      ./client\n\n" COLOR_OFF);
 }
 
 bool ProxyController::copy_files()
@@ -353,7 +361,8 @@ bool ProxyController::get_opt(int argc, const char **argv)
 				return false;
 			break;
 		default:
-			printf("Error:\n     Unknown args : %s\n\n", argv[optind - 1]);
+			printf(COLOR_RED"Error:\n     Unknown args : "
+				   COLOR_BLUE"%s\n\n" COLOR_OFF, argv[optind - 1]);
 			return false;
 		}
 	}
@@ -371,27 +380,23 @@ bool ProxyController::check_args()
 
 	if (client_type < 0 || server_type < 0)
 	{
-		printf("Error:\n     Invalid type : %s, %s\n\n",
+		printf(COLOR_RED"Error:\n     Invalid type :"
+			   COLOR_BLUE" %s" COLOR_RED ", " COLOR_BLUE "%s\n\n" COLOR_OFF,
 			   this->config.proxy_server_type_string(),
 			   this->config.proxy_client_type_string());
 		return false;
 	}
 
-	// TODO: temperarily only support workflow to workflow, rpc to rpc
 	if ((client_type == BASIC_TYPE && server_type > BASIC_TYPE) ||
-		(server_type == BASIC_TYPE && client_type > BASIC_TYPE))
-	{
-		printf("Error:\n     Temperarily not support %s and %s together\n\n",
-			   this->config.proxy_server_type_string(),
-			   this->config.proxy_client_type_string());
-		return false;
-	}
-
-	// TODO: temperarily NOT support protobuf with thrift
-	if ((client_type == PROTOBUF_TYPE && server_type == THRIFT_TYPE) ||
+		(server_type == BASIC_TYPE && client_type > BASIC_TYPE) ||
+		// TODO: temperarily only support workflow to workflow, rpc to rpc
+		(client_type == PROTOBUF_TYPE && server_type == THRIFT_TYPE) ||
 		(server_type == PROTOBUF_TYPE && client_type == THRIFT_TYPE))
+		// TODO: temperarily NOT support protobuf with thrift
 	{
-		printf("Error:\n     Temperarily not support %s and %s together\n\n",
+		printf(COLOR_RED"Error:\n     Temperarily not support "
+			   COLOR_BLUE"%s" COLOR_RED " and " COLOR_BLUE "%s"
+			   COLOR_RED" together\n\n" COLOR_OFF,
 			   this->config.proxy_server_type_string(),
 			   this->config.proxy_client_type_string());
 		return false;
@@ -404,7 +409,7 @@ bool ProxyController::check_args()
 	else if (client_type == THRIFT_TYPE)
 	{
 		// this->config.idl_type = IDL_TYPE_THRIFT;
-		printf("Error:\n     Temperarily not support IDL thrift.\n\n");
+		printf(COLOR_RED"Error:\n     Temperarily not support IDL thrift.\n\n" COLOR_OFF);
 		return false;
 	}
 

@@ -36,8 +36,7 @@ static std::string server_process_codes(uint8_t type)
             task->get_req()->get_request_uri());
     print_peer_address(task);
 
-    task->get_resp()->append_output_body("<html>Hello from server!</html>");
-)");
+    task->get_resp()->append_output_body("<html>Hello from server!</html>");)");
 
 	if (type == PROTOCOL_TYPE_REDIS)
 		return std::string(R"(
@@ -53,8 +52,7 @@ static std::string server_process_codes(uint8_t type)
         print_peer_address(task);
 
         val.set_status("OK"); // example: return OK to every requests
-        resp->set_result(val);
-)");
+        resp->set_result(val);)");
 
 	return std::string("Unknown type");
 }
@@ -302,7 +300,8 @@ static bool basic_get_opt(int argc, const char **argv, struct srpc_config *confi
 				return false;
 			break;
 		default:
-			printf("Error:\n     Unknown args : %s\n\n", argv[optind - 1]);
+			printf(COLOR_RED"Error:\n     Unknown args : "
+				   COLOR_BLUE"%s\n\n" COLOR_OFF, argv[optind - 1]);
 			return false;
 		}
 	}
@@ -312,12 +311,15 @@ static bool basic_get_opt(int argc, const char **argv, struct srpc_config *confi
 
 static void basic_print_usage(const char *name, const char *command)
 {
-	printf("Usage:\n"
-		   "    %s %s <PROJECT_NAME> [FLAGS]\n\n"
-		   "Available Flags:\n"
-		   "    -o :    project output path (default: CURRENT_PATH)\n"
-		   "    -d :    path of dependencies (default: COMPILE_PATH)\n"
-		   , name, command);
+	printf(COLOR_PINK"Usage:\n"
+		   COLOR_INFO"    %s " COLOR_COMMAND "%s "
+		   COLOR_INFO"<PROJECT_NAME>" COLOR_FLAG " [FLAGS]\n\n"
+		   COLOR_PINK"Available Flags:\n"
+		   COLOR_FLAG"    -o : "
+		   COLOR_WHITE"project output path (default: CURRENT_PATH)\n"
+		   COLOR_FLAG"    -d : "
+		   COLOR_WHITE"path of dependencies (default: COMPILE_PATH)\n"
+		   COLOR_OFF, name, command);
 }
 
 HttpController::HttpController()
@@ -410,13 +412,14 @@ bool FileServiceController::get_opt(int argc, const char **argv)
 
 void FileServiceController::print_success_info() const
 {
-	printf("Success:\n      make project path \" %s \" done.\n\n",
-			this->config.output_path);
-	printf("Commands:\n      cd %s\n      make -j\n\n",
-			this->config.output_path);
-	printf("Execute:\n      ./server\n\n");
-	printf("Try file service:\n");
-	printf("      curl localhost:8080/index.html\n");
-	printf("      curl -i localhost:8080/a/b/\n\n");
+	printf(COLOR_GREEN"Success:\n      make project path "
+		   COLOR_BLUE"\" %s \"" COLOR_GREEN " done.\n\n",
+		   this->config.output_path);
+	printf(COLOR_PINK"Commands:\n      " COLOR_BLUE "cd %s\n      make -j\n\n",
+		   this->config.output_path);
+	printf(COLOR_PINK"Execute:\n      " COLOR_GREEN "./server\n\n");
+	printf(COLOR_PINK"Try file service:\n");
+	printf(COLOR_WHITE"      curl localhost:8080/index.html\n");
+	printf("      curl -i localhost:8080/a/b/\n\n" COLOR_OFF);
 }
 

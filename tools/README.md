@@ -2,7 +2,7 @@
 
 # srpc小工具
 
-### 一个帮你生成Workflow和SRPC项目/脚手架的小工具。
+### 一个帮你快速生成Workflow和SRPC项目的脚手架小工具。
 
 ## 1. 编译
 
@@ -24,7 +24,7 @@ make
 
 ```
 Description:
-    A handy generator for Workflow and SRPC project.
+    Simple generator for building Workflow and SRPC projects.
 
 Usage:
     ./srpc <COMMAND> <PROJECT_NAME> [FLAGS]

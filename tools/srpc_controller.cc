@@ -226,11 +226,10 @@ bool CommandController::parse_args(int argc, const char **argv)
 {
 	if (argc < 3)
 	{
-		printf("Missing: PROJECT_NAME\n\n");
+		printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
 		return false;
 	}
 
-//	getcwd(this->config.output_path, MAXPATHLEN);
 	memset(this->config.output_path, 0, MAXPATHLEN);
 	this->config.project_name = argv[2];
 	this->config.service_name = argv[2];
@@ -261,8 +260,9 @@ bool CommandController::check_args()
 
 	if (strlen(this->config.project_name) >= MAXPATHLEN - path_len - 2)
 	{
-		printf("Error:\n      project name \" %s \" or path \" %s \" "\
-               " is too long. total limit %d.\n\n",
+		printf(COLOR_RED "Error:\n      project name" COLOR_BLUE " \" %s \" "
+			   COLOR_RED "or path" COLOR_BLUE " \" %s \" "
+               COLOR_RED " is too long. Total limit : %d.\n\n" COLOR_OFF,
 			   this->config.project_name, this->config.output_path, MAXPATHLEN);
 		return false;
 	}
@@ -283,23 +283,25 @@ bool CommandController::dependencies_and_dir()
 {
 	struct srpc_config *config = &this->config;
 	DIR *dir;
+	int status;
 
 	dir = opendir(config->output_path);
 	if (dir != NULL)
 	{
-		printf("Error:\n      project path \" %s \" EXISTS.\n\n",
-				config->output_path);
-		closedir(dir);
+		printf(COLOR_RED "Error:\n      project path "
+			   COLOR_BLUE "\" %s \"" COLOR_RED " EXISTS.\n\n" COLOR_OFF,
+			   config->output_path);
 
+		closedir(dir);
 		return false;
 	}
 
 	dir = opendir(config->template_path);
 	if (dir == NULL)
 	{
-		printf("Error:\n      template path \" %s \" does NOT exist.\n",
-				config->template_path);
-
+		printf(COLOR_RED "Error:\n      template path "
+			   COLOR_BLUE "\" %s \" " COLOR_RED "does NOT exist.\n" COLOR_OFF,
+			   config->template_path);
 		return false;
 	}
 	closedir(dir);
@@ -313,12 +315,12 @@ bool CommandController::dependencies_and_dir()
 			std::string cmd = "cd ";
 			cmd += config->depend_path;
 			cmd += "&& git submodule init && git submodule update";
-			system(cmd.c_str());
+			(void)system(cmd.c_str());
 
 			if (access(workflow_file.c_str(), 0) != 0)
 			{
 				printf(DEPENDENCIES_ERROR, config->depend_path,
-						config->project_name);
+					   config->project_name);
 				return false;
 			}
 		}
@@ -331,7 +333,7 @@ bool CommandController::dependencies_and_dir()
 			std::string cmd = "cd ";
 			cmd += config->depend_path;
 			cmd += " && make -j4";
-			system(cmd.c_str());
+			(void)system(cmd.c_str());
 		}
 	}
 
@@ -417,21 +419,30 @@ bool CommandController::copy_single_file(const std::string& in_file,
 						ret = fwrite(buf, size, 1, write_fp) >= 0 ? true : false;
 				}
 				else
-					printf("Error:\n       read \" %s \" failed\n\n", in_file.c_str());
+				{
+					printf(COLOR_RED "Error:\n       read " COLOR_WHITE
+						   "\" %s \" " COLOR_RED "failed\n\n" COLOR_OFF,
+						   in_file.c_str());
+				}
 
 				free(buf);
 			}
 			else
-				printf("Error:\n      system error.\n\n");
+				printf(COLOR_RED "Error:\n      system error.\n\n" COLOR_OFF);
 
 			fclose(write_fp);
 		}
 		else
-			printf("Error:\n       write \" %s \" failed\n\n", out_file.c_str());
+		{
+			printf(COLOR_RED "Error:\n       write" COLOR_WHITE " \" %s \" "
+				   COLOR_RED "failed\n\n" COLOR_OFF, out_file.c_str());
+		}
 	}
 	else
-		printf("Error:\n      open \" %s \" failed.\n\n", in_file.c_str());
-
+	{
+		printf(COLOR_RED "Error:\n      open" COLOR_WHITE " \" %s \""
+			   COLOR_RED " failed.\n\n" COLOR_OFF, in_file.c_str());
+	}
 	return ret;
 }
 
@@ -460,11 +471,13 @@ bool CommandController::copy_files()
 
 void CommandController::print_success_info() const
 {
-	printf("Success:\n      make project path \" %s \" done.\n\n",
-			this->config.output_path);
-	printf("Commands:\n      cd %s\n      make -j\n\n",
-			this->config.output_path);
-	printf("Execute:\n      ./server\n      ./client\n\n");
+	printf(COLOR_GREEN"Success!\n      make project path "
+		   COLOR_BLUE"\" %s \"" COLOR_GREEN " done.\n\n",
+		   this->config.output_path);
+	printf(COLOR_PINK"Commands:\n      " COLOR_BLUE "cd %s\n      make -j\n\n",
+		   this->config.output_path);
+	printf(COLOR_PINK"Execute:\n      "
+		   COLOR_GREEN "./server\n      ./client\n\n" COLOR_OFF);
 }
 
 bool common_cmake_transform(const std::string& format, FILE *out,
