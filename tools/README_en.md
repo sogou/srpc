@@ -26,16 +26,17 @@ Usage:
     ./srpc <COMMAND> <PROJECT_NAME> [FLAGS]
 
 Available Commands:
-    "http"  - create project with both client and server
-    "redis" - create project with both client and server
-    "rpc"   - create project with both client and server
-    "proxy" - create proxy for some client and server protocol
-    "file"  - create project with file service
+    http    - create project with both client and server
+    redis   - create project with both client and server
+    rpc     - create project with both client and server
+    proxy   - create proxy for some client and server protocol
+    file    - create project with asynchronous file service
+    compute - create project with asynchronous computing service
 ```
 
 ## 3. START
 
-Execute this simple example
+Execute this simple example:
 
 ```sh
 ./srpc http project_name1
@@ -316,7 +317,8 @@ async resp. message: "Hi back"
 
 ## 8. FILE COMMAND
 
-This is an example to make a file service. We try the command like the following:
+This is a simple file server. File reading is asynchronous, and the  threads for process( )  will not be blocked by file IOs.
+
 ```
 ./srpc file file_project
 ```
@@ -412,4 +414,39 @@ The log printed by server:
 http file service start, port 8080
 file service get request: /a/b/
 ```
+
+## 9. COMPUTE COMMAND
+
+Next is a simple calculation server, similarly, the calculation will not block the server processing thread.
+
+```
+./srpc compute compute_test
+```
+
+Through the above command, we can create a project, which receives the url request as the parameter n, and performs Fibonacci calculation.
+
+```
+Success:
+      make project path " compute_test/ " done.
+
+Commands:
+      cd compute_test/
+      make -j
+
+Execute:
+      ./server
+
+Try compute with n=8:
+      curl localhost:8080/8
+```
+
+Enter the `compute_test/` directory and use `make` to compile and execute `./server` to run. Then we can use curl or browser to enter `localhost:8080/8` to calculate the 8th Fibonacci number. Here take curl as an example:
+
+```
+curl localhost:8080/8
+
+<html><p>0 + 1 = 1.</p><p>1 + 1 = 2.</p><p>1 + 2 = 3.</p><p>2 + 3 = 5.</p><p>3 + 5 = 8.</p><p>5 + 8 = 13.</p><p>The No. 8 Fibonacci number is: 13.</p></html>
+```
+
+We can see the calculation steps inside the server. This computing example of the server uses go_task to encapsulate a function. Welcome to try more computing scheduling. 
 

@@ -30,15 +30,15 @@ Usage:
     ./srpc <COMMAND> <PROJECT_NAME> [FLAGS]
 
 Available Commands:
-    "http"  - create project with both client and server
-    "redis" - create project with both client and server
-    "rpc"   - create project with both client and server
-    "proxy" - create proxy for some client and server protocol
-    "file"  - create project with file service
+    http    - create project with both client and server
+    redis   - create project with both client and server
+    rpc     - create project with both client and server
+    proxy   - create proxy for some client and server protocol
+    file    - create project with asynchronous file service
+    compute - create project with asynchronous computing service
 ```
 
 ## 3. 入门
-
 
 我们先从最简单的命令开始入门：
 
@@ -314,7 +314,7 @@ async resp. message: "Hi back"
 
 ## 8. FILE
 
-这是一个简单的文件服务器：
+这是一个简单的文件服务器，文件读取都是异步的，不会因为读文件阻塞当前服务器的处理线程：
 
 ```
 ./srpc file file_project
@@ -407,4 +407,39 @@ Connection: Keep-Alive
 http file service start, port 8080
 file service get request: /a/b/
 ```
+
+## 9. COMPUTE
+
+接下来是一个简单的计算服务器，同理，计算也不会阻塞当前服务器的处理线程：
+
+```
+./srpc compute compute_test
+```
+
+通过以上命令，我们可以创建一个小项目，项目默认接收url请求作为参数n，并进行斐波那契计算。
+
+```
+Success:
+      make project path " compute_test/ " done.
+
+Commands:
+      cd compute_test/
+      make -j
+
+Execute:
+      ./server
+
+Try compute with n=8:
+      curl localhost:8080/8
+```
+
+进入`compute_test/`目录执行`make`，并执行`./server`运行起来。然后我们就可以使用curl或者浏览器输入`localhost:8080/8`，计算第8个斐波那契数是多少。这里以`curl`为例：
+
+```
+curl localhost:8080/8
+
+<html><p>0 + 1 = 1.</p><p>1 + 1 = 2.</p><p>1 + 2 = 3.</p><p>2 + 3 = 5.</p><p>3 + 5 = 8.</p><p>5 + 8 = 13.</p><p>The No. 8 Fibonacci number is: 13.</p></html>
+```
+
+我们看到了server内部的计算步骤。server的计算例子使用了go_task去封装一个计算函数，欢迎尝试更多的计算调度。
 
