@@ -78,8 +78,7 @@ static std::string client_task_callback_codes(uint8_t type)
         task->get_resp()->get_parsed_body(&body, &body_len);
         fwrite(body, 1, body_len, stdout);
         fflush(stdout);
-     }
-)");
+     })");
 
 	if (type == PROTOCOL_TYPE_REDIS)
 		return std::string(R"(
@@ -90,8 +89,7 @@ static std::string client_task_callback_codes(uint8_t type)
     {
         resp->get_result(val);
         fprintf(stderr, "response: %s\n", val.string_value().c_str());
-    }
-)");
+    })");
 
 	return std::string("Unknown type");
 }
@@ -195,7 +193,12 @@ bool basic_client_config_transform(const std::string& format, FILE *out,
 	
 	// for proxy
 	if (config->type == COMMAND_PROXY)
-		port = port - 1;
+	{
+		if (get_client_protocol_type(config) == PROTOCOL_TYPE_HTTP)
+			port = 8888;
+		else
+			port = port - 1;
+	}
 
 	size_t len = fprintf(out, format.c_str(), port,
 						 redirect_code.c_str(), user_and_passwd.c_str());
@@ -224,13 +227,18 @@ bool basic_client_transform(const std::string& format, FILE *out,
 	std::transform(client_lower.begin(), client_lower.end(),
 				   client_lower.begin(), ::tolower);
 
+	std::string client_request_codes;
+	if ((config->type == COMMAND_PROXY && client_type == PROTOCOL_TYPE_HTTP) ||
+		config->type == COMMAND_REDIS)
+		client_request_codes = client_set_request_codes(client_type);
+
 	size_t len = fprintf(out, format.c_str(), type, type, type,
 						 client_task_callback_codes(client_type).c_str(),
 						 client_lower.c_str(),
 						 username_passwd_codes(client_type).c_str(),
 						 type, client_lower.c_str(),
 						 client_redirect_codes(client_type).c_str(),
-						 client_set_request_codes(client_type).c_str());
+						 client_request_codes.c_str());
 
 	return len > 0;
 }
