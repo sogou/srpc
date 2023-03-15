@@ -203,7 +203,7 @@ void Generator::thrift_replace_include(const idl_info& cur_info, std::vector<rpc
 					SGenUtil::replace(param.type_name, desc.block_name, "int32_t");
 			}
 
-			for (const auto sub_info : cur_info.include_list)
+			for (const auto &sub_info : cur_info.include_list)
 			{
 				for (const auto& desc : sub_info.desc_list)
 				{
@@ -216,7 +216,7 @@ void Generator::thrift_replace_include(const idl_info& cur_info, std::vector<rpc
 		auto pos = param.type_name.find('.');
 		if (pos != std::string::npos)
 		{
-			for (const auto sub_info : cur_info.include_list)
+			for (const auto &sub_info : cur_info.include_list)
 			{
 				if (sub_info.package_name.empty())
 					continue;

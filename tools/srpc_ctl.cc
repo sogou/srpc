@@ -17,67 +17,26 @@
 #include <stdio.h>
 #include "srpc_controller.h"
 
-//TODO: 1412
 static void usage(const char *name)
 {
 	printf(COLOR_PINK"Description:\n"
 		   COLOR_PURPLE"    Simple generator for building Workflow and SRPC projects.\n\n"
 		   COLOR_PINK"Usage:\n"
 		   COLOR_INFO"    %s" COLOR_COMMAND " <COMMAND>"
-		   COLOR_INFO" <PROJECT_NAME>" " [FLAGS]\n\n"
+		   COLOR_INFO" <PROJECT_NAME>" COLOR_FLAG " [FLAGS]\n\n"
 		   COLOR_PINK"Available Commands:\n"
 		   COLOR_COMMAND"    http"
-		   COLOR_WHITE"  - create project with both client and server\n"
+		   COLOR_WHITE"    - create project with both client and server\n"
 		   COLOR_COMMAND"    redis"
-		   COLOR_WHITE" - create project with both client and server\n"
+		   COLOR_WHITE"   - create project with both client and server\n"
 		   COLOR_COMMAND"    rpc"
-		   COLOR_WHITE"   - create project with both client and server\n"
+		   COLOR_WHITE"     - create project with both client and server\n"
 		   COLOR_COMMAND"    proxy"
-		   COLOR_WHITE" - create proxy for some client and server protocol\n"
+		   COLOR_WHITE"   - create proxy for some client and server protocol\n"
 		   COLOR_COMMAND"    file"
-		   COLOR_WHITE"  - create project with file service\n"
-		   COLOR_OFF, name);
-}
-
-static void usage1(const char *name)
-{
-	printf(COLOR_PINK"Description:\n"
-		   COLOR_PURPLE"    Simple generator for building Workflow and SRPC projects.\n\n"
-		   COLOR_PINK"Usage:\n"
-		   COLOR_LPURPLE"    %s" COLOR_BLUE " <COMMAND>"
-		   COLOR_LPURPLE" <PROJECT_NAME>" " [FLAGS]\n\n"
-		   COLOR_PINK"Available Commands:\n"
-		   COLOR_BLUE"    http"
-		   COLOR_WHITE"  - create project with both client and server\n"
-		   COLOR_BLUE"    redis"
-		   COLOR_WHITE" - create project with both client and server\n"
-		   COLOR_BLUE"    rpc"
-		   COLOR_WHITE"   - create project with both client and server\n"
-		   COLOR_BLUE"    proxy"
-		   COLOR_WHITE" - create proxy for some client and server protocol\n"
-		   COLOR_BLUE"    file"
-		   COLOR_WHITE"  - create project with file service\n"
-		   COLOR_OFF, name);
-}
-
-static void usage2(const char *name)
-{
-	printf(COLOR_PINK"Description:\n"
-		   COLOR_PURPLE"    Simple generator for building Workflow and SRPC projects.\n\n"
-		   COLOR_PINK"Usage:\n"
-		   COLOR_BLUE"    %s" COLOR_YELLOW " <COMMAND>"
-		   COLOR_BLUE" <PROJECT_NAME>" " [FLAGS]\n\n"
-		   COLOR_PINK"Available Commands:\n"
-		   COLOR_YELLOW"    http"
-		   COLOR_WHITE"  - create project with both client and server\n"
-		   COLOR_YELLOW"    redis"
-		   COLOR_WHITE" - create project with both client and server\n"
-		   COLOR_YELLOW"    rpc"
-		   COLOR_WHITE"   - create project with both client and server\n"
-		   COLOR_YELLOW"    proxy"
-		   COLOR_WHITE" - create proxy for some client and server protocol\n"
-		   COLOR_YELLOW"    file"
-		   COLOR_WHITE"  - create project with file service\n"
+		   COLOR_WHITE"    - create project with asynchronous file service\n"
+		   COLOR_COMMAND"    compute"
+		   COLOR_WHITE" - create project with asynchronous computing service\n"
 		   COLOR_OFF, name);
 }
 
@@ -110,6 +69,10 @@ int main(int argc, const char *argv[])
 	else if (strcasecmp(argv[1], "file") == 0)
 	{
 		ctl = new FileServiceController;
+	}
+	else if (strcasecmp(argv[1], "compute") == 0)
+	{
+		ctl = new ComputeController;
 	}
 	else
 	{

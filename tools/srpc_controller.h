@@ -148,6 +148,20 @@ public:
 	~FileServiceController() { }
 };
 
+class ComputeController : public CommandController
+{
+public:
+	void print_usage(const char *name) const override;
+	void print_success_info() const override;
+
+private:
+	bool get_opt(int argc, const char **argv) override;
+
+public:
+	ComputeController();
+	~ComputeController() { }
+};
+
 ////////// common transform functions //////////
 
 bool common_cmake_transform(const std::string& format, FILE *out,

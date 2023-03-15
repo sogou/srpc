@@ -120,7 +120,7 @@ int parse_origin(int argc, const char *argv[],
 {
 	int idl_file_id = 1;
 
-	for (size_t i = 1; i < argc && i < 4 && argv[i][0] != '-'; i++)
+	for (int i = 1; i < argc && i < 4 && argv[i][0] != '-'; i++)
 	{
 		if (i == 1) // parse [protobuf|thrift]
 		{

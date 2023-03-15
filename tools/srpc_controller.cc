@@ -315,7 +315,13 @@ bool CommandController::dependencies_and_dir()
 			std::string cmd = "cd ";
 			cmd += config->depend_path;
 			cmd += "&& git submodule init && git submodule update";
-			(void)system(cmd.c_str());
+
+			status = system(cmd.c_str());
+			if (status == -1 || status == 127)
+			{
+				perror("git submodule init failed");
+				return false;
+			}
 
 			if (access(workflow_file.c_str(), 0) != 0)
 			{
@@ -333,7 +339,13 @@ bool CommandController::dependencies_and_dir()
 			std::string cmd = "cd ";
 			cmd += config->depend_path;
 			cmd += " && make -j4";
-			(void)system(cmd.c_str());
+
+			status = system(cmd.c_str());
+			if (status == -1 || status == 127)
+			{
+				perror("execute command make failed");
+				return false;
+			}
 		}
 	}
 
@@ -491,7 +503,8 @@ bool common_cmake_transform(const std::string& format, FILE *out,
 
 	if (config->type == COMMAND_FILE)
 		codes_str = " file_service.cc";
-	else
+
+	if (config->type != COMMAND_FILE && config->type != COMMAND_COMPUTE)
 		executors_str = " client";
 
 	if (config->type == COMMAND_PROXY)

@@ -124,7 +124,7 @@ static std::string username_passwd_codes(uint8_t type)
 
 static uint8_t get_protocol_type(const struct srpc_config *config, uint8_t type)
 {
-	if (config->type == COMMAND_HTTP ||
+	if (config->type == COMMAND_HTTP || config->type == COMMAND_COMPUTE ||
 		(config->type == COMMAND_PROXY && type == PROTOCOL_TYPE_HTTP))
 		return PROTOCOL_TYPE_HTTP;
 
@@ -421,5 +421,57 @@ void FileServiceController::print_success_info() const
 	printf(COLOR_PINK"Try file service:\n");
 	printf(COLOR_WHITE"      curl localhost:8080/index.html\n");
 	printf("      curl -i localhost:8080/a/b/\n\n" COLOR_OFF);
+}
+
+ComputeController::ComputeController()
+{
+	this->config.type = COMMAND_COMPUTE;
+	struct CommandController::file_info info;
+
+	info = { "basic/server.conf", "server.conf", basic_server_config_transform };
+	this->default_files.push_back(info);
+
+	info = { "basic/compute_server_main.cc", "server_main.cc", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "common/CMakeLists.txt", "CMakeLists.txt", common_cmake_transform };
+	this->default_files.push_back(info);
+
+	info = { "common/GNUmakefile", "GNUmakefile", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "config/Json.h", "config/Json.h", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "config/Json.cc", "config/Json.cc", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "config/config_simple.h", "config/config.h", nullptr };
+	this->default_files.push_back(info);
+
+	info = { "config/config_simple.cc", "config/config.cc", nullptr };
+	this->default_files.push_back(info);
+}
+
+void ComputeController::print_usage(const char *name) const
+{
+	basic_print_usage(name, "compute");
+}
+
+bool ComputeController::get_opt(int argc, const char **argv)
+{
+	return basic_get_opt(argc, argv, &this->config);
+}
+
+void ComputeController::print_success_info() const
+{
+	printf(COLOR_GREEN"Success:\n      make project path "
+		   COLOR_BLUE"\" %s \"" COLOR_GREEN " done.\n\n",
+		   this->config.output_path);
+	printf(COLOR_PINK"Commands:\n      " COLOR_BLUE "cd %s\n      make -j\n\n",
+		   this->config.output_path);
+	printf(COLOR_PINK"Execute:\n      " COLOR_GREEN "./server\n\n");
+	printf(COLOR_PINK"Try compute with n=8:\n");
+	printf(COLOR_WHITE"      curl localhost:8080/8\n\n" COLOR_OFF);
 }
 
