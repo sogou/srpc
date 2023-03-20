@@ -9,7 +9,7 @@
 先从github上把srpc项目拷贝下来，小工具代码在srpc/tools/目录下，执行`make`即可编译。
 
 ```
-git clone --recursive https://github.com/sogou/srpc.git
+git clone https://github.com/sogou/srpc
 cd srpc/tools
 make
 ```
