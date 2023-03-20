@@ -7,7 +7,7 @@
 ## 1. COMPILE
 
 ```
-git clone --recursive https://github.com/sogou/srpc.git
+git clone https://github.com/sogou/srpc
 cd srpc/tools
 make
 ```
