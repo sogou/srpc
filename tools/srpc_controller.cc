@@ -30,7 +30,7 @@ if(${PROTOC} STREQUAL "PROTOC-NOTFOUND")
 endif ()
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${IDL_FILE}))";
 
-static int mkdir_p(const char *name, mode_t mode)
+int mkdir_p(const char *name, mode_t mode)
 {
 	int ret = mkdir(name, mode);
 	if (ret == 0 || errno != ENOENT)
@@ -226,7 +226,11 @@ bool CommandController::parse_args(int argc, const char **argv)
 {
 	if (argc < 3)
 	{
-		printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
+		if (argc == 2 && strncmp(argv[1], "api", strlen(argv[1])) == 0)
+			printf(COLOR_RED "Missing: FILE_NAME\n\n" COLOR_OFF);
+		else
+			printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
+
 		return false;
 	}
 
@@ -254,15 +258,18 @@ bool CommandController::parse_args(int argc, const char **argv)
 bool CommandController::check_args()
 {
 	if (*(this->config.project_name) == '-')
+	{
+		printf(COLOR_RED "Error: Invalid PROJECT_NAME\n\n" COLOR_OFF);
 		return false;
+	}
 
 	size_t path_len = strlen(this->config.output_path);
 
 	if (strlen(this->config.project_name) >= MAXPATHLEN - path_len - 2)
 	{
-		printf(COLOR_RED "Error:\n      project name" COLOR_BLUE " \" %s \" "
-			   COLOR_RED "or path" COLOR_BLUE " \" %s \" "
-               COLOR_RED " is too long. Total limit : %d.\n\n" COLOR_OFF,
+		printf(COLOR_RED"Error:\n      project name" COLOR_BLUE " %s "
+			   COLOR_RED"or path" COLOR_BLUE " %s "
+               COLOR_RED" is too long. Total limit : %d.\n\n" COLOR_OFF,
 			   this->config.project_name, this->config.output_path, MAXPATHLEN);
 		return false;
 	}
@@ -289,7 +296,7 @@ bool CommandController::dependencies_and_dir()
 	if (dir != NULL)
 	{
 		printf(COLOR_RED "Error:\n      project path "
-			   COLOR_BLUE "\" %s \"" COLOR_RED " EXISTS.\n\n" COLOR_OFF,
+			   COLOR_BLUE " %s " COLOR_RED " EXISTS.\n\n" COLOR_OFF,
 			   config->output_path);
 
 		closedir(dir);
@@ -300,7 +307,7 @@ bool CommandController::dependencies_and_dir()
 	if (dir == NULL)
 	{
 		printf(COLOR_RED "Error:\n      template path "
-			   COLOR_BLUE "\" %s \" " COLOR_RED "does NOT exist.\n" COLOR_OFF,
+			   COLOR_BLUE " %s " COLOR_RED "does NOT exist.\n" COLOR_OFF,
 			   config->template_path);
 		return false;
 	}
@@ -432,27 +439,27 @@ bool CommandController::copy_single_file(const std::string& in_file,
 				}
 				else
 				{
-					printf(COLOR_RED "Error:\n       read " COLOR_WHITE
-						   "\" %s \" " COLOR_RED "failed\n\n" COLOR_OFF,
+					printf(COLOR_RED"Error:\n       read " COLOR_WHITE
+						   " %s " COLOR_RED "failed\n\n" COLOR_OFF,
 						   in_file.c_str());
 				}
 
 				free(buf);
 			}
 			else
-				printf(COLOR_RED "Error:\n      system error.\n\n" COLOR_OFF);
+				printf(COLOR_RED"Error:\n      system error.\n\n" COLOR_OFF);
 
 			fclose(write_fp);
 		}
 		else
 		{
-			printf(COLOR_RED "Error:\n       write" COLOR_WHITE " \" %s \" "
-				   COLOR_RED "failed\n\n" COLOR_OFF, out_file.c_str());
+			printf(COLOR_RED"Error:\n       write" COLOR_WHITE " %s "
+				   COLOR_RED"failed\n\n" COLOR_OFF, out_file.c_str());
 		}
 	}
 	else
 	{
-		printf(COLOR_RED "Error:\n      open" COLOR_WHITE " \" %s \""
+		printf(COLOR_RED"Error:\n      open" COLOR_WHITE " %s "
 			   COLOR_RED " failed.\n\n" COLOR_OFF, in_file.c_str());
 	}
 	return ret;
@@ -483,8 +490,8 @@ bool CommandController::copy_files()
 
 void CommandController::print_success_info() const
 {
-	printf(COLOR_GREEN"Success!\n      make project path "
-		   COLOR_BLUE"\" %s \"" COLOR_GREEN " done.\n\n",
+	printf(COLOR_GREEN"Success!\n      make project path"
+		   COLOR_BLUE" %s " COLOR_GREEN " done.\n\n",
 		   this->config.output_path);
 	printf(COLOR_PINK"Commands:\n      " COLOR_BLUE "cd %s\n      make -j\n\n",
 		   this->config.output_path);
@@ -560,7 +567,6 @@ bool rpc_cmake_transform(const std::string& format, FILE *out,
 						 const struct srpc_config *config)
 {
 	std::string idl_file_name;
-
 	std::string srpc_path = config->depend_path;
 	std::string workflow_path = config->depend_path;
 	workflow_path += "workflow";
