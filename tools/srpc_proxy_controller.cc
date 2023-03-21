@@ -223,6 +223,8 @@ void ProxyController::print_usage(const char *name) const
 	printf(COLOR_PINK"Usage:\n"
 		   COLOR_INFO"    %s " COLOR_BLUE "proxy "
 		   COLOR_INFO "<PROJECT_NAME>" COLOR_FLAG " [FLAGS]\n\n"
+		   COLOR_PINK"Example:\n"
+		   COLOR_PURPLE"    %s proxy my_proxy_project\n\n"
 		   COLOR_PINK"Available Flags:\n"
 		   COLOR_FLAG"    -c :"
 		   COLOR_WHITE" client type for proxy [ Http | Redis | SRPC | SRPCHttp"
@@ -234,13 +236,13 @@ void ProxyController::print_usage(const char *name) const
 		   COLOR_WHITE" project output path (default: CURRENT_PATH)\n"
 		   COLOR_FLAG"    -d :"
 		   COLOR_WHITE" path of dependencies (default: COMPILE_PATH)\n"
-		   COLOR_OFF, name);
+		   COLOR_OFF, name, name);
 }
 
 void ProxyController::print_success_info() const
 {
 	printf(COLOR_GREEN"Success:\n      make project path "
-		   COLOR_BLUE"\" %s \"" COLOR_GREEN " done.\n\n" COLOR_OFF,
+		   COLOR_BLUE" %s " COLOR_GREEN " done.\n\n" COLOR_OFF,
 		   this->config.output_path);
 	printf(COLOR_PINK"Commands:\n"
 		   COLOR_BLUE "      cd %s\n      make -j\n\n" COLOR_OFF,

@@ -37,7 +37,7 @@ class CommandController
 {
 public:
 	bool parse_args(int argc, const char **argv);
-	bool dependencies_and_dir();
+	virtual bool dependencies_and_dir();
 	virtual bool copy_files();
 	virtual void print_success_info() const;
 	virtual void print_usage(const char *name) const = 0;
@@ -116,6 +116,24 @@ public:
 	~RPCController() { }
 };
 
+class APIController : public CommandController
+{
+public:
+	bool dependencies_and_dir() override;
+	void print_usage(const char *name) const override;
+	void print_success_info() const override;
+
+protected:
+	bool check_args() override;
+
+private:
+	bool get_opt(int argc, const char **argv) override;
+
+public:
+	APIController();
+	~APIController() { }
+};
+
 class ProxyController : public CommandController
 {
 public:
@@ -161,6 +179,10 @@ public:
 	ComputeController();
 	~ComputeController() { }
 };
+
+////////// common functions //////////
+
+int mkdir_p(const char *name, mode_t mode);
 
 ////////// common transform functions //////////
 

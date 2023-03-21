@@ -322,12 +322,14 @@ static void basic_print_usage(const char *name, const char *command)
 	printf(COLOR_PINK"Usage:\n"
 		   COLOR_INFO"    %s " COLOR_COMMAND "%s "
 		   COLOR_INFO"<PROJECT_NAME>" COLOR_FLAG " [FLAGS]\n\n"
+		   COLOR_PINK"Example:\n"
+		   COLOR_PURPLE"    %s %s my_%s_project\n\n"
 		   COLOR_PINK"Available Flags:\n"
 		   COLOR_FLAG"    -o : "
 		   COLOR_WHITE"project output path (default: CURRENT_PATH)\n"
 		   COLOR_FLAG"    -d : "
 		   COLOR_WHITE"path of dependencies (default: COMPILE_PATH)\n"
-		   COLOR_OFF, name, command);
+		   COLOR_OFF, name, command, name, command, command);
 }
 
 HttpController::HttpController()

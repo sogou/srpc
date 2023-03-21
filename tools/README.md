@@ -33,6 +33,7 @@ Available Commands:
     http    - create project with both client and server
     redis   - create project with both client and server
     rpc     - create project with both client and server
+    api     - create protobuf or thrift IDL api
     proxy   - create proxy for some client and server protocol
     file    - create project with asynchronous file service
     compute - create project with asynchronous computing service
@@ -46,14 +47,14 @@ Available Commands:
 ./srpc http project_name1
 ```
 
-然后就可以看到屏幕上显示，项目建立在了新目录`./project_name1/`中，并且带有编译和执行的提示命令。
+然后就可以看到屏幕上显示，项目建立在了新目录`project_name1/`中，并且带有编译和执行的提示命令。
 
 ```
 Success:
-      make project path " ./project_name1/ " done.
+      make project path project_name1/ done.
 
 Commands:
-      cd ./project_name1/
+      cd project_name1/
       make -j
 
 Execute:
@@ -102,6 +103,9 @@ Missing: PROJECT_NAME
 Usage:
     ./srpc http <PROJECT_NAME> [FLAGS]
 
+Example:
+    ./srpc http my_http_project
+
 Available Flags:
     -o :    project output path (default: CURRENT_PATH)
     -d :    path of dependencies (default: COMPILE_PATH)
@@ -120,6 +124,9 @@ Missing: PROJECT_NAME
 
 Usage:
     ./srpc rpc <PROJECT_NAME> [FLAGS]
+
+Example:
+    ./srpc rpc my_rpc_project
 
 Available Flags:
     -r :    rpc type [ SRPC | SRPCHttp | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: SRPC)
@@ -155,10 +162,10 @@ finish parsing proto file: [/root/srpc/tools/rpc_example/test.proto]
 Info: srpc generator done.
 
 Success:
-      make project path " /root/srpc/tools/rpc_example/ " done.
+      make project path rpc_example/ done.
 
 Commands:
-      cd /root/srpc/tools/rpc_example/
+      cd rpc_example/
       make -j
 
 Execute:
@@ -166,7 +173,44 @@ Execute:
       ./client
 ```
 
-## 6. REDIS
+## 6. API
+
+API命令用于简单地创建一个IDL文件，这样方便我们改完文件之后再进行rpc项目调查创建。命令如下：
+
+```
+Missing: FILE_NAME
+
+Usage:
+    ./srpc api <FILE_NAME> [FLAGS]
+
+Example:
+    ./srpc api my_api
+
+Available Flags:
+    -o : file output path (default: CURRENT_PATH)
+    -i : idl type [ protobuf | thrift ] (default: protobuf)
+```
+
+我们通过以下命令，可以创建一个默认为proto格式的文件：
+
+```
+./srpc api test
+```
+
+```
+Success:
+      Create api file test.proto at path /root/srpc/tools done.
+
+Suggestions:
+      Modify the api file as you needed.
+      And make rpc project base on this file with the following command:
+
+      ./srpc rpc my_rpc_project -f test.proto -p /root/srpc/tools
+```
+
+之后就可以通过以上建议的命令创建一个rpc项目了，rpc项目以test.proto文件创建生成代码，使用方法如`RPC`部分介绍。
+
+## 7. REDIS
 
 创建REDIS协议的client和server，命令如下：
 
@@ -181,6 +225,9 @@ Missing: PROJECT_NAME
 
 Usage:
     ./srpc redis <PROJECT_NAME> [FLAGS]
+
+Example:
+    ./srpc redis my_redis_project
 
 Available Flags:
     -o :    project output path (default: CURRENT_PATH)
@@ -206,19 +253,19 @@ response: OK
 如果client有填写用户名和密码的需求，可以填到`client.conf`中。我们打开这个配置文件看看：
 
 ```
-  1 {                                                                               
-  2   "client":                                                                     
-  3   {                                                                             
-  4     "remote_host": "127.0.0.1",                                                 
-  5     "remote_port": 6379,                                                        
-  6     "retry_max": 2,                                                             
-  7     "user_name": "root",                                                        
-  8     "password": ""                                                              
-  9   }                                                                             
+  1 {
+  2   "client":
+  3   {
+  4     "remote_host": "127.0.0.1",
+  5     "remote_port": 6379,
+  6     "retry_max": 2,
+  7     "user_name": "root",
+  8     "password": ""
+  9   }
  10 }
 ```
 
-## 7. PROXY
+## 8. PROXY
 
 这个命令用于构建一个转发服务器，并且还有与其协议相关的server和client。
 
@@ -234,6 +281,9 @@ Missing: PROJECT_NAME
 Usage:
     ./srpc proxy <PROJECT_NAME> [FLAGS]
 
+Example:
+    ./srpc redis my_proxy_project
+
 Available Flags:
     -c :    client type for proxy [ Http | Redis | SRPC | SRPCHttp | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: Http)
     -s :    server type for proxy [ Http | Redis | SRPC | SRPCHttp | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: Http)
@@ -248,10 +298,10 @@ Available Flags:
 ```
 ```
 Success:
-      make project path " ./srpc_trpc_proxy_example/ " done.
+      make project path srpc_trpc_proxy_example/ " done.
 
 Commands:
-      cd ./srpc_trpc_proxy_example/
+      cd srpc_trpc_proxy_example/
       make -j
 
 Execute:
@@ -312,7 +362,7 @@ sync resp. message: "Hi back"
 async resp. message: "Hi back"
 ```
 
-## 8. FILE
+## 9. FILE
 
 这是一个简单的文件服务器，文件读取都是异步的，不会因为读文件阻塞当前服务器的处理线程：
 
@@ -322,7 +372,7 @@ async resp. message: "Hi back"
 
 ```
 Success:
-      make project path " ./file_project/ " done.
+      make project path file_project/ done.
 
 Commands:
       cd ./file_project/
@@ -408,7 +458,7 @@ http file service start, port 8080
 file service get request: /a/b/
 ```
 
-## 9. COMPUTE
+## 10. COMPUTE
 
 接下来是一个简单的计算服务器，同理，计算也不会阻塞当前服务器的处理线程：
 
@@ -420,7 +470,7 @@ file service get request: /a/b/
 
 ```
 Success:
-      make project path " compute_test/ " done.
+      make project path compute_test/ done.
 
 Commands:
       cd compute_test/

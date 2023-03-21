@@ -102,6 +102,9 @@ Missing: PROJECT_NAME
 Usage:
     ./srpc http <PROJECT_NAME> [FLAGS]
 
+Example:
+    ./srpc redis my_http_project
+
 Available Flags:
     -o :    project output path (default: CURRENT_PATH)
     -d :    path of dependencies (default: COMPILE_PATH)
@@ -122,6 +125,9 @@ Missing: PROJECT_NAME
 
 Usage:
     ./srpc rpc <PROJECT_NAME> [FLAGS]
+
+Example:
+    ./srpc redis my_rpc_project
 
 Available Flags:
     -r :    rpc type [ SRPC | SRPCHttp | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: SRPC)
@@ -168,7 +174,44 @@ Execute:
       ./client
 ```
 
-## 6. REDIS COMMAND
+## 6. API COMMAND
+
+This command is to create an IDL file, which is convenient for us to create rpc project after changing the file. The command is as follows:
+
+```
+Missing: FILE_NAME
+
+Usage:
+    ./srpc api <FILE_NAME> [FLAGS]
+
+Example:
+    ./srpc api my_api
+
+Available Flags:
+    -o : file output path (default: CURRENT_PATH)
+    -i : idl type [ protobuf | thrift ] (default: protobuf)
+```
+
+Create a file in proto format by default:
+
+```
+./srpc api test
+```
+
+```
+Success:
+      Create api file test.proto at path /root/srpc/tools done.
+
+Suggestions:
+      Modify the api file as you needed.
+      And make rpc project base on this file with the following command:
+
+      ./srpc rpc my_rpc_project -f test.proto -p /root/srpc/tools
+```
+
+Then we can create an rpc project through the above suggested commands. The rpc project uses the test.proto file to create the generated code.
+
+## 7. REDIS COMMAND
 
 commands for REDIS:
 
@@ -183,6 +226,9 @@ Missing: PROJECT_NAME
 
 Usage:
     ./srpc redis <PROJECT_NAME> [FLAGS]
+
+Example:
+    ./srpc redis my_redis_project
 
 Available Flags:
     -o :    project output path (default: CURRENT_PATH)
@@ -208,19 +254,19 @@ response: OK
 If there is user name and password for redis server, client may fill them into client.conf:
 
 ```
-  1 {                                                                               
-  2   "client":                                                                     
-  3   {                                                                             
-  4     "remote_host": "127.0.0.1",                                                 
-  5     "remote_port": 6379,                                                        
-  6     "retry_max": 2,                                                             
-  7     "user_name": "root",                                                        
-  8     "password": ""                                                              
-  9   }                                                                             
+  1 {
+  2   "client":
+  3   {
+  4     "remote_host": "127.0.0.1",
+  5     "remote_port": 6379,
+  6     "retry_max": 2,
+  7     "user_name": "root",
+  8     "password": ""
+  9   }
  10 }
 ```
 
-## 7. PROXY COMMAND
+## 8. PROXY COMMAND
 
 commands for PROXY:
 
@@ -235,6 +281,9 @@ Missing: PROJECT_NAME
 
 Usage:
     ./srpc proxy <PROJECT_NAME> [FLAGS]
+
+Example:
+    ./srpc redis my_proxy_project
 
 Available Flags:
     -c :    client type for proxy [ Http | Redis | SRPC | SRPCHttp | BRPC | Thrift | ThriftHttp | TRPC | TRPCHttp ] (default: Http)
@@ -315,7 +364,7 @@ sync resp. message: "Hi back"
 async resp. message: "Hi back"
 ```
 
-## 8. FILE COMMAND
+## 9. FILE COMMAND
 
 This is a simple file server. File reading is asynchronous, and the  threads for process( )  will not be blocked by file IOs.
 
@@ -415,7 +464,7 @@ http file service start, port 8080
 file service get request: /a/b/
 ```
 
-## 9. COMPUTE COMMAND
+## 10. COMPUTE COMMAND
 
 Next is a simple calculation server, similarly, the calculation will not block the server processing thread.
 

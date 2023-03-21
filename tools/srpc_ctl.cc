@@ -31,6 +31,8 @@ static void usage(const char *name)
 		   COLOR_WHITE"   - create project with both client and server\n"
 		   COLOR_COMMAND"    rpc"
 		   COLOR_WHITE"     - create project with both client and server\n"
+		   COLOR_COMMAND"    api"
+		   COLOR_WHITE"     - create protobuf or thrift IDL api\n"
 		   COLOR_COMMAND"    proxy"
 		   COLOR_WHITE"   - create proxy for some client and server protocol\n"
 		   COLOR_COMMAND"    file"
@@ -61,6 +63,10 @@ int main(int argc, const char *argv[])
 	else if (strcasecmp(argv[1], "rpc") == 0)
 	{
 		ctl = new RPCController;
+	}
+	else if (strcasecmp(argv[1], "api") == 0)
+	{
+		ctl = new APIController;
 	}
 	else if (strcasecmp(argv[1], "proxy") == 0)
 	{
