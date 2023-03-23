@@ -336,11 +336,9 @@ static uint8_t proxy_string_to_type(const char *type)
 	return PROTOCOL_TYPE_MAX;
 }
 
-bool ProxyController::get_opt(int argc, const char **argv)
+static bool proxy_get_opt(int argc, const char **argv, struct srpc_config *config)
 {
-	struct srpc_config *config = &this->config;
 	char c;
-	optind = 3;
 
 	while ((c = getopt(argc, (char * const *)argv, "o:c:s:d:")) != -1)
 	{
@@ -367,6 +365,35 @@ bool ProxyController::get_opt(int argc, const char **argv)
 				   COLOR_BLUE"%s\n\n" COLOR_OFF, argv[optind - 1]);
 			return false;
 		}
+	}
+
+	return true;
+}
+
+bool ProxyController::get_opt(int argc, const char **argv)
+{
+	optind = 2;
+	getcwd(this->config.output_path, MAXPATHLEN);
+
+	if (proxy_get_opt(argc, argv, &this->config) == false)
+		return false;
+
+	if (optind == argc)
+	{
+		printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
+		return false;
+	}
+
+	this->config.project_name = argv[optind];
+	optind++;
+
+	if (proxy_get_opt(argc, argv, &this->config) == false)
+		return false;
+
+	if (this->config.project_name == NULL)
+	{
+		printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
+		return false;
 	}
 
 	return true;

@@ -235,8 +235,7 @@ bool CommandController::parse_args(int argc, const char **argv)
 	}
 
 	memset(this->config.output_path, 0, MAXPATHLEN);
-	this->config.project_name = argv[2];
-	this->config.service_name = argv[2];
+
 	if (get_path(__FILE__, this->config.depend_path, 2) == false)
 		return false;
 
@@ -257,12 +256,6 @@ bool CommandController::parse_args(int argc, const char **argv)
 
 bool CommandController::check_args()
 {
-	if (*(this->config.project_name) == '-')
-	{
-		printf(COLOR_RED "Error: Invalid PROJECT_NAME\n\n" COLOR_OFF);
-		return false;
-	}
-
 	size_t path_len = strlen(this->config.output_path);
 
 	if (strlen(this->config.project_name) >= MAXPATHLEN - path_len - 2)

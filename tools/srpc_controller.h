@@ -123,9 +123,6 @@ public:
 	void print_usage(const char *name) const override;
 	void print_success_info() const override;
 
-protected:
-	bool check_args() override;
-
 private:
 	bool get_opt(int argc, const char **argv) override;
 

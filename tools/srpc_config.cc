@@ -89,6 +89,8 @@ static int check_file_idl_type(const char *filename)
 
 srpc_config::srpc_config()
 {
+	project_name = NULL;
+	service_name = NULL;
 	rpc_type = PROTOCOL_TYPE_SRPC;
 	idl_type = IDL_TYPE_DEFAULT;
 	data_type = DATA_TYPE_DEFAULT;

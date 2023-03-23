@@ -493,7 +493,8 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 		if (!modules_.empty())
 		{
 			RPCModuleData resp_data;
-			this->resp.get_meta_module_data(resp_data);
+			//TODO: Fill some resp meta to client task
+			//this->resp.get_meta_module_data(resp_data);
 			for (auto *module : modules_)
 				module->client_task_end(this, resp_data);
 		}
