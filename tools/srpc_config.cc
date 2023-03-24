@@ -106,25 +106,32 @@ bool srpc_config::prepare_specified_idl_file()
 	{
 		if (this->specified_idl_path != NULL)
 		{
-			printf("Error:\n      idl_path is specified but NO idl_file.\n\n");
+			printf(COLOR_RED"Error:\n      idl_path is specified "
+				   "but NO idl_file.\n\n" COLOR_OFF);
 			return false;
 		}
 
 		return true;
 	}
+	else if (this->service_name != NULL)
+	{
+		printf(COLOR_RED"Error:\n      [-s service_name] does NOT take effect "
+			   "when idl_file is specified.\n\n" COLOR_OFF);
+		return false;
+	}
 
 	this->idl_type = check_file_idl_type(this->specified_idl_file);
 	if (this->idl_type == IDL_TYPE_MAX)
 	{
-		printf("Error:\n      Invalid idl type. file : \" %s \"\n\n",
-				this->specified_idl_file);
+		printf(COLOR_RED"Error:\n      Invalid idl type. file :" COLOR_BLUE
+			   " %s\n\n" COLOR_OFF, this->specified_idl_file);
 		return false;
 	}
 
 	if (access(this->specified_idl_file, F_OK) != 0)
 	{
-		printf("Error:\n      idl_file \" %s \" does NOT exist.\n\n",
-				this->specified_idl_file);
+		printf(COLOR_RED"Error:\n      idl_file" COLOR_BLUE " %s " COLOR_RED
+			   "does NOT exist.\n\n" COLOR_OFF, this->specified_idl_file);
 		return false;
 	}
 

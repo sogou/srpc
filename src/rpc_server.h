@@ -60,8 +60,6 @@ protected:
 	void server_process(NETWORKTASK *task) const;
 
 private:
-	void set_tracing(TASK *Task);
-
 	std::mutex mutex;
 	std::map<std::string, RPCService *> service_map;
 	RPCModule *modules[SRPC_MODULE_MAX] = { NULL };
