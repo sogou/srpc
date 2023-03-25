@@ -9,7 +9,7 @@
 <a href="https://github.com/sogou/srpc/releases"><img src="https://img.shields.io/github/v/release/sogou/srpc?color=379c9c&logoColor=ffffff&style=flat-square"/></a>
 <a href="https://github.com/sogou/srpc/actions?query=workflow%3A%22ci+build%22++"><img src="https://img.shields.io/github/actions/workflow/status/sogou/srpc/ci.yml?branch=master&color=379c9c&style=flat-square"/></a>
 
-### NEW !!!  👉 [SRPC tools : build Workflow and SRPC projects easily.](/tools/README_en.md)
+### NEW !!!  👉 [SRPC tools : build Workflow and SRPC projects easily.](/tools/README.md)
 
 ## Introduction
 
