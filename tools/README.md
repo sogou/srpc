@@ -1,4 +1,4 @@
-[中文版入口](README.md)
+[中文版入口](README_cn.md)
 
 # srpc tools
 
