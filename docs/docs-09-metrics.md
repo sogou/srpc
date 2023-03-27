@@ -44,7 +44,7 @@
 我们选择Prometheus作为我们的上报对象，因此需要使用**RPCMetricsPull**插件。
 
 ~~~cpp
-#include "srpc/rpc_filter_metrics.h" // Metrics插件所在的头文件
+#include "srpc/rpc_metrics_filter.h" // Metrics插件所在的头文件
 
 int main()
 {
@@ -76,7 +76,7 @@ int main()
 一旦创建成功，我们之后都会使用这同一个名字去操作这个指标。
 
 **创建其他指标的接口**   
-可以查看刚才include的头文件[rpc_filter_metrics.h](/src/module/rpc_filter_metrics.h)中的：`class RPCMetricsFilter`。
+可以查看刚才include的头文件[rpc_metrics_filter.h](/src/module/rpc_metrics_filter.h)中的：`class RPCMetricsFilter`。
 
 #### (3) 把插件添加到server/client中
 

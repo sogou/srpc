@@ -2,7 +2,7 @@
 #include <limits.h>
 #include "workflow/WFTask.h"
 #include "workflow/HttpUtil.h"
-#include "rpc_filter_span.h"
+#include "rpc_trace_filter.h"
 #include "opentelemetry_trace_service.pb.h"
 
 namespace srpc
@@ -145,7 +145,7 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	return ret;
 }
 
-bool RPCSpanFilterPolicy::collect(RPCModuleData& span)
+bool RPCTraceFilterPolicy::collect(RPCModuleData& span)
 {
 	long long timestamp = GET_CURRENT_MS();
 
@@ -177,7 +177,7 @@ bool RPCSpanFilterPolicy::collect(RPCModuleData& span)
 	return false;
 }
 
-bool RPCSpanFilterPolicy::report(size_t count)
+bool RPCTraceFilterPolicy::report(size_t count)
 {
 	long long timestamp = GET_CURRENT_MS();
 
@@ -194,7 +194,7 @@ bool RPCSpanFilterPolicy::report(size_t count)
 	return false;
 }
 
-void RPCSpanLogTask::dispatch()
+void RPCTraceLogTask::dispatch()
 {
 	char str[SPAN_LOG_MAX_LENGTH];
 	rpc_span_log_format(this->span, str, SPAN_LOG_MAX_LENGTH);
@@ -203,7 +203,7 @@ void RPCSpanLogTask::dispatch()
 	this->subtask_done();
 }
 
-SubTask *RPCSpanRedis::create(RPCModuleData& span)
+SubTask *RPCTraceRedis::create(RPCModuleData& span)
 {
 	auto iter = span.find(SRPC_TRACE_ID);
 	if (iter == span.end())
@@ -222,8 +222,8 @@ SubTask *RPCSpanRedis::create(RPCModuleData& span)
 	return task;
 }
 
-RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url) :
-	RPCFilter(RPCModuleTypeSpan),
+RPCTraceOpenTelemetry::RPCTraceOpenTelemetry(const std::string& url) :
+	RPCFilter(RPCModuleTypeTrace),
 	url(url + OTLP_TRACES_PATH),
 	redirect_max(OTLP_HTTP_REDIRECT_MAX),
 	retry_max(OTLP_HTTP_RETRY_MAX),
@@ -236,13 +236,13 @@ RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url) :
 	this->report_req = new ExportTraceServiceRequest;
 }
 
-RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url,
-										   int redirect_max,
-										   int retry_max,
-										   size_t spans_per_second,
-										   size_t report_threshold,
-										   size_t report_interval) :
-	RPCFilter(RPCModuleTypeSpan),
+RPCTraceOpenTelemetry::RPCTraceOpenTelemetry(const std::string& url,
+											 int redirect_max,
+											 int retry_max,
+											 size_t spans_per_second,
+											 size_t report_threshold,
+											 size_t report_interval) :
+	RPCFilter(RPCModuleTypeTrace),
 	url(url + OTLP_TRACES_PATH),
 	redirect_max(redirect_max),
 	retry_max(retry_max),
@@ -253,12 +253,12 @@ RPCSpanOpenTelemetry::RPCSpanOpenTelemetry(const std::string& url,
 	this->report_req = new ExportTraceServiceRequest;
 }
 
-RPCSpanOpenTelemetry::~RPCSpanOpenTelemetry()
+RPCTraceOpenTelemetry::~RPCTraceOpenTelemetry()
 {
 	delete this->report_req;
 }
 
-SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
+SubTask *RPCTraceOpenTelemetry::create(RPCModuleData& span)
 {
 	std::string *output = new std::string;
 	SubTask *next = NULL;
@@ -297,15 +297,15 @@ SubTask *RPCSpanOpenTelemetry::create(RPCModuleData& span)
 	return task;
 }
 
-void RPCSpanOpenTelemetry::add_attributes(const std::string& key,
-										  const std::string& value)
+void RPCTraceOpenTelemetry::add_attributes(const std::string& key,
+										   const std::string& value)
 {
 	this->mutex.lock();
 	this->attributes.insert(std::make_pair(key, value));
 	this->mutex.unlock();
 }
 
-size_t RPCSpanOpenTelemetry::clear_attributes()
+size_t RPCTraceOpenTelemetry::clear_attributes()
 {
 	size_t ret;
 
@@ -317,7 +317,7 @@ size_t RPCSpanOpenTelemetry::clear_attributes()
 	return ret;
 }
 
-bool RPCSpanOpenTelemetry::filter(RPCModuleData& data)
+bool RPCTraceOpenTelemetry::filter(RPCModuleData& data)
 {
 	std::unordered_map<std::string, google::protobuf::Message *>::iterator it;
 	InstrumentationLibrarySpans *spans;

@@ -39,7 +39,7 @@ static constexpr char const *SRPC_DURATION			= "srpc.duration";
 static constexpr int SRPC_TIMESTAMP_BITS		= 38;
 static constexpr int SRPC_GROUP_BITS			= 4;
 static constexpr int SRPC_MACHINE_BITS			= 10;
-//static constexpr int SEQUENCE_BITS			= 12;
+//static constexpr int SRPC_SEQUENCE_BITS		= 12;
 static constexpr int SRPC_TOTAL_BITS			= 64;
 
 class RPCModule

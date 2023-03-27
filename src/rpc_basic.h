@@ -140,7 +140,7 @@ enum RPCCompressType
 enum RPCModuleType
 {
 	RPCModuleTypeEmpty		=	0,
-	RPCModuleTypeSpan		=	1,
+	RPCModuleTypeTrace		=	1,
 	RPCModuleTypeMetrics	=	2,
 	RPCModuleTypeLog		=	3,
 };

@@ -3,8 +3,8 @@
 #include "workflow/WFGlobal.h"
 #include "workflow/UpstreamManager.h"
 #include "workflow/UpstreamPolicies.h"
-#include "srpc/rpc_filter_metrics.h"
-#include "srpc/rpc_filter_span.h"
+#include "srpc/rpc_metrics_filter.h"
+#include "srpc/rpc_trace_filter.h"
 
 using namespace srpc;
 
@@ -379,7 +379,7 @@ void RPCConfig::load_trace()
             if (it.has("spans_per_second"))
                 spans_per_second = it["spans_per_second"];
 
-            auto *filter = new RPCSpanDefault(spans_per_second);
+            auto *filter = new RPCTraceDefault(spans_per_second);
             this->filters.push_back(filter);
         }
         else if (filter_name.compare("opentelemetry") == 0)
@@ -402,12 +402,12 @@ void RPCConfig::load_trace()
             if (it.has("report_interval_ms"))
                 report_interval = it["report_interval_ms"];
 
-            auto *filter = new RPCSpanOpenTelemetry(url,
-                                                    redirect_max,
-                                                    retry_max,
-                                                    spans_per_second,
-                                                    report_threshold,
-                                                    report_interval);
+            auto *filter = new RPCTraceOpenTelemetry(url,
+                                                     redirect_max,
+                                                     retry_max,
+                                                     spans_per_second,
+                                                     report_threshold,
+                                                     report_interval);
 
             if (it.has("attributes"))
             {

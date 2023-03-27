@@ -3,24 +3,26 @@
 ## 上报Tracing到OpenTelemetry
 **SRPC**支持产生和上报链路信息trace和span，并且可以通过多种途径进行上报，其中包括本地导出数据和上报到[OpenTelemetry](https://opentelemetry.io).
 
-**SRPC**遵循**OpenTelemetry**的[数据规范(data specification)](https://github.com/open-telemetry/opentelemetry-specification)以及[w3c的trace context](https://www.w3.org/TR/trace-context/)，因此可以使用插件**RPCSpanOpenTelemetry**进行上报。
+**SRPC**遵循**OpenTelemetry**的[数据规范(data specification)](https://github.com/open-telemetry/opentelemetry-specification)以及[w3c的trace context](https://www.w3.org/TR/trace-context/)，因此可以使用插件**RPCTraceOpenTelemetry**进行上报。
 
 秉承着**Workflow**的风格，所有的上报都是异步任务模式，对RPC的请求和服务不会产生任何性能影响。
 
 ### 1. 用法
 
-先构造插件`RPCSpanOpenTelemetry`，然后通过`add_filter()`把插件加到**server**或**client**中。
+先构造插件`RPCTraceOpenTelemetry`，然后通过`add_filter()`把插件加到**server**或**client**中。
 
 以[tutorial-02-srpc_pb_client.cc](https://github.com/sogou/srpc/blob/master/tutorial/tutorial-02-srpc_pb_client.cc)作为client的示例，我们如下加两行代码：
 
 ```cpp
-int main()                                                                   
-{                                                                        
-    Example::SRPCClient client("127.0.0.1", 1412); 
+int main()
+{
+    Example::SRPCClient client("127.0.0.1", 1412);
 
-    RPCSpanOpenTelemetry span_otel("http://127.0.0.1:4318");
+    RPCTraceOpenTelemetry span_otel("http://127.0.0.1:4318");
     client.add_filter(&span_otel);
+
     ...
+}
 ```
 
 以[tutorial-01-srpc_pb_server.cc](https://github.com/sogou/srpc/blob/master/tutorial/tutorial-01-srpc_pb_server.cc)作为server的示例，也增加类似的两行。同时我们还增加一个本地插件，用于把本次请求的trace数据也在屏幕上打印：
@@ -28,14 +30,16 @@ int main()
 ```cpp
 int main()
 {
-    SRPCServer server;  
+    SRPCServer server;
 
-    RPCSpanOpenTelemetry span_otel("http://127.0.0.1:4318");
-    server.add_filter(&span_otel);                                                 
+    RPCTraceOpenTelemetry span_otel("http://127.0.0.1:4318");
+    server.add_filter(&span_otel);
 
-    RPCSpanDefault span_log; // 这个插件会把本次请求的trace信息打到屏幕上                                                  
-    server.add_filter(&span_log);                                              
+    RPCTraceDefault span_log; // 这个插件会把本次请求的trace信息打到屏幕上
+    server.add_filter(&span_log);
+
     ...
+}
 ```
 
 执行命令`make tutorial`可以编译出示例程序，并且分别把server和client跑起来，我们可以在屏幕上看到一些tracing信息：
@@ -58,7 +62,7 @@ int main()
 
 ### 3. 参数
 
-多久收集一份trace信息、上报请求的重试次数、以及其他参数，都可以通过`RPCSpanOpenTelemetry`的构造函数指定。代码参考：[src/module/rpc_filter_span.h](https://github.com/sogou/srpc/blob/master/src/module/rpc_filter_span.h#L238)
+多久收集一份trace信息、上报请求的重试次数、以及其他参数，都可以通过`RPCTraceOpenTelemetry`的构造函数指定。代码参考：[src/module/rpc_trace_filter.h](https://github.com/sogou/srpc/blob/master/src/module/rpc_trace_filter.h#L238)
 
 默认每秒收集1000条trace信息，并且透传tracing信息等其他功能也已遵循上述规范实现。
 

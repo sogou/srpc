@@ -18,7 +18,7 @@
 #include "echo_pb.srpc.h"
 #include "workflow/WFFacilities.h"
 #include "srpc/rpc_types.h"
-#include "srpc/rpc_filter_metrics.h"
+#include "srpc/rpc_metrics_filter.h"
 
 using namespace srpc;
 
