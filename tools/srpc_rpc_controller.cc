@@ -54,6 +54,9 @@ RPCController::RPCController()
 
 	info = { "config/config_full.cc", "config/config.cc", nullptr };
 	this->default_files.push_back(info);
+
+	info = { "common/config.json", "full.conf", nullptr };
+	this->default_files.push_back(info);
 }
 
 void RPCController::print_usage(const char *name) const
@@ -137,11 +140,9 @@ bool RPCController::copy_files()
 	return CommandController::copy_files();
 }
 
-bool RPCController::get_opt(int argc, const char **argv)
+static bool rpc_get_opt(int argc, const char **argv, struct srpc_config *config)
 {
-	struct srpc_config *config = &this->config;
 	char c;
-	optind = 3;
 
 	while ((c = getopt(argc, (char * const *)argv,
 					   "o:r:i:x:c:s:d:f:p:")) != -1)
@@ -189,6 +190,37 @@ bool RPCController::get_opt(int argc, const char **argv)
 	return true;
 }
 
+bool RPCController::get_opt(int argc, const char **argv)
+{
+	optind = 2;
+
+	if (rpc_get_opt(argc, argv, &this->config) == false)
+		return false;
+
+	if (optind == argc)
+	{
+		printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
+		return false;
+	}
+
+	this->config.project_name = argv[optind];
+	optind++;
+
+	if (rpc_get_opt(argc, argv, &this->config) == false)
+		return false;
+
+	if (this->config.project_name == NULL)
+	{
+		printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
+		return false;
+	}
+
+	if (this->config.service_name == NULL)
+		this->config.service_name = this->config.project_name;
+
+	return true;
+}
+
 bool RPCController::check_args()
 {
 	if (CommandController::check_args() == false)
@@ -201,7 +233,7 @@ bool RPCController::check_args()
 		config->data_type == DATA_TYPE_MAX ||
 		config->compress_type == COMPRESS_TYPE_MAX)
 	{
-		printf(COLOR_RED"Error:\n      Invalid rpc args.\n" COLOR_OFF);
+		printf(COLOR_RED"Error:\n      Invalid rpc args : -r | -i | -c | -d .\n\n" COLOR_OFF);
 		return false;
 	}
 
@@ -214,7 +246,7 @@ bool RPCController::check_args()
 		{
 			printf(COLOR_RED"Error:\n      "
 				   COLOR_BLUE"\" %s \" "
-				   COLOR_RED"does NOT support protobuf as idl or data type.\n" COLOR_OFF,
+				   COLOR_RED"does NOT support protobuf as idl or data type.\n\n" COLOR_OFF,
 				   config->rpc_type_string());
 			return false;
 		}
@@ -266,24 +298,21 @@ void APIController::print_usage(const char *name) const
 		   COLOR_OFF, name, name);
 }
 
-bool APIController::get_opt(int argc, const char **argv)
+static bool api_get_opt(int argc, const char **argv, struct srpc_config *config)
 {
 	char c;
-	optind = 3;
-
-	getcwd(this->config.output_path, MAXPATHLEN);
 
 	while ((c = getopt(argc, (char * const *)argv, "o:i:")) != -1)
 	{
 		switch (c)
 		{
 		case 'o':
-			memset(this->config.output_path, 0, MAXPATHLEN);
-			if (sscanf(optarg, "%s", this->config.output_path) != 1)
+			memset(config->output_path, 0, MAXPATHLEN);
+			if (sscanf(optarg, "%s", config->output_path) != 1)
 				return false;
 			break;
 		case 'i':
-			this->config.set_idl_type(optarg);
+			config->set_idl_type(optarg);
 			break;
 		default:
 			printf(COLOR_RED "Error:\n     Unknown args : "
@@ -295,11 +324,29 @@ bool APIController::get_opt(int argc, const char **argv)
 	return true;
 }
 
-bool APIController::check_args()
+bool APIController::get_opt(int argc, const char **argv)
 {
-	if (*(this->config.project_name) == '-')
+	optind = 2;
+	getcwd(this->config.output_path, MAXPATHLEN);
+
+	if (api_get_opt(argc, argv, &this->config) == false)
+		return false;
+
+	if (optind == argc)
 	{
-		printf(COLOR_RED "Error: Invalid FILE_NAME\n\n" COLOR_OFF);
+		printf(COLOR_RED "Missing: FILE_NAME\n\n" COLOR_OFF);
+		return false;
+	}
+
+	this->config.project_name = argv[optind];
+	optind++;
+
+	if (api_get_opt(argc, argv, &this->config) == false)
+		return false;
+
+	if (this->config.project_name == NULL)
+	{
+		printf(COLOR_RED "Missing: FILE_NAME\n\n" COLOR_OFF);
 		return false;
 	}
 

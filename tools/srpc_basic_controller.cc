@@ -284,10 +284,9 @@ static void basic_default_file_initialize(DEFAULT_FILES& files)
 	files.push_back(info);
 }
 
-static bool basic_get_opt(int argc, const char **argv, struct srpc_config *config)
+static bool get_opt_args(int argc, const char **argv, struct srpc_config *config)
 {
 	char c;
-	optind = 3;
 
 	while ((c = getopt(argc, (char * const *)argv, "o:t:d:")) != -1)
 	{
@@ -312,6 +311,34 @@ static bool basic_get_opt(int argc, const char **argv, struct srpc_config *confi
 				   COLOR_BLUE"%s\n\n" COLOR_OFF, argv[optind - 1]);
 			return false;
 		}
+	}
+
+	return true;
+}
+
+static bool basic_get_opt(int argc, const char **argv, struct srpc_config *config)
+{
+	optind = 2;
+
+	if (get_opt_args(argc, argv, config) == false)
+		return false;
+
+	if (optind == argc)
+	{
+		printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
+		return false;
+	}
+
+	config->project_name = argv[optind];
+	optind++;
+
+	if (get_opt_args(argc, argv, config) == false)
+		return false;
+
+	if (config->project_name == NULL)
+	{
+		printf(COLOR_RED "Missing: PROJECT_NAME\n\n" COLOR_OFF);
+		return false;
 	}
 
 	return true;
@@ -423,7 +450,7 @@ bool FileServiceController::get_opt(int argc, const char **argv)
 void FileServiceController::print_success_info() const
 {
 	printf(COLOR_GREEN"Success:\n      make project path "
-		   COLOR_BLUE"\" %s \"" COLOR_GREEN " done.\n\n",
+		   COLOR_BLUE"\" %s \"" COLOR_GREEN "done.\n\n",
 		   this->config.output_path);
 	printf(COLOR_PINK"Commands:\n      " COLOR_BLUE "cd %s\n      make -j\n\n",
 		   this->config.output_path);

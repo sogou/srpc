@@ -42,7 +42,6 @@ static void sig_handler(int signo)
 
 int main()
 {
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
 
@@ -59,7 +58,6 @@ int main()
 	else
 		perror("server start");
 
-	google::protobuf::ShutdownProtobufLibrary();	
 	return 0;
 }
 

@@ -19,20 +19,6 @@
 
 #include "srpc_config.h"
 
-#define COLOR_OFF		"\033[0m"
-#define COLOR_WHITE		"\033[37;1m"
-#define COLOR_RED		"\033[31;1m"
-#define COLOR_GREEN		"\033[32;1m"
-#define COLOR_YELLOW	"\033[33;1m"
-#define COLOR_PURPLE	"\033[34;1m"
-#define COLOR_PINK		"\033[35;1m"
-#define COLOR_BLUE		"\033[36;1m"
-#define COLOR_LPURPLE	"\033[94;1m"
-
-#define COLOR_COMMAND	COLOR_BLUE
-#define COLOR_INFO		COLOR_YELLOW
-#define COLOR_FLAG		COLOR_PURPLE
-
 class CommandController
 {
 public:
@@ -122,9 +108,6 @@ public:
 	bool dependencies_and_dir() override;
 	void print_usage(const char *name) const override;
 	void print_success_info() const override;
-
-protected:
-	bool check_args() override;
 
 private:
 	bool get_opt(int argc, const char **argv) override;
