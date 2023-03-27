@@ -120,7 +120,7 @@ int main()
 
     // 2. 构造参数，填上upstream的名字
     RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
-    client_params.host = "srpc::echo_server"; // 这个scheme只用于upstream URI解析
+    client_params.host = "echo_server";
     client_params.port = 1412; // 这个port只用于upstream URI解析，不影响具体实例的选取
 
     // 3. 用参数创建client，其他用法与示例类似
