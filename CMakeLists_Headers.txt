@@ -16,11 +16,11 @@ set(SRC_HEADERS
 	src/var/time_window_quantiles.h
 	src/var/rpc_var.h
 	src/module/rpc_module.h
-	src/module/rpc_module_span.h
-	src/module/rpc_module_metrics.h
+	src/module/rpc_trace_module.h
+	src/module/rpc_metrics_module.h
 	src/module/rpc_filter.h
-	src/module/rpc_filter_span.h
-	src/module/rpc_filter_metrics.h
+	src/module/rpc_trace_filter.h
+	src/module/rpc_metrics_filter.h
 	src/rpc_basic.h
 	src/rpc_buffer.h
 	src/rpc_client.h

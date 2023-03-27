@@ -11,7 +11,7 @@
 #include "workflow/WFHttpServer.h"
 #include "rpc_basic.h"
 #include "rpc_var.h"
-#include "rpc_filter_metrics.h"
+#include "rpc_metrics_filter.h"
 #include "opentelemetry_metrics_service.pb.h"
 
 namespace srpc

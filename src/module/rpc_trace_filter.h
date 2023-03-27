@@ -14,8 +14,8 @@
   limitations under the License.
 */
 
-#ifndef __RPC_FILTER_SPAN_H__
-#define __RPC_FILTER_SPAN_H__
+#ifndef __RPC_TRACE_FILTER_H__
+#define __RPC_TRACE_FILTER_H__
 
 #include <time.h>
 #include <mutex>
@@ -29,7 +29,7 @@
 #include "workflow/WFTaskFactory.h"
 #include "workflow/RedisMessage.h"
 #include "rpc_basic.h"
-#include "rpc_module_span.h"
+#include "rpc_trace_module.h"
 
 namespace srpc
 {
@@ -38,17 +38,17 @@ static constexpr unsigned int	SPAN_LIMIT_DEFAULT			= 1;
 static constexpr size_t			SPAN_LOG_MAX_LENGTH			= 1024;
 static constexpr size_t			UINT64_STRING_LENGTH		= 20;
 static constexpr unsigned int	SPAN_REDIS_RETRY_MAX		= 0;
-static constexpr const char	   *SPAN_BATCH_LOG_NAME_DEFAULT	= "./span_info.log";
+static constexpr const char	   *SPAN_BATCH_LOG_NAME_DEFAULT	= "./trace_info.log";
 static constexpr size_t			SPAN_BATCH_LOG_SIZE_DEFAULT	= 4 * 1024 * 1024;
 static constexpr unsigned int	SPANS_PER_SECOND_DEFAULT	= 1000;
 static constexpr const char	   *OTLP_TRACES_PATH			= "/v1/traces";
 
-class RPCSpanFilterPolicy
+class RPCTraceFilterPolicy
 {
 public:
-	RPCSpanFilterPolicy(size_t spans_per_second,
-						size_t report_threshold,
-						size_t report_interval_msec) :
+	RPCTraceFilterPolicy(size_t spans_per_second,
+						 size_t report_threshold,
+						 size_t report_interval_msec) :
 		stat_interval(1), // default 1 msec
 		spans_per_sec(spans_per_second),
 		last_collect_timestamp(0),
@@ -104,11 +104,11 @@ private:
 	long long last_report_timestamp;
 };
 
-class RPCSpanLogTask : public WFGenericTask
+class RPCTraceLogTask : public WFGenericTask
 {
 public:
-	RPCSpanLogTask(RPCModuleData& span,
-				   std::function<void (RPCSpanLogTask *)> callback) :
+	RPCTraceLogTask(RPCModuleData& span,
+				   std::function<void (RPCTraceLogTask *)> callback) :
 		span(span),
 		callback(std::move(callback))
 	{}
@@ -129,21 +129,21 @@ private:
 
 public:
 	RPCModuleData span;
-	std::function<void (RPCSpanLogTask *)> callback;
+	std::function<void (RPCTraceLogTask *)> callback;
 };
 
-class RPCSpanDefault : public RPCFilter
+class RPCTraceDefault : public RPCFilter
 {
 public:
-	RPCSpanDefault() :
-		RPCFilter(RPCModuleTypeSpan),
+	RPCTraceDefault() :
+		RPCFilter(RPCModuleTypeTrace),
 		filter_policy(SPANS_PER_SECOND_DEFAULT,
 					  RPC_REPORT_THREHOLD_DEFAULT,
 					  RPC_REPORT_INTERVAL_DEFAULT)
 	{}
 
-	RPCSpanDefault(size_t spans_per_second) :
-		RPCFilter(RPCModuleTypeSpan),
+	RPCTraceDefault(size_t spans_per_second) :
+		RPCFilter(RPCModuleTypeTrace),
 		filter_policy(spans_per_second,
 					  RPC_REPORT_THREHOLD_DEFAULT,
 					  RPC_REPORT_INTERVAL_DEFAULT)
@@ -152,7 +152,7 @@ public:
 private:
 	SubTask *create(RPCModuleData& span) override
 	{
-		return new RPCSpanLogTask(span, nullptr);
+		return new RPCTraceLogTask(span, nullptr);
 	}
 
 	bool filter(RPCModuleData& span) override
@@ -172,23 +172,23 @@ public:
 	}
 
 private:
-	RPCSpanFilterPolicy filter_policy;
+	RPCTraceFilterPolicy filter_policy;
 };
 
-class RPCSpanRedis : public RPCFilter
+class RPCTraceRedis : public RPCFilter
 {
 public:
-	RPCSpanRedis(const std::string& url) :
-		RPCFilter(RPCModuleTypeSpan),
+	RPCTraceRedis(const std::string& url) :
+		RPCFilter(RPCModuleTypeTrace),
 		retry_max(SPAN_REDIS_RETRY_MAX),
 		filter_policy(SPANS_PER_SECOND_DEFAULT,
 					  RPC_REPORT_THREHOLD_DEFAULT,
 					  RPC_REPORT_INTERVAL_DEFAULT)
 	{}
 
-	RPCSpanRedis(const std::string& url, int retry_max,
-				 size_t spans_per_second) :
-		RPCFilter(RPCModuleTypeSpan),
+	RPCTraceRedis(const std::string& url, int retry_max,
+				  size_t spans_per_second) :
+		RPCFilter(RPCModuleTypeTrace),
 		redis_url(url),
 		retry_max(retry_max),
 		filter_policy(spans_per_second,
@@ -220,10 +220,10 @@ public:
 	}
 
 private:
-	RPCSpanFilterPolicy filter_policy;
+	RPCTraceFilterPolicy filter_policy;
 };
 
-class RPCSpanOpenTelemetry : public RPCFilter
+class RPCTraceOpenTelemetry : public RPCFilter
 {
 public:
 	void set_spans_per_sec(size_t n)
@@ -255,7 +255,7 @@ private:
 	int redirect_max;
 	int retry_max;
 
-	RPCSpanFilterPolicy filter_policy;
+	RPCTraceFilterPolicy filter_policy;
 	std::mutex mutex;
 	std::unordered_map<std::string, std::string> attributes;
 	google::protobuf::Message *report_req;
@@ -268,16 +268,16 @@ private:
 	bool filter(RPCModuleData& span) override;
 
 public:
-	RPCSpanOpenTelemetry(const std::string& url);
+	RPCTraceOpenTelemetry(const std::string& url);
 
-	RPCSpanOpenTelemetry(const std::string& url,
-						 int redirect_max,
-						 int retry_max,
-						 size_t spans_per_second,
-						 size_t report_threshold,
-						 size_t report_interval);
+	RPCTraceOpenTelemetry(const std::string& url,
+						  int redirect_max,
+						  int retry_max,
+						  size_t spans_per_second,
+						  size_t report_threshold,
+						  size_t report_interval);
 
-	virtual ~RPCSpanOpenTelemetry();
+	virtual ~RPCTraceOpenTelemetry();
 };
 
 } // end namespace srpc

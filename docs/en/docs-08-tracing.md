@@ -3,23 +3,25 @@
 ## Report Tracing to OpenTelemetry
 **SRPC** supports generating and reporting tracing and spans, which can be reported in multiple ways, including exporting data locally or to [OpenTelemetry](https://opentelemetry.io).
 
-Since **SRPC** follows the [data specification](https://github.com/open-telemetry/opentelemetry-specification) of **OpenTelemetry** and the specification of [w3c trace context](https://www.w3.org/TR/trace-context/), now we can use **RPCSpanOpenTelemetry** as the reporting plugin.
+Since **SRPC** follows the [data specification](https://github.com/open-telemetry/opentelemetry-specification) of **OpenTelemetry** and the specification of [w3c trace context](https://www.w3.org/TR/trace-context/), now we can use **RPCTraceOpenTelemetry** as the reporting plugin.
 
 The report conforms to the **Workflow** style, which is pure asynchronous task and therefore has no performance impact on the RPC requests and services.
 
 ### 1. Usage
 
-After the plugin `RPCSpanOpenTelemetry` is constructed, we can use `add_filter()` to add it into **server** or **client**.
+After the plugin `RPCTraceOpenTelemetry` is constructed, we can use `add_filter()` to add it into **server** or **client**.
 
 For [tutorial-02-srpc_pb_client.cc](https://github.com/sogou/srpc/blob/master/tutorial/tutorial-02-srpc_pb_client.cc), add 2 lines like the following : 
 ```cpp
-int main()                                                                   
-{                                                                        
-    Example::SRPCClient client("127.0.0.1", 1412); 
+int main()
+{
+    Example::SRPCClient client("127.0.0.1", 1412);
 
-    RPCSpanOpenTelemetry span_otel("http://127.0.0.1:4318");
+    RPCTraceOpenTelemetry span_otel("http://127.0.0.1:4318");
     client.add_filter(&span_otel);
+
     ...
+}
 ```
 
 For [tutorial-01-srpc_pb_server.cc](https://github.com/sogou/srpc/blob/master/tutorial/tutorial-01-srpc_pb_server.cc), add the similar 2 lines. We also add the local plugin to print the reported data on the screen :
@@ -29,12 +31,14 @@ int main()
 {
     SRPCServer server;  
 
-    RPCSpanOpenTelemetry span_otel("http://127.0.0.1:4318");
-    server.add_filter(&span_otel);                                                 
+    RPCTraceOpenTelemetry span_otel("http://127.0.0.1:4318");
+    server.add_filter(&span_otel);
 
-    RPCSpanDefault span_log; // this plugin will print the tracing info on the screen                                                  
-    server.add_filter(&span_log);                                              
+    RPCTraceDefault span_log; // this plugin will print the tracing info on the screen
+    server.add_filter(&span_log);
+
     ...
+}
 ```
 
 make the tutorial and run both server and client, we can see some tracing information on the screen. 
@@ -57,7 +61,7 @@ As what we saw on the screen, the client reported span_id: **04d070f537f17d00** 
 
 ### 3. About Parameters
 
-How long to collect a trace, and the number of reported retries and other parameters can be specified through the constructor parameters of `RPCSpanOpenTelemetry`. Code reference: [src/module/rpc_filter_span.h](https://github.com/sogou/srpc/blob/master/src/module/rpc_filter_span.h#L238)
+How long to collect a trace, and the number of reported retries and other parameters can be specified through the constructor parameters of `RPCTraceOpenTelemetry`. Code reference: [src/module/rpc_trace_filter.h](https://github.com/sogou/srpc/blob/master/src/module/rpc_trace_filter.h#L238)
 
 The default value is to collect up to 1000 trace information per second, and features such as transferring tracing information through the srpc framework transparently have also been implemented, which also conform to the specifications. 
 

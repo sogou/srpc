@@ -14,8 +14,8 @@
   limitations under the License.
 */
 
-#ifndef __RPC_FILTER_METRICS_H__
-#define __RPC_FILTER_METRICS_H__
+#ifndef __RPC_METRIC_FILTER_H__
+#define __RPC_METRIC_FILTER_H__
 
 #include <string>
 #include <set>
@@ -30,7 +30,7 @@
 #include "workflow/WFHttpServer.h"
 #include "rpc_basic.h"
 #include "rpc_var.h"
-#include "rpc_module_metrics.h"
+#include "rpc_metrics_module.h"
 
 namespace srpc
 {

@@ -27,7 +27,7 @@
 #include "rpc_meta.pb.h"
 #include "rpc_message_srpc.h"
 #include "rpc_zero_copy_stream.h"
-#include "rpc_module_span.h"
+#include "rpc_trace_module.h"
 
 namespace srpc
 {

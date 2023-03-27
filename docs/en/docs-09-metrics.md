@@ -43,7 +43,7 @@ The example shows usage via [tutorial-16-server_with_metrics.cc](/tutorial/tutor
 Here we use Prometheus to be reported, thus we need the filter **RPCMetricsPull** as the plugin.
 
 ~~~cpp
-#include "srpc/rpc_filter_metrics.h" // metrics filter header file
+#include "srpc/rpc_metrics_filter.h" // metrics filter header file
 
 int main()
 {
@@ -79,7 +79,7 @@ We will use this unique name to operate the metrics after it has been created.
 
 **Other APIs to create metrics**
 
-You can check this header file [rpc_filter_metrics.h](/src/module/rpc_filter_metrics.h): `class RPCMetricsFilter`.
+You can check this header file [rpc_metrics_filter.h](/src/module/rpc_metrics_filter.h): `class RPCMetricsFilter`.
 
 #### (3) add filter into server / client
 
