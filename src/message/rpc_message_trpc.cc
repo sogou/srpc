@@ -27,6 +27,7 @@
 #include "rpc_basic.h"
 #include "rpc_compress.h"
 #include "rpc_zero_copy_stream.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -1204,22 +1205,22 @@ bool TRPCHttpResponse::deserialize_meta()
 
 bool TRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
 {
-	return true;
+	return http_set_header_module_data(data, this);
 }
 
 bool TRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 {
-	return true;
+	return http_get_header_module_data(this, data);
 }
 
 bool TRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 {
-	return true;
+	return http_set_header_module_data(data, this);
 }
 
 bool TRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
-	return true;
+	return http_get_header_module_data(this, data);
 }
 
 bool TRPCHttpRequest::set_http_header(const std::string& name,
