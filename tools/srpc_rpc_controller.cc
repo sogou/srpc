@@ -215,9 +215,6 @@ bool RPCController::get_opt(int argc, const char **argv)
 		return false;
 	}
 
-	if (this->config.service_name == NULL)
-		this->config.service_name = this->config.project_name;
-
 	return true;
 }
 
@@ -273,6 +270,9 @@ bool RPCController::check_args()
 
 	if (config->prepare_specified_idl_file() == false)
 		return false;
+
+	if (config->service_name == NULL)
+		config->service_name = config->project_name;
 
 	return true;
 }
@@ -350,6 +350,7 @@ bool APIController::get_opt(int argc, const char **argv)
 		return false;
 	}
 
+	this->config.service_name = this->config.project_name;
 	return true;
 }
 

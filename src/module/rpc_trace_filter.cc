@@ -147,6 +147,9 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 
 bool RPCTraceFilterPolicy::collect(RPCModuleData& span)
 {
+	if (span.find(SRPC_TRACE_ID) == span.end())
+		return false;
+
 	long long timestamp = GET_CURRENT_MS();
 
 	if (timestamp < this->last_collect_timestamp + this->stat_interval &&
