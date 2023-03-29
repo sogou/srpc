@@ -39,11 +39,13 @@ void parse_thrift_type_name(const std::string& type_name,
 
 bool Parser::parse(const std::string& proto_file, idl_info& info)
 {
-	auto pos = proto_file.find_last_of('/');
+	std::string idl_file = info.input_dir + proto_file;
+
+	auto pos = idl_file.find_last_of('/');
 	if (pos == std::string::npos)
-		info.file_name = proto_file;
+		info.file_name = idl_file;
 	else
-		info.file_name = proto_file.substr(pos + 1);
+		info.file_name = idl_file.substr(pos + 1);
 
 	pos = info.file_name.find_last_of('.');
 	if (pos == std::string::npos)
@@ -51,17 +53,17 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 	else
 		info.file_name_prefix = info.file_name.substr(0, pos + 1);
 
-	info.absolute_file_path = proto_file;
+	info.absolute_file_path = idl_file;
 
-	FILE *in = fopen(proto_file.c_str(), "r");
+	FILE *in = fopen(idl_file.c_str(), "r");
 	if (!in)
 	{
 		fprintf(stderr, "[Parser] proto file: [%s] not exists.\n",
-				proto_file.c_str());
+				idl_file.c_str());
 		return false;
 	}
 
-	fprintf(stdout, "proto file: [%s]\n", proto_file.c_str());
+	fprintf(stdout, "proto file: [%s]\n", idl_file.c_str());
 
 	char line_buffer[LINE_LENGTH_MAX];
 	std::string file_path;
@@ -115,7 +117,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 			{
 				fprintf(stderr, "[Parser ERROR] %s must not set "
 						"\"option cc_generic_services = true\" for srpc.\n",
-						proto_file.c_str());
+						idl_file.c_str());
 				return false;
 			}
 		}
@@ -131,13 +133,16 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 					continue;
 			}
 
-			file_path = info.input_dir + file_path;
-
 			info.include_list.resize(info.include_list.size() + 1);
+			info.include_list.back().input_dir = info.input_dir;
+
 			succ = this->parse(file_path, info.include_list.back());
 			if (!succ)
 			{
 				info.include_list.pop_back();
+				fprintf(stderr, "[Parser ERROR] failed to parse "
+						"\" %s \" in \" %s \"\n",
+						file_path.c_str(), idl_file.c_str());
 				return false;
 			}
 
@@ -147,7 +152,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 		if (this->is_thrift &&
 			this->parse_thrift_typedef(line,
 									   old_type_name,
-									   new_type_name,info) == true)
+									   new_type_name, info) == true)
 		{
 			info.typedef_list.push_back(typedef_descriptor{old_type_name,
 														   new_type_name});
@@ -280,7 +285,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 	build_typedef_mapping(info);
 	fclose(in);
-	fprintf(stdout, "finish parsing proto file: [%s]\n", proto_file.c_str());
+	fprintf(stdout, "finish parsing proto file: [%s]\n", idl_file.c_str());
 	return true;
 }
 

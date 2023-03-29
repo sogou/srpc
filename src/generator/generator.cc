@@ -77,9 +77,8 @@ bool Generator::init_file_names(const std::string& idl_file, const char *out_dir
 bool Generator::generate(struct GeneratorParams& params)
 {
 	this->info.input_dir = params.input_dir;
-	std::string idl_file = params.input_dir + params.idl_file;
 
-	if (this->parser.parse(idl_file, this->info) == false)
+	if (this->parser.parse(params.idl_file, this->info) == false)
 	{
 		fprintf(stderr, "[Generator Error] parse failed.\n");
 		return false;
