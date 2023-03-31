@@ -338,9 +338,9 @@ static uint8_t proxy_string_to_type(const char *type)
 
 static bool proxy_get_opt(int argc, const char **argv, struct srpc_config *config)
 {
-	char c;
+	int c;
 
-	while ((c = getopt(argc, (char * const *)argv, "o:c:s:d:")) != -1)
+	while ((c = getopt(argc, (char * const *)argv, "o:c:s:d:")) >= 0)
 	{
 		switch (c)
 		{

@@ -286,9 +286,9 @@ static void basic_default_file_initialize(DEFAULT_FILES& files)
 
 static bool get_opt_args(int argc, const char **argv, struct srpc_config *config)
 {
-	char c;
+	int c;
 
-	while ((c = getopt(argc, (char * const *)argv, "o:t:d:")) != -1)
+	while ((c = getopt(argc, (char * const *)argv, "o:t:d:")) >= 0)
 	{
 		switch (c)
 		{
