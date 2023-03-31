@@ -142,10 +142,10 @@ bool RPCController::copy_files()
 
 static bool rpc_get_opt(int argc, const char **argv, struct srpc_config *config)
 {
-	char c;
+	int c;
 
 	while ((c = getopt(argc, (char * const *)argv,
-					   "o:r:i:x:c:s:d:f:p:")) != -1)
+					   "o:r:i:x:c:s:d:f:p:")) >= 0)
 	{
 		switch (c)
 		{
