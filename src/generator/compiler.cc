@@ -170,7 +170,7 @@ int parse_getopt(int argc, char * const *argv,
 		{ "help",          no_argument,       NULL, 'h'}
 	};
 
-	while ((ch = getopt_long(argc, argv, "vf:o:i:sh", longopts, NULL)) != 1)
+	while ((ch = getopt_long(argc, argv, "vf:o:i:sh", longopts, NULL)) != -1)
 	{
 		switch (ch)
 		{
