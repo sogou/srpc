@@ -12,8 +12,7 @@
 #include "srpc_controller.h"
 
 static constexpr const char *DEPENDENCIES_ERROR = R"(Warning:
-Default dependencies path : %s does not have
-Workflow or other third_party dependencies.
+Default dependencies path : %s does not have third_party dependencies.
 This may cause link error in project : %s
 
 Please check or specify srpc path with '-d'
@@ -279,11 +278,96 @@ bool CommandController::check_args()
 	return true;
 }
 
+static inline bool is_with_srpc(const struct srpc_config *config)
+{
+	if (config->type == COMMAND_RPC ||
+		(config->type == COMMAND_PROXY &&
+		 check_proxy_type(config->proxy_server_type) != PROXY_BASIC_TYPE &&
+		 check_proxy_type(config->proxy_client_type) != PROXY_BASIC_TYPE))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+static bool check_dependencies_and_init(const struct srpc_config *config)
+{
+	int status;
+	bool with_srpc = is_with_srpc(config);
+
+	// the specified_depend_path must for workflow
+	if (config->specified_depend_path == true && with_srpc == false)
+		return true;
+
+	std::string check_file = config->depend_path;
+
+	if (with_srpc == false)
+		check_file += "workflow/workflow-config.cmake.in";
+	else
+		check_file += "third_party/snappy/cmake";
+
+	if (access(check_file.c_str(), 0) != 0)
+	{
+		std::string cmd = "cd ";
+		cmd += config->depend_path;
+
+		cmd += "&& git submodule update --init";
+
+		if (with_srpc == false)
+			cmd += " workflow";
+
+		status = system(cmd.c_str());
+		if (status == -1 || status == 127)
+		{
+			perror("git submodule update failed");
+			return false;
+		}
+
+		if (access(check_file.c_str(), 0) != 0)
+		{
+			printf(DEPENDENCIES_ERROR, config->depend_path,
+				   config->project_name);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static bool check_libraries_and_compile(const struct srpc_config *config)
+{
+	int status;
+	std::string library_path;
+	std::string compile_path = config->depend_path;
+
+	if (is_with_srpc(config) == false && config->specified_depend_path == false)
+		compile_path += "/workflow";
+
+	library_path = compile_path;
+	library_path += "/_lib";
+
+	if (access(library_path.c_str(), 0) != 0)
+	{
+		std::string cmd = "cd ";
+		cmd += compile_path;
+		cmd += " && make -j4";
+
+		status = system(cmd.c_str());
+		if (status == -1 || status == 127)
+		{
+			perror("execute command make failed");
+			return false;
+		}
+	}
+
+	return true;
+}
+
 bool CommandController::dependencies_and_dir()
 {
 	struct srpc_config *config = &this->config;
 	DIR *dir;
-	int status;
 
 	dir = opendir(config->output_path);
 	if (dir != NULL)
@@ -306,48 +390,11 @@ bool CommandController::dependencies_and_dir()
 	}
 	closedir(dir);
 
-	if (config->specified_depend_path == false)
-	{
-		std::string workflow_file = config->depend_path;
-		workflow_file += "workflow/workflow-config.cmake.in";
-		if (access(workflow_file.c_str(), 0) != 0)
-		{
-			std::string cmd = "cd ";
-			cmd += config->depend_path;
-			cmd += "&& git submodule init && git submodule update";
+	if (check_dependencies_and_init(config) == false)
+		return false;
 
-			status = system(cmd.c_str());
-			if (status == -1 || status == 127)
-			{
-				perror("git submodule init failed");
-				return false;
-			}
-
-			if (access(workflow_file.c_str(), 0) != 0)
-			{
-				printf(DEPENDENCIES_ERROR, config->depend_path,
-					   config->project_name);
-				return false;
-			}
-		}
-
-		std::string srpc_lib = config->depend_path;
-		srpc_lib += "_lib";
-
-		if (access(srpc_lib.c_str(), 0) != 0)
-		{
-			std::string cmd = "cd ";
-			cmd += config->depend_path;
-			cmd += " && make -j4";
-
-			status = system(cmd.c_str());
-			if (status == -1 || status == 127)
-			{
-				perror("execute command make failed");
-				return false;
-			}
-		}
-	}
+	if (check_libraries_and_compile(config) == false)
+		return false;
 
 	if (mkdir_p(config->output_path, 0755) != 0)
 	{
@@ -496,7 +543,8 @@ bool common_cmake_transform(const std::string& format, FILE *out,
 							const struct srpc_config *config)
 {
 	std::string path = config->depend_path;
-	path += "workflow";
+	if (config->specified_depend_path == false)
+		path += "workflow";
 
 	std::string codes_str;
 	std::string executors_str;

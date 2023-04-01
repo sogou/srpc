@@ -244,6 +244,28 @@ const char *srpc_config::proxy_client_type_string() const
 	return get_type_string(this->proxy_client_type);
 }
 
+int check_proxy_type(uint8_t type)
+{
+	if (type == PROTOCOL_TYPE_HTTP ||
+		type == PROTOCOL_TYPE_REDIS ||
+		type == PROTOCOL_TYPE_MYSQL ||
+		type == PROTOCOL_TYPE_KAFKA)
+		return PROXY_BASIC_TYPE;
+
+	if (type == PROTOCOL_TYPE_SRPC ||
+		type == PROTOCOL_TYPE_SRPC_HTTP ||
+		type == PROTOCOL_TYPE_BRPC ||
+		type == PROTOCOL_TYPE_TRPC ||
+		type == PROTOCOL_TYPE_TRPC_HTTP)
+		return PROXY_PROTOBUF_TYPE;
+
+	if (type == PROTOCOL_TYPE_THRIFT ||
+		type == PROTOCOL_TYPE_THRIFT_HTTP)
+		return PROXY_THRIFT_TYPE;
+
+	return -1;
+}
+
 ControlGenerator::ControlGenerator(const struct srpc_config *config) :
 	Generator(config->idl_type == IDL_TYPE_THRIFT ? true : false),
 	ctl_printer(config->idl_type == IDL_TYPE_THRIFT ? true : false),
