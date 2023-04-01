@@ -26,12 +26,6 @@
 
 #include "srpc_controller.h"
 
-enum
-{
-	BASIC_TYPE = 1,
-	PROTOBUF_TYPE = 2,
-	THRIFT_TYPE = 3
-};
 
 static std::string default_server_port(uint8_t type)
 {
@@ -55,28 +49,6 @@ static std::string default_proxy_port(uint8_t type)
 		return "3305";
 	// Add other protocol here
 	return "1411";
-}
-
-static int check_proxy_type(uint8_t type)
-{
-	if (type == PROTOCOL_TYPE_HTTP ||
-		type == PROTOCOL_TYPE_REDIS ||
-		type == PROTOCOL_TYPE_MYSQL ||
-		type == PROTOCOL_TYPE_KAFKA)
-		return BASIC_TYPE;
-
-	if (type == PROTOCOL_TYPE_SRPC ||
-		type == PROTOCOL_TYPE_SRPC_HTTP ||
-		type == PROTOCOL_TYPE_BRPC ||
-		type == PROTOCOL_TYPE_TRPC ||
-		type == PROTOCOL_TYPE_TRPC_HTTP)
-		return PROTOBUF_TYPE;
-
-	if (type == PROTOCOL_TYPE_THRIFT ||
-		type == PROTOCOL_TYPE_THRIFT_HTTP)
-		return THRIFT_TYPE;
-
-	return -1;
 }
 
 static std::string proxy_process_request_codes(uint8_t server_type,
@@ -255,8 +227,8 @@ bool ProxyController::copy_files()
 {
 	struct file_info info;
 
-	if (check_proxy_type(this->config.proxy_client_type) == BASIC_TYPE &&
-		check_proxy_type(this->config.proxy_server_type) == BASIC_TYPE)
+	if (check_proxy_type(this->config.proxy_client_type) == PROXY_BASIC_TYPE &&
+		check_proxy_type(this->config.proxy_server_type) == PROXY_BASIC_TYPE)
 	{
 		info = { "common/CMakeLists.txt", "CMakeLists.txt", common_cmake_transform };
 		this->default_files.push_back(info);
@@ -416,11 +388,11 @@ bool ProxyController::check_args()
 		return false;
 	}
 
-	if ((client_type == BASIC_TYPE && server_type > BASIC_TYPE) ||
-		(server_type == BASIC_TYPE && client_type > BASIC_TYPE) ||
+	if ((client_type == PROXY_BASIC_TYPE && server_type > PROXY_BASIC_TYPE) ||
+		(server_type == PROXY_BASIC_TYPE && client_type > PROXY_BASIC_TYPE) ||
 		// TODO: temperarily only support workflow to workflow, rpc to rpc
-		(client_type == PROTOBUF_TYPE && server_type == THRIFT_TYPE) ||
-		(server_type == PROTOBUF_TYPE && client_type == THRIFT_TYPE))
+		(client_type == PROXY_PROTOBUF_TYPE && server_type == PROXY_THRIFT_TYPE) ||
+		(server_type == PROXY_PROTOBUF_TYPE && client_type == PROXY_THRIFT_TYPE))
 		// TODO: temperarily NOT support protobuf with thrift
 	{
 		printf(COLOR_RED"Error:\n     Temperarily not support "
@@ -431,11 +403,11 @@ bool ProxyController::check_args()
 		return false;
 	}
 
-	if (client_type == PROTOBUF_TYPE)
+	if (client_type == PROXY_PROTOBUF_TYPE)
 	{
 		this->config.idl_type = IDL_TYPE_PROTOBUF;
 	}
-	else if (client_type == THRIFT_TYPE)
+	else if (client_type == PROXY_THRIFT_TYPE)
 	{
 		// this->config.idl_type = IDL_TYPE_THRIFT;
 		printf(COLOR_RED"Error:\n     Temperarily not support IDL thrift.\n\n" COLOR_OFF);

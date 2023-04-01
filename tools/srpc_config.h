@@ -174,12 +174,20 @@ enum
 	COMPRESS_TYPE_MAX
 };
 
+enum
+{
+	PROXY_BASIC_TYPE = 1,
+	PROXY_PROTOBUF_TYPE = 2,
+	PROXY_THRIFT_TYPE = 3
+};
+
 void usage(int argc, const char *argv[]);
 void usage_http(int argc, const char *argv[]);
 void usage_db(int argc, const char *argv[], const struct srpc_config *config);
 void usage_kafka(int argc, const char *argv[]);
 void usage_rpc(int argc, const char *argv[], const struct srpc_config *config);
 const char *get_type_string(uint8_t type);
+int check_proxy_type(uint8_t type);
 
 #endif
 
