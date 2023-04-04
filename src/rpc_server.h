@@ -235,16 +235,10 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
-				RPCModuleData req_data;
 				SERIES *series;
 				auto *server_task = static_cast<TASK *>(task);
-
-				req->get_meta_module_data(req_data);
-
-				if (!req_data.empty())
-					server_task->set_module_data(std::move(req_data));
-
 				RPCModuleData *task_data = server_task->mutable_module_data();
+				req->get_meta_module_data(*task_data);
 
 				for (auto *module : this->modules)
 				{
@@ -253,8 +247,7 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				}
 
 				series = static_cast<SERIES *>(series_of(task));
-				if (!task_data->empty())
-					series->set_module_data(task_data);
+				series->set_module_data(task_data);
 
 				status_code = req->decompress();
 				if (status_code == RPCStatusOK)

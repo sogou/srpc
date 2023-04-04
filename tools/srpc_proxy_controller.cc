@@ -368,6 +368,8 @@ bool ProxyController::get_opt(int argc, const char **argv)
 		return false;
 	}
 
+	this->config.service_name = this->config.project_name;
+
 	return true;
 }
 

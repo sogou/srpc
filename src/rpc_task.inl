@@ -148,7 +148,7 @@ public:
 	RPCClientTask(const std::string& service_name,
 				  const std::string& method_name,
 				  const RPCTaskParams *params,
-				  const std::list<RPCModule *>&& modules,
+				  std::list<RPCModule *>&& modules,
 				  user_done_t&& user_done);
 
 	bool get_remote(std::string& ip, unsigned short *port) const;
@@ -174,11 +174,11 @@ class RPCServerTask : public WFServerTask<RPCREQ, RPCRESP>
 public:
 	RPCServerTask(CommService *service,
 				  std::function<void (WFNetworkTask<RPCREQ, RPCRESP> *)>& process,
-				  const std::list<RPCModule *>&& modules) :
+				  std::list<RPCModule *>&& modules) :
 		WFServerTask<RPCREQ, RPCRESP>(service, WFGlobal::get_scheduler(), process),
 		worker(new RPCContextImpl<RPCREQ, RPCRESP>(this, &module_data_),
 			   &this->req, &this->resp),
-		modules_(modules)
+		modules_(std::move(modules))
 	{
 	}
 
@@ -288,20 +288,13 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		status_code = this->resp.compress();
 		if (status_code == RPCStatusOK)
 		{
-			RPCSeries *series = static_cast<RPCSeries *>(series_of(this));
-
-			RPCModuleData *data = series->get_module_data();
-
-			if (data != NULL)
-				this->set_module_data(std::move(*data));
-			else
-				data = &global_empty_map;
+			// for server, this is the where series->module_data stored
+			RPCModuleData *data = this->mutable_module_data();
 
 			for (auto *module : modules_)
 				module->server_task_end(this, *data);
 
-			this->resp.set_meta_module_data(*this->mutable_module_data());
-			series->clear_module_data();
+			this->resp.set_meta_module_data(*data);
 
 			if (this->resp.serialize_meta())
 				return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
@@ -400,12 +393,12 @@ inline RPCClientTask<RPCREQ, RPCRESP>::RPCClientTask(
 					const std::string& service_name,
 					const std::string& method_name,
 					const RPCTaskParams *params,
-					const std::list<RPCModule *>&& modules,
+					std::list<RPCModule *>&& modules,
 					user_done_t&& user_done):
 	WFComplexClientTask<RPCREQ, RPCRESP>(0, nullptr),
 	user_done_(std::move(user_done)),
 	init_failed_(false),
-	modules_(modules)
+	modules_(std::move(modules))
 {
 	if (user_done_)
 		this->set_callback(std::bind(&RPCClientTask::rpc_callback,
@@ -455,17 +448,18 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 		SERIES *series = dynamic_cast<SERIES *>(series_of(this));
 
 		if (series)
+		{
 			data = series->get_module_data();
+			if (data != NULL)
+				this->set_module_data(*data);
+		}
 
-		if (data != NULL)
-			this->set_module_data(*data);
-		else
-			data = &global_empty_map;
+		data = this->mutable_module_data();
 
 		for (auto *module : modules_)
 			module->client_task_begin(this, *data);
 
-		this->req.set_meta_module_data(*this->mutable_module_data());
+		this->req.set_meta_module_data(*data);
 
 		if (this->req.serialize_meta())
 			return this->WFClientTask<RPCREQ, RPCRESP>::message_out();
@@ -492,11 +486,11 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 
 		if (!modules_.empty())
 		{
-			RPCModuleData resp_data;
+			RPCModuleData *resp_data = this->mutable_module_data();
 			//TODO: Fill some resp meta to client task
 			//this->resp.get_meta_module_data(resp_data);
 			for (auto *module : modules_)
-				module->client_task_end(this, resp_data);
+				module->client_task_end(this, *resp_data);
 		}
 		//TODO: Feedback client resp meta through all nodes by series
 	}
