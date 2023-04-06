@@ -61,11 +61,11 @@ public:
 
 	enum RPCModuleType get_module_type() const { return this->module_type; }
 
-	virtual bool client_begin(SubTask *task, const RPCModuleData& data)
+	virtual bool client_begin(SubTask *task, RPCModuleData& data)
 	{
 		return true;
 	}
-	virtual bool server_begin(SubTask *task, const RPCModuleData& data)
+	virtual bool server_begin(SubTask *task, RPCModuleData& data)
 	{
 		return true;
 	}

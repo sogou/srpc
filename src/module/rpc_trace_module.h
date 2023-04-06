@@ -67,9 +67,9 @@ template<class SERVER_TASK, class CLIENT_TASK>
 class TraceModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, const RPCModuleData& data) override;
+	bool client_begin(SubTask *task, RPCModuleData& data) override;
 	bool client_end(SubTask *task, RPCModuleData& data) override;
-	bool server_begin(SubTask *task, const RPCModuleData& data) override;
+	bool server_begin(SubTask *task, RPCModuleData& data) override;
 	bool server_end(SubTask *task, RPCModuleData& data) override;
 
 public:
@@ -84,25 +84,22 @@ template<class SERVER_TASK, class CLIENT_TASK>
 class RPCTraceModule : public TraceModule<SERVER_TASK, CLIENT_TASK>
 {
 public:
-	bool client_begin(SubTask *task, const RPCModuleData& data) override;
+	bool client_begin(SubTask *task, RPCModuleData& data) override;
 	bool client_end(SubTask *task, RPCModuleData& data) override;
-	bool server_begin(SubTask *task, const RPCModuleData& data) override;
+	bool server_begin(SubTask *task, RPCModuleData& data) override;
 	bool server_end(SubTask *task, RPCModuleData& data) override;
 };
 
 ////////// impl
 
 template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::client_begin(SubTask *task, const RPCModuleData& data)
+bool TraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data)
 {
-	auto *client_task = static_cast<CTASK *>(task);
-	RPCModuleData& module_data = *(client_task->mutable_module_data());
-
 	if (!data.empty())
 	{
 		auto iter = data.find(SRPC_SPAN_ID);
 		if (iter != data.end())
-			module_data[SRPC_PARENT_SPAN_ID] = iter->second;
+			data[SRPC_PARENT_SPAN_ID] = iter->second;
 	} else {
 		uint64_t trace_id_high = htonll(SRPCGlobal::get_instance()->get_random());
 		uint64_t trace_id_low = htonll(SRPCGlobal::get_instance()->get_random());
@@ -113,19 +110,22 @@ bool TraceModule<STASK, CTASK>::client_begin(SubTask *task, const RPCModuleData&
 		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
 				&trace_id_low, SRPC_TRACEID_SIZE / 2);
 
-		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
+		data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 
 	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
 	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
 
 	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
-	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
+	data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
-	module_data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_CLIENT;
+	data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_CLIENT;
 
-	if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
-		module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
+	data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
+
+	// clear other unnecessary module_data since the data comes from series
+	data.erase(SRPC_DURATION);
+	data.erase(SRPC_FINISH_TIMESTAMP);
 
 	return true;
 }
@@ -133,27 +133,21 @@ bool TraceModule<STASK, CTASK>::client_begin(SubTask *task, const RPCModuleData&
 template<class STASK, class CTASK>
 bool TraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data)
 {
-	auto *client_task = static_cast<CTASK *>(task);
-	RPCModuleData& module_data = *(client_task->mutable_module_data());
-	unsigned long long end_time = GET_CURRENT_NS();
-
-	for (auto kv : module_data)
-		data[kv.first] = module_data[kv.first];
-
-	data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-	data[SRPC_DURATION] = std::to_string(end_time -
-						atoll(data[SRPC_START_TIMESTAMP].data()));
+	if (data.find(SRPC_DURATION) == data.end())
+	{
+		unsigned long long end_time = GET_CURRENT_NS();
+		data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
+		data[SRPC_DURATION] = std::to_string(end_time -
+							atoll(data[SRPC_START_TIMESTAMP].data()));
+	}
 
 	return true;
 }
 
 template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::server_begin(SubTask *task, const RPCModuleData& data)
+bool TraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data)
 {
-	auto *server_task = static_cast<STASK *>(task);
-	RPCModuleData& module_data = *(server_task->mutable_module_data());
-
-	if (module_data[SRPC_TRACE_ID].empty())
+	if (data[SRPC_TRACE_ID].empty())
 	{
 		uint64_t trace_id_high = SRPCGlobal::get_instance()->get_random();
 		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_random();
@@ -164,21 +158,21 @@ bool TraceModule<STASK, CTASK>::server_begin(SubTask *task, const RPCModuleData&
 		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
 				&trace_id_low, SRPC_TRACEID_SIZE / 2);
 
-		module_data[SRPC_TRACE_ID] = std::move(trace_id_buf);
+		data[SRPC_TRACE_ID] = std::move(trace_id_buf);
 	}
 	else
-		module_data[SRPC_PARENT_SPAN_ID] = module_data[SRPC_SPAN_ID];
+		data[SRPC_PARENT_SPAN_ID] = data[SRPC_SPAN_ID];
 
 	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
 	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
 
 	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
-	module_data[SRPC_SPAN_ID] = std::move(span_id_buf);
+	data[SRPC_SPAN_ID] = std::move(span_id_buf);
 
-	if (module_data.find(SRPC_START_TIMESTAMP) == module_data.end())
-		module_data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
+	if (data.find(SRPC_START_TIMESTAMP) == data.end())
+		data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
 
-	module_data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_SERVER;
+	data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_SERVER;
 
 	return true;
 }
@@ -186,33 +180,32 @@ bool TraceModule<STASK, CTASK>::server_begin(SubTask *task, const RPCModuleData&
 template<class STASK, class CTASK>
 bool TraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data)
 {
-	auto *server_task = static_cast<STASK *>(task);
-	RPCModuleData& module_data = *(server_task->mutable_module_data());
-	unsigned long long end_time = GET_CURRENT_NS();
+	if (data.find(SRPC_DURATION) == data.end())
+	{
+		unsigned long long end_time = GET_CURRENT_NS();
 
-	module_data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-	module_data[SRPC_DURATION] = std::to_string(end_time -
-						atoll(module_data[SRPC_START_TIMESTAMP].data()));
+		data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
+		data[SRPC_DURATION] = std::to_string(end_time -
+							atoll(data[SRPC_START_TIMESTAMP].data()));
+	}
 
 	return true;
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task,
-											   const RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data)
 {
 	TraceModule<STASK, CTASK>::client_begin(task, data);
 
 	auto *client_task = static_cast<CTASK *>(task);
 	auto *req = client_task->get_req();
-	RPCModuleData& module_data = *(client_task->mutable_module_data());
 
-	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
-	module_data[OTLP_SERVICE_NAME] = req->get_service_name();
-	module_data[OTLP_METHOD_NAME] = req->get_method_name();
-	module_data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
-	module_data[SRPC_COMPRESS_TYPE] =
-								  std::to_string(req->get_compress_type());
+	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
+	data[OTLP_SERVICE_NAME] = req->get_service_name();
+	data[OTLP_METHOD_NAME] = req->get_method_name();
+	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
+	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
+
 	return true;
 }
 
@@ -238,8 +231,7 @@ bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task,
-											   const RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data)
 {
 	TraceModule<STASK, CTASK>::server_begin(task, data);
 
@@ -247,20 +239,18 @@ bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task,
 	unsigned short port;
 	auto *server_task = static_cast<STASK *>(task);
 	auto *req = server_task->get_req();
-	RPCModuleData& module_data = *(server_task->mutable_module_data());
 
-	module_data[OTLP_SERVICE_NAME] = req->get_service_name();
-	module_data[OTLP_METHOD_NAME] = req->get_method_name();
-	module_data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
-	module_data[SRPC_COMPRESS_TYPE] =
-						std::to_string(req->get_compress_type());
+	data[OTLP_SERVICE_NAME] = req->get_service_name();
+	data[OTLP_METHOD_NAME] = req->get_method_name();
+	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
+	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
 
-	module_data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
+	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
 
 	if (server_task->get_remote(ip, &port))
 	{
-		module_data[SRPC_REMOTE_IP] = std::move(ip);
-		module_data[SRPC_REMOTE_PORT] = std::to_string(port);
+		data[SRPC_REMOTE_IP] = std::move(ip);
+		data[SRPC_REMOTE_PORT] = std::to_string(port);
 	}
 
 	return true;
@@ -273,9 +263,9 @@ bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data
 
 	auto *server_task = static_cast<STASK *>(task);
 	auto *resp = server_task->get_resp();
-	RPCModuleData& module_data = *(server_task->mutable_module_data());
-	module_data[SRPC_STATE] = std::to_string(resp->get_status_code());
-	module_data[SRPC_ERROR] = std::to_string(resp->get_error());
+
+	data[SRPC_STATE] = std::to_string(resp->get_status_code());
+	data[SRPC_ERROR] = std::to_string(resp->get_error());
 
 	return true;
 }

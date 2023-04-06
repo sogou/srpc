@@ -25,7 +25,7 @@
 namespace srpc
 {
 
-bool RPCModule::client_task_begin(SubTask *task, const RPCModuleData& data)
+bool RPCModule::client_task_begin(SubTask *task, RPCModuleData& data)
 {
 	bool ret = this->client_begin(task, data);
 
@@ -35,7 +35,7 @@ bool RPCModule::client_task_begin(SubTask *task, const RPCModuleData& data)
 	return ret;
 }
 
-bool RPCModule::server_task_begin(SubTask *task, const RPCModuleData& data)
+bool RPCModule::server_task_begin(SubTask *task, RPCModuleData& data)
 {
 	bool ret = this->server_begin(task, data);
 
