@@ -27,6 +27,8 @@
 namespace srpc
 {
 
+static constexpr char const *SRPC_COMPONENT_SRPC	= "srpc.srpc";
+
 static constexpr char const *SRPC_SPAN_LOG			= "srpc.log";
 static constexpr char const *SRPC_SPAN_EVENT		= "event";
 static constexpr char const *SRPC_SPAN_MESSAGE		= "message";
@@ -34,6 +36,19 @@ static constexpr char const *SRPC_SPAN_MESSAGE		= "message";
 static constexpr char const *SRPC_START_TIMESTAMP	= "srpc.start_time";
 static constexpr char const *SRPC_FINISH_TIMESTAMP	= "srpc.finish_time";
 static constexpr char const *SRPC_DURATION			= "srpc.duration";
+
+static constexpr char const *SRPC_HTTP_METHOD		= "http.method";
+static constexpr char const *SRPC_HTTP_STATUS_CODE	= "http.status_code";
+static constexpr char const *SRPC_HTTP_SOCK_FAMILY	= "net.sock.family";
+static constexpr char const *SRPC_HTTP_SOCK_ADDR	= "net.sock.peer.addr";
+static constexpr char const *SRPC_HTTP_SOCK_PORT	= "net.sock.peer.port";
+static constexpr char const *SRPC_HTTP_REQ_LEN		= "http.request_content_length";
+static constexpr char const *SRPC_HTTP_RESP_LEN		= "http.response_content_length";
+
+// /users/12314/?q=ddds
+static constexpr char const *SRPC_HTTP_TARGET		= "http.target";
+// The IP address of the original client behind all proxies, from X-Forwarded-For
+static constexpr char const *SRPC_HTTP_CLIENT_IP	= "http.client_ip";
 
 //for SnowFlake: u_id = [timestamp][group][machine][sequence]
 static constexpr int SRPC_TIMESTAMP_BITS		= 38;

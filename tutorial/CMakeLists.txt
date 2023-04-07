@@ -210,3 +210,15 @@ foreach(src ${TUTORIAL_HELLOWORLD_LIST})
 	add_dependencies(${bin_name} TURORIAL_GEN)
 endforeach()
 
+set(TUTORIAL_HTTP_LIST
+	tutorial-17-http_server
+	tutorial-18-http_client
+)
+
+foreach(src ${TUTORIAL_HTTP_LIST})
+	string(REPLACE "-" ";" arr ${src})
+	list(GET arr -1 bin_name)
+	add_executable(${bin_name} ${src}.cc)
+	target_link_libraries(${bin_name} ${SRPC_LIB})
+	add_dependencies(${bin_name} TURORIAL_GEN)
+endforeach()

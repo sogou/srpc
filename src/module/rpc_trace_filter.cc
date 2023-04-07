@@ -90,13 +90,8 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	TRACE_ID_BIN_TO_HEX(trace_id, trace_id_buf);
 	SPAN_ID_BIN_TO_HEX(span_id, span_id_buf);
 
-	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s service: %s"
-									" method: %s start_time: %s",
-						  trace_id_buf,
-						  span_id_buf,
-						  data[OTLP_SERVICE_NAME].c_str(),
-						  data[OTLP_METHOD_NAME].c_str(),
-						  data[SRPC_START_TIMESTAMP].c_str());
+	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s",
+						  trace_id_buf, span_id_buf);
 
 	auto iter = data.find(SRPC_PARENT_SPAN_ID);
 	if (iter != data.end())
@@ -109,25 +104,26 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 						parent_span_id_buf);
 	}
 
-	iter = data.find(SRPC_FINISH_TIMESTAMP);
-	if (iter != data.end())
+	if (data.find(OTLP_SERVICE_NAME) != data.end()) // for RPC
 	{
-		ret += snprintf(str + ret, len - ret, " finish_time: %s",
-						iter->second.c_str());
+		ret += snprintf(str + ret, len - ret, " service: %s method: %s",
+						data[OTLP_SERVICE_NAME].c_str(),
+						data[OTLP_METHOD_NAME].c_str());
 	}
 
-	iter = data.find(SRPC_DURATION);
-	if (iter != data.end())
-	{
-		ret += snprintf(str + ret, len - ret, " duration: %s(ns)"
-											  " remote_ip: %s port: %s"
-											  " state: %s error: %s",
-						iter->second.c_str(),
-						data[SRPC_REMOTE_IP].c_str(),
-						data[SRPC_REMOTE_PORT].c_str(),
-						data[SRPC_STATE].c_str(),
-						data[SRPC_ERROR].c_str());
-	}
+	// TODO : add some method for HTTP
+
+	ret += snprintf(str + ret, len - ret, " start_time: %s finish_time: %s"
+										  " duration: %s(ns)"
+										  " remote_ip: %s port: %s"
+										  " state: %s error: %s",
+					data[SRPC_START_TIMESTAMP].c_str(),
+					data[SRPC_FINISH_TIMESTAMP].c_str(),
+					data[SRPC_DURATION].c_str(),
+					data[SRPC_REMOTE_IP].c_str(),
+					data[SRPC_REMOTE_PORT].c_str(),
+					data[SRPC_STATE].c_str(),
+					data[SRPC_ERROR].c_str());
 
 	for (const auto& it : data)
 	{

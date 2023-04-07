@@ -21,6 +21,10 @@ set(SRC_HEADERS
 	src/module/rpc_filter.h
 	src/module/rpc_trace_filter.h
 	src/module/rpc_metrics_filter.h
+	src/http/http_task.h
+	src/http/http_module.h
+	src/http/http_client.h
+	src/http/http_server.h
 	src/rpc_basic.h
 	src/rpc_buffer.h
 	src/rpc_client.h

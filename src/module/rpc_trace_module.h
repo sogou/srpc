@@ -53,9 +53,6 @@ static constexpr char const *SRPC_REMOTE_IP			= "srpc.peer.ip";
 static constexpr char const *SRPC_REMOTE_PORT		= "srpc.peer.port";
 static constexpr char const *SRPC_SAMPLING_PRIO		= "srpc.sampling.priority";
 
-// for srpc.component
-static constexpr char const *SRPC_COMPONENT_SRPC	= "srpc.srpc";
-
 // for ext tags
 static constexpr char const *SRPC_DATA_TYPE			= "srpc.data.type";
 static constexpr char const *SRPC_COMPRESS_TYPE		= "srpc.compress.type";
