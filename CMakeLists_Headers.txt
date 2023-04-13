@@ -21,10 +21,6 @@ set(SRC_HEADERS
 	src/module/rpc_filter.h
 	src/module/rpc_trace_filter.h
 	src/module/rpc_metrics_filter.h
-	src/http/http_task.h
-	src/http/http_module.h
-	src/http/http_client.h
-	src/http/http_server.h
 	src/rpc_basic.h
 	src/rpc_buffer.h
 	src/rpc_client.h
@@ -39,6 +35,16 @@ set(SRC_HEADERS
 	src/rpc_zero_copy_stream.h
 	src/rpc_define.h
 )
+
+if (NOT WIN32)
+	set(SRC_HEADERS
+		${SRC_HEADERS}
+		src/http/http_task.h
+		src/http/http_module.h
+		src/http/http_client.h
+		src/http/http_server.h
+	)
+endif ()
 
 if (NOT SNAPPY_INSTALLED)
 	set(SNAPPY_HEADERS

@@ -18,6 +18,13 @@
 #include "http_task.h"
 #include "http_module.h"
 
+#ifdef _WIN32
+#include <workflow/PlatformSocket.h>
+#else
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#endif
+
 namespace srpc
 {
 
@@ -56,7 +63,7 @@ void HttpServer::add_filter(RPCFilter *filter)
 
 CommSession *HttpServer::new_session(long long seq, CommConnection *conn)
 {
-	WFHttpTask *task;
+	HttpServerTask *task;
 
 	std::list<RPCModule *> module;
 	for (int i = 0; i < SRPC_MODULE_MAX; i++)
@@ -69,8 +76,32 @@ CommSession *HttpServer::new_session(long long seq, CommConnection *conn)
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->set_receive_timeout(this->params.receive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
+	task->set_is_ssl(this->get_ssl_ctx() ? true : false);
+	task->set_listen_port(this->get_listen_port());
 
 	return task;
+}
+
+unsigned short HttpServer::get_listen_port()
+{
+	if (this->listen_port == 0)
+	{
+		struct sockaddr_storage addr;
+		socklen_t l = sizeof addr;
+		this->get_listen_addr((struct sockaddr *)&addr, &l);
+		if (addr.ss_family == AF_INET)
+		{
+			struct sockaddr_in *sin = (struct sockaddr_in *)&addr;
+			this->listen_port = ntohs(sin->sin_port);
+		}
+		else // if (addr.ss_family == AF_INET6)
+		{
+			struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&addr;
+			this->listen_port = ntohs(sin6->sin6_port);
+		}
+	}
+
+	return this->listen_port;
 }
 
 } // namespace srpc

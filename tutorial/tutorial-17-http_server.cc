@@ -25,6 +25,7 @@ static WFFacilities::WaitGroup wait_group(1);
 
 srpc::RPCMetricsPull  exporter;
 srpc::RPCTraceDefault trace_log;
+//srpc::RPCTraceOpenTelemetry otel("http://127.0.0.1:8081");
 
 static void sig_handler(int signo)
 {
@@ -52,7 +53,8 @@ int main()
 	exporter.create_summary("echo_test_quantiles", "Test quantile",
 						  {{0.5, 0.05}, {0.9, 0.01}});
 
-	server.add_filter(&trace_log);	
+	server.add_filter(&trace_log);
+//	server.add_filter(&otel);
 	server.add_filter(&exporter);
 
 	if (server.start(1412) == 0)

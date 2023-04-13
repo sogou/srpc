@@ -57,6 +57,28 @@ static constexpr char const *SRPC_SAMPLING_PRIO		= "srpc.sampling.priority";
 static constexpr char const *SRPC_DATA_TYPE			= "srpc.data.type";
 static constexpr char const *SRPC_COMPRESS_TYPE		= "srpc.compress.type";
 
+// for http
+static constexpr char const *SRPC_HTTP_SOCK_FAMILY	= "net.sock.family";
+static constexpr char const *SRPC_HTTP_SOCK_ADDR	= "net.sock.peer.addr";
+static constexpr char const *SRPC_HTTP_SOCK_PORT	= "net.sock.peer.port";
+static constexpr char const *SRPC_HTTP_REQ_LEN		= "http.request_content_length";
+static constexpr char const *SRPC_HTTP_RESP_LEN		= "http.response_content_length";
+
+// for http client
+static constexpr char const *SRPC_HTTP_CLIENT_URL	= "http.url";
+static constexpr char const *SRPC_HTTP_PEER_NAME	= "net.peer.name";
+static constexpr char const *SRPC_HTTP_PEER_PORT	= "net.peer.port";
+static constexpr char const *SRPC_HTTP_RESEND_COUNT	= "http.resend_count";
+
+// for http server
+static constexpr char const *SRPC_HTTP_SCHEME		= "http.scheme";
+static constexpr char const *SRPC_HTTP_HOST_NAME	= "net.host.name";
+static constexpr char const *SRPC_HTTP_HOST_PORT	= "net.host.port";
+// /users/12314/?q=ddds
+static constexpr char const *SRPC_HTTP_TARGET		= "http.target";
+// The IP address of the original client behind all proxies, from X-Forwarded-For
+static constexpr char const *SRPC_HTTP_CLIENT_IP	= "http.client_ip";
+
 // Basic TraceModule for generating general span data.
 // Each kind of network task can derived its own TraceModule.
 

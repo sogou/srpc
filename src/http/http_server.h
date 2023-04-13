@@ -28,15 +28,24 @@ namespace srpc
 class HttpServer : public WFHttpServer
 {
 public:
-	HttpServer(http_process_t proc) : WFHttpServer(std::move(proc)) {}
+	HttpServer(http_process_t proc) :
+		WFHttpServer(std::move(proc)),
+		listen_port(0)
+	{
+	}
+
 	void add_filter(RPCFilter *filter);
 
 protected:
 	CommSession *new_session(long long seq, CommConnection *conn) override;
 
 private:
+	unsigned short get_listen_port();
+
+private:
 	std::mutex mutex;
 	RPCModule *modules[SRPC_MODULE_MAX] = { NULL };
+	unsigned short listen_port;
 };
 
 } // namespace srpc

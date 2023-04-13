@@ -70,13 +70,19 @@ static const struct HttpClientParams HTTP_CLIENT_PARAMS_DEFAULT =
 class HttpClient
 {
 public:
-	WFHttpTask *create_http_task(http_callback_t callback);
-	void add_filter(RPCFilter *filter);
+	HttpClient() { }
 
-public:
-	HttpClient(const std::string& url);
-	HttpClient(const ParsedURI& uri);
-	HttpClient(const HttpClientParams *params);
+	WFHttpTask *create_http_task(const std::string& url,
+								 int redirect_max,
+								 int retry_max,
+								 http_callback_t callback);
+
+	WFHttpTask *create_http_task(const ParsedURI& uri,
+								 int redirect_max,
+								 int retry_max,
+								 http_callback_t callback);
+
+	void add_filter(RPCFilter *filter);
 
 private:
 	void callback(WFHttpTask *task);

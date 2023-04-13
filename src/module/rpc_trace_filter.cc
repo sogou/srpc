@@ -3,12 +3,11 @@
 #include "workflow/WFTask.h"
 #include "workflow/HttpUtil.h"
 #include "rpc_trace_filter.h"
-#include "opentelemetry_trace_service.pb.h"
+#include "opentelemetry_trace.pb.h"
 
 namespace srpc
 {
 
-using namespace opentelemetry::proto::collector::trace::v1;
 using namespace opentelemetry::proto::trace::v1;
 using namespace opentelemetry::proto::common::v1;
 using namespace opentelemetry::proto::resource::v1;
@@ -16,7 +15,7 @@ using namespace opentelemetry::proto::resource::v1;
 static InstrumentationLibrarySpans *
 rpc_span_fill_pb_request(const RPCModuleData& data,
 		const std::unordered_map<std::string, std::string>& attributes,
-		ExportTraceServiceRequest *req)
+		TracesData *req)
 {
 	ResourceSpans *rs = req->add_resource_spans();
 	InstrumentationLibrarySpans *spans = rs->add_instrumentation_library_spans();
@@ -57,26 +56,76 @@ static void rpc_span_fill_pb_span(RPCModuleData& data,
 								  InstrumentationLibrarySpans *spans)
 {
 	Span *span = spans->add_spans();
+	Status *status = span->mutable_status();
+	KeyValue *attribute;
+	AnyValue *value;
 
 	span->set_span_id(data[SRPC_SPAN_ID].c_str(), SRPC_SPANID_SIZE);
 	span->set_trace_id(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE);
-	span->set_name(data[OTLP_METHOD_NAME]);
+
+	// name is required and specified in OpenTelemetry semantic conventions.
+	auto iter = data.find(OTLP_METHOD_NAME);
+	if (iter != data.end())
+		span->set_name(data[OTLP_METHOD_NAME]); // for RPC
+	else
+		span->set_name(data[SRPC_HTTP_METHOD]); // for HTTP
+
+	// refer to : trace/semantic_conventions/http/#status
+	int http_status_code = 0;
+	iter = data.find(SRPC_HTTP_STATUS_CODE);
+	if (iter != data.end())
+		http_status_code = atoi(data[SRPC_HTTP_STATUS_CODE].c_str());
 
 	for (const auto& iter : data)
 	{
-		if (iter.first.compare(SRPC_PARENT_SPAN_ID) == 0)
+		const std::string& key = iter.first;
+
+		if (key.compare(SRPC_PARENT_SPAN_ID) == 0)
+		{
 			span->set_parent_span_id(iter.second);
-		else if (iter.first.compare(SRPC_SPAN_KIND) == 0)
+		}
+		else if (key.compare(SRPC_SPAN_KIND) == 0)
 		{
 			if (iter.second.compare(SRPC_SPAN_KIND_CLIENT) == 0)
+			{
 				span->set_kind(Span_SpanKind_SPAN_KIND_CLIENT);
+				if (http_status_code >= 400)
+					status->set_code(Status_StatusCode_STATUS_CODE_ERROR);
+			}
 			else if (iter.second.compare(SRPC_SPAN_KIND_SERVER) == 0)
+			{
 				span->set_kind(Span_SpanKind_SPAN_KIND_SERVER);
+				if (http_status_code >= 500)
+					status->set_code(Status_StatusCode_STATUS_CODE_ERROR);
+			}
 		}
-		else if (iter.first.compare(SRPC_START_TIMESTAMP) == 0)
+		else if (key.compare(SRPC_START_TIMESTAMP) == 0)
+		{
 			span->set_start_time_unix_nano(atoll(data[SRPC_START_TIMESTAMP].data()));
-		else if (iter.first.compare(SRPC_FINISH_TIMESTAMP) == 0)
+		}
+		else if (key.compare(SRPC_FINISH_TIMESTAMP) == 0)
+		{
 			span->set_end_time_unix_nano(atoll(data[SRPC_FINISH_TIMESTAMP].data()));
+		}
+		else if (key.compare(0, 5, "srpc.") != 0)
+		{
+			attribute= span->add_attributes();
+			attribute->set_key(key);
+			value = attribute->mutable_value();
+
+			size_t len = key.length();
+			if ((len > 4 && key.substr(len - 4).compare("port") == 0) ||
+				(len > 5 && key.substr(len - 5).compare("count") == 0) ||
+				(len > 6 && key.substr(len - 6).compare("length") == 0) ||
+				key.compare(SRPC_HTTP_STATUS_CODE)== 0)
+			{
+				value->set_int_value(atoi(iter.second.c_str()));
+			}
+			else
+			{
+				value->set_string_value(iter.second);
+			}
+		}
 	}
 }
 
@@ -104,30 +153,26 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 						parent_span_id_buf);
 	}
 
-	if (data.find(OTLP_SERVICE_NAME) != data.end()) // for RPC
-	{
-		ret += snprintf(str + ret, len - ret, " service: %s method: %s",
-						data[OTLP_SERVICE_NAME].c_str(),
-						data[OTLP_METHOD_NAME].c_str());
-	}
-
-	// TODO : add some method for HTTP
-
 	ret += snprintf(str + ret, len - ret, " start_time: %s finish_time: %s"
-										  " duration: %s(ns)"
-										  " remote_ip: %s port: %s"
-										  " state: %s error: %s",
+										  " duration: %s(ns)",
 					data[SRPC_START_TIMESTAMP].c_str(),
 					data[SRPC_FINISH_TIMESTAMP].c_str(),
-					data[SRPC_DURATION].c_str(),
-					data[SRPC_REMOTE_IP].c_str(),
-					data[SRPC_REMOTE_PORT].c_str(),
-					data[SRPC_STATE].c_str(),
-					data[SRPC_ERROR].c_str());
+					data[SRPC_DURATION].c_str());
 
 	for (const auto& it : data)
 	{
-		if (strncmp(it.first.c_str(), SRPC_SPAN_LOG, strlen(SRPC_SPAN_LOG)) == 0)
+		if (strcmp(it.first.c_str(), SRPC_START_TIMESTAMP) == 0 ||
+			strcmp(it.first.c_str(), SRPC_FINISH_TIMESTAMP) == 0 ||
+			strcmp(it.first.c_str(), SRPC_DURATION) == 0 ||
+			strcmp(it.first.c_str(), SRPC_TRACE_ID) == 0 ||
+			strcmp(it.first.c_str(), SRPC_SPAN_ID) == 0 ||
+			strcmp(it.first.c_str(), SRPC_PARENT_SPAN_ID) == 0)
+		{
+			continue;
+		}
+
+		if (strcmp(it.first.c_str(), SRPC_SPAN_LOG) == 0)
+		{
 			ret += snprintf(str + ret, len - ret,
 							"\n%s trace_id: %s span_id: %s"
 							" timestamp: %s %s",
@@ -136,6 +181,15 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 							span_id_buf,
 							it.first.c_str() + strlen(SRPC_SPAN_LOG) + 1,
 							it.second.c_str());
+		}
+		else
+		{
+			const char * key = it.first.c_str();
+			if (it.first.compare(0, 5, "srpc.") == 0)
+				key += 5;
+			ret += snprintf(str + ret, len - ret, " %s: %s",
+							key, it.second.c_str());
+		}
 	}
 
 	return ret;
@@ -232,7 +286,7 @@ RPCTraceOpenTelemetry::RPCTraceOpenTelemetry(const std::string& url) :
 	report_status(false),
 	report_span_count(0)
 {
-	this->report_req = new ExportTraceServiceRequest;
+	this->report_req = new TracesData;
 }
 
 RPCTraceOpenTelemetry::RPCTraceOpenTelemetry(const std::string& url,
@@ -249,7 +303,7 @@ RPCTraceOpenTelemetry::RPCTraceOpenTelemetry(const std::string& url,
 	report_status(false),
 	report_span_count(0)
 {
-	this->report_req = new ExportTraceServiceRequest;
+	this->report_req = new TracesData;
 }
 
 RPCTraceOpenTelemetry::~RPCTraceOpenTelemetry()
@@ -261,7 +315,7 @@ SubTask *RPCTraceOpenTelemetry::create(RPCModuleData& span)
 {
 	std::string *output = new std::string;
 	SubTask *next = NULL;
-	ExportTraceServiceRequest *req = (ExportTraceServiceRequest *)this->report_req;
+	TracesData *req = (TracesData *)this->report_req;
 
 	this->mutex.lock();
 	if (!this->report_status)
@@ -320,18 +374,34 @@ bool RPCTraceOpenTelemetry::filter(RPCModuleData& data)
 {
 	std::unordered_map<std::string, google::protobuf::Message *>::iterator it;
 	InstrumentationLibrarySpans *spans;
+	std::string service_name;
 	bool ret;
-	const std::string& service_name = data[OTLP_SERVICE_NAME];
+
+	auto iter = data.find(OTLP_SERVICE_NAME);
+	if (iter != data.end())
+	{
+		service_name = iter->second;
+	}
+	else // for HTTP
+	{
+		service_name = data[SRPC_COMPONENT] + std::string(".") +
+					   data[SRPC_HTTP_SCHEME];
+
+		if (data.find(SRPC_SPAN_KIND_CLIENT) != data.end())
+			service_name += ".client";
+		else
+			service_name += ".server";
+	}
 
 	this->mutex.lock();
 	if (this->filter_policy.collect(data))
 	{
 		++this->report_span_count;
-		it = report_map.find(service_name);
-		if (it == report_map.end())
+		it = this->report_map.find(service_name);
+		if (it == this->report_map.end())
 		{
 			spans = rpc_span_fill_pb_request(data, this->attributes,
-							(ExportTraceServiceRequest *)this->report_req);
+											 (TracesData *)this->report_req);
 			this->report_map.insert({service_name, spans});
 		}
 		else

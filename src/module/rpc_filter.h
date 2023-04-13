@@ -29,6 +29,8 @@ static constexpr unsigned int	OTLP_HTTP_REDIRECT_MAX		= 0;
 static constexpr unsigned int	OTLP_HTTP_RETRY_MAX			= 1;
 static constexpr const char	   *OTLP_SERVICE_NAME			= "service.name";
 static constexpr const char	   *OTLP_METHOD_NAME			= "operation.name";
+static constexpr const char	   *SRPC_HTTP_METHOD			= "http.method";
+static constexpr const char	   *SRPC_HTTP_STATUS_CODE		= "http.status_code";
 static constexpr size_t			RPC_REPORT_THREHOLD_DEFAULT	= 100;
 static constexpr size_t			RPC_REPORT_INTERVAL_DEFAULT	= 1000; /* msec */
 

@@ -15,6 +15,53 @@ using namespace protocol;
 
 #define HTTP_KEEPALIVE_MAX		(300 * 1000)
 
+HttpClientTask::HttpClientTask(int redirect_max,
+							   int retry_max,
+							   http_callback_t&& callback,
+							   std::list<RPCModule *>&& modules) :
+	WFComplexClientTask(retry_max, std::move(callback)),
+	redirect_max_(redirect_max),
+	redirect_count_(0),
+	modules_(std::move(modules))
+{
+	protocol::HttpRequest *client_req = this->get_req();
+
+	client_req->set_method(HttpMethodGet);
+	client_req->set_http_version("HTTP/1.1");
+}
+
+std::string HttpClientTask::get_uri_host() const
+{
+	if (uri_.state == URI_STATE_SUCCESS)
+		return uri_.host;
+
+	return "";
+}
+
+std::string HttpClientTask::get_uri_port() const
+{
+	if (uri_.state == URI_STATE_SUCCESS)
+		return uri_.port;
+
+	return "";
+}
+
+std::string HttpClientTask::get_url() const
+{
+	if (url_.empty())
+		return url_;
+
+	return ""; //TODO: fill with uri and other info
+}
+
+std::string HttpClientTask::get_uri_scheme() const
+{
+	if (uri_.state == URI_STATE_SUCCESS)
+		return uri_.scheme;
+
+	return "";
+}
+
 CommMessageOut *HttpClientTask::message_out()
 {
 	HttpRequest *req = this->get_req();

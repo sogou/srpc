@@ -38,21 +38,17 @@ public:
 	HttpClientTask(int redirect_max,
 				   int retry_max,
 				   http_callback_t&& callback,
-				   std::list<RPCModule *>&& modules) :
-		WFComplexClientTask(retry_max, std::move(callback)),
-		redirect_max_(redirect_max),
-		redirect_count_(0),
-		modules_(std::move(modules))
-	{
-		protocol::HttpRequest *client_req = this->get_req();
-
-		client_req->set_method(HttpMethodGet);
-		client_req->set_http_version("HTTP/1.1");
-	}
+				   std::list<RPCModule *>&& modules);
 
 	RPCModuleData *mutable_module_data() { return &module_data_; }
 	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
+	int get_retry_times() const { return retry_times_; }
+	void set_url(std::string url) { this->url_ = std::move(url); }
 
+	std::string get_uri_host() const;
+	std::string get_uri_port() const;
+	std::string get_uri_scheme() const;
+	std::string get_url() const;
 /*
 	// similar to opentracing: log({{"event", "error"}, {"message", "application log"}});
 	void log(const RPCLogVector& fields);
@@ -77,13 +73,14 @@ protected:
 	void check_response();
 
 public:
-	http_callback_t user_callback;
+	http_callback_t user_callback_;
 
 private:
+	std::string url_;
 	int redirect_max_;
 	int redirect_count_;
 	RPCModuleData module_data_;
-	std::list<RPCModule *> modules_;
+	std::list<RPCModule *> modules_ = { NULL };
 };
 
 class HttpServerTask : public WFServerTask<protocol::HttpRequest,
@@ -98,6 +95,11 @@ public:
 		req_has_keep_alive_header_(false),
 		modules_(std::move(modules))
 	{}
+
+	void set_is_ssl(bool is_ssl) { this->is_ssl_ = is_ssl; }
+	void set_listen_port(unsigned short port) { this->listen_port_ = port; }
+	bool is_ssl() const { return this->is_ssl_; }
+	unsigned short listen_port() const { return this->listen_port_; }
 
 	class ModuleSeries : public WFServerTask<protocol::HttpRequest,
 											 protocol::HttpResponse>::Series
@@ -135,6 +137,8 @@ protected:
 	std::string req_keep_alive_;
 	RPCModuleData module_data_;
 	std::list<RPCModule *> modules_;
+	bool is_ssl_;
+	unsigned short listen_port_;
 };
 
 } // end namespace srpc

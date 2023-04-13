@@ -7,7 +7,6 @@ set(PROTO_LIST
 	proto/opentelemetry_common.proto
 	proto/opentelemetry_resource.proto
 	proto/opentelemetry_trace.proto
-	proto/opentelemetry_trace_service.proto
 	proto/opentelemetry_metrics.proto
 	proto/opentelemetry_metrics_service.proto)
 
