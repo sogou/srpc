@@ -41,17 +41,6 @@ if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
 	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
 endif ()
 
-#if (APPLE)
-#	if (WORKFLOW_INCLUDE_DIR)
-#		set (WORKFLOW_INCLUDE_DIR ${Workflow_DIR}/_include)
-#		set (WORKFLOW_LIB_DIR ${Workflow_DIR}/_lib)
-#	else ()
-#		find_package(Workflow REQUIRED)
-#	endif ()
-#else ()
-#	find_package(Workflow REQUIRED)
-#endif()
-
 find_package(srpc REQUIRED CONFIG HINTS ..)
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
@@ -88,9 +77,13 @@ else ()
 endif ()
 
 if (APPLE)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ${CMAKE_FIND_LIBRARY_SUFFIXES})
+	find_library(Workflow_LIB workflow HINTS ../workflow/_lib)
+	find_library(Srpc_LIB srpc HINTS ../_lib)
+
 	set(SRPC_LIB
-		srpc
-		workflow
+		${Srpc_LIB}
+		${Workflow_LIB}
 		pthread
 		OpenSSL::SSL
 		OpenSSL::Crypto
