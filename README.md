@@ -66,7 +66,7 @@
   * For protobuf, you must install protobuf v3.11.0 or above by yourself.
   * For Workflow, it\`s added as dependency automatically via git submodule.
   * For snappy and lz4, source codes are also included as third\_party via git submodule.
-  * Workflow, snappy and lz4 can also be found via installed package in the system. If the submodule dependencies are not pulled in thirt_party, they will be searched from the default installation path of the system. The version of snappy is required v1.1.6 or above.
+  * Workflow, snappy and lz4 can also be found via installed package in the system. If the submodule dependencies are not pulled in third\_party, they will be searched from the default installation path of the system. The version of snappy is required v1.1.6 or above.
 * There is no difference in the srpc code under the Windows version, but users need to use the windows branch of Workflow
 
 ~~~sh
