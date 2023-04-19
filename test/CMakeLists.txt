@@ -38,17 +38,6 @@ if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
 	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
 endif ()
 
-#if (APPLE)
-#	if (WORKFLOW_INCLUDE_DIR)
-#		set (WORKFLOW_INCLUDE_DIR ${Workflow_DIR}/_include)
-#		set (WORKFLOW_LIB_DIR ${Workflow_DIR}/_lib)
-#	else ()
-#		find_package(Workflow REQUIRED)
-#	endif ()
-#else ()
-#	find_package(Workflow REQUIRED)
-#endif()
-
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
@@ -72,10 +61,28 @@ set(memcheck_command ${CMAKE_MEMORYCHECK_COMMAND} ${CMAKE_MEMORYCHECK_COMMAND_OP
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 
 enable_testing()
+
 if (WIN32)
 	find_package(GTest CONFIG REQUIRED)
 else ()
 	find_package(GTest REQUIRED)
+endif ()
+
+set(CXX_STD "c++11")
+if (GTest_VERSION VERSION_GREATER_EQUAL "1.13.0")
+	set(CXX_STD "c++14")
+else ()
+	get_filename_component(GTEST_PATH ${GTEST_LIBRARY} DIRECTORY ABSOLUTE)
+	execute_process(COMMAND grep Version "${GTEST_PATH}/pkgconfig/gtest.pc"
+					RESULT_VARIABLE GTEST_VERSION_RESULT
+					OUTPUT_VARIABLE GTEST_VERSION_OUTPUT)
+	if (${GTEST_VERSION_RESULT} EQUAL "0")
+		string(REPLACE " " ";" GTEST_VERSION_STR ${GTEST_VERSION_OUTPUT})
+		list(GET GTEST_VERSION_STR 1 GTEST_VERSION)
+		if (${GTEST_VERSION} VERSION_GREATER_EQUAL "1.13.0")
+			set(CXX_STD "c++14")
+		endif ()
+	endif ()
 endif ()
 
 if (WIN32)
@@ -83,7 +90,7 @@ if (WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /wd4200 /Zc:__cplusplus /std:c++14")
 else ()
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -fPIC -pipe -std=gnu90")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++11 -fno-exceptions")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=${CXX_STD} -fno-exceptions")
 endif ()
 
 set(TEST_LIST
@@ -102,9 +109,13 @@ add_custom_target(
 set(GTEST_LIB GTest::GTest GTest::Main)
 
 if (APPLE)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ${CMAKE_FIND_LIBRARY_SUFFIXES})
+	find_library(Workflow_LIB workflow HINTS ../workflow/_lib)
+	find_library(Srpc_LIB srpc HINTS ../_lib)
+
 	set(SRPC_LIB
-		srpc
-		workflow
+		${Srpc_LIB}
+		${Workflow_LIB}
 		pthread
 		OpenSSL::SSL
 		OpenSSL::Crypto
@@ -157,7 +168,7 @@ endforeach()
 
 if (WIN32)
 	set(memcheck nothing)
-else ()
+elseif (NOT ${CMAKE_MEMORYCHECK_COMMAND} STREQUAL "CMAKE_MEMORYCHECK_COMMAND-NOTFOUND")
 	foreach(src ${TEST_LIST})
 		add_test(${src}-memory-check ${memcheck_command} ./${src})
 	endforeach()

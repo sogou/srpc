@@ -50,6 +50,7 @@ ifeq ("$(WORKFLOW)","Found")
 endif
 	-make -C test clean
 	-make -C tutorial clean
+	-make -C benchmark clean
 	rm -rf $(DEFAULT_BUILD_DIR)
 	rm -rf _include
 	rm -rf _lib
