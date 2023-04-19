@@ -40,7 +40,8 @@ rpc_span_fill_pb_request(const RPCModuleData& data,
 		value->set_string_value(attr.second);
 	}
 
-	iter = data.find(OTLP_SERVICE_NAME); // if attributes also set service.name, data takes precedence
+	// if attributes also set service.name, data takes precedence
+	iter = data.find(OTLP_SERVICE_NAME);
 	if (iter != data.end())
 	{
 		attribute = resource->add_attributes();
@@ -58,41 +59,41 @@ static void rpc_span_fill_pb_span(RPCModuleData& data,
 	Span *span = spans->add_spans();
 	Status *status = span->mutable_status();
 	KeyValue *attribute;
-	AnyValue *value;
+	AnyValue *attr_value;
 
 	span->set_span_id(data[SRPC_SPAN_ID].c_str(), SRPC_SPANID_SIZE);
 	span->set_trace_id(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE);
 
 	// name is required and specified in OpenTelemetry semantic conventions.
-	auto iter = data.find(OTLP_METHOD_NAME);
-	if (iter != data.end())
+	if (data.find(OTLP_METHOD_NAME) != data.end())
 		span->set_name(data[OTLP_METHOD_NAME]); // for RPC
 	else
 		span->set_name(data[SRPC_HTTP_METHOD]); // for HTTP
 
 	// refer to : trace/semantic_conventions/http/#status
 	int http_status_code = 0;
-	iter = data.find(SRPC_HTTP_STATUS_CODE);
+	auto iter = data.find(SRPC_HTTP_STATUS_CODE);
 	if (iter != data.end())
-		http_status_code = atoi(data[SRPC_HTTP_STATUS_CODE].c_str());
+		http_status_code = atoi(iter->second.c_str());
 
-	for (const auto& iter : data)
+	for (const auto& kv : data)
 	{
-		const std::string& key = iter.first;
+		const std::string& key = kv.first;
+		const std::string& val = kv.second;
 
 		if (key.compare(SRPC_PARENT_SPAN_ID) == 0)
 		{
-			span->set_parent_span_id(iter.second);
+			span->set_parent_span_id(val);
 		}
 		else if (key.compare(SRPC_SPAN_KIND) == 0)
 		{
-			if (iter.second.compare(SRPC_SPAN_KIND_CLIENT) == 0)
+			if (val.compare(SRPC_SPAN_KIND_CLIENT) == 0)
 			{
 				span->set_kind(Span_SpanKind_SPAN_KIND_CLIENT);
 				if (http_status_code >= 400)
 					status->set_code(Status_StatusCode_STATUS_CODE_ERROR);
 			}
-			else if (iter.second.compare(SRPC_SPAN_KIND_SERVER) == 0)
+			else if (val.compare(SRPC_SPAN_KIND_SERVER) == 0)
 			{
 				span->set_kind(Span_SpanKind_SPAN_KIND_SERVER);
 				if (http_status_code >= 500)
@@ -111,7 +112,7 @@ static void rpc_span_fill_pb_span(RPCModuleData& data,
 		{
 			attribute= span->add_attributes();
 			attribute->set_key(key);
-			value = attribute->mutable_value();
+			attr_value = attribute->mutable_value();
 
 			size_t len = key.length();
 			if ((len > 4 && key.substr(len - 4).compare("port") == 0) ||
@@ -119,11 +120,11 @@ static void rpc_span_fill_pb_span(RPCModuleData& data,
 				(len > 6 && key.substr(len - 6).compare("length") == 0) ||
 				key.compare(SRPC_HTTP_STATUS_CODE)== 0)
 			{
-				value->set_int_value(atoi(iter.second.c_str()));
+				attr_value->set_int_value(atoi(val.c_str()));
 			}
 			else
 			{
-				value->set_string_value(iter.second);
+				attr_value->set_string_value(val);
 			}
 		}
 	}
@@ -142,36 +143,35 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 	size_t ret = snprintf(str, len, "trace_id: %s span_id: %s",
 						  trace_id_buf, span_id_buf);
 
-	auto iter = data.find(SRPC_PARENT_SPAN_ID);
-	if (iter != data.end())
+	for (const auto& iter : data)
 	{
-		char parent_span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
-		span_id = (const uint64_t *)iter->second.c_str();
-
-		SPAN_ID_BIN_TO_HEX(span_id, parent_span_id_buf);
-		ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
-						parent_span_id_buf);
-	}
-
-	ret += snprintf(str + ret, len - ret, " start_time: %s finish_time: %s"
-										  " duration: %s(ns)",
-					data[SRPC_START_TIMESTAMP].c_str(),
-					data[SRPC_FINISH_TIMESTAMP].c_str(),
-					data[SRPC_DURATION].c_str());
-
-	for (const auto& it : data)
-	{
-		if (strcmp(it.first.c_str(), SRPC_START_TIMESTAMP) == 0 ||
-			strcmp(it.first.c_str(), SRPC_FINISH_TIMESTAMP) == 0 ||
-			strcmp(it.first.c_str(), SRPC_DURATION) == 0 ||
-			strcmp(it.first.c_str(), SRPC_TRACE_ID) == 0 ||
-			strcmp(it.first.c_str(), SRPC_SPAN_ID) == 0 ||
-			strcmp(it.first.c_str(), SRPC_PARENT_SPAN_ID) == 0)
+		if (strcmp(iter.first.c_str(), SRPC_TRACE_ID) == 0 ||
+			strcmp(iter.first.c_str(), SRPC_SPAN_ID) == 0 ||
+			strcmp(iter.first.c_str(), SRPC_FINISH_TIMESTAMP) == 0 ||
+			strcmp(iter.first.c_str(), SRPC_DURATION) == 0)
 		{
 			continue;
 		}
 
-		if (strcmp(it.first.c_str(), SRPC_SPAN_LOG) == 0)
+		if (strcmp(iter.first.c_str(), SRPC_PARENT_SPAN_ID) == 0)
+		{
+			char parent_span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
+			span_id = (const uint64_t *)iter.second.c_str();
+
+			SPAN_ID_BIN_TO_HEX(span_id, parent_span_id_buf);
+			ret += snprintf(str + ret, len - ret, " parent_span_id: %s",
+							parent_span_id_buf);
+		}
+		else if (strcmp(iter.first.c_str(), SRPC_START_TIMESTAMP) == 0)
+		{
+			ret += snprintf(str + ret, len - ret,
+							" start_time: %s finish_time: %s duration: %s(ns)",
+							data[SRPC_START_TIMESTAMP].c_str(),
+							data[SRPC_FINISH_TIMESTAMP].c_str(),
+							data[SRPC_DURATION].c_str());
+		}
+/*
+		else if (strcmp(it.first.c_str(), SRPC_SPAN_LOG) == 0)
 		{
 			ret += snprintf(str + ret, len - ret,
 							"\n%s trace_id: %s span_id: %s"
@@ -182,13 +182,14 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 							it.first.c_str() + strlen(SRPC_SPAN_LOG) + 1,
 							it.second.c_str());
 		}
+*/
 		else
 		{
-			const char * key = it.first.c_str();
-			if (it.first.compare(0, 5, "srpc.") == 0)
+			const char *key = iter.first.c_str();
+			if (iter.first.compare(0, 5, "srpc.") == 0)
 				key += 5;
 			ret += snprintf(str + ret, len - ret, " %s: %s",
-							key, it.second.c_str());
+							key, iter.second.c_str());
 		}
 	}
 

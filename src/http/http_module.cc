@@ -26,9 +26,9 @@
 namespace srpc
 {
 
-bool HttpTraceModule::client_begin(SubTask *task, RPCModuleData& data)
+bool HttpTraceModule::client_begin(SubTask *task, RPCModuleData& data) const
 {
-	TraceModule<HttpServerTask, HttpClientTask>::client_begin(task, data);
+	TraceModule::client_begin(task, data);
 
 	auto *client_task = static_cast<HttpClientTask *>(task);
 	auto *req = client_task->get_req();
@@ -49,9 +49,9 @@ bool HttpTraceModule::client_begin(SubTask *task, RPCModuleData& data)
 	return true;
 }
 
-bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data)
+bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data) const
 {
-	TraceModule<HttpServerTask, HttpClientTask>::client_end(task, data);
+	TraceModule::client_end(task, data);
 
 	auto *client_task = static_cast<HttpClientTask *>(task);
 	auto *resp = client_task->get_resp();
@@ -59,12 +59,13 @@ bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data)
 	data[SRPC_STATE] = std::to_string(client_task->get_state());
 	if (client_task->get_state() != WFT_STATE_SUCCESS)
 	{
-		data[SRPC_ERROR] = client_task->get_error();
+		data[SRPC_ERROR] = std::to_string(client_task->get_error());
 		if (client_task->get_error() == ETIMEDOUT)
 		{
 			data[SRPC_TIMEOUT_REASON] =
 				std::to_string(client_task->get_timeout_reason());
 		}
+
 		return true;
 	}
 
@@ -106,9 +107,9 @@ bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data)
 	return true;
 }
 
-bool HttpTraceModule::server_begin(SubTask *task, RPCModuleData& data)
+bool HttpTraceModule::server_begin(SubTask *task, RPCModuleData& data) const
 {
-	TraceModule<HttpServerTask, HttpClientTask>::server_begin(task, data);
+	TraceModule::server_begin(task, data);
 
 	auto *server_task = static_cast<HttpServerTask *>(task);
 	auto *req = server_task->get_req();
@@ -172,50 +173,43 @@ bool HttpTraceModule::server_begin(SubTask *task, RPCModuleData& data)
 	return true;
 }
 
-bool HttpTraceModule::server_end(SubTask *task, RPCModuleData& data)
+bool HttpTraceModule::server_end(SubTask *task, RPCModuleData& data) const
 {
-	TraceModule<HttpServerTask, HttpClientTask>::server_end(task, data);
+	TraceModule::server_end(task, data);
 
 	auto *server_task = static_cast<HttpServerTask *>(task);
 	auto *resp = server_task->get_resp();
 
 	data[SRPC_STATE] = std::to_string(server_task->get_state());
-	if (server_task->get_state() == WFT_STATE_SUCCESS)
+	if (server_task->get_state() != WFT_STATE_SUCCESS)
 	{
-		data[SRPC_HTTP_STATUS_CODE] = resp->get_status_code();
-		data[SRPC_HTTP_RESP_LEN] = std::to_string(resp->get_output_body_size());
+		data[SRPC_ERROR] = std::to_string(server_task->get_error());
+		if (server_task->get_error() == ETIMEDOUT)
+		{
+			data[SRPC_TIMEOUT_REASON] =
+				std::to_string(server_task->get_timeout_reason());
+		}
+
+		return true;
 	}
 
-	return true;
-}
-
-bool HttpMetricsModule::client_begin(SubTask *task, RPCModuleData& data)
-{
-	MetricsModule<HttpServerTask, HttpClientTask>::client_begin(task, data);
-
-/*
-	auto *client_task = static_cast<HttpClientTask *>(task);
-	auto *req = client_task->get_req();
-
-	data[OTLP_SERVICE_NAME] = req->get_service_name();
-	data[OTLP_METHOD_NAME] = req->get_method_name();
-*/
+	data[SRPC_HTTP_STATUS_CODE] = resp->get_status_code();
+	data[SRPC_HTTP_RESP_LEN] = std::to_string(resp->get_output_body_size());
 
 	return true;
 }
 
-bool HttpMetricsModule::server_begin(SubTask *task, RPCModuleData& data)
+bool HttpMetricsModule::client_begin(SubTask *task, RPCModuleData& data) const
 {
-	MetricsModule<HttpServerTask, HttpClientTask>::server_begin(task, data);
+	MetricsModule::client_begin(task, data);
+	// TODO:
+	return true;
+}
 
-/*
-	auto *server_task = static_cast<HttpServerTask *>(task);
-	auto *req = server_task->get_req();
-
-	data[OTLP_SERVICE_NAME] = req->get_service_name();
-	data[OTLP_METHOD_NAME] = req->get_method_name();
-*/
-
+bool HttpMetricsModule::server_begin(SubTask *task, RPCModuleData& data) const
+{
+	MetricsModule::server_begin(task, data);
+	// TODO:
 	return true;
 }
 

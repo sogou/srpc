@@ -87,13 +87,26 @@ void HttpClient::init()
 void HttpClient::callback(WFHttpTask *task)
 {
 	HttpClientTask *client_task = (HttpClientTask *)task;
-	RPCModuleData *resp_data = client_task->mutable_module_data();
-	http_get_header_module_data(task->get_resp(), *resp_data);
-	
-	for (int i = 0; i < SRPC_MODULE_MAX; i++)
+	RPCModuleData *resp_data;
+	HttpServerTask::ModuleSeries *series;
+	const std::list<RPCModule *>& module_list = client_task->get_module_list();
+
+	if (!module_list.empty())
 	{
-		if (this->modules[i])
-			this->modules[i]->client_task_end(task, *resp_data);
+		resp_data = client_task->mutable_module_data();
+
+		if (resp_data->empty()) // get series module data failed previously
+		{
+			series = dynamic_cast<HttpServerTask::ModuleSeries *>(series_of(task));
+
+			if (series)
+				resp_data = series->get_module_data();
+		}
+//		else
+//			http_get_header_module_data(task->get_resp(), *resp_data);
+
+		for (const RPCModule *module : module_list)
+			module->client_task_end(task, *resp_data);
 	}
 
 	if (client_task->user_callback_)

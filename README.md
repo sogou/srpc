@@ -114,9 +114,10 @@ sudo apt-get install libsrpc
 * [Step 4: Use the Client](/docs/en/docs-04-client.md)
 * [Step 5: Understand asynchrous Context](/docs/en/docs-05-context.md)
 * [Step 6: Use it together with the Workflow](/docs/en/docs-06-workflow.md)
-* [Step 7: Common Usage of HTTP](/docs/en/docs-07-http.md)
+* [Step 7: Use Http with SRPC, TRPC and Thrift](/docs/en/docs-07-srpc-http.md)
 * [Step 8: Report Tracing to OpenTelemetry](/docs/en/docs-08-tracing.md)
 * [Step 9: Report Metrics to OpenTelemetry / Prometheus](/docs/en/docs-09-metrics.md)
+* [Step 10: Use HTTP with Workflow Style and SRPC Modules](/docs/docs-10-http-with-modules.md)
 
 Easy to compile tutorial with these commands:
 

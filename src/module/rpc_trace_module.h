@@ -82,14 +82,13 @@ static constexpr char const *SRPC_HTTP_CLIENT_IP	= "http.client_ip";
 // Basic TraceModule for generating general span data.
 // Each kind of network task can derived its own TraceModule.
 
-template<class SERVER_TASK, class CLIENT_TASK>
 class TraceModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) override;
-	bool client_end(SubTask *task, RPCModuleData& data) override;
-	bool server_begin(SubTask *task, RPCModuleData& data) override;
-	bool server_end(SubTask *task, RPCModuleData& data) override;
+	bool client_begin(SubTask *task, RPCModuleData& data) const override;
+	bool client_end(SubTask *task, RPCModuleData& data) const override;
+	bool server_begin(SubTask *task, RPCModuleData& data) const override;
+	bool server_end(SubTask *task, RPCModuleData& data) const override;
 
 public:
 	TraceModule() : RPCModule(RPCModuleTypeTrace)
@@ -100,121 +99,21 @@ public:
 // Fill RPC related data in trace module
 
 template<class SERVER_TASK, class CLIENT_TASK>
-class RPCTraceModule : public TraceModule<SERVER_TASK, CLIENT_TASK>
+class RPCTraceModule : public TraceModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) override;
-	bool client_end(SubTask *task, RPCModuleData& data) override;
-	bool server_begin(SubTask *task, RPCModuleData& data) override;
-	bool server_end(SubTask *task, RPCModuleData& data) override;
+	bool client_begin(SubTask *task, RPCModuleData& data) const override;
+	bool client_end(SubTask *task, RPCModuleData& data) const override;
+	bool server_begin(SubTask *task, RPCModuleData& data) const override;
+	bool server_end(SubTask *task, RPCModuleData& data) const override;
 };
 
 ////////// impl
 
 template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data) const
 {
-	if (!data.empty())
-	{
-		auto iter = data.find(SRPC_SPAN_ID);
-		if (iter != data.end())
-			data[SRPC_PARENT_SPAN_ID] = iter->second;
-	} else {
-		uint64_t trace_id_high = htonll(SRPCGlobal::get_instance()->get_random());
-		uint64_t trace_id_low = htonll(SRPCGlobal::get_instance()->get_random());
-		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
-
-		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
-				SRPC_TRACEID_SIZE / 2);
-		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
-				&trace_id_low, SRPC_TRACEID_SIZE / 2);
-
-		data[SRPC_TRACE_ID] = std::move(trace_id_buf);
-	}
-
-	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
-	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
-
-	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
-	data[SRPC_SPAN_ID] = std::move(span_id_buf);
-
-	data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_CLIENT;
-
-	data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
-
-	// clear other unnecessary module_data since the data comes from series
-	data.erase(SRPC_DURATION);
-	data.erase(SRPC_FINISH_TIMESTAMP);
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data)
-{
-	if (data.find(SRPC_DURATION) == data.end())
-	{
-		unsigned long long end_time = GET_CURRENT_NS();
-		data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-		data[SRPC_DURATION] = std::to_string(end_time -
-							atoll(data[SRPC_START_TIMESTAMP].data()));
-	}
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data)
-{
-	if (data[SRPC_TRACE_ID].empty())
-	{
-		uint64_t trace_id_high = SRPCGlobal::get_instance()->get_random();
-		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_random();
-		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
-
-		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
-				SRPC_TRACEID_SIZE / 2);
-		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
-				&trace_id_low, SRPC_TRACEID_SIZE / 2);
-
-		data[SRPC_TRACE_ID] = std::move(trace_id_buf);
-	}
-	else
-		data[SRPC_PARENT_SPAN_ID] = data[SRPC_SPAN_ID];
-
-	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
-	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
-
-	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
-	data[SRPC_SPAN_ID] = std::move(span_id_buf);
-
-	if (data.find(SRPC_START_TIMESTAMP) == data.end())
-		data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
-
-	data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_SERVER;
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data)
-{
-	if (data.find(SRPC_DURATION) == data.end())
-	{
-		unsigned long long end_time = GET_CURRENT_NS();
-
-		data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-		data[SRPC_DURATION] = std::to_string(end_time -
-							atoll(data[SRPC_START_TIMESTAMP].data()));
-	}
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data)
-{
-	TraceModule<STASK, CTASK>::client_begin(task, data);
+	TraceModule::client_begin(task, data);
 
 	auto *client_task = static_cast<CTASK *>(task);
 	auto *req = client_task->get_req();
@@ -229,9 +128,9 @@ bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& da
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data) const
 {
-	TraceModule<STASK, CTASK>::client_end(task, data);
+	TraceModule::client_end(task, data);
 
 	std::string ip;
 	unsigned short port;
@@ -250,9 +149,9 @@ bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data) const
 {
-	TraceModule<STASK, CTASK>::server_begin(task, data);
+	TraceModule::server_begin(task, data);
 
 	std::string ip;
 	unsigned short port;
@@ -276,9 +175,9 @@ bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& da
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data) const
 {
-	TraceModule<STASK, CTASK>::server_end(task, data);
+	TraceModule::server_end(task, data);
 
 	auto *server_task = static_cast<STASK *>(task);
 	auto *resp = server_task->get_resp();

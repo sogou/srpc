@@ -14,6 +14,8 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_LIST})
 
 set(SRC
 	rpc_module.cc
+	rpc_trace_module.cc
+	rpc_metrics_module.cc
 	rpc_trace_filter.cc
 	rpc_metrics_filter.cc
 	${PROTO_SRCS} ${PROTO_HDRS}

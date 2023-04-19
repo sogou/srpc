@@ -45,7 +45,7 @@ int main()
 1. 操作的是`WFHttpTask`（与Workflow中的一致），而不是由Protobuf或者Thrift等IDL定义的结构体；
 2. 接口也不再是RPC里定义的**Service**了，因此也无需派生ServiceImpl实现RPC函数，而是直接给Server传一个`process函数`；
 3. `process函数`格式也与Workflow一致：`std::function<void (WFHttpTask *task)>`；
-4. process函数里拿到的参数上task，通过task->get_req()和task->get_resp()可以拿到请求与回复，分别是`HttpRequest`和`HttpResponse`，而其他上下文也在task而非**RPCContext**上；
+4. process函数里拿到的参数是task，通过task->get_req()和task->get_resp()可以拿到请求与回复，分别是`HttpRequest`和`HttpResponse`，而其他上下文也在task而非**RPCContext**上；
 
 ### 2. HttpClient用法
 
@@ -112,6 +112,7 @@ SRPC框架的trace模块已经采集以下内容，并会通过各自的filter�
 |* http.url|  请求的url | string |  | |
 
 state与error参考：[workflow/src/kernel/Communicator.h](workflow/src/kernel/Communicator.h)
+
 timeout_reason参考：[workflow/src/kernel/CommRequest.h](workflow/src/kernel/CommRequest.h)
 
 **3. Server指标**

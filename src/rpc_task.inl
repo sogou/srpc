@@ -483,16 +483,6 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 	{
 		if (this->resp.deserialize_meta() == false)
 			this->resp.set_status_code(RPCStatusMetaError);
-
-		if (!modules_.empty())
-		{
-			RPCModuleData *resp_data = this->mutable_module_data();
-			//TODO: Fill some resp meta to client task
-			//this->resp.get_meta_module_data(resp_data);
-			for (auto *module : modules_)
-				module->client_task_end(this, *resp_data);
-		}
-		//TODO: Feedback client resp meta through all nodes by series
 	}
 
 	return true;
@@ -503,6 +493,7 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 {
 	RPCWorker worker(new RPCContextImpl<RPCREQ, RPCRESP>(this, &module_data_),
 					 &this->req, &this->resp);
+
 	int status_code = this->resp.get_status_code();
 
 	if (status_code != RPCStatusOK && status_code != RPCStatusUndefined)
@@ -565,6 +556,25 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 
 	this->resp.set_status_code(status_code);
 	this->resp.set_error(this->error);
+
+	using SERIES = typename RPCServerTask<RPCREQ, RPCRESP>::RPCSeries;
+
+	if (!modules_.empty())
+	{
+		RPCModuleData *resp_data = this->mutable_module_data();
+
+		if (resp_data->empty()) // get series module data failed previously
+		{
+			SERIES *series = dynamic_cast<SERIES *>(series_of(this));
+			if (series)
+				resp_data = series->get_module_data();
+		}
+//		else
+//			this->resp.get_meta_module_data(resp_data);
+		for (auto *module : modules_)
+			module->client_task_end(this, *resp_data);
+	}
+
 
 	user_done_(status_code, worker);
 }

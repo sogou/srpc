@@ -48,10 +48,10 @@ static constexpr int SRPC_TOTAL_BITS			= 64;
 class RPCModule
 {
 protected:
-	virtual bool client_begin(SubTask *task, RPCModuleData& data) = 0;
-	virtual bool server_begin(SubTask *task, RPCModuleData& data) = 0;
-	virtual bool client_end(SubTask *task, RPCModuleData& data) = 0;
-	virtual bool server_end(SubTask *task, RPCModuleData& data) = 0;
+	virtual bool client_begin(SubTask *task, RPCModuleData& data) const = 0;
+	virtual bool server_begin(SubTask *task, RPCModuleData& data) const = 0;
+	virtual bool client_end(SubTask *task, RPCModuleData& data) const = 0;
+	virtual bool server_end(SubTask *task, RPCModuleData& data) const = 0;
 
 public:
 	void add_filter(RPCFilter *filter)
@@ -64,10 +64,10 @@ public:
 	size_t get_filters_size() const { return this->filters.size(); }
 	enum RPCModuleType get_module_type() const { return this->module_type; }
 
-	bool client_task_begin(SubTask *task, RPCModuleData& data);
-	bool server_task_begin(SubTask *task, RPCModuleData& data);
-	bool client_task_end(SubTask *task, RPCModuleData& data);
-	bool server_task_end(SubTask *task, RPCModuleData& data);
+	bool client_task_begin(SubTask *task, RPCModuleData& data) const;
+	bool server_task_begin(SubTask *task, RPCModuleData& data) const;
+	bool client_task_end(SubTask *task, RPCModuleData& data) const;
+	bool server_task_end(SubTask *task, RPCModuleData& data) const;
 
 	RPCModule(enum RPCModuleType module_type)
 	{

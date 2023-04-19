@@ -26,20 +26,20 @@
 namespace srpc
 {
 
-class HttpTraceModule : public TraceModule<HttpServerTask, HttpClientTask>
+class HttpTraceModule : public TraceModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) override;
-	bool client_end(SubTask *task, RPCModuleData& data) override;
-	bool server_begin(SubTask *task, RPCModuleData& data) override;
-	bool server_end(SubTask *task, RPCModuleData& data) override;
+	bool client_begin(SubTask *task, RPCModuleData& data) const override;
+	bool client_end(SubTask *task, RPCModuleData& data) const override;
+	bool server_begin(SubTask *task, RPCModuleData& data) const override;
+	bool server_end(SubTask *task, RPCModuleData& data) const override;
 };
 
-class HttpMetricsModule : public MetricsModule<HttpServerTask, HttpClientTask>
+class HttpMetricsModule : public MetricsModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) override;
-	bool server_begin(SubTask *task, RPCModuleData& data) override;
+	bool client_begin(SubTask *task, RPCModuleData& data) const override;
+	bool server_begin(SubTask *task, RPCModuleData& data) const override;
 };
 
 } // end namespace srpc

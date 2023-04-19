@@ -1,14 +1,14 @@
-[中文版](/docs/docs-07-http.md)
+[中文版](/docs/docs-07-srpc-http.md)
 
-## HTTP 
+## 07 - Use Http with SRPC, TRPC and Thrift
 
-**srpc** supports **HTTP** protocol, which make it convenient to communicate to other language. Just fill the **IDL** content into **HTTP body**, and fill the **IDL** type(**json**/**protobuf**) into **Http header** , we communicate with other frameworks through the **HTTP** protocol.
+**srpc** supports **HTTP** protocol, which make it convenient to communicate to other language. Just fill the **IDL** content into **HTTP body**, and fill the **IDL** type(**json**/**protobuf**/**thrift**) into **Http header** , we communicate with other frameworks through the **HTTP** protocol.
 
-- **SRPCHttpServer** and **TRPCHttpServer** can receive HTTP requests from client implemented by any language.
+- **SRPCHttpServer**, **TRPCHttpServer** and **ThriftHttpServer** can receive HTTP requests from client implemented by any language.
 
-- **SRPCHttpClient** and **TRPCHttpClient** can send HTTP requests to servers implemented by any language.
+- **SRPCHttpClient**, **TRPCHttpClient** and **ThriftHttpClient** can send HTTP requests to servers implemented by any language.
 
-- **HTTP header**: `Content-Type` needs to be set as `application/json` when body is json, or set as `application/x-protobuf` when body is protobuf.
+- **HTTP header**: `Content-Type` needs to be set as `application/json` when body is json, or set as `application/x-protobuf` when body is protobuf, or set as `application/x-thrift` when body is thrift;
 
 - **HTTP body**: If there is **bytes** type in body, **json** needs to be encoded with **base64**.
 
@@ -72,7 +72,7 @@ print(ret.json())
 
 ### 2. Splicing the path of HTTP request
 
-[README.md](/docs/en/README_cn.md#6-run) shows that the path is concatenated by the service name and the rpc name. Moreover, for the above proto file example with the package name `package trpc.test.helloworld;`, the package name also needs to be spliced into the path. The splicing paths of **SRPCHttp** and **TRPCHttpClient** are different. 
+[README.md](/docs/en/README_cn.md#6-run) shows that the path is concatenated by the service name and the rpc name. Moreover, for the above proto file example with the package name `package trpc.test.helloworld;`, the package name also needs to be spliced into the path. The splicing paths of **SRPCHttp** and **TRPCHttpClient** are different. For **ThriftHttp**, multi service is not supported in SRPC thrift, so no path is required.
 
 Let's take **curl** as an example:
 
@@ -84,6 +84,11 @@ curl 127.0.0.1:8811/trpc/test/helloworld/Batch/Add -H 'Content-Type: application
 Request to **TRPCHttpServer**:
 ```sh
 curl 127.0.0.1:8811/trpc.test.helloworld.Batch/Add -H 'Content-Type: application/json' -d '{...}'
+```
+
+Request to **ThriftHttpServer**:
+```sh
+curl 127.0.0.1:8811 -H 'Content-Type: application/json' -d '{...}'
 ```
 
 ### 3. HTTP status code
@@ -144,7 +149,7 @@ For **client**, we need to set the **HTTP header on the request** through `RPCCl
 ~~~cpp
 int main()
 {
-    Example::SRPCClient client("127.0.0.1", 1412);
+    Example::SRPCHttpClient client("127.0.0.1", 80);
     EchoRequest req;
     req.set_message("Hello, srpc!");
 

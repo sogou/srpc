@@ -44,6 +44,7 @@ public:
 	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
 	int get_retry_times() const { return retry_times_; }
 	void set_url(std::string url) { this->url_ = std::move(url); }
+	const std::list<RPCModule *>& get_module_list() const { return this->modules_; }
 
 	std::string get_uri_host() const;
 	std::string get_uri_port() const;
@@ -80,7 +81,7 @@ private:
 	int redirect_max_;
 	int redirect_count_;
 	RPCModuleData module_data_;
-	std::list<RPCModule *> modules_ = { NULL };
+	std::list<RPCModule *> modules_;
 };
 
 class HttpServerTask : public WFServerTask<protocol::HttpRequest,
@@ -120,9 +121,6 @@ public:
 	private:
 		RPCModuleData *module_data_;
 	};
-
-//TODO:
-//	bool get_remote(std::string& ip, unsigned short *port) const;
 
 	RPCModuleData *mutable_module_data() { return &module_data_; }
 	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
