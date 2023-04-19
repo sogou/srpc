@@ -3,7 +3,7 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "build type")
 set(CMAKE_SKIP_RPATH TRUE)
 
 project(srpc
-	VERSION 0.9.8
+	VERSION 0.10.0
 	LANGUAGES C CXX)
 	
 ###Options
