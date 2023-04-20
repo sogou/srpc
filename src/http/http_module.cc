@@ -31,15 +31,9 @@ bool HttpTraceModule::client_begin(SubTask *task, RPCModuleData& data) const
 	TraceModule::client_begin(task, data);
 
 	auto *client_task = static_cast<HttpClientTask *>(task);
-	auto *req = client_task->get_req();
+	TraceModule::client_begin_request(client_task->get_req(), data);
 
 	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
-	data[SRPC_HTTP_METHOD] = req->get_method();
-
-	const void *body;
-	size_t body_len;
-	req->get_parsed_body(&body, &body_len);
-	data[SRPC_HTTP_REQ_LEN] = std::to_string(body_len);
 
 	data[SRPC_HTTP_PEER_NAME] = client_task->get_uri_host();
 	data[SRPC_HTTP_PEER_PORT] = client_task->get_uri_port();
@@ -54,7 +48,6 @@ bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data) const
 	TraceModule::client_end(task, data);
 
 	auto *client_task = static_cast<HttpClientTask *>(task);
-	auto *resp = client_task->get_resp();
 
 	data[SRPC_STATE] = std::to_string(client_task->get_state());
 	if (client_task->get_state() != WFT_STATE_SUCCESS)
@@ -69,13 +62,9 @@ bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data) const
 		return true;
 	}
 
-	data[SRPC_HTTP_STATUS_CODE] = resp->get_status_code();
-	data[SRPC_HTTP_RESEND_COUNT] = std::to_string(client_task->get_retry_times());
+	TraceModule::client_end_response(client_task->get_resp(), data);
 
-	const void *body;
-	size_t body_len;
-	resp->get_parsed_body(&body, &body_len);
-	data[SRPC_HTTP_RESP_LEN] = std::to_string(body_len);
+	data[SRPC_HTTP_RESEND_COUNT] = std::to_string(client_task->get_retry_times());
 
 	char addrstr[128];
 	struct sockaddr_storage addr;
@@ -112,11 +101,9 @@ bool HttpTraceModule::server_begin(SubTask *task, RPCModuleData& data) const
 	TraceModule::server_begin(task, data);
 
 	auto *server_task = static_cast<HttpServerTask *>(task);
-	auto *req = server_task->get_req();
+	TraceModule::server_begin_request(server_task->get_req(), data);
 
 	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
-	data[SRPC_HTTP_METHOD] = req->get_method();
-	data[SRPC_HTTP_TARGET] = req->get_request_uri();
 	data[SRPC_HTTP_SCHEME] = server_task->is_ssl() ? "https" : "http";
 	data[SRPC_HTTP_HOST_PORT] = std::to_string(server_task->listen_port());
 
@@ -147,38 +134,13 @@ bool HttpTraceModule::server_begin(SubTask *task, RPCModuleData& data) const
 	data[SRPC_HTTP_SOCK_ADDR] = addrstr;
 	data[SRPC_HTTP_SOCK_PORT] = std::to_string(port);
 
-	const void *body;
-	size_t body_len;
-	req->get_parsed_body(&body, &body_len);
-	data[SRPC_HTTP_REQ_LEN] = std::to_string(body_len);
-
-	std::string name;
-	std::string value;
-	protocol::HttpHeaderCursor req_cursor(req);
-	int flag = 0;
-	while (req_cursor.next(name, value) && flag != 3)
-	{
-		if (strcasecmp(name.data(), "Host") == 0)
-		{
-			data[SRPC_HTTP_HOST_NAME] = value;
-			flag |= 1;
-		}
-		else if (strcasecmp(name.data(), "X-Forwarded-For") == 0)
-		{
-			data[SRPC_HTTP_CLIENT_IP] = value;
-			flag |= (1 << 1);
-		}
-	}
-
 	return true;
 }
 
 bool HttpTraceModule::server_end(SubTask *task, RPCModuleData& data) const
 {
 	TraceModule::server_end(task, data);
-
 	auto *server_task = static_cast<HttpServerTask *>(task);
-	auto *resp = server_task->get_resp();
 
 	data[SRPC_STATE] = std::to_string(server_task->get_state());
 	if (server_task->get_state() != WFT_STATE_SUCCESS)
@@ -193,8 +155,7 @@ bool HttpTraceModule::server_end(SubTask *task, RPCModuleData& data) const
 		return true;
 	}
 
-	data[SRPC_HTTP_STATUS_CODE] = resp->get_status_code();
-	data[SRPC_HTTP_RESP_LEN] = std::to_string(resp->get_output_body_size());
+	TraceModule::server_end_response(server_task->get_resp(), data);
 
 	return true;
 }

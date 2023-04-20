@@ -15,6 +15,7 @@
 */
 
 #include "rpc_trace_module.h"
+#include "workflow/HttpUtil.h"
 
 namespace srpc
 {
@@ -107,6 +108,65 @@ bool TraceModule::server_end(SubTask *task, RPCModuleData& data) const
 	}
 
 	return true;
+}
+
+void TraceModule::client_begin_request(protocol::HttpRequest *req,
+									   RPCModuleData& data) const
+{
+	data[SRPC_HTTP_METHOD] = req->get_method();
+
+	const void *body;
+	size_t body_len;
+	req->get_parsed_body(&body, &body_len);
+	data[SRPC_HTTP_REQ_LEN] = std::to_string(body_len);
+}
+
+void TraceModule::client_end_response(protocol::HttpResponse *resp,
+									  RPCModuleData& data) const
+{
+	data[SRPC_HTTP_STATUS_CODE] = resp->get_status_code();
+
+	const void *body;
+	size_t body_len;
+	resp->get_parsed_body(&body, &body_len);
+	data[SRPC_HTTP_RESP_LEN] = std::to_string(body_len);
+}
+
+void TraceModule::server_begin_request(protocol::HttpRequest *req,
+									   RPCModuleData& data) const
+{
+	data[SRPC_HTTP_METHOD] = req->get_method();
+	data[SRPC_HTTP_TARGET] = req->get_request_uri();
+
+	const void *body;
+	size_t body_len;
+	req->get_parsed_body(&body, &body_len);
+	data[SRPC_HTTP_REQ_LEN] = std::to_string(body_len);
+
+	std::string name;
+	std::string value;
+	protocol::HttpHeaderCursor req_cursor(req);
+	int flag = 0;
+	while (req_cursor.next(name, value) && flag != 3)
+	{
+		if (strcasecmp(name.data(), "Host") == 0)
+		{
+			data[SRPC_HTTP_HOST_NAME] = value;
+			flag |= 1;
+		}
+		else if (strcasecmp(name.data(), "X-Forwarded-For") == 0)
+		{
+			data[SRPC_HTTP_CLIENT_IP] = value;
+			flag |= (1 << 1);
+		}
+	}
+}
+
+void TraceModule::server_end_response(protocol::HttpResponse *resp,
+									  RPCModuleData& data) const
+{
+	data[SRPC_HTTP_STATUS_CODE] = resp->get_status_code();
+	data[SRPC_HTTP_RESP_LEN] = std::to_string(resp->get_output_body_size());
 }
 
 } // end namespace srpc

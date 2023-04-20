@@ -90,6 +90,33 @@ public:
 	bool server_begin(SubTask *task, RPCModuleData& data) const override;
 	bool server_end(SubTask *task, RPCModuleData& data) const override;
 
+protected:
+	void client_begin_request(protocol::HttpRequest *req,
+							  RPCModuleData& data) const;
+	void client_end_response(protocol::HttpResponse *resp,
+							 RPCModuleData& data) const;
+	void server_begin_request(protocol::HttpRequest *req,
+							  RPCModuleData& data) const;
+	void server_end_response(protocol::HttpResponse *resp,
+							 RPCModuleData& data) const;
+
+	void client_begin_request(protocol::ProtocolMessage *req,
+							  RPCModuleData& data) const
+	{
+	}
+	void client_end_response(protocol::ProtocolMessage *resp,
+							 RPCModuleData& data) const
+	{
+	}
+	void server_begin_request(protocol::ProtocolMessage *req,
+							  RPCModuleData& data) const
+	{
+	}
+	void server_end_response(protocol::ProtocolMessage *resp,
+							 RPCModuleData& data) const
+	{
+	}
+
 public:
 	TraceModule() : RPCModule(RPCModuleTypeTrace)
 	{
@@ -111,7 +138,8 @@ public:
 ////////// impl
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data) const
+bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task,
+												RPCModuleData& data) const
 {
 	TraceModule::client_begin(task, data);
 
@@ -124,11 +152,14 @@ bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& da
 	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
 
+	TraceModule::client_begin_request(req, data);
+
 	return true;
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data) const
+bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task,
+											  RPCModuleData& data) const
 {
 	TraceModule::client_end(task, data);
 
@@ -145,11 +176,14 @@ bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data
 		data[SRPC_REMOTE_PORT] = std::to_string(port);
 	}
 
+	TraceModule::client_end_response(resp, data);
+
 	return true;
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data) const
+bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task,
+												RPCModuleData& data) const
 {
 	TraceModule::server_begin(task, data);
 
@@ -171,11 +205,14 @@ bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& da
 		data[SRPC_REMOTE_PORT] = std::to_string(port);
 	}
 
+	TraceModule::server_begin_request(req, data);
+
 	return true;
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data) const
+bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task,
+											  RPCModuleData& data) const
 {
 	TraceModule::server_end(task, data);
 
@@ -184,6 +221,8 @@ bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data
 
 	data[SRPC_STATE] = std::to_string(resp->get_status_code());
 	data[SRPC_ERROR] = std::to_string(resp->get_error());
+
+	TraceModule::client_end_response(resp, data);
 
 	return true;
 }
