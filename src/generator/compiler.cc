@@ -29,7 +29,7 @@
 
 #include "generator.h"
 
-const char *SRPC_VERSION = "0.10.0";
+const char *SRPC_VERSION = "0.10.1";
 
 /* LQ - prototype to determine if the file type is thrift */
 enum
@@ -43,9 +43,11 @@ static int check_file_idl_type(const char *filename);
 static int parse_origin(int argc, const char *argv[],
 						struct GeneratorParams& params,
 						int& idl_type);
+#ifndef _WIN32
 static int parse_getopt(int argc, char * const *argv,
 						struct GeneratorParams& params,
 						int& idl_type);
+#endif
 static int parse_prefix_dir(std::string& file, std::string& dir);
 static int get_idl_type(const char *argv);
 static bool is_root(std::string& file);
@@ -66,13 +68,15 @@ int main(int argc, const char *argv[])
 	int idl_type = TYPE_UNKNOWN;
 	struct GeneratorParams params;
 
+#ifndef _WIN32
 	if (parse_origin(argc, argv, params, idl_type) == 0)
 	{
-#ifndef _WIN32
 		if (parse_getopt(argc, (char * const *)argv, params, idl_type) != 0)
-#endif
 			return 0;
 	}
+#else
+	parse_origin(argc, argv, params, idl_type);
+#endif
 
 	if (params.out_dir == NULL || params.idl_file.empty())
 	{
@@ -156,6 +160,7 @@ int parse_origin(int argc, const char *argv[],
 	return 0;
 }
 
+#ifndef _WIN32
 int parse_getopt(int argc, char * const *argv,
 				 struct GeneratorParams& params, int& idl_type)
 {
@@ -212,6 +217,7 @@ int parse_getopt(int argc, char * const *argv,
 
 	return 0;
 }
+#endif
 
 int get_idl_type(const char *type)
 {
