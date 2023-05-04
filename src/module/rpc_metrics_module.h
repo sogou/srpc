@@ -30,10 +30,10 @@ namespace srpc
 class MetricsModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) const override;
-	bool client_end(SubTask *task, RPCModuleData& data) const override;
-	bool server_begin(SubTask *task, RPCModuleData& data) const override;
-	bool server_end(SubTask *task, RPCModuleData& data) const override;
+	bool client_begin(SubTask *task, RPCModuleData& data) override;
+	bool client_end(SubTask *task, RPCModuleData& data) override;
+	bool server_begin(SubTask *task, RPCModuleData& data) override;
+	bool server_end(SubTask *task, RPCModuleData& data) override;
 
 public:
 	MetricsModule() : RPCModule(RPCModuleTypeMetrics) { }
@@ -45,15 +45,15 @@ template<class SERVER_TASK, class CLIENT_TASK>
 class RPCMetricsModule : public MetricsModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) const override;
-	bool server_begin(SubTask *task, RPCModuleData& data) const override;
+	bool client_begin(SubTask *task, RPCModuleData& data) override;
+	bool server_begin(SubTask *task, RPCModuleData& data) override;
 };
 
 ////////// impl
 
 template<class STASK, class CTASK>
 bool RPCMetricsModule<STASK, CTASK>::client_begin(SubTask *task,
-												  RPCModuleData& data) const
+												  RPCModuleData& data)
 {
 	MetricsModule::client_begin(task, data);
 
@@ -68,7 +68,7 @@ bool RPCMetricsModule<STASK, CTASK>::client_begin(SubTask *task,
 
 template<class STASK, class CTASK>
 bool RPCMetricsModule<STASK, CTASK>::server_begin(SubTask *task,
-												  RPCModuleData& data) const
+												  RPCModuleData& data)
 {
 	MetricsModule::server_begin(task, data);
 

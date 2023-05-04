@@ -19,7 +19,7 @@
 namespace srpc
 {
 
-bool MetricsModule::client_begin(SubTask *task, RPCModuleData& data) const
+bool MetricsModule::client_begin(SubTask *task, RPCModuleData& data)
 {
 	data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
 	// clear other unnecessary module_data since the data comes from series
@@ -29,7 +29,7 @@ bool MetricsModule::client_begin(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool MetricsModule::client_end(SubTask *task, RPCModuleData& data) const
+bool MetricsModule::client_end(SubTask *task, RPCModuleData& data)
 {
 	if (data.find(SRPC_START_TIMESTAMP) != data.end() &&
 		data.find(SRPC_DURATION) == data.end())
@@ -43,7 +43,7 @@ bool MetricsModule::client_end(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool MetricsModule::server_begin(SubTask *task, RPCModuleData& data) const
+bool MetricsModule::server_begin(SubTask *task, RPCModuleData& data)
 {
 	if (data.find(SRPC_START_TIMESTAMP) == data.end())
 		data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
@@ -51,7 +51,7 @@ bool MetricsModule::server_begin(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool MetricsModule::server_end(SubTask *task, RPCModuleData& data) const
+bool MetricsModule::server_end(SubTask *task, RPCModuleData& data)
 {
 	if (data.find(SRPC_START_TIMESTAMP) != data.end() &&
 		data.find(SRPC_DURATION) == data.end())

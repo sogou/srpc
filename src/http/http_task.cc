@@ -17,8 +17,8 @@ using namespace protocol;
 
 HttpClientTask::HttpClientTask(int redirect_max,
 							   int retry_max,
-							   http_callback_t&& callback,
-							   std::list<RPCModule *>&& modules) :
+							   std::list<RPCModule *>&& modules,
+							   http_callback_t&& callback) :
 	WFComplexClientTask(retry_max, std::move(callback)),
 	redirect_max_(redirect_max),
 	redirect_count_(0),

@@ -26,7 +26,7 @@
 namespace srpc
 {
 
-bool HttpTraceModule::client_begin(SubTask *task, RPCModuleData& data) const
+bool HttpTraceModule::client_begin(SubTask *task, RPCModuleData& data)
 {
 	TraceModule::client_begin(task, data);
 
@@ -43,7 +43,7 @@ bool HttpTraceModule::client_begin(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data) const
+bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data)
 {
 	TraceModule::client_end(task, data);
 
@@ -88,7 +88,8 @@ bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data) const
 		inet_ntop(AF_INET6, &sin6->sin6_addr, addrstr, 128);
 		port = ntohs(sin6->sin6_port);
 	}
-	// else : Unknown
+	else
+		memset(addrstr, 0, sizeof (addrstr));
 
 	data[SRPC_HTTP_SOCK_ADDR] = addrstr;
 	data[SRPC_HTTP_SOCK_PORT] = std::to_string(port);
@@ -96,7 +97,7 @@ bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool HttpTraceModule::server_begin(SubTask *task, RPCModuleData& data) const
+bool HttpTraceModule::server_begin(SubTask *task, RPCModuleData& data)
 {
 	TraceModule::server_begin(task, data);
 
@@ -137,7 +138,7 @@ bool HttpTraceModule::server_begin(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool HttpTraceModule::server_end(SubTask *task, RPCModuleData& data) const
+bool HttpTraceModule::server_end(SubTask *task, RPCModuleData& data)
 {
 	TraceModule::server_end(task, data);
 	auto *server_task = static_cast<HttpServerTask *>(task);
@@ -160,14 +161,14 @@ bool HttpTraceModule::server_end(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool HttpMetricsModule::client_begin(SubTask *task, RPCModuleData& data) const
+bool HttpMetricsModule::client_begin(SubTask *task, RPCModuleData& data)
 {
 	MetricsModule::client_begin(task, data);
 	// TODO:
 	return true;
 }
 
-bool HttpMetricsModule::server_begin(SubTask *task, RPCModuleData& data) const
+bool HttpMetricsModule::server_begin(SubTask *task, RPCModuleData& data)
 {
 	MetricsModule::server_begin(task, data);
 	// TODO:

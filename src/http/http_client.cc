@@ -36,7 +36,7 @@ WFHttpTask *HttpClient::create_http_task(const std::string& url,
 	auto&& cb = std::bind(&HttpClient::callback, this, std::placeholders::_1);
 
 	HttpClientTask *task = new HttpClientTask(redirect_max, retry_max,
-											  cb, std::move(module));
+											  std::move(module), std::move(cb));
 
 	ParsedURI uri;
 	URIParser::parse(url, uri);
@@ -63,7 +63,7 @@ WFHttpTask *HttpClient::create_http_task(const ParsedURI& uri,
 	auto&& cb = std::bind(&HttpClient::callback, this, std::placeholders::_1);
 
 	HttpClientTask *task = new HttpClientTask(redirect_max, retry_max,
-											  cb, std::move(module));
+											  std::move(module), std::move(cb));
 
 	task->init(uri);
 	task->set_keep_alive(HTTP_KEEPALIVE_DEFAULT);
@@ -105,7 +105,7 @@ void HttpClient::callback(WFHttpTask *task)
 //		else
 //			http_get_header_module_data(task->get_resp(), *resp_data);
 
-		for (const RPCModule *module : module_list)
+		for (RPCModule *module : module_list)
 			module->client_task_end(task, *resp_data);
 	}
 

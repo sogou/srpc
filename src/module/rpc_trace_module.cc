@@ -47,7 +47,7 @@ static void generate_common_trace(SubTask *task, RPCModuleData& data)
 	data[SRPC_SPAN_ID] = std::move(span_id_buf);
 }
 
-bool TraceModule::client_begin(SubTask *task, RPCModuleData& data) const
+bool TraceModule::client_begin(SubTask *task, RPCModuleData& data)
 {
 	generate_common_trace(task, data);
 
@@ -61,7 +61,7 @@ bool TraceModule::client_begin(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool TraceModule::client_end(SubTask *task, RPCModuleData& data) const
+bool TraceModule::client_end(SubTask *task, RPCModuleData& data)
 {
 	// 1. failed to call any client_begin() previously
 	if (data.find(SRPC_START_TIMESTAMP) == data.end())
@@ -80,7 +80,7 @@ bool TraceModule::client_end(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool TraceModule::server_begin(SubTask *task, RPCModuleData& data) const
+bool TraceModule::server_begin(SubTask *task, RPCModuleData& data)
 {
 	generate_common_trace(task, data);
 
@@ -90,7 +90,7 @@ bool TraceModule::server_begin(SubTask *task, RPCModuleData& data) const
 	return true;
 }
 
-bool TraceModule::server_end(SubTask *task, RPCModuleData& data) const
+bool TraceModule::server_end(SubTask *task, RPCModuleData& data)
 {
 	// 1. failed to call any server_begin() previously
 	if (data.find(SRPC_START_TIMESTAMP) == data.end())

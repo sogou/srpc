@@ -87,10 +87,10 @@ static constexpr char const *SRPC_HTTP_CLIENT_IP	= "http.client_ip";
 class TraceModule : public RPCModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) const override;
-	bool client_end(SubTask *task, RPCModuleData& data) const override;
-	bool server_begin(SubTask *task, RPCModuleData& data) const override;
-	bool server_end(SubTask *task, RPCModuleData& data) const override;
+	bool client_begin(SubTask *task, RPCModuleData& data) override;
+	bool client_end(SubTask *task, RPCModuleData& data) override;
+	bool server_begin(SubTask *task, RPCModuleData& data) override;
+	bool server_end(SubTask *task, RPCModuleData& data) override;
 
 protected:
 	void client_begin_request(protocol::HttpRequest *req,
@@ -131,17 +131,17 @@ template<class SERVER_TASK, class CLIENT_TASK>
 class RPCTraceModule : public TraceModule
 {
 public:
-	bool client_begin(SubTask *task, RPCModuleData& data) const override;
-	bool client_end(SubTask *task, RPCModuleData& data) const override;
-	bool server_begin(SubTask *task, RPCModuleData& data) const override;
-	bool server_end(SubTask *task, RPCModuleData& data) const override;
+	bool client_begin(SubTask *task, RPCModuleData& data) override;
+	bool client_end(SubTask *task, RPCModuleData& data) override;
+	bool server_begin(SubTask *task, RPCModuleData& data) override;
+	bool server_end(SubTask *task, RPCModuleData& data) override;
 };
 
 ////////// impl
 
 template<class STASK, class CTASK>
 bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task,
-												RPCModuleData& data) const
+												RPCModuleData& data)
 {
 	TraceModule::client_begin(task, data);
 
@@ -161,7 +161,7 @@ bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task,
 
 template<class STASK, class CTASK>
 bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task,
-											  RPCModuleData& data) const
+											  RPCModuleData& data)
 {
 	TraceModule::client_end(task, data);
 
@@ -185,7 +185,7 @@ bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task,
 
 template<class STASK, class CTASK>
 bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task,
-												RPCModuleData& data) const
+												RPCModuleData& data)
 {
 	TraceModule::server_begin(task, data);
 
@@ -214,7 +214,7 @@ bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task,
 
 template<class STASK, class CTASK>
 bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task,
-											  RPCModuleData& data) const
+											  RPCModuleData& data)
 {
 	TraceModule::server_end(task, data);
 

@@ -72,11 +72,11 @@ CommSession *HttpServer::new_session(long long seq, CommConnection *conn)
 			module.push_back(this->modules[i]);
 	}
 
-	task = new HttpServerTask(this, this->process, std::move(module));
+	task = new HttpServerTask(this, std::move(module), this->process);
 	task->set_keep_alive(this->params.keep_alive_timeout);
 	task->set_receive_timeout(this->params.receive_timeout);
 	task->get_req()->set_size_limit(this->params.request_size_limit);
-	task->set_is_ssl(this->get_ssl_ctx() ? true : false);
+	task->set_is_ssl(this->get_ssl_ctx() != NULL);
 	task->set_listen_port(this->get_listen_port());
 
 	return task;

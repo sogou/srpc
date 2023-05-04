@@ -37,8 +37,8 @@ class HttpClientTask : public WFComplexClientTask<protocol::HttpRequest,
 public:
 	HttpClientTask(int redirect_max,
 				   int retry_max,
-				   http_callback_t&& callback,
-				   std::list<RPCModule *>&& modules);
+				   std::list<RPCModule *>&& modules,
+				   http_callback_t&& callback);
 
 	RPCModuleData *mutable_module_data() { return &module_data_; }
 	void set_module_data(RPCModuleData data) { module_data_ = std::move(data); }
@@ -89,8 +89,8 @@ class HttpServerTask : public WFServerTask<protocol::HttpRequest,
 {
 public:
 	HttpServerTask(CommService *service,
-				   std::function<void (WFHttpTask *)>& process,
-				   std::list<RPCModule *>&& modules) :
+				   std::list<RPCModule *>&& modules,
+				   std::function<void (WFHttpTask *)>& process) :
 		WFServerTask(service, WFGlobal::get_scheduler(), process),
 		req_is_alive_(false),
 		req_has_keep_alive_header_(false),
