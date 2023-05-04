@@ -1,6 +1,6 @@
 [中文版](/docs/docs-06-workflow.md)
 
-## Integrating with the asynchronous Workflow framework
+## 06 - Integrating with the asynchronous Workflow framework
 
 ### 1. Server
 

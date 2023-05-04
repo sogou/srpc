@@ -1,6 +1,6 @@
 [English version](/docs/en/docs-01-idl.md)
 
-## RPC IDL
+##  01 - RPC IDL
 - 描述文件
 - 前后兼容
 - Protobuf/Thrift

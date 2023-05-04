@@ -1,6 +1,6 @@
 [中文版](/docs/docs-01-idl.md)
 
-## RPC IDL
+## 01 - RPC IDL
 
 - Interface Description Languaue file
 - Backward and forward compatibility

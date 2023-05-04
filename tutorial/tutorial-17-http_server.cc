@@ -25,7 +25,7 @@ static WFFacilities::WaitGroup wait_group(1);
 
 srpc::RPCMetricsPull  exporter;
 srpc::RPCTraceDefault trace_log;
-//srpc::RPCTraceOpenTelemetry otel("http://127.0.0.1:8081");
+//srpc::RPCTraceOpenTelemetry otel("http://127.0.0.1:4318");
 
 static void sig_handler(int signo)
 {

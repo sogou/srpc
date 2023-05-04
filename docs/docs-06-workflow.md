@@ -1,6 +1,6 @@
 [English version](/docs/en/docs-06-workflow.md)
 
-## 与workflow异步框架的结合
+## 06 - 与workflow异步框架的结合
 ### 1. Server
 下面我们通过一个具体例子来呈现
 - Echo RPC在接收到请求时，向下游发起一次http请求

@@ -1,6 +1,6 @@
 [English version](/docs/en/docs-02-service.md)
 
-## RPC Service
+## 02 - RPC Service
 - 组成SRPC服务的基本单元
 - 每一个Service一定由某一种IDL生成
 - Service只与IDL有关，与网络通信具体协议无关

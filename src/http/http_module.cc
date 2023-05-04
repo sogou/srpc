@@ -49,10 +49,10 @@ bool HttpTraceModule::client_end(SubTask *task, RPCModuleData& data) const
 
 	auto *client_task = static_cast<HttpClientTask *>(task);
 
-	data[SRPC_STATE] = std::to_string(client_task->get_state());
+	data[WF_TASK_STATE] = std::to_string(client_task->get_state());
 	if (client_task->get_state() != WFT_STATE_SUCCESS)
 	{
-		data[SRPC_ERROR] = std::to_string(client_task->get_error());
+		data[WF_TASK_ERROR] = std::to_string(client_task->get_error());
 		if (client_task->get_error() == ETIMEDOUT)
 		{
 			data[SRPC_TIMEOUT_REASON] =

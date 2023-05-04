@@ -170,6 +170,12 @@ static size_t rpc_span_log_format(RPCModuleData& data, char *str, size_t len)
 							data[SRPC_FINISH_TIMESTAMP].c_str(),
 							data[SRPC_DURATION].c_str());
 		}
+		else if (strcmp(iter.first.c_str(), SRPC_STATE) == 0 ||
+				 strcmp(iter.first.c_str(), SRPC_ERROR) == 0)
+		{
+			ret += snprintf(str + ret, len - ret, " %s: %s",
+							iter.first.c_str(), iter.second.c_str());
+		}
 /*
 		else if (strcmp(it.first.c_str(), SRPC_SPAN_LOG) == 0)
 		{
@@ -323,6 +329,8 @@ SubTask *RPCTraceOpenTelemetry::create(RPCModuleData& span)
 		next = WFTaskFactory::create_empty_task();
 	else
 	{
+//		fprintf(stderr, "[Trace info to report] :\n%s\n\n",
+//				req->DebugString().c_str());
 		req->SerializeToString(output);
 		this->report_status = false;
 		this->report_span_count = 0;
