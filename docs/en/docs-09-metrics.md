@@ -1,6 +1,6 @@
 [中文版](/docs/docs-09-metrics.md)
 
-## Report Metrics to OpenTelemetry / Prometheus
+## 09 - Report Metrics to OpenTelemetry / Prometheus
 
 **Metrics** are common monitoring requirements. **SRPC** supports the generation and statistics of Metrics, and reports through various way, including reporting to [Prometheus](https://prometheus.io/) and [OpenTelemetry](https://opentelemetry.io).
 

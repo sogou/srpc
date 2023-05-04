@@ -7,7 +7,6 @@ set(PROTO_LIST
 	proto/opentelemetry_common.proto
 	proto/opentelemetry_resource.proto
 	proto/opentelemetry_trace.proto
-	proto/opentelemetry_trace_service.proto
 	proto/opentelemetry_metrics.proto
 	proto/opentelemetry_metrics_service.proto)
 
@@ -15,6 +14,8 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_LIST})
 
 set(SRC
 	rpc_module.cc
+	rpc_trace_module.cc
+	rpc_metrics_module.cc
 	rpc_trace_filter.cc
 	rpc_metrics_filter.cc
 	${PROTO_SRCS} ${PROTO_HDRS}

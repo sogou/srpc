@@ -36,6 +36,16 @@ set(SRC_HEADERS
 	src/rpc_define.h
 )
 
+if (NOT WIN32)
+	set(SRC_HEADERS
+		${SRC_HEADERS}
+		src/http/http_task.h
+		src/http/http_module.h
+		src/http/http_client.h
+		src/http/http_server.h
+	)
+endif ()
+
 if (NOT SNAPPY_INSTALLED)
 	set(SNAPPY_HEADERS
 		third_party/snappy/snappy.h

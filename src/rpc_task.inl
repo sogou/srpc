@@ -288,22 +288,24 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		status_code = this->resp.compress();
 		if (status_code == RPCStatusOK)
 		{
-			// for server, this is the where series->module_data stored
-			RPCModuleData *data = this->mutable_module_data();
-
-			for (auto *module : modules_)
-				module->server_task_end(this, *data);
-
-			this->resp.set_meta_module_data(*data);
-
-			if (this->resp.serialize_meta())
-				return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
-
-			status_code = RPCStatusMetaError;
+			if (!this->resp.serialize_meta())
+				status_code = RPCStatusMetaError;
 		}
 	}
 
 	this->resp.set_status_code(status_code);
+
+	// for server, this is the where series->module_data stored
+	RPCModuleData *data = this->mutable_module_data();
+
+	for (auto *module : modules_)
+		module->server_task_end(this, *data);
+
+	this->resp.set_meta_module_data(*data);
+
+	if (status_code == RPCStatusOK)
+		return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
+
 	errno = EBADMSG;
 	return NULL;
 }
@@ -444,31 +446,31 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 
 	if (status_code == RPCStatusOK)
 	{
-		RPCModuleData *data = NULL;
-		SERIES *series = dynamic_cast<SERIES *>(series_of(this));
-
-		if (series)
-		{
-			data = series->get_module_data();
-			if (data != NULL)
-				this->set_module_data(*data);
-		}
-
-		data = this->mutable_module_data();
-
-		for (auto *module : modules_)
-			module->client_task_begin(this, *data);
-
-		this->req.set_meta_module_data(*data);
-
-		if (this->req.serialize_meta())
-			return this->WFClientTask<RPCREQ, RPCRESP>::message_out();
-
-		status_code = RPCStatusMetaError;
+		if (!this->req.serialize_meta())
+			status_code = RPCStatusMetaError;
 	}
 
-	this->disable_retry();
 	this->resp.set_status_code(status_code);
+
+	RPCModuleData *data = NULL;
+	SERIES *series = dynamic_cast<SERIES *>(series_of(this));
+	if (series)
+	{
+		data = series->get_module_data();
+		if (data != NULL)
+			this->set_module_data(*data);
+	}
+	data = this->mutable_module_data();
+
+	for (auto *module : modules_)
+		module->client_task_begin(this, *data);
+
+	this->req.set_meta_module_data(*data);
+
+	if (status_code == RPCStatusOK)
+		return this->WFClientTask<RPCREQ, RPCRESP>::message_out();
+
+	this->disable_retry();
 	errno = EBADMSG;
 	return NULL;
 }
@@ -483,16 +485,6 @@ bool RPCClientTask<RPCREQ, RPCRESP>::finish_once()
 	{
 		if (this->resp.deserialize_meta() == false)
 			this->resp.set_status_code(RPCStatusMetaError);
-
-		if (!modules_.empty())
-		{
-			RPCModuleData *resp_data = this->mutable_module_data();
-			//TODO: Fill some resp meta to client task
-			//this->resp.get_meta_module_data(resp_data);
-			for (auto *module : modules_)
-				module->client_task_end(this, *resp_data);
-		}
-		//TODO: Feedback client resp meta through all nodes by series
 	}
 
 	return true;
@@ -503,6 +495,7 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 {
 	RPCWorker worker(new RPCContextImpl<RPCREQ, RPCRESP>(this, &module_data_),
 					 &this->req, &this->resp);
+
 	int status_code = this->resp.get_status_code();
 
 	if (status_code != RPCStatusOK && status_code != RPCStatusUndefined)
@@ -565,6 +558,24 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 
 	this->resp.set_status_code(status_code);
 	this->resp.set_error(this->error);
+
+	using SERIES = typename RPCServerTask<RPCREQ, RPCRESP>::RPCSeries;
+
+	if (!modules_.empty())
+	{
+		RPCModuleData *resp_data = this->mutable_module_data();
+
+		if (resp_data->empty()) // get series module data failed previously
+		{
+			SERIES *series = dynamic_cast<SERIES *>(series_of(this));
+			if (series)
+				resp_data = series->get_module_data();
+		}
+//		else
+//			this->resp.get_meta_module_data(resp_data);
+		for (auto *module : modules_)
+			module->client_task_end(this, *resp_data);
+	}
 
 	user_done_(status_code, worker);
 }

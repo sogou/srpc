@@ -27,7 +27,6 @@ namespace srpc
 // Basic MetricsModlue for generating general metrics data.
 // Each kind of network task can derived its own MetricsModlue.
 
-template<class SERVER_TASK, class CLIENT_TASK>
 class MetricsModule : public RPCModule
 {
 public:
@@ -43,7 +42,7 @@ public:
 // Fill RPC related data in metrics module
 
 template<class SERVER_TASK, class CLIENT_TASK>
-class RPCMetricsModule : public MetricsModule<SERVER_TASK, CLIENT_TASK>
+class RPCMetricsModule : public MetricsModule
 {
 public:
 	bool client_begin(SubTask *task, RPCModuleData& data) override;
@@ -53,57 +52,10 @@ public:
 ////////// impl
 
 template<class STASK, class CTASK>
-bool MetricsModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data)
+bool RPCMetricsModule<STASK, CTASK>::client_begin(SubTask *task,
+												  RPCModuleData& data)
 {
-	data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
-	// clear other unnecessary module_data since the data comes from series
-	data.erase(SRPC_DURATION);
-	data.erase(SRPC_FINISH_TIMESTAMP);
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool MetricsModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data)
-{
-	if (data.find(SRPC_DURATION) == data.end())
-	{
-		unsigned long long end_time = GET_CURRENT_NS();
-		data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-		data[SRPC_DURATION] = std::to_string(end_time -
-							atoll(data[SRPC_START_TIMESTAMP].data()));
-	}
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool MetricsModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data)
-{
-	if (data.find(SRPC_START_TIMESTAMP) == data.end())
-		data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool MetricsModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data)
-{
-	if (data.find(SRPC_DURATION) == data.end())
-	{
-		unsigned long long end_time = GET_CURRENT_NS();
-
-		data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-		data[SRPC_DURATION] = std::to_string(end_time -
-							atoll(data[SRPC_START_TIMESTAMP].data()));
-	}
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool RPCMetricsModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data)
-{
-	MetricsModule<STASK, CTASK>::client_begin(task, data);
+	MetricsModule::client_begin(task, data);
 
 	auto *client_task = static_cast<CTASK *>(task);
 	auto *req = client_task->get_req();
@@ -118,7 +70,7 @@ template<class STASK, class CTASK>
 bool RPCMetricsModule<STASK, CTASK>::server_begin(SubTask *task,
 												  RPCModuleData& data)
 {
-	MetricsModule<STASK, CTASK>::server_begin(task, data);
+	MetricsModule::server_begin(task, data);
 
 	auto *server_task = static_cast<STASK *>(task);
 	auto *req = server_task->get_req();

@@ -1,6 +1,6 @@
 [中文版](/docs/docs-08-tracing.md)
 
-## Report Tracing to OpenTelemetry
+## 08 - Report Tracing to OpenTelemetry
 **SRPC** supports generating and reporting tracing and spans, which can be reported in multiple ways, including exporting data locally or to [OpenTelemetry](https://opentelemetry.io).
 
 Since **SRPC** follows the [data specification](https://github.com/open-telemetry/opentelemetry-specification) of **OpenTelemetry** and the specification of [w3c trace context](https://www.w3.org/TR/trace-context/), now we can use **RPCTraceOpenTelemetry** as the reporting plugin.

@@ -49,21 +49,41 @@ static constexpr char const *SRPC_SPAN_KIND_CLIENT	= "srpc.client";
 static constexpr char const *SRPC_SPAN_KIND_SERVER	= "srpc.server";
 static constexpr char const *SRPC_STATE				= "srpc.state";
 static constexpr char const *SRPC_ERROR				= "srpc.error";
+static constexpr char const *WF_TASK_STATE			= "task.state";
+static constexpr char const *WF_TASK_ERROR			= "task.error";
 static constexpr char const *SRPC_REMOTE_IP			= "srpc.peer.ip";
 static constexpr char const *SRPC_REMOTE_PORT		= "srpc.peer.port";
 static constexpr char const *SRPC_SAMPLING_PRIO		= "srpc.sampling.priority";
-
-// for srpc.component
-static constexpr char const *SRPC_COMPONENT_SRPC	= "srpc.srpc";
 
 // for ext tags
 static constexpr char const *SRPC_DATA_TYPE			= "srpc.data.type";
 static constexpr char const *SRPC_COMPRESS_TYPE		= "srpc.compress.type";
 
+// for http
+static constexpr char const *SRPC_HTTP_SOCK_FAMILY	= "net.sock.family";
+static constexpr char const *SRPC_HTTP_SOCK_ADDR	= "net.sock.peer.addr";
+static constexpr char const *SRPC_HTTP_SOCK_PORT	= "net.sock.peer.port";
+static constexpr char const *SRPC_HTTP_REQ_LEN		= "http.request_content_length";
+static constexpr char const *SRPC_HTTP_RESP_LEN		= "http.response_content_length";
+
+// for http client
+static constexpr char const *SRPC_HTTP_CLIENT_URL	= "http.url";
+static constexpr char const *SRPC_HTTP_PEER_NAME	= "net.peer.name";
+static constexpr char const *SRPC_HTTP_PEER_PORT	= "net.peer.port";
+static constexpr char const *SRPC_HTTP_RESEND_COUNT	= "http.resend_count";
+
+// for http server
+static constexpr char const *SRPC_HTTP_SCHEME		= "http.scheme";
+static constexpr char const *SRPC_HTTP_HOST_NAME	= "net.host.name";
+static constexpr char const *SRPC_HTTP_HOST_PORT	= "net.host.port";
+// /users/12314/?q=ddds
+static constexpr char const *SRPC_HTTP_TARGET		= "http.target";
+// The IP address of the original client behind all proxies, from X-Forwarded-For
+static constexpr char const *SRPC_HTTP_CLIENT_IP	= "http.client_ip";
+
 // Basic TraceModule for generating general span data.
 // Each kind of network task can derived its own TraceModule.
 
-template<class SERVER_TASK, class CLIENT_TASK>
 class TraceModule : public RPCModule
 {
 public:
@@ -71,6 +91,33 @@ public:
 	bool client_end(SubTask *task, RPCModuleData& data) override;
 	bool server_begin(SubTask *task, RPCModuleData& data) override;
 	bool server_end(SubTask *task, RPCModuleData& data) override;
+
+protected:
+	void client_begin_request(protocol::HttpRequest *req,
+							  RPCModuleData& data) const;
+	void client_end_response(protocol::HttpResponse *resp,
+							 RPCModuleData& data) const;
+	void server_begin_request(protocol::HttpRequest *req,
+							  RPCModuleData& data) const;
+	void server_end_response(protocol::HttpResponse *resp,
+							 RPCModuleData& data) const;
+
+	void client_begin_request(protocol::ProtocolMessage *req,
+							  RPCModuleData& data) const
+	{
+	}
+	void client_end_response(protocol::ProtocolMessage *resp,
+							 RPCModuleData& data) const
+	{
+	}
+	void server_begin_request(protocol::ProtocolMessage *req,
+							  RPCModuleData& data) const
+	{
+	}
+	void server_end_response(protocol::ProtocolMessage *resp,
+							 RPCModuleData& data) const
+	{
+	}
 
 public:
 	TraceModule() : RPCModule(RPCModuleTypeTrace)
@@ -81,7 +128,7 @@ public:
 // Fill RPC related data in trace module
 
 template<class SERVER_TASK, class CLIENT_TASK>
-class RPCTraceModule : public TraceModule<SERVER_TASK, CLIENT_TASK>
+class RPCTraceModule : public TraceModule
 {
 public:
 	bool client_begin(SubTask *task, RPCModuleData& data) override;
@@ -93,109 +140,10 @@ public:
 ////////// impl
 
 template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task,
+												RPCModuleData& data)
 {
-	if (!data.empty())
-	{
-		auto iter = data.find(SRPC_SPAN_ID);
-		if (iter != data.end())
-			data[SRPC_PARENT_SPAN_ID] = iter->second;
-	} else {
-		uint64_t trace_id_high = htonll(SRPCGlobal::get_instance()->get_random());
-		uint64_t trace_id_low = htonll(SRPCGlobal::get_instance()->get_random());
-		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
-
-		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
-				SRPC_TRACEID_SIZE / 2);
-		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
-				&trace_id_low, SRPC_TRACEID_SIZE / 2);
-
-		data[SRPC_TRACE_ID] = std::move(trace_id_buf);
-	}
-
-	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
-	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
-
-	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
-	data[SRPC_SPAN_ID] = std::move(span_id_buf);
-
-	data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_CLIENT;
-
-	data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
-
-	// clear other unnecessary module_data since the data comes from series
-	data.erase(SRPC_DURATION);
-	data.erase(SRPC_FINISH_TIMESTAMP);
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data)
-{
-	if (data.find(SRPC_DURATION) == data.end())
-	{
-		unsigned long long end_time = GET_CURRENT_NS();
-		data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-		data[SRPC_DURATION] = std::to_string(end_time -
-							atoll(data[SRPC_START_TIMESTAMP].data()));
-	}
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data)
-{
-	if (data[SRPC_TRACE_ID].empty())
-	{
-		uint64_t trace_id_high = SRPCGlobal::get_instance()->get_random();
-		uint64_t trace_id_low = SRPCGlobal::get_instance()->get_random();
-		std::string trace_id_buf(SRPC_TRACEID_SIZE + 1, 0);
-
-		memcpy((char *)trace_id_buf.c_str(), &trace_id_high,
-				SRPC_TRACEID_SIZE / 2);
-		memcpy((char *)trace_id_buf.c_str() + SRPC_TRACEID_SIZE / 2,
-				&trace_id_low, SRPC_TRACEID_SIZE / 2);
-
-		data[SRPC_TRACE_ID] = std::move(trace_id_buf);
-	}
-	else
-		data[SRPC_PARENT_SPAN_ID] = data[SRPC_SPAN_ID];
-
-	uint64_t span_id = SRPCGlobal::get_instance()->get_random();
-	std::string span_id_buf(SRPC_SPANID_SIZE + 1, 0);
-
-	memcpy((char *)span_id_buf.c_str(), &span_id, SRPC_SPANID_SIZE);
-	data[SRPC_SPAN_ID] = std::move(span_id_buf);
-
-	if (data.find(SRPC_START_TIMESTAMP) == data.end())
-		data[SRPC_START_TIMESTAMP] = std::to_string(GET_CURRENT_NS());
-
-	data[SRPC_SPAN_KIND] = SRPC_SPAN_KIND_SERVER;
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool TraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data)
-{
-	if (data.find(SRPC_DURATION) == data.end())
-	{
-		unsigned long long end_time = GET_CURRENT_NS();
-
-		data[SRPC_FINISH_TIMESTAMP] = std::to_string(end_time);
-		data[SRPC_DURATION] = std::to_string(end_time -
-							atoll(data[SRPC_START_TIMESTAMP].data()));
-	}
-
-	return true;
-}
-
-template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& data)
-{
-	TraceModule<STASK, CTASK>::client_begin(task, data);
+	TraceModule::client_begin(task, data);
 
 	auto *client_task = static_cast<CTASK *>(task);
 	auto *req = client_task->get_req();
@@ -206,13 +154,16 @@ bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task, RPCModuleData& da
 	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
 
+	TraceModule::client_begin_request(req, data);
+
 	return true;
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task,
+											  RPCModuleData& data)
 {
-	TraceModule<STASK, CTASK>::client_end(task, data);
+	TraceModule::client_end(task, data);
 
 	std::string ip;
 	unsigned short port;
@@ -227,13 +178,16 @@ bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task, RPCModuleData& data
 		data[SRPC_REMOTE_PORT] = std::to_string(port);
 	}
 
+	TraceModule::client_end_response(resp, data);
+
 	return true;
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task,
+												RPCModuleData& data)
 {
-	TraceModule<STASK, CTASK>::server_begin(task, data);
+	TraceModule::server_begin(task, data);
 
 	std::string ip;
 	unsigned short port;
@@ -253,19 +207,24 @@ bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task, RPCModuleData& da
 		data[SRPC_REMOTE_PORT] = std::to_string(port);
 	}
 
+	TraceModule::server_begin_request(req, data);
+
 	return true;
 }
 
 template<class STASK, class CTASK>
-bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task, RPCModuleData& data)
+bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task,
+											  RPCModuleData& data)
 {
-	TraceModule<STASK, CTASK>::server_end(task, data);
+	TraceModule::server_end(task, data);
 
 	auto *server_task = static_cast<STASK *>(task);
 	auto *resp = server_task->get_resp();
 
 	data[SRPC_STATE] = std::to_string(resp->get_status_code());
 	data[SRPC_ERROR] = std::to_string(resp->get_error());
+
+	TraceModule::client_end_response(resp, data);
 
 	return true;
 }

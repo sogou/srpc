@@ -83,6 +83,10 @@ add_dependencies(thrift LINK_HEADERS)
 add_dependencies(compress LINK_HEADERS)
 add_dependencies(message LINK_HEADERS)
 
+if (NOT WIN32)
+	add_subdirectory(http)
+	add_dependencies(http LINK_HEADERS)
+endif ()
 
 if (WIN32)
 	add_library(
@@ -124,6 +128,7 @@ else ()
 		$<TARGET_OBJECTS:thrift>
 		$<TARGET_OBJECTS:compress>
 		$<TARGET_OBJECTS:message>
+		$<TARGET_OBJECTS:http>
 	)
 
 	add_library(
@@ -134,6 +139,7 @@ else ()
 		$<TARGET_OBJECTS:thrift>
 		$<TARGET_OBJECTS:compress>
 		$<TARGET_OBJECTS:message>
+		$<TARGET_OBJECTS:http>
 	)
 
 	target_link_libraries(${SHARED_LIB_NAME} 

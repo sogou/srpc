@@ -1,7 +1,6 @@
 [English version](/docs/en/docs-09-metrics.md)
 
-## 上报Metrics
-
+## 09 - 上报Metrics
 
 **Metrics**(指标)是常用的监控需求，**SRPC**支持产生与统计Metrics，并通过多种途径上报，其中包括上报到[Prometheus](https://prometheus.io/)和[OpenTelemetry](https://opentelemetry.io)。
 

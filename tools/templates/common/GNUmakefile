@@ -12,6 +12,7 @@ base:
 
 clean:
 ifeq ($(BUILD_DIR), $(wildcard $(BUILD_DIR)))
+	make -C $(BUILD_DIR) clean
 	rm -rf $(BUILD_DIR)
 endif
 

@@ -78,9 +78,10 @@ make
 * [第4步：使用Client](docs/docs-04-client.md)
 * [第5步：了解异步Context](docs/docs-05-context.md)
 * [第6步：与workflow的结合使用](docs/docs-06-workflow.md)
-* [第7步：使用HTTP协议互通](docs/docs-07-http.md)
+* [第7步：使用SRPC发送HTTP协议](docs/docs-07-srpc-http.md)
 * [第8步：链路上报到OpenTelemetry](docs/docs-08-tracing.md)
 * [第9步：监控指标的使用与上报](docs/docs-09-metrics.md)
+* [第10步：附带生态模块功能的Workflow风格Http](/docs/docs-10-http-with-modules.md)
 
 简单的命令即可编译示例：
 
