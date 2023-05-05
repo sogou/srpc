@@ -106,6 +106,19 @@ To install the srpc library for deployment:
 sudo apt-get install libsrpc
 ~~~~
 
+### Installation(Fedora Linux):
+srpc has been packaged for Fedora.
+
+To install the srpc library for development purposes:
+~~~~sh
+sudo dnf install srpc-devel
+~~~~
+
+To install the srpc library for deployment:
+~~~~sh
+sudo dnf install srpc
+~~~~
+
 ## Tutorial
 
 * [Step 1: Design IDL description file](/docs/en/docs-01-idl.md)
