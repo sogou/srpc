@@ -115,8 +115,13 @@ public:
 
 		RPCModuleData *get_module_data() { return module_data_; }
 		void set_module_data(RPCModuleData *data) { module_data_ = data; }
-		bool has_module_data() const { return !!module_data_; }
-		void clear_module_data() { module_data_ = NULL; }
+		virtual void *get_specific(const char *key)
+		{
+			if (strcmp(key, SRPC_MODULE_DATA) == 0)
+				return this->module_data_;
+			else
+				return NULL;
+		}
 
 	private:
 		RPCModuleData *module_data_;
