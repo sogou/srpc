@@ -142,14 +142,18 @@ else ()
 		$<TARGET_OBJECTS:http>
 	)
 
-	target_link_libraries(${SHARED_LIB_NAME} 
-						  OpenSSL::SSL
-						  OpenSSL::Crypto
-						  pthread
-						  protobuf
-						  workflow
-						  z ${SNAPPY_LIB} ${LZ4_LIB})
-		
+	if (APPLE)
+		target_link_libraries(${SHARED_LIB_NAME}
+							  OpenSSL::SSL
+							  OpenSSL::Crypto
+							  pthread
+							  protobuf
+							  workflow
+							  z ${SNAPPY_LIB} ${LZ4_LIB})
+	else ()
+		target_link_libraries(${SHARED_LIB_NAME})
+	endif ()
+
 	set_target_properties(${STATIC_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 	set_target_properties(${SHARED_LIB_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME} VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR} )
 
