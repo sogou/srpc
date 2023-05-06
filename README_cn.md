@@ -70,6 +70,19 @@ cd srpc
 make
 ~~~
 
+### 安装（Fedora Linux）：
+srpc已为Fedora打包。
+
+为了开发目的安装srpc库：
+~~~sh
+sudo dnf install srpc-devel
+~~~
+
+要安装srpc库以进行部署，请执行以下操作：
+~~~sh
+sudo dnf install srpc
+~~~
+
 ## Tutorial
 
 * [第1步：设计IDL描述文件](docs/docs-01-idl.md)
