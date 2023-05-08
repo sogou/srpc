@@ -67,19 +67,11 @@ CommMessageOut *HttpClientTask::message_out()
 	HttpRequest *req = this->get_req();
 	struct HttpMessageHeader header;
 	bool is_alive;
-	HttpServerTask::ModuleSeries *series;
-	RPCModuleData *data = NULL;
+	void *series_data = series_of(this)->get_specific(SRPC_MODULE_DATA);
+	RPCModuleData *data = (RPCModuleData *)series_data;
 
-	// prepare module_data from series to request
-	series = dynamic_cast<HttpServerTask::ModuleSeries *>(series_of(this));
-
-	if (series)
-	{
-		data = series->get_module_data();
-		if (data != NULL)
-			this->set_module_data(*data);
-	}
-
+	if (data)
+		this->set_module_data(*data);
 	data = this->mutable_module_data();
 
 	for (auto *module : modules_)

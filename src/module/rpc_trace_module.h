@@ -171,7 +171,13 @@ bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task,
 	auto *resp = client_task->get_resp();
 
 	data[SRPC_STATE] = std::to_string(resp->get_status_code());
-	data[SRPC_ERROR] = std::to_string(resp->get_error());
+
+	if (resp->get_status_code() != RPCStatusOK)
+	{
+		data[SRPC_ERROR] = std::to_string(resp->get_error());
+		return true;
+	}
+
 	if (client_task->get_remote(ip, &port))
 	{
 		data[SRPC_REMOTE_IP] = std::move(ip);
@@ -222,7 +228,12 @@ bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task,
 	auto *resp = server_task->get_resp();
 
 	data[SRPC_STATE] = std::to_string(resp->get_status_code());
-	data[SRPC_ERROR] = std::to_string(resp->get_error());
+
+	if (resp->get_status_code() != RPCStatusOK)
+	{
+		data[SRPC_ERROR] = std::to_string(resp->get_error());
+		return true;
+	}
 
 	TraceModule::client_end_response(resp, data);
 

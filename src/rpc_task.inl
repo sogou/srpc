@@ -193,8 +193,13 @@ public:
 
 		RPCModuleData *get_module_data() { return this->module_data; }
 		void set_module_data(RPCModuleData *data) { this->module_data = data; }
-		bool has_module_data() const { return !!this->module_data; }
-		void clear_module_data() { this->module_data = NULL; }
+		virtual void *get_specific(const char *key)
+		{
+			if (strcmp(key, SRPC_MODULE_DATA) == 0)
+				return this->module_data;
+			else
+				return NULL;
+		}
 
 	private:
 		RPCModuleData *module_data;
@@ -439,7 +444,6 @@ bool RPCClientTask<RPCREQ, RPCRESP>::check_request()
 template<class RPCREQ, class RPCRESP>
 CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 {
-	using SERIES = typename RPCServerTask<RPCREQ, RPCRESP>::RPCSeries;
 	this->req.set_seqid(this->get_task_seq());
 
 	int status_code = this->req.compress();
@@ -452,14 +456,11 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 
 	this->resp.set_status_code(status_code);
 
-	RPCModuleData *data = NULL;
-	SERIES *series = dynamic_cast<SERIES *>(series_of(this));
-	if (series)
-	{
-		data = series->get_module_data();
-		if (data != NULL)
-			this->set_module_data(*data);
-	}
+	void *series_data = series_of(this)->get_specific(SRPC_MODULE_DATA);
+	RPCModuleData *data = (RPCModuleData *)series_data;
+
+	if (data)
+		this->set_module_data(*data);
 	data = this->mutable_module_data();
 
 	for (auto *module : modules_)
@@ -510,12 +511,13 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 		{
 			this->resp.set_status_code(RPCStatusOK);
 			status_code = user_done_(status_code, worker);
-			if (status_code == RPCStatusOK)
-				return;
 		}
 
-		this->state = WFT_STATE_TASK_ERROR;
-		this->error = status_code;
+		if (status_code != RPCStatusOK)
+		{
+			this->state = WFT_STATE_TASK_ERROR;
+			this->error = status_code;
+		}
 	}
 
 	if (this->state == WFT_STATE_TASK_ERROR)
@@ -534,7 +536,7 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 			break;
 		}
 	}
-	else
+	else if (status_code != RPCStatusOK)
 	{
 		switch (this->state)
 		{
@@ -559,25 +561,26 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 	this->resp.set_status_code(status_code);
 	this->resp.set_error(this->error);
 
-	using SERIES = typename RPCServerTask<RPCREQ, RPCRESP>::RPCSeries;
-
 	if (!modules_.empty())
 	{
+		void *series_data;
 		RPCModuleData *resp_data = this->mutable_module_data();
 
 		if (resp_data->empty()) // get series module data failed previously
 		{
-			SERIES *series = dynamic_cast<SERIES *>(series_of(this));
-			if (series)
-				resp_data = series->get_module_data();
+			series_data = series_of(this)->get_specific(SRPC_MODULE_DATA);
+			if (series_data)
+				resp_data = (RPCModuleData *)series_data;
 		}
 //		else
 //			this->resp.get_meta_module_data(resp_data);
+
 		for (auto *module : modules_)
 			module->client_task_end(this, *resp_data);
 	}
 
-	user_done_(status_code, worker);
+	if (status_code != RPCStatusOK)
+		user_done_(status_code, worker);
 }
 
 template<class RPCREQ, class RPCRESP>
