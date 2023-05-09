@@ -106,7 +106,10 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 		}
 		else if (this->check_multi_comments_begin(line))
+		{
 			state = (state & PARSER_ST_OUTSIDE_COMMENT_MASK) + PARSER_ST_INSIDE_COMMENT;
+			continue;
+		}
 
 		if (this->is_thrift == false)
 		{
