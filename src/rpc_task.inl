@@ -235,6 +235,7 @@ static void RPCAsyncFutureCallback(OUTPUT *output, srpc::RPCContext *ctx)
 	res.second.status_code = ctx->get_status_code();
 	res.second.error = ctx->get_error();
 	res.second.success = ctx->success();
+	res.second.timeout_reason = ctx->get_timeout_reason();
 	if (res.second.success)
 		res.first = std::move(*output);
 
@@ -437,7 +438,6 @@ template<class RPCREQ, class RPCRESP>
 bool RPCClientTask<RPCREQ, RPCRESP>::check_request()
 {
 	int status_code = this->resp.get_status_code();
-
 	return status_code == RPCStatusOK || status_code == RPCStatusUndefined;
 }
 
@@ -453,8 +453,6 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 		if (!this->req.serialize_meta())
 			status_code = RPCStatusMetaError;
 	}
-
-	this->resp.set_status_code(status_code);
 
 	void *series_data = series_of(this)->get_specific(SRPC_MODULE_DATA);
 	RPCModuleData *data = (RPCModuleData *)series_data;
@@ -472,6 +470,7 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 		return this->WFClientTask<RPCREQ, RPCRESP>::message_out();
 
 	this->disable_retry();
+	this->resp.set_status_code(status_code);
 	errno = EBADMSG;
 	return NULL;
 }
@@ -536,7 +535,7 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 			break;
 		}
 	}
-	else if (status_code != RPCStatusOK)
+	else if (this->state != WFT_STATE_SUCCESS)
 	{
 		switch (this->state)
 		{
