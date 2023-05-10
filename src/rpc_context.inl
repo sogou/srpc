@@ -149,7 +149,11 @@ public:
 	{
 		return task_->get_resp()->get_error();
 	}
-	//int get_timeout_reason() const override;
+
+	int get_timeout_reason() const override
+	{
+		return task_->get_timeout_reason();
+	}
 
 public:
 	// for server-process

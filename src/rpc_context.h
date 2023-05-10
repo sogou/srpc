@@ -32,6 +32,7 @@ struct RPCSyncContext
 	int status_code;
 	int error;
 	bool success;
+	int timeout_reason;
 };
 
 class RPCContext
@@ -54,7 +55,7 @@ public:
 	virtual const char *get_errmsg() const = 0;
 	virtual int get_error() const = 0;
 	virtual void *get_user_data() const = 0;
-	//virtual int get_timeout_reason() const;
+	virtual int get_timeout_reason() const = 0;
 
 public:
 	// for server-process
