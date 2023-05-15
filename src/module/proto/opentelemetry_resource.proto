@@ -20,7 +20,9 @@ import "opentelemetry_common.proto";
 
 // Resource information.
 message Resource {
-  // Set of labels that describe the resource.
+  // Set of attributes that describe the resource.
+  // Attribute keys MUST be unique (it is not allowed to have more than one
+  // attribute with the same key).
   repeated opentelemetry.proto.common.v1.KeyValue attributes = 1;
 
   // dropped_attributes_count is the number of dropped attributes. If the value is 0, then

@@ -16,7 +16,6 @@
 
 #include <stdio.h>
 #include "workflow/WFFacilities.h"
-#include "echo_pb.srpc.h"
 #include "srpc/http_client.h"
 #include "srpc/rpc_types.h"
 #include "srpc/rpc_types.h"

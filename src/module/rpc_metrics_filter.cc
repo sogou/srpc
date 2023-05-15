@@ -427,11 +427,15 @@ SubTask *RPCMetricsOTel::create(RPCModuleData& data)
 	ExportMetricsServiceRequest req;
 	ResourceMetrics *rm = req.add_resource_metrics();
 	Resource *resource = rm->mutable_resource();
-	InstrumentationLibraryMetrics *metrics = rm->add_instrumentation_library_metrics();
+	ScopeMetrics *metrics = rm->add_scope_metrics();
 	KeyValue *attribute;
 	AnyValue *value;
 
+	InstrumentationScope *scope = metrics->mutable_scope();
+	scope->set_name(this->scope_name);
+
 	auto iter = data.find(OTLP_METHOD_NAME);
+
 	if (iter != data.end())
 	{
 		attribute = resource->add_attributes();
@@ -461,6 +465,7 @@ SubTask *RPCMetricsOTel::create(RPCModuleData& data)
 
 	this->expose(metrics);
 
+//	fprintf(stderr, "[Metrics info to report]\n%s\n", req.DebugString().c_str());
 	req.SerializeToString(output);
 	this->report_counts = 0;
 
@@ -468,6 +473,17 @@ SubTask *RPCMetricsOTel::create(RPCModuleData& data)
 													   this->redirect_max,
 													   this->retry_max,
 													   [](WFHttpTask *task) {
+/*
+		protocol::HttpResponse *resp = task->get_resp();
+		fprintf(stderr, "[metrics report callback] state=%d error=%d\n",
+				task->get_state(), task->get_error());
+
+		if (task->get_state() == WFT_STATE_SUCCESS)
+		{
+			fprintf(stderr, "%s %s %s\r\n", resp->get_http_version(),
+					resp->get_status_code(), resp->get_reason_phrase());
+		}
+*/
 		delete (std::string *)task->user_data;
 	});
 
@@ -485,8 +501,8 @@ bool RPCMetricsOTel::expose(google::protobuf::Message *msg)
 {
 	std::unordered_map<std::string, RPCVar *> tmp;
 	std::unordered_map<std::string, RPCVar *>::iterator it;
-	InstrumentationLibraryMetrics *metrics;
-	metrics = static_cast<InstrumentationLibraryMetrics *>(msg);
+	ScopeMetrics *metrics;
+	metrics = static_cast<ScopeMetrics *>(msg);
 
 	this->reduce(tmp);
 

@@ -182,6 +182,8 @@ public:
 	// for client level attributes, such as ProviderID
 	void add_attributes(const std::string& key, const std::string& value);
 	size_t clear_attributes();
+	// refer to 'ScopeMetrics' : a collection of Metrics in a Scope
+	void set_scope_name(const std::string& name) { this->scope_name = name; }
 
 public:
 	RPCMetricsOTel(const std::string& url);
@@ -253,6 +255,7 @@ private:
 	RPCFilterPolicy policy;
 	std::atomic<size_t> report_counts;
 	std::map<std::string, std::string> attributes;
+	std::string scope_name;
 };
 
 } // end namespace srpc
