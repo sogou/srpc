@@ -329,8 +329,7 @@ SubTask *RPCTraceOpenTelemetry::create(RPCModuleData& span)
 		next = WFTaskFactory::create_empty_task();
 	else
 	{
-//		fprintf(stderr, "[Trace info to report] :\n%s\n\n",
-//				req->DebugString().c_str());
+//		fprintf(stderr, "[Trace info to report]\n%s\n\n", req->DebugString().c_str());
 		req->SerializeToString(output);
 		this->report_status = false;
 		this->report_span_count = 0;
@@ -346,6 +345,17 @@ SubTask *RPCTraceOpenTelemetry::create(RPCModuleData& span)
 													   this->redirect_max,
 													   this->retry_max,
 													   [](WFHttpTask *task) {
+/*
+		protocol::HttpResponse *resp = task->get_resp();
+		fprintf(stderr, "[Trace report callback] state=%d error=%d\n",
+				task->get_state(), task->get_error());
+
+		if (task->get_state() == WFT_STATE_SUCCESS)
+		{
+			fprintf(stderr, "%s %s %s\r\n", resp->get_http_version(),
+					resp->get_status_code(), resp->get_reason_phrase());
+		}
+*/
 		delete (std::string *)task->user_data;
 	});
 

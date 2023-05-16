@@ -48,6 +48,8 @@ message ArrayValue {
 message KeyValueList {
   // A collection of key/value pairs of key-value pairs. The list may be empty (may
   // contain 0 elements).
+  // The keys MUST be unique (it is not allowed to have more than one
+  // value with the same key).
   repeated KeyValue values = 1;
 }
 
@@ -67,10 +69,20 @@ message StringKeyValue {
   string value = 2;
 }
 
+////////// deprecated
 // InstrumentationLibrary is a message representing the instrumentation library information
 // such as the fully qualified name and version. 
 message InstrumentationLibrary {
   // An empty instrumentation library name means the name is unknown. 
   string name = 1;
   string version = 2;
+}
+
+// such as the fully qualified name and version.
+message InstrumentationScope {
+  // An empty instrumentation scope name means the name is unknown.
+  string name = 1;
+  string version = 2;
+  repeated KeyValue attributes = 3;
+  uint32 dropped_attributes_count = 4;
 }
