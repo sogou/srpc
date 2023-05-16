@@ -15,6 +15,7 @@
 */
 
 #include "http_module.h"
+#include "http_task.h"
 
 #ifdef _WIN32
 #include <workflow/PlatformSocket.h>
