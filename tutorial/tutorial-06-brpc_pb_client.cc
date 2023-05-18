@@ -15,9 +15,12 @@
 */
 
 #include <stdio.h>
+#include "workflow/WFFacilities.h"
 #include "echo_pb.srpc.h"
 
 using namespace srpc;
+
+static WFFacilities::WaitGroup wait_group(1);
 
 int main()
 {
@@ -61,6 +64,7 @@ int main()
 		printf("status[%d] error[%d] errmsg:%s\n",
 				sync_ctx.status_code, sync_ctx.error, sync_ctx.errmsg.c_str());
 
+	wait_group.wait();
 	return 0;
 }
 
