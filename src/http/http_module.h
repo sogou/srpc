@@ -21,7 +21,6 @@
 #include "rpc_module.h"
 #include "rpc_trace_module.h"
 #include "rpc_metrics_module.h"
-#include "http_task.h"
 
 namespace srpc
 {

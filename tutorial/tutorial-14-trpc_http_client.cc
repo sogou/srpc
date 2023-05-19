@@ -15,11 +15,14 @@
 */
 
 #include <stdio.h>
+#include "workflow/WFFacilities.h"
 #include "helloworld.srpc.h"
 #include "srpc/rpc_types.h"
 
 using namespace srpc;
 using namespace trpc::test::helloworld;
+
+static WFFacilities::WaitGroup wait_group(1);
 
 int main()
 {
@@ -50,6 +53,7 @@ int main()
 		printf("status[%d] error[%d] errmsg:%s\n",
 				sync_ctx.status_code, sync_ctx.error, sync_ctx.errmsg.c_str());
 
+	wait_group.wait();
 	return 0;
 }
 

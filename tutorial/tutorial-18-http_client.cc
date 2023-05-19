@@ -18,7 +18,6 @@
 #include "workflow/WFFacilities.h"
 #include "srpc/http_client.h"
 #include "srpc/rpc_types.h"
-#include "srpc/rpc_types.h"
 #include "srpc/rpc_metrics_filter.h"
 #include "srpc/rpc_trace_filter.h"
 
