@@ -89,15 +89,26 @@ RPCVarLocal::~RPCVarLocal()
 {
 	RPCVarGlobal *global_var = RPCVarGlobal::get_instance();
 
-	global_var->del(this);
+	global_var->remove(this);
 	global_var->dup(this->vars);
 
 	for (auto it = this->vars.begin(); it != this->vars.end(); it++)
 		delete it->second;
 }
 
+RPCVarGlobal::~RPCVarGlobal()
+{
+	this->finished = true;
+
+	for (auto& local : this->local_vars)
+		delete local;
+}
+
 void RPCVarGlobal::dup(const std::unordered_map<std::string, RPCVar *>& vars)
 {
+	if (this->finished == true)
+		return;
+
 	RPCVarLocal *local;
 
 	this->mutex.lock();
@@ -105,6 +116,7 @@ void RPCVarGlobal::dup(const std::unordered_map<std::string, RPCVar *>& vars)
 		local = NULL;
 	else
 		local = this->local_vars[0];
+
 	this->mutex.unlock();
 
 	if (local == NULL)
@@ -130,7 +142,7 @@ void RPCVarGlobal::dup(const std::unordered_map<std::string, RPCVar *>& vars)
 	local->mutex.unlock();
 }
 
-void RPCVarGlobal::del(const RPCVarLocal *var)
+void RPCVarGlobal::remove(const RPCVarLocal *var)
 {
 	this->mutex.lock();
 	for (size_t i = 0; i < this->local_vars.size(); i++)
@@ -197,8 +209,7 @@ RPCVar *CounterVar::create(bool with_data)
 
 	if (with_data)
 	{
-		for (auto it = this->data.begin();
-			 it != this->data.end(); it++)
+		for (auto it = this->data.begin(); it != this->data.end(); it++)
 		{
 			var->data.insert(std::make_pair(it->first,
 							(GaugeVar *)it->second->create(true)));
@@ -494,6 +505,52 @@ void SummaryVar::collect(RPCVarCollector *collector)
 
 	collector->collect_summary_end(this, this->sum, this->count);
 	this->quantile_out.clear();
+}
+
+TimedGaugeVar::TimedGaugeVar(const std::string& name, const std::string& help,
+							 Clock::duration duration, size_t bucket_num) :
+	GaugeVar(name, help),
+	RPCTimeWindow<GaugeVar>(duration, bucket_num)
+{
+	for (size_t i = 0; i < bucket_num; i ++)
+		this->data_bucket.push_back(GaugeVar(name, help));
+}
+
+void TimedGaugeVar::increase()
+{
+	this->rotate();
+
+	for (auto& bucket : this->data_bucket)
+		bucket.increase();
+}
+
+const void *TimedGaugeVar::get_data()
+{
+	GaugeVar& bucket = this->rotate();
+	return bucket.get_data();
+}
+
+RPCVar *TimedGaugeVar::create(bool with_data)
+{
+	GaugeVar& current_bucket = this->rotate();
+	RPCVar *var;
+
+	if (with_data) // for reduce
+	{
+		GaugeVar *gauge = new GaugeVar(this->get_name(), this->get_help());
+		gauge->set(*(double *)current_bucket.get_data());
+		var = gauge;
+	}
+	else // for dup into other threads
+	{
+		TimedGaugeVar *timed_gauge = new TimedGaugeVar(this->get_name(),
+													   this->get_help(),
+													   this->duration,
+													   this->bucket_num);
+		var = timed_gauge;
+	}
+
+	return var;
 }
 
 } // end namespace srpc

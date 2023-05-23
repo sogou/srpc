@@ -28,6 +28,9 @@ jobs:
     - name: make tutorial
       run: make tutorial -j4
 
+    - name: make check
+      run: make check -j4
+
     - name: make install
       run: sudo make install
   test:

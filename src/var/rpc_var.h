@@ -23,6 +23,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <chrono>
 #include "time_window_quantiles.h"
 
 namespace srpc
@@ -76,6 +77,7 @@ public:
 	static RPCVar *var(const std::string& name);
 	static bool check_name_format(const std::string& name);
 };
+
 class RPCVarGlobal
 {
 public:
@@ -85,23 +87,30 @@ public:
 		return &kInstance;
 	}
 
-	void add(RPCVarLocal *var)
+	void add(RPCVarLocal *local)
 	{
 		this->mutex.lock();
-		this->local_vars.push_back(var);
+		this->local_vars.push_back(local);
 		this->mutex.unlock();
 	}
 
-	void del(const RPCVarLocal *var);
 	RPCVar *find(const std::string& name);
+
+	// following APIs are used when thread exit and its ~RPCVarLocal()
+
+	// remove a RPCVarLocal from Glolba->local_vars
+	void remove(const RPCVarLocal *var);
+	// duplicate the vars into global existing RPCVarLocal
 	void dup(const std::unordered_map<std::string, RPCVar *>& vars);
 
 private:
-	RPCVarGlobal() { }
+	RPCVarGlobal() { this->finished = false; }
+	~RPCVarGlobal();
 
 public:
 	std::mutex mutex;
 	std::vector<RPCVarLocal *> local_vars;
+	bool finished;
 //	friend class RPCVarFactory;
 };
 
@@ -173,8 +182,9 @@ public:
 	virtual RPCVar *create(bool with_data) = 0;
 	virtual bool reduce(const void *ptr, size_t sz) = 0;
 	virtual size_t get_size() const = 0;
-	virtual const void *get_data() const = 0;
+	virtual const void *get_data() = 0;
 	virtual void collect(RPCVarCollector *collector) = 0;
+	virtual void reset() = 0;
 
 public:
 	RPCVar(const std::string& name, const std::string& help, RPCVarType type) :
@@ -199,12 +209,12 @@ protected:
 class GaugeVar : public RPCVar
 {
 public:
-	void increase() { ++this->data; }
-	void decrease() { --this->data; }
+	virtual void increase() { ++this->data; }
+	virtual void decrease() { --this->data; }
 	size_t get_size() const override { return sizeof(double); }
-	const void *get_data() const override { return &this->data; }
+	const void *get_data() override { return &this->data; }
 
-	virtual double get() const { return this->data; }
+	virtual double get() { return this->data; }
 	virtual void set(double var) { this->data = var; }
 
 	RPCVar *create(bool with_data) override;
@@ -220,6 +230,8 @@ public:
 	{
 		collector->collect_gauge(this, this->data);
 	}
+
+	void reset() override { this->data = 0; }
 
 public:
 	GaugeVar(const std::string& name, const std::string& help) :
@@ -243,9 +255,11 @@ public:
 	void collect(RPCVarCollector *collector) override;
 
 	size_t get_size() const override { return this->data.size(); }
-	const void *get_data() const override { return &this->data; }
+	const void *get_data() override { return &this->data; }
 
 	static bool label_to_str(const LABEL_MAP& labels, std::string& str);
+
+	void reset() override { this->data.clear(); }
 
 public:
 	CounterVar(const std::string& name, const std::string& help) :
@@ -254,6 +268,7 @@ public:
 	}
 
 	~CounterVar();
+
 private:
 	std::unordered_map<std::string, GaugeVar *> data;
 };
@@ -271,7 +286,7 @@ public:
 	void collect(RPCVarCollector *collector) override;
 
 	size_t get_size() const override { return this->bucket_counts.size(); }
-	const void *get_data() const override { return this; }
+	const void *get_data() override { return this; }
 
 	double get_sum() const { return this->sum; }
 	size_t get_count() const { return this->count; }
@@ -279,6 +294,8 @@ public:
 	{
 		return &this->bucket_counts;
 	}
+
+	void reset() override { this->bucket_counts.clear(); }
 
 public:
 	HistogramVar(const std::string& name, const std::string& help,
@@ -301,7 +318,7 @@ public:
 	void collect(RPCVarCollector *collector) override;
 
 	size_t get_size() const override { return this->quantiles.size(); }
-	const void *get_data() const override { return this; }
+	const void *get_data() override { return this; }
 
 	double get_sum() const { return this->sum; }
 	size_t get_count() const { return this->count; }
@@ -309,6 +326,8 @@ public:
 	{
 		return &this->quantile_values;
 	}
+
+	void reset() override { /* no TimedSummary so no reset for Summary */}
 
 public:
 	SummaryVar(const std::string& name, const std::string& help,
@@ -324,6 +343,67 @@ private:
 	int age_buckets;
 	TimeWindowQuantiles<double> quantile_values;
 	std::vector<double> quantile_out;
+};
+
+template<typename VAR>
+class RPCTimeWindow
+{
+public:
+	using Clock = std::chrono::steady_clock;
+	RPCTimeWindow(Clock::duration duration, size_t bucket_num);
+
+protected:
+	VAR& rotate();
+
+protected:
+	std::vector<VAR> data_bucket;
+	Clock::duration duration;
+	size_t bucket_num;
+
+private:
+	size_t current_bucket;
+	Clock::time_point last_rotation;
+	Clock::duration rotation_interval;
+};
+
+template<typename VAR>
+RPCTimeWindow<VAR>::RPCTimeWindow(Clock::duration duration, size_t bucket_num) :
+	duration(duration),
+	bucket_num(bucket_num),
+	rotation_interval(duration / bucket_num)
+{
+	this->current_bucket = 0;
+	this->last_rotation = Clock::now();
+}
+
+template<typename VAR>
+VAR& RPCTimeWindow<VAR>::rotate()
+{
+	auto delta = Clock::now() - this->last_rotation;
+
+	while (delta > this->rotation_interval)
+	{
+		this->data_bucket[this->current_bucket].reset();
+		if (++this->current_bucket >= this->data_bucket.size())
+			this->current_bucket = 0;
+
+		delta -= this->rotation_interval;
+		this->last_rotation += this->rotation_interval;
+	}
+
+	return this->data_bucket[this->current_bucket];
+}
+
+class TimedGaugeVar : public GaugeVar, RPCTimeWindow<GaugeVar>
+{
+public:
+	TimedGaugeVar(const std::string& name, const std::string& help,
+				  Clock::duration duration, size_t bucket_num);
+	// for collect
+	void increase() override;
+	// for reduce
+	const void *get_data() override;
+	RPCVar *create(bool with_data) override;
 };
 
 } // end namespace srpc
