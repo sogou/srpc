@@ -17,7 +17,7 @@ jobs:
     - name: install deps
       run: |
         sudo apt-get update
-        sudo apt-get install -y libprotobuf-dev protobuf-compiler
+        sudo apt-get install -y libprotobuf-dev protobuf-compiler libgtest-dev valgrind
 
     - name: update submodules
       run: git submodule update --init --recursive
