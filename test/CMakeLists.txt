@@ -93,10 +93,6 @@ else ()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=${CXX_STD} -fno-exceptions")
 endif ()
 
-set(TEST_LIST
-	unittest
-)
-
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS test_pb.proto)
 
 add_custom_target(
@@ -158,6 +154,10 @@ else ()
 		)
 endif ()
 
+set(TEST_LIST unittest)
+set(BASIC_TEST var_unittest)
+set(ALL_TEST var_unittest unittest)
+
 foreach(src ${TEST_LIST})
 	add_executable(${src} EXCLUDE_FROM_ALL ${src}.cc ${PROTO_SRCS} ${PROTO_HDRS})
 	target_link_libraries(${src} ${SRPC_LIB} ${GTEST_LIB})
@@ -166,10 +166,17 @@ foreach(src ${TEST_LIST})
 	add_dependencies(check ${src})
 endforeach()
 
+foreach(src ${BASIC_TEST})
+	add_executable(${src} EXCLUDE_FROM_ALL ${src}.cc)
+	target_link_libraries(${src} ${SRPC_LIB} ${GTEST_LIB})
+	add_test(${src} ${src})
+	add_dependencies(check ${src})
+endforeach()
+
 if (WIN32)
 	set(memcheck nothing)
 elseif (NOT ${CMAKE_MEMORYCHECK_COMMAND} STREQUAL "CMAKE_MEMORYCHECK_COMMAND-NOTFOUND")
-	foreach(src ${TEST_LIST})
+	foreach(src ${ALL_TEST})
 		add_test(${src}-memory-check ${memcheck_command} ./${src})
 	endforeach()
 endif ()
