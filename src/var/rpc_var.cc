@@ -370,6 +370,12 @@ void HistogramVar::collect(RPCVarCollector *collector)
 	collector->collect_histogram_end(this, this->sum, this->count);
 }
 
+void HistogramVar::reset() {
+	for (size_t i = 0; i < this->bucket_boundaries.size(); i++)
+		this->bucket_counts[i] = 0;
+	this->sum = 0;
+	this->count = 0;
+}
 
 SummaryVar::SummaryVar(const std::string& name, const std::string& help,
 					   const std::vector<struct Quantile>& quantile,

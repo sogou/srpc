@@ -295,7 +295,7 @@ public:
 		return &this->bucket_counts;
 	}
 
-	void reset() override { this->bucket_counts.clear(); }
+	void reset() override;
 
 public:
 	HistogramVar(const std::string& name, const std::string& help,
