@@ -249,7 +249,7 @@ void BRPCMessage::set_attachment_nocopy(const char *attachment, size_t len)
 
 bool BRPCMessage::get_attachment_nocopy(const char **attachment, size_t *len) const
 {
-	size_t tmp_len = *len;
+	size_t tmp_len = (size_t)-1;
 	const void *tmp_buf;
 
 	if (this->attachment == NULL ||
