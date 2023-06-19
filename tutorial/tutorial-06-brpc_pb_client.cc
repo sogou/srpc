@@ -41,11 +41,9 @@ int main()
 		const char *attachment;
 		size_t len;
 
-		if (ctx->get_attachment(&attachment, &len))
+		while (ctx->get_attachment(&attachment, &len))
 			printf("get attachment [%.*s] len=%zu\n", (int)len, attachment, len);
-		else
-			printf("no attachment\n\n");
-		});
+	});
 
 	//sync
 	EchoRequest sync_req;
