@@ -281,6 +281,14 @@ void CounterVar::collect(RPCVarCollector *collector)
 		collector->collect_counter_each(this, it->first, it->second->get());
 }
 
+void CounterVar::reset()
+{
+	for (auto it = this->data.begin(); it != this->data.end(); it++)
+		delete it->second;
+
+	this->data.clear();
+}
+
 void HistogramVar::observe(double value)
 {
 	size_t i = 0;

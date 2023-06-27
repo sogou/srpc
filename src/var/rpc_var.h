@@ -259,7 +259,7 @@ public:
 
 	static bool label_to_str(const LABEL_MAP& labels, std::string& str);
 
-	void reset() override { this->data.clear(); }
+	void reset() override;
 
 public:
 	CounterVar(const std::string& name, const std::string& help) :
