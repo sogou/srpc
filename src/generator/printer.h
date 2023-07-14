@@ -1429,6 +1429,8 @@ inline void %sClient::%s(const %s *req, %sDone done)
 {
 	auto *task = this->create_rpc_client_task("%s", std::move(done));
 
+	if (this->params.callee_timeout >= 0)
+		task->get_req()->set_callee_timeout(this->params.callee_timeout);
 	if (!this->params.caller.empty())
 		task->get_req()->set_caller_name(this->params.caller);
 	task->serialize_input(req);
@@ -1453,6 +1455,8 @@ inline WFFuture<std::pair<%s, srpc::RPCSyncContext>> %sClient::async_%s(const %s
 	auto fr = pr->get_future();
 	auto *task = this->create_rpc_client_task<%s>("%s", srpc::RPCAsyncFutureCallback<%s>);
 
+	if (this->params.callee_timeout >= 0)
+		task->get_req()->set_callee_timeout(this->params.callee_timeout);
 	if (!this->params.caller.empty())
 		task->get_req()->set_caller_name(this->params.caller);
 	task->serialize_input(req);

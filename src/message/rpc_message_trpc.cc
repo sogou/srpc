@@ -578,6 +578,13 @@ void TRPCRequest::set_method_name(const std::string& method_name)
 	meta->set_func(method_name);
 }
 
+void TRPCRequest::set_callee_timeout(int timeout)
+{
+	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
+
+	meta->set_timeout(timeout);
+}
+
 void TRPCRequest::set_caller_name(const std::string& caller_name)
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);

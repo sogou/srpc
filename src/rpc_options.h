@@ -45,6 +45,7 @@ struct RPCClientParams
 	bool is_ssl;
 //or URL
 	std::string url;
+	int callee_timeout;
 	std::string caller;
 };
 
@@ -80,6 +81,7 @@ static const struct RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
 /*	.port				=	*/	SRPC_DEFAULT_PORT,
 /*	.is_ssl				=	*/	false,
 /*	.url				=	*/	"",
+/*	.callee_timeout		=	*/	-1,
 /*	.caller				=	*/	""
 };
 
