@@ -8,7 +8,6 @@ proto_library(
         "src/message/rpc_meta.proto",
         "src/message/rpc_meta_brpc.proto",
         "src/message/rpc_meta_trpc.proto",
-        "src/message/rpc_span.proto",
     ],
     strip_import_prefix = "src/message",
 )
@@ -21,12 +20,14 @@ cc_proto_library(
 proto_library(
     name = "module_proto",
     srcs = [
-        "src/module/opentelemetry_common.proto",
-        "src/module/opentelemetry_resource.proto",
-        "src/module/opentelemetry_trace.proto",
-        "src/module/opentelemetry_trace_service.proto",
+        "src/module/proto/opentelemetry_common.proto",
+        "src/module/proto/opentelemetry_resource.proto",
+        "src/module/proto/opentelemetry_trace.proto",
+        "src/module/proto/opentelemetry_trace_service.proto",
+        "src/module/proto/opentelemetry_metrics.proto",
+        "src/module/proto/opentelemetry_metrics_service.proto",
     ],
-    strip_import_prefix = "src/module",
+    strip_import_prefix = "src/module/proto",
 )
 
 cc_proto_library(
@@ -57,6 +58,7 @@ cc_library(
         "src/message",
         "src/module",
         "src/thrift",
+        "src/var",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -349,6 +351,36 @@ cc_binary(
     ],
     deps = [
         ":helloworld_pb_srpc",
+        ":libsrpc",
+        ":srpc_hdrs",
+    ],
+)
+
+cc_binary(
+    name = "srpc_pb_proxy",
+    srcs = ["tutorial/tutorial-15-srpc_pb_proxy.cc"],
+    linkopts = [
+        "-lpthread",
+        "-lssl",
+        "-lcrypto",
+    ],
+    deps = [
+        ":echo_pb_srpc",
+        ":libsrpc",
+        ":srpc_hdrs",
+    ],
+)
+
+cc_binary(
+    name = "server_with_metrics",
+    srcs = ["tutorial/tutorial-16-server_with_metrics.cc"],
+    linkopts = [
+        "-lpthread",
+        "-lssl",
+        "-lcrypto",
+    ],
+    deps = [
+        ":echo_pb_srpc",
         ":libsrpc",
         ":srpc_hdrs",
     ],

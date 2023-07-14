@@ -16,13 +16,6 @@
 
 #ifndef __RPC_CONTEXT_H__
 #define __RPC_CONTEXT_H__
-
-#ifdef _WIN32
-#include <workflow/PlatformSocket.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#endif
 #include <string>
 #include <functional>
 #include <workflow/Workflow.h>
@@ -39,6 +32,7 @@ struct RPCSyncContext
 	int status_code;
 	int error;
 	bool success;
+	int timeout_reason;
 };
 
 class RPCContext
@@ -51,6 +45,8 @@ public:
 	virtual const std::string& get_method_name() const = 0;
 
 	virtual SeriesWork *get_series() const = 0;
+	virtual bool get_http_header(const std::string& name,
+								 std::string& value) const = 0;
 
 public:
 	// for client-done
@@ -59,7 +55,7 @@ public:
 	virtual const char *get_errmsg() const = 0;
 	virtual int get_error() const = 0;
 	virtual void *get_user_data() const = 0;
-	//virtual int get_timeout_reason() const;
+	virtual int get_timeout_reason() const = 0;
 
 public:
 	// for server-process
@@ -71,10 +67,41 @@ public:
 	virtual void set_reply_callback(std::function<void (RPCContext *ctx)> cb) = 0;
 	virtual void set_send_timeout(int timeout) = 0;
 	virtual void set_keep_alive(int timeout) = 0;
-	virtual void log(const RPCLogVector& fields) = 0;
-	virtual void baggage(const std::string& key, const std::string& value) = 0;
+	virtual bool set_http_code(int code) = 0;
+	virtual bool set_http_header(const std::string& name, const std::string& value) = 0;
+	virtual bool add_http_header(const std::string& name, const std::string& value) = 0;
+
+	virtual bool log(const RPCLogVector& fields) = 0;
+
+	// Refer to : https://opentelemetry.io/docs/reference/specification/baggage/api
+	// corresponding to SetValue(), GetValue(), RemoveValue()
+	virtual bool add_baggage(const std::string& key, const std::string& value) = 0;
+	virtual bool get_baggage(const std::string& key, std::string& value) = 0;
+	//virtual bool remove_baggage(const std::string& key) = 0;
+
 	//virtual void noreply();
 	//virtual WFConnection *get_connection();
+
+public:
+	// for json format
+	// Currently only support pb to json. Default : false
+
+	// Whether to add spaces, line breaks and indentation to make the JSON
+	// output easy to read.
+	virtual void set_json_add_whitespace(bool on) = 0;
+
+	// Whether to always print enums as ints.
+	virtual void set_json_always_print_enums_as_ints(bool flag) = 0;
+
+	// Whether to preserve proto field names.
+	virtual void set_json_preserve_proto_field_names(bool flag) = 0;
+
+	// Whether to always print primitive fields.
+	// By default proto3 primitive fields with default values will be omitted
+	// in JSON output. For example, an int32 field set to 0 will be omitted.
+	// Set this flag to true will override the default behavior and print
+	// primitive fields regardless of their values.
+	virtual void set_json_always_print_primitive_fields(bool flag) = 0;
 
 public:
 	virtual ~RPCContext() { }

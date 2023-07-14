@@ -14,10 +14,11 @@
   limitations under the License.
 */
 
-#include "rpc_message.h"
-#include <workflow/WFTask.h>
 #include <mutex>
 #include <condition_variable>
+#include <workflow/WFTask.h>
+#include "rpc_message.h"
+#include "rpc_module.h"
 
 namespace srpc
 {
@@ -53,13 +54,13 @@ public:
 			{
 				struct sockaddr_in *sin = (struct sockaddr_in *)(&addr);
 
-				inet_ntop(AF_INET, &sin->sin_addr, ip_str, addrlen);
+				inet_ntop(AF_INET, &sin->sin_addr, ip_str, INET_ADDRSTRLEN);
 			}
 			else if (addr.ss_family == AF_INET6)
 			{
 				struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)(&addr);
 
-				inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, addrlen);
+				inet_ntop(AF_INET6, &sin6->sin6_addr, ip_str, INET6_ADDRSTRLEN);
 			}
 		}
 
@@ -119,6 +120,14 @@ public:
 			return task_->get_resp()->get_attachment_nocopy(attachment, len);
 	}
 
+	bool get_http_header(const std::string& name, std::string& value) const override
+	{
+		if (this->is_server_task())
+			return task_->get_req()->get_http_header(name, value);
+		else
+			return task_->get_resp()->get_http_header(name, value);
+	}
+
 public:
 	// for client-done
 	bool success() const override
@@ -140,7 +149,11 @@ public:
 	{
 		return task_->get_resp()->get_error();
 	}
-	//int get_timeout_reason() const override;
+
+	int get_timeout_reason() const override
+	{
+		return task_->get_timeout_reason();
+	}
 
 public:
 	// for server-process
@@ -164,14 +177,106 @@ public:
 		}
 	}
 
-	void log(const RPCLogVector& fields) override { }
+	bool set_http_code(int code) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->set_http_code(code);
 
-	void baggage(const std::string& key, const std::string& value) override { }
+		return false;
+	}
+
+	bool set_http_header(const std::string& name, const std::string& value) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->set_http_header(name, value);
+
+		return false;
+	}
+
+	bool add_http_header(const std::string& name, const std::string& value) override
+	{
+		if (this->is_server_task())
+			return task_->get_resp()->add_http_header(name, value);
+
+		return false;
+	}
+
+	bool log(const RPCLogVector& fields) override
+	{
+		if (this->is_server_task() && module_data_)
+		{
+			std::string key;
+			std::string value;
+			RPCCommon::log_format(key, value, fields);
+			module_data_->emplace(std::move(key), std::move(value));
+
+			return true;
+		}
+
+		return false;
+	}
+
+	bool add_baggage(const std::string& key, const std::string& value) override
+	{
+		if (this->is_server_task() && module_data_)
+		{
+			(*module_data_)[key] = value;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool get_baggage(const std::string& key, std::string& value) override
+	{
+		if (module_data_)
+		{
+			const auto it = module_data_->find(key);
+
+			if (it != module_data_->cend())
+			{
+				value = it->second;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void set_json_add_whitespace(bool on) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_json_add_whitespace(on);
+	}
+
+	void set_json_always_print_enums_as_ints(bool on) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_json_enums_as_ints(on);
+	}
+
+	void set_json_preserve_proto_field_names(bool on) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_json_preserve_names(on);
+	}
+
+	void set_json_always_print_primitive_fields(bool on) override
+	{
+		if (this->is_server_task())
+			task_->get_resp()->set_json_print_primitive(on);
+	}
 
 	//void noreply() override;
 	//WFConnection *get_connection() override;
 
-	RPCContextImpl(WFNetworkTask<RPCREQ, RPCRESP> *task) : task_(task) { }
+public:
+	RPCContextImpl(WFNetworkTask<RPCREQ, RPCRESP> *task,
+				   RPCModuleData *module_data) :
+		task_(task),
+		module_data_(module_data)
+	{
+	}
 
 protected:
 	bool is_server_task() const
@@ -182,6 +287,9 @@ protected:
 
 protected:
 	WFNetworkTask<RPCREQ, RPCRESP> *task_;
+
+private:
+	RPCModuleData *module_data_;
 };
 
 } // namespace srpc

@@ -94,7 +94,7 @@ static int protobuf_stream_decompress(const char *buf, size_t buflen, ProtobufID
 	if (!msg->ParseFromZeroCopyStream(&gzipInputStream))
 		return -1;
 
-	return msg->ByteSize();
+	return msg->ByteSizeLong();
 }
 */
 

@@ -15,8 +15,6 @@
 */
 
 #include <ctype.h>
-#include <unistd.h>
-#include <sys/param.h>
 #include "parser.h"
 #include "thrift/rpc_thrift_enum.h"
 
@@ -41,20 +39,13 @@ void parse_thrift_type_name(const std::string& type_name,
 
 bool Parser::parse(const std::string& proto_file, idl_info& info)
 {
-	char current_dir[MAXPATHLEN] = {};
-	std::string dir_prefix;
+	std::string idl_file = info.input_dir + proto_file;
 
-	auto pos = proto_file.find_last_of('/');
+	auto pos = idl_file.find_last_of('/');
 	if (pos == std::string::npos)
-		info.file_name = proto_file;
+		info.file_name = idl_file;
 	else
-	{
-		info.file_name = proto_file.substr(pos + 1);
-
-		getcwd(current_dir, MAXPATHLEN);
-		dir_prefix = current_dir;
-		dir_prefix += "/";
-	}
+		info.file_name = idl_file.substr(pos + 1);
 
 	pos = info.file_name.find_last_of('.');
 	if (pos == std::string::npos)
@@ -62,17 +53,17 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 	else
 		info.file_name_prefix = info.file_name.substr(0, pos + 1);
 
-	info.absolute_file_path = proto_file;
+	info.absolute_file_path = idl_file;
 
-	FILE *in = fopen(proto_file.c_str(), "r");
+	FILE *in = fopen(idl_file.c_str(), "r");
 	if (!in)
 	{
 		fprintf(stderr, "[Parser] proto file: [%s] not exists.\n",
-				proto_file.c_str());
+				idl_file.c_str());
 		return false;
 	}
 
-	fprintf(stdout, "proto file: [%s]\n", proto_file.c_str());
+	fprintf(stdout, "proto file: [%s]\n", idl_file.c_str());
 
 	char line_buffer[LINE_LENGTH_MAX];
 	std::string file_path;
@@ -115,7 +106,10 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 		}
 		else if (this->check_multi_comments_begin(line))
+		{
 			state = (state & PARSER_ST_OUTSIDE_COMMENT_MASK) + PARSER_ST_INSIDE_COMMENT;
+			continue;
+		}
 
 		if (this->is_thrift == false)
 		{
@@ -126,7 +120,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 			{
 				fprintf(stderr, "[Parser ERROR] %s must not set "
 						"\"option cc_generic_services = true\" for srpc.\n",
-						proto_file.c_str());
+						idl_file.c_str());
 				return false;
 			}
 		}
@@ -136,13 +130,22 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 		if (this->parse_include_file(line, file_path) == true)
 		{
-			file_path = dir_prefix + file_path;
+			if (!this->is_thrift)
+			{
+				if (file_path.rfind("google/protobuf/", 0) == 0)
+					continue;
+			}
 
 			info.include_list.resize(info.include_list.size() + 1);
+			info.include_list.back().input_dir = info.input_dir;
+
 			succ = this->parse(file_path, info.include_list.back());
 			if (!succ)
 			{
 				info.include_list.pop_back();
+				fprintf(stderr, "[Parser ERROR] failed to parse "
+						"\" %s \" in \" %s \"\n",
+						file_path.c_str(), idl_file.c_str());
 				return false;
 			}
 
@@ -152,7 +155,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 		if (this->is_thrift &&
 			this->parse_thrift_typedef(line,
 									   old_type_name,
-									   new_type_name,info) == true)
+									   new_type_name, info) == true)
 		{
 			info.typedef_list.push_back(typedef_descriptor{old_type_name,
 														   new_type_name});
@@ -243,7 +246,8 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 						info.desc_list.emplace_back(std::move(desc));
 					}
-					else if (block_type == "struct" && this->is_thrift)
+					else if ((block_type == "struct" || block_type == "union") &&
+							 this->is_thrift)
 					{
 						succ = this->parse_struct_thrift(info.file_name_prefix,
 														 block, desc, info);
@@ -284,6 +288,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 	build_typedef_mapping(info);
 	fclose(in);
+	fprintf(stdout, "finish parsing proto file: [%s]\n", idl_file.c_str());
 	return true;
 }
 
@@ -321,18 +326,21 @@ std::string Parser::find_typedef_mapping_type(std::string& type_name,
 	{
 		auto key_type = find_typedef_mapping_type(type_name, ++cur, info);
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
+		++cur;
 		return "std::map<" + key_type + ", " + val_type + ">";
 	}
 	else if (idl_type == "std::set" && cur < type_name.size() &&
 			 type_name[cur] == '<')
 	{
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
+		++cur;
 		return "std::set<" + val_type + ">";
 	}
 	else if (idl_type == "std::vector" && cur < type_name.size() &&
 			 type_name[cur] == '<')
 	{
 		auto val_type = find_typedef_mapping_type(type_name, ++cur, info);
+		++cur;
 		return "std::vector<" + val_type + ">";
 	}
 
@@ -451,20 +459,6 @@ int Parser::parse_pb_rpc_option(const std::string& line)
 	return 2;
 }
 
-bool Parser::parse_dir_prefix(const std::string& file_name, char *dir_prefix)
-{
-	size_t pos = file_name.length() - 1;
-	while (file_name[pos] != '/' && pos != 0)
-		pos--;
-
-	if (pos == 0)
-		return false;
-
-	snprintf(dir_prefix, pos + 2, "%s", file_name.c_str());
-//	fprintf(stderr, "[%s]------------[%s]\n", file_name.c_str(), dir_prefix);
-	return true;
-}
-
 bool Parser::parse_thrift_typedef(const std::string& line,
 								  std::string& old_type_name,
 								  std::string& new_type_name,
@@ -503,28 +497,8 @@ bool Parser::parse_include_file(const std::string& line, std::string& file_name)
 		return false;
 
 	file_name = line.substr(st + 1, ed - st - 1);
-//	fprintf(stderr, "parse_include_file() %s--------%s\n", line.c_str(), file_name.c_str());
+//	fprintf(stderr, "parse_include_file(%s,%s)\n", line.c_str(), file_name.c_str());
 	return true;
-
-/*
-	pos += include_prefix.length();
-
-	while (line[pos] == ' ')
-		pos++;
-
-	size_t begin = pos;
-
-	//TODO: special logic for thrift
-	while (pos < line.length() && !isspace(line[pos])
-			&& line[pos] != ';')
-		pos++;
-
-	if (line[begin] != '\"' || line[line.length() - 2] != ';'
-		|| line[line.length() - 3] != '\"')
-		return false;
-
-	file_name = line.substr(begin + 1, line.length() - 4 - begin);
-	return true;*/
 }
 
 bool Parser::parse_package_name(const std::string& line,
@@ -619,18 +593,21 @@ static std::string gen_param_var(const std::string& type_name, size_t& cur,
 	{
 		auto key_type = gen_param_var(type_name, ++cur, info);
 		auto val_type = gen_param_var(type_name, ++cur, info);
+		++cur;
 		return "std::map<" + key_type + ", " + val_type + ">";
 	}
 	else if (idl_type == "set" && cur < type_name.size() &&
 			 type_name[cur] == '<')
 	{
 		auto val_type = gen_param_var(type_name, ++cur, info);
+		++cur;
 		return "std::set<" + val_type + ">";
 	}
 	else if (idl_type == "list" && cur < type_name.size() &&
 			 type_name[cur] == '<')
 	{
 		auto val_type = gen_param_var(type_name, ++cur, info);
+		++cur;
 		return "std::vector<" + val_type + ">";
 	}
 
@@ -766,16 +743,16 @@ bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,
 	std::string idl_type;
 	if (left_b + 1 < str.size())
 	{
-		auto bb = SGenUtil::split_filter_empty(str.substr(left_b + 1), ',');
+		auto bb = SGenUtil::split_skip_string(str.substr(left_b + 1), ',');
 		for (const auto& ele : bb)
 		{
-			auto filedparam = SGenUtil::split_filter_empty(ele, ':');
+			auto filedparam = SGenUtil::split_skip_string(ele, ':');
 			if (filedparam.size() != 2)
 			  continue;
 
-			auto typevar = SGenUtil::split_filter_empty(filedparam[1], ' ');
+			auto typevar = SGenUtil::split_skip_string(filedparam[1], ' ');
 			if (typevar.size() != 2)
-			  continue;
+				continue;
 
 			param.var_name = typevar[1];
 			param.required_state = srpc::THRIFT_STRUCT_FIELD_REQUIRED;
@@ -824,7 +801,7 @@ bool Parser::parse_service_thrift(const std::string& file_name_prefix,
 		if (left_b == std::string::npos)
 			continue;
 
-		auto aa = SGenUtil::split_filter_empty(line.substr(0, left_b), ' ');
+		auto aa = SGenUtil::split_skip_string(line.substr(0, left_b), ' ');
 		if (aa.size() != 2)
 			continue;
 
@@ -902,7 +879,7 @@ bool Parser::parse_enum_thrift(const std::string& block, Descriptor& desc)
 		if (valid_block[i] == '\n' || valid_block[i] == '\r' || valid_block[i] == ',')
 			valid_block[i] = ';';
 
-	auto arr = SGenUtil::split_filter_empty(valid_block, ';');
+	auto arr = SGenUtil::split_skip_string(valid_block, ';');
 
 	for (const auto& ele : arr)
 	{
@@ -930,19 +907,35 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 
 	std::string valid_block = block.substr(st + 1, ed - st - 1);
 	int deep = 0;
+	bool in_string = false;
 	for (size_t i = 0; i < valid_block.size(); i++)
 	{
-		if (valid_block[i] == '\n' || valid_block[i] == '\r')
+		int c = valid_block[i];
+		if (c == '\n' || c == '\r')
+		{
 			valid_block[i] = ';';
-		else if (valid_block[i] == ',' && deep == 0)
+			in_string = false;
+		}
+		else if (c == ',' && !in_string && deep == 0)
 			valid_block[i] = ';';
-		else if (valid_block[i] == '<')
+		else if (c == '<' && !in_string)
 			deep++;
-		else if (valid_block[i] == '>')
+		else if (c == '>' && !in_string)
 			deep--;
+		else if (c == '[' && !in_string)
+			valid_block[i] = '{';
+		else if (c == ']' && !in_string)
+			valid_block[i] = '}';
+		else if (c == '\"')
+			in_string = !in_string;
+		else if (in_string && c == '\\')
+		{
+			if (i + 1 < valid_block.size())
+				i++;
+		}
 	}
 
-	auto arr = SGenUtil::split_filter_empty(valid_block, ';');
+	auto arr = SGenUtil::split_skip_string(valid_block, ';');
 
 	for (const auto& ele : arr)
 	{
@@ -950,7 +943,7 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		if (line.empty())
 			continue;
 
-		auto aabb = SGenUtil::split_filter_empty(line, ':');
+		auto aabb = SGenUtil::split_skip_string(line, ':');
 		if (aabb.size() != 2)
 			continue;
 
@@ -962,7 +955,7 @@ bool Parser::parse_struct_thrift(const std::string& file_name_prefix,
 		param.field_id = atoi(aa.c_str());
 
 		auto bb = SGenUtil::strip(aabb[1]);
-		auto bbcc = SGenUtil::split_filter_empty(bb, '=');
+		auto bbcc = SGenUtil::split_skip_string(bb, '=');
 		if (bbcc.size() == 2)
 		{
 			bb = SGenUtil::strip(bbcc[0]);

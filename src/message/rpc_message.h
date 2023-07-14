@@ -57,6 +57,8 @@ public:
 
 	virtual void set_status_code(int code) = 0;
 	virtual void set_error(int error) = 0;
+
+	virtual bool set_http_code(int code) { return false; }
 };
 
 class RPCMessage
@@ -73,6 +75,33 @@ public:
 	virtual int decompress() = 0;
 	virtual bool get_meta_module_data(RPCModuleData& data) const = 0;
 	virtual bool set_meta_module_data(const RPCModuleData& data) = 0;
+
+	virtual bool set_http_header(const std::string& name,
+								 const std::string& value)
+	{
+		return false;
+	}
+
+	virtual bool add_http_header(const std::string& name,
+								 const std::string& value)
+	{
+		return false;
+	}
+
+	virtual bool get_http_header(const std::string& name,
+								 std::string& value) const
+	{
+		return false;
+	}
+
+	virtual void set_json_add_whitespace(bool on);
+	virtual bool get_json_add_whitespace() const;
+	virtual void set_json_enums_as_ints(bool on);
+	virtual bool get_json_enums_as_ints() const;
+	virtual void set_json_preserve_names(bool on);
+	virtual bool get_json_preserve_names() const;
+	virtual void set_json_print_primitive(bool on);
+	virtual bool get_json_print_primitive() const;
 
 public:
 	//pb
@@ -97,7 +126,67 @@ public:
 	{
 		return RPCStatusIDLDeserializeNotSupported;
 	}
+
+public:
+	RPCMessage() { this->flags = 0; }
+
+protected:
+	uint32_t flags;
 };
+
+// implementation
+
+inline void RPCMessage::set_json_add_whitespace(bool on)
+{
+	if (on)
+		this->flags |= SRPC_JSON_OPTION_ADD_WHITESPACE;
+	else
+		this->flags &= ~SRPC_JSON_OPTION_ADD_WHITESPACE;
+}
+
+inline bool RPCMessage::get_json_add_whitespace() const
+{
+	return this->flags & SRPC_JSON_OPTION_ADD_WHITESPACE;
+}
+
+inline void RPCMessage::set_json_enums_as_ints(bool on)
+{
+	if (on)
+		this->flags |= SRPC_JSON_OPTION_ENUM_AS_INITS;
+	else
+		this->flags &= ~SRPC_JSON_OPTION_ENUM_AS_INITS;
+}
+
+inline bool RPCMessage::get_json_enums_as_ints() const
+{
+	return this->flags & SRPC_JSON_OPTION_ENUM_AS_INITS;
+}
+
+inline void RPCMessage::set_json_preserve_names(bool on)
+{
+	if (on)
+		this->flags |= SRPC_JSON_OPTION_PRESERVE_NAMES;
+	else
+		this->flags &= ~SRPC_JSON_OPTION_PRESERVE_NAMES;
+}
+
+inline bool RPCMessage::get_json_preserve_names() const
+{
+	return this->flags & SRPC_JSON_OPTION_PRESERVE_NAMES;
+}
+
+inline void RPCMessage::set_json_print_primitive(bool on)
+{
+	if (on)
+		this->flags |= SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+	else
+		this->flags &= ~SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+}
+
+inline bool RPCMessage::get_json_print_primitive() const
+{
+	return this->flags & SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+}
 
 } // namespace srpc
 

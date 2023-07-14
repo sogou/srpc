@@ -524,14 +524,16 @@ public:
 	void print_server_main_begin()
 	{
 		fprintf(this->out_file, "%s", this->server_main_begin_format.c_str());
+		if (!this->is_thrift)
+			fprintf(this->out_file, "%s", this->main_pb_version_format.c_str());
+	}
 
+	void print_server_main_address()
+	{
 		if (this->is_thrift)
 			fprintf(this->out_file, this->server_main_ip_port_format.c_str(), "Thrift");
 		else
-		{
-			fprintf(this->out_file, "%s", this->main_pb_version_format.c_str());
 			fprintf(this->out_file, this->server_main_ip_port_format.c_str(), "SRPC");
-		}
 	}
 
 	void print_server_main_method(const std::string& service)
@@ -547,6 +549,10 @@ public:
 	void print_server_main_end()
 	{
 		fprintf(this->out_file, "%s", this->server_main_end_format.c_str());
+	}
+
+	void print_server_main_return()
+	{
 		if (!this->is_thrift)
 			fprintf(this->out_file, "%s", this->main_pb_shutdown_format.c_str());
 		fprintf(this->out_file, "%s", this->main_end_return_format.c_str());
@@ -717,7 +723,7 @@ public:
 			fprintf(this->out_file, this->server_constructor_add_method_format.c_str(),
 					rpc.method_name.c_str(), rpc.method_name.c_str());
 		}
-		fprintf(this->out_file, "}");
+		fprintf(this->out_file, "}\n");
 	}
 
 	void print_client_constructor(const std::string& type, const std::string& service,
@@ -963,12 +969,17 @@ public:
 		fprintf(this->out_file, "%s", this->client_main_begin_format.c_str());
 		if (!this->is_thrift)
 			fprintf(this->out_file, "%s", this->main_pb_version_format.c_str());
+	}
+
+	void print_client_main_address()
+	{
 		fprintf(this->out_file, "%s", this->client_main_ip_port_format.c_str());
 	}
 
 	void print_client_main_service(const std::string& type,
 								   const std::vector<std::string>& package,
-								   const std::string& service)
+								   const std::string& service,
+								   const std::string& suffix)
 	{
 		//std::string service_lower = service;
 		//std::transform(service_lower.begin(), service_lower.end(),
@@ -976,13 +987,14 @@ public:
 
 		std::string base_service = make_package_prefix(package, service);
 		fprintf(this->out_file, this->client_main_service_format.c_str(),
-				base_service.c_str(), type.c_str());
+				base_service.c_str(), type.c_str(), suffix.c_str());
 	}
 
 	void print_client_main_method_call(const std::vector<std::string>& package,
 									   const std::string& service,
 									   const std::string& method,
-									   const std::string& request)
+									   const std::string& request,
+									   const std::string& suffix)
 	{
 		std::string method_lower = method;
 		std::transform(method_lower.begin(), method_lower.end(),
@@ -997,7 +1009,8 @@ public:
 
 		fprintf(this->out_file, this->client_main_method_call_format.c_str(),
 				req.c_str(), method_lower.c_str(), method_lower.c_str(),
-				method.c_str(), method_lower.c_str(), method_lower.c_str()); 
+				suffix.c_str(), method.c_str(), method_lower.c_str(),
+				method_lower.c_str());
 	}
 
 /*
@@ -1041,10 +1054,11 @@ public:
 
 	Printer(bool is_thrift) { this->is_thrift = is_thrift; }
 
-private:
+protected:
 	FILE *out_file;
 	bool is_thrift;
 
+private:
 	std::string thrift_include_format = R"(#pragma once
 #include "srpc/rpc_thrift_idl.h"
 )";
@@ -1065,8 +1079,7 @@ namespace %s
 using namespace %s;
 )";
 
-	std::string srpc_file_include_format = R"(
-#include "%s.srpc.h"
+	std::string srpc_file_include_format = R"(#include "%s.srpc.h"
 #include "workflow/WFFacilities.h"
 )";
 
@@ -1174,8 +1187,8 @@ rpc_buf_t *req_buf, rpc_buf_t *resp_buf)
 	%s pb_resp;
 	pb_req.ParseFromArray(req_buf->buf, req_buf->len);
 	%s(task, &pb_req, &pb_resp);
-	resp_buf->buf = malloc(pb_resp.ByteSize());
-	resp_buf->len = pb_resp.ByteSize();
+	resp_buf->buf = malloc(pb_resp.ByteSizeLong());
+	resp_buf->len = pb_resp.ByteSizeLong();
 	pb_resp.SerializeToArray(resp_buf->buf, resp_buf->len);
 }
 )";
@@ -1482,16 +1495,13 @@ inline void %sClient::send_%s(%s)
 
 inline %s %sClient::recv_%s(%s)
 {
-	bool in_handler = false;
+	int cookie = 0;
 	auto *receiver = get_thread_sync_receiver_%s();
 	std::unique_lock<std::mutex> lock(receiver->mutex);
 
 	if (!receiver->is_done)
 	{
-		in_handler = WFGlobal::get_scheduler()->is_handler_thread();
-		if (in_handler)
-			WFGlobal::sync_operation_begin();
-
+		cookie = WFGlobal::sync_operation_begin();
 		while (!receiver->is_done)
 			receiver->cond.wait(lock);
 	}
@@ -1500,8 +1510,7 @@ inline %s %sClient::recv_%s(%s)
 	*get_thread_sync_ctx() = std::move(receiver->ctx);
 	auto res = std::move(receiver->output);
 	lock.unlock();
-	if (in_handler)
-		WFGlobal::sync_operation_end();
+	WFGlobal::sync_operation_end(cookie);
 
 	%s;
 }
@@ -1593,7 +1602,9 @@ public:
 
 	std::string server_impl_method_format = R"(
 	void %s(%s *request, %s *response, srpc::RPCContext *ctx) override
-	{}
+	{
+		// TODO: fill server logic here
+	}
 )";
 
 	std::string server_main_begin_format = R"(
@@ -1633,14 +1644,14 @@ int main()
 )";
 
 	std::string client_main_service_format = R"(
-	%s::%sClient client(ip, port);
+	%s::%sClient client%s(ip, port);
 )";
 
 	std::string client_main_method_call_format = R"(
 	// example for RPC method call
 	%s %s_req;
 	//%s_req.set_message("Hello, srpc!");
-	client.%s(&%s_req, %s_done);
+	client%s.%s(&%s_req, %s_done);
 )";
 
 /*

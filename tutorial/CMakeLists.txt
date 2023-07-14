@@ -6,6 +6,12 @@ project(srpc_tutorial
 		LANGUAGES C CXX
 )
 
+###Options
+
+if (WIN32)
+	option(SRPC_TUTORIAL_BUILD_STATIC_RUNTIME "Use static runtime" ON)
+endif ()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 if (NOT "$ENV{LIBRARY_PATH}" STREQUAL "")
@@ -19,28 +25,37 @@ if (NOT "$ENV{CPLUS_INCLUDE_PATH}" STREQUAL "")
 endif ()
 
 find_package(OpenSSL REQUIRED)
+find_package(srpc REQUIRED CONFIG HINTS ..)
 
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
 	find_package(Protobuf CONFIG REQUIRED)
+	find_library(LZ4_LIBRARY NAMES lz4)
+	if(LZ4_LIBRARY STREQUAL "LZ4_LIBRARY-NOTFOUND")
+		find_package(lz4)
+		if(lz4_FOUND)
+			set(LZ4_LIBRARY ${lz4_LIBRARIES})
+		endif()
+	endif()
+	find_package(Snappy CONFIG REQUIRED)
 else ()
 	find_package(Protobuf REQUIRED)
 endif ()
 
-find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
-find_package(ZLIB REQUIRED)
-#if (APPLE)
-#	if (WORKFLOW_INCLUDE_DIR)
-#		set (WORKFLOW_INCLUDE_DIR ${Workflow_DIR}/_include)
-#		set (WORKFLOW_LIB_DIR ${Workflow_DIR}/_lib)
-#	else ()
-#		find_package(Workflow REQUIRED)
-#	endif ()
-#else ()
-#	find_package(Workflow REQUIRED)
-#endif()
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/lz4/lib/lz4.h")
+	set(LZ4_LIB lz4)
+endif ()
 
-find_package(srpc REQUIRED CONFIG HINTS ..)
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy/cmake")
+	set(SNAPPY_LIB snappy)
+endif ()
+
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
+	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+endif ()
+
+find_package(ZLIB REQUIRED)
+
 include_directories(
 	${OPENSSL_INCLUDE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
@@ -63,11 +78,29 @@ protobuf_generate_cpp(HELLOWORLD_SRCS HELLOWORLD_HDRS helloworld.proto)
 
 add_custom_target(
 	TURORIAL_GEN ALL
-	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/echo_pb.proto  ${PROJECT_SOURCE_DIR}
-	COMMAND ${SRPC_GEN_PROGRAM} thrift   ${PROJECT_SOURCE_DIR}/echo_thrift.thrift ${PROJECT_SOURCE_DIR}
-	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/helloworld.proto  ${PROJECT_SOURCE_DIR}
-	COMMENT "sprc generator..."
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/echo_pb.proto  ${PROJECT_SOURCE_DIR}
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/echo_thrift.thrift ${PROJECT_SOURCE_DIR}
+	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/helloworld.proto ${PROJECT_SOURCE_DIR}
+	COMMENT "srpc generator..."
 )
+
+if (WIN32)
+	if (SRPC_TUTORIAL_BUILD_STATIC_RUNTIME)
+		set(CompilerFlags
+				CMAKE_CXX_FLAGS
+				CMAKE_CXX_FLAGS_DEBUG
+				CMAKE_CXX_FLAGS_RELEASE
+				CMAKE_CXX_FLAGS_MINSIZEREL
+				CMAKE_C_FLAGS
+				CMAKE_C_FLAGS_DEBUG
+				CMAKE_C_FLAGS_RELEASE
+				CMAKE_C_FLAGS_MINSIZEREL
+				)
+		foreach(CompilerFlag ${CompilerFlags})
+			string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+		endforeach ()
+	endif ()
+endif ()
 
 if (WIN32)
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   /MP /wd4200")
@@ -85,18 +118,48 @@ set(TUTORIAL_PB_LIST
 	tutorial-09-client_task
 	tutorial-10-server_async
 	tutorial-15-srpc_pb_proxy
+	tutorial-16-server_with_metrics
 )
 
 if (APPLE)
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ${CMAKE_FIND_LIBRARY_SUFFIXES})
+	find_library(Workflow_LIB workflow HINTS ../workflow/_lib)
+	find_library(Srpc_LIB srpc HINTS ../_lib)
+
+	set(SRPC_LIB
+		${Srpc_LIB}
+		${Workflow_LIB}
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		)
 elseif (WIN32)
-	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto protobuf::libprotobuf ZLIB::ZLIB)
+	set(SRPC_LIB
+		srpc
+		workflow
+		ws2_32
+		wsock32
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf::libprotobuf
+		ZLIB::ZLIB
+		Snappy::snappy
+		${LZ4_LIBRARY}
+		)
 else ()
-	if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy/cmake)
-		set(SRPC_LIB srpc snappy lz4)
-	else ()
-		set(SRPC_LIB srpc)
-	endif ()
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		${SNAPPY_LIB}
+		${LZ4_LIB}
+		)
 endif ()
 
 foreach(src ${TUTORIAL_PB_LIST})
@@ -136,4 +199,19 @@ foreach(src ${TUTORIAL_HELLOWORLD_LIST})
 	target_link_libraries(${bin_name} ${SRPC_LIB})
 	add_dependencies(${bin_name} TURORIAL_GEN)
 endforeach()
+
+if (NOT WIN32)
+	set(TUTORIAL_HTTP_LIST
+		tutorial-17-http_server
+		tutorial-18-http_client
+	)
+
+	foreach(src ${TUTORIAL_HTTP_LIST})
+		string(REPLACE "-" ";" arr ${src})
+		list(GET arr -1 bin_name)
+		add_executable(${bin_name} ${src}.cc)
+		target_link_libraries(${bin_name} ${SRPC_LIB})
+		add_dependencies(${bin_name} TURORIAL_GEN)
+	endforeach()
+endif ()
 

@@ -3,7 +3,7 @@ project(message)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-set(PROTO_LIST rpc_meta.proto rpc_meta_brpc.proto rpc_span.proto rpc_meta_trpc.proto)
+set(PROTO_LIST rpc_meta.proto rpc_meta_brpc.proto rpc_meta_trpc.proto)
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_LIST})
 
 set(SRC

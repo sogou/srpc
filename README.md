@@ -1,18 +1,26 @@
 [中文版入口](README_cn.md)
 
-# SRPC
+<br/>
+<img src="https://raw.githubusercontent.com/wiki/sogou/srpc/srpc-logo-min.png" width = "140" height = "40" alt="srpc-logo"/>
 
-[![Language](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE "License") [![Build Status](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/ "Platform") [![](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg) [![](https://travis-ci.com/sogou/srpc.svg?branch=master)](https://travis-ci.com/sogou/srpc)
+<a href="https://github.com/sogou/srpc/blob/master/LICENSE"><img src="https://img.shields.io/github/license/sogou/srpc?color=379c9c&style=flat-square"/></a>
+<a href="https://en.cppreference.com/"><img src="https://img.shields.io/badge/language-C++-black.svg?color=379c9c&style=flat-square"/></a>
+<a href="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"/></a>
+<a href="https://github.com/sogou/srpc/releases"><img src="https://img.shields.io/github/v/release/sogou/srpc?color=379c9c&logoColor=ffffff&style=flat-square"/></a>
+<a href="https://github.com/sogou/srpc/actions?query=workflow%3A%22ci+build%22++"><img src="https://img.shields.io/github/actions/workflow/status/sogou/srpc/ci.yml?branch=master&color=379c9c&style=flat-square"/></a>
+
+### NEW !!!  👉 [SRPC tools : build Workflow and SRPC projects easily.](/tools/README.md)
 
 ## Introduction
 
-#### SRPC is an RPC system developed by Sogou. Its main features include:
+#### SRPC is an enterprise-level RPC system used by almost all online services in Sogou. It handles tens of billions of requests every day, covering searches, recommendations, advertising system, and other types of services. Its main features include:
 
 * Base on [Sogou C++ Workflow](https://github.com/sogou/workflow), with the following features:
-  * High performance
+  * High performance, low latency, lightweight
   * Low development and access cost
   * Compatible with SeriesWork and ParallelWork in Workflow
   * One-click migration for existing projects with protobuf/thrift
+  * Supports multiple operating systems: Linux / MacOS / Windows
 * Support several IDL formats, including:
   * Protobuf
   * Thrift
@@ -35,40 +43,94 @@
   * As a server, you can accept POST requests with HTTP server developed in any language and parse the HTTP headers.
   * As a client, you can send POST requests with HTTP client developed in any language and add the required HTTP headers.
 * Built-in client/server which can seamlessly communicate with a server/client in other RPC frameworks, including:
+  * SRPC
   * BRPC
   * TRPC (the only open-source implementation of TRPC protocol so far)
-  * ~~GRPC~~
   * Thrift Framed Binary
   * Thrift Http Binary
 * How to use it together with Workflow:
   * You can use the interface to create an RPC task
   * You can put the RPC task into SeriesWork or ParallelWork, and you can also get the current SeriesWork in the callback.
   * You can also use other features supported by Workflow, including upstream, calculation scheduling, asynchronous file IO, etc.
+* AOP Modular Plugin Management:
+  * Able to report tracing and metrics to [OpenTelemetry](https://opentelemetry.io)
+  * Able to pull metrics by [Prometheus](https://prometheus.io)
+  * Easy to report to other Cloud Native systems
+* srpc Envoy-filter for the users of Kubernetes
 * [More features and layers](/docs/en/rpc.md)
 
 ## Installation
 
-* srpc is a static library, libsrpc.a. You only need to add the libsrpc as a dependency in the development environment, and it is not required in the compiled binary release.
+* srpc will compile the static library libsrpc.a and dynamic library libsrpc.so (or dylib or dll).
 * srpc depends on Workflow and protobuf3.
-  * For protobuf, you must install protobuf v3.0.0 or above by yourself.
+  * For protobuf, you must install protobuf v3.11.0 or above by yourself.
   * For Workflow, it\`s added as dependency automatically via git submodule.
   * For snappy and lz4, source codes are also included as third\_party via git submodule.
+  * Workflow, snappy and lz4 can also be found via installed package in the system. If the submodule dependencies are not pulled in third\_party, they will be searched from the default installation path of the system. The version of snappy is required v1.1.6 or above.
+* There is no difference in the srpc code under the Windows version, but users need to use the windows branch of Workflow
 
 ~~~sh
 git clone --recursive https://github.com/sogou/srpc.git
 cd srpc
 make
-sudo make install
 ~~~
+
+### Installation(Debian Linux):
+srpc has been packaged for Debian. It is currently in Debian sid (unstable) but will eventually be placed into the stable repository.
+
+In order to access the unstable repository, you will need to edit your /etc/apt/sources.list file.
+
+sources.list has the format: `deb <respository server/mirror> <repository name> <sub branches of the repo>`
+
+Simply add the 'unstable' sub branch to your repo:
+~~~~sh
+deb http://deb.debian.org/ main contrib non-free 
+
+--> 
+
+deb http://deb.debian.org/ unstable main contrib non-free
+~~~~
+
+Once that is added, update your repo list and then you should be able to install it:
+~~~~sh
+sudo apt-get update
+~~~~
+
+To install the srpc library for development purposes:
+~~~~sh
+sudo apt-get install libsrpc-dev
+~~~~
+
+To install the srpc library for deployment:
+~~~~sh
+sudo apt-get install libsrpc
+~~~~
+
+### Installation(Fedora Linux):
+srpc has been packaged for Fedora.
+
+To install the srpc library for development purposes:
+~~~~sh
+sudo dnf install srpc-devel
+~~~~
+
+To install the srpc library for deployment:
+~~~~sh
+sudo dnf install srpc
+~~~~
 
 ## Tutorial
 
-* [Step 1: Design IDL description file](/docs/en/tutorial-01-idl.md)
-* [Step 2: Implement ServiceIMPL](/docs/en/tutorial-02-service.md)
-* [Step 3: Start the Server](/docs/en/tutorial-03-server.md)
-* [Step 4: Use the Client](/docs/en/tutorial-04-client.md)
-* [Step 5: Understand asynchrous Context](/docs/en/tutorial-05-context.md)
-* [Step 6: Use it together with the Workflow](/docs/en/tutorial-06-workflow.md)
+* [Step 1: Design IDL description file](/docs/en/docs-01-idl.md)
+* [Step 2: Implement ServiceIMPL](/docs/en/docs-02-service.md)
+* [Step 3: Start the Server](/docs/en/docs-03-server.md)
+* [Step 4: Use the Client](/docs/en/docs-04-client.md)
+* [Step 5: Understand asynchrous Context](/docs/en/docs-05-context.md)
+* [Step 6: Use it together with the Workflow](/docs/en/docs-06-workflow.md)
+* [Step 7: Use Http with SRPC, TRPC and Thrift](/docs/en/docs-07-srpc-http.md)
+* [Step 8: Report Tracing to OpenTelemetry](/docs/en/docs-08-tracing.md)
+* [Step 9: Report Metrics to OpenTelemetry / Prometheus](/docs/en/docs-09-metrics.md)
+* [Step 10: Use HTTP with Workflow Style and SRPC Modules](/docs/docs-10-http-with-modules.md)
 
 Easy to compile tutorial with these commands:
 
@@ -120,13 +182,6 @@ public:
     void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
     {
         response->set_message("Hi, " + request->name());
-
-        // gzip/zlib/snappy/lz4/none
-        // ctx->set_compress_type(RPCCompressGzip);
-
-        // protobuf/json
-        // ctx->set_data_type(RPCDataJson);
-
         printf("get_req:\n%s\nset_resp:\n%s\n",
                 request->DebugString().c_str(), response->DebugString().c_str());
     }
@@ -195,20 +250,25 @@ g++ -o client client.cc example.pb.cc -std=c++11 -lsrpc
 
 #### 6\. run
 
-Terminal 1
+Terminal 1:
 
 ~~~sh
 ./server
 ~~~
 
-Terminal 2
+Terminal 2:
 
 ~~~sh
 ./client
+~~~
+
+We can also use CURL to post Http request:
+
+~~~sh
 curl 127.0.0.1:8811/Example/Echo -H 'Content-Type: application/json' -d '{message:"from curl",name:"CURL"}'
 ~~~
 
-Output of Terminal 1
+Output of Terminal 1:
 
 ~~~sh
 get_req:
@@ -227,10 +287,15 @@ message: "Hi, CURL"
 
 ~~~
 
-Output of Terminal 2
+Output of Terminal 2:
 
 ~~~sh
 message: "Hi, workflow"
+~~~
+
+Output of CURL:
+
+~~~sh
 {"message":"Hi, CURL"}
 ~~~
 

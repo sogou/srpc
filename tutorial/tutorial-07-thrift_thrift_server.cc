@@ -25,13 +25,13 @@ static WFFacilities::WaitGroup wait_group(1);
 class ExampleServiceImpl : public Example::Service
 {
 public:
-	void Echo(EchoResult& _return, const std::string& message, const std::string& name) override
+	void Echo(EchoResult& _return, const std::string& message,
+			  const std::string& name) override
 	{
 		_return.message = "Hi back, " + name;
 
 		printf("Server Echo()\nreq_message:\n%s\nresp_message:\n%s\n",
-									message.c_str(),
-									_return.message.c_str());
+				message.c_str(), _return.message.c_str());
 	}
 };
 
@@ -42,7 +42,6 @@ static void sig_handler(int signo)
 
 int main()
 {
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
 
@@ -50,6 +49,7 @@ int main()
 	ExampleServiceImpl impl;
 
 	server.add_service(&impl);
+
 	if (server.start(1412) == 0)
 	{
 		wait_group.wait();
@@ -58,7 +58,6 @@ int main()
 	else
 		perror("server start");
 
-	google::protobuf::ShutdownProtobufLibrary();	
 	return 0;
 }
 

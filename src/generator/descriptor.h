@@ -71,6 +71,7 @@ struct Descriptor
 struct idl_info
 {
 	std::string file_name;
+	std::string input_dir;
 	std::string absolute_file_path;
 	std::string file_name_prefix;
 	std::vector<std::string> package_name;
@@ -83,7 +84,62 @@ struct idl_info
 
 class SGenUtil
 {
+private:
+	static const char *skip_string(const char *cursor)
+	{
+		while (*cursor && *cursor != '\"')
+		{
+			if (*cursor == '\\')
+			{
+				cursor++;
+				if (!*cursor)
+					break;
+			}
+
+			cursor++;
+		}
+
+		return cursor;
+	}
+
 public:
+	static std::vector<std::string> split_skip_string(const std::string& str,
+													  char sep)
+	{
+		std::vector<std::string> res;
+
+		/* Can not use '\"' as the seperator. */
+		if (sep == '\"')
+			return res;
+
+		const char *cursor = str.c_str();
+		const char *start = cursor;
+
+		while (*cursor)
+		{
+			if (*cursor == '\"')
+			{
+				cursor = SGenUtil::skip_string(++cursor);
+				if (!*cursor)
+					break;
+			}
+			else if (*cursor == sep)
+			{
+				if (start < cursor)
+					res.emplace_back(start, cursor);
+
+				start = cursor + 1;
+			}
+
+			cursor++;
+		}
+
+		if (start < cursor)
+			res.emplace_back(start, cursor);
+
+		return res;
+	}
+/*
 	static std::vector<std::string> split_filter_empty(const std::string& str,
 													   char sep)
 	{
@@ -106,7 +162,7 @@ public:
 
 		return res;
 	}
-
+*/
 	static std::vector<std::string> split_by_space(const std::string& str)
 	{
 		std::vector<std::string> elems;

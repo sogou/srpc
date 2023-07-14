@@ -32,7 +32,11 @@
 struct GeneratorParams
 {
 	const char *out_dir;
-	const char *out_file;
+	bool generate_skeleton;
+	std::string idl_file;
+	std::string input_dir;
+
+	GeneratorParams() : out_dir(NULL), generate_skeleton(true) { }
 };
 
 class Generator
@@ -48,17 +52,25 @@ public:
 		this->is_thrift = is_thrift;
 	}
 
-	bool generate(const std::string& idl_file, struct GeneratorParams params);
+	bool generate(struct GeneratorParams& params);
+
+protected:
+	virtual bool generate_server_cpp_file(const idl_info& cur_info,
+										  const std::string& idle_file_name);
+	virtual bool generate_client_cpp_file(const idl_info& cur_info,
+										  const std::string& idle_file_name);
+
+	std::string server_cpp_file;
+	std::string client_cpp_file;
 
 private:
-	bool generate_header(idl_info& cur_info, struct GeneratorParams params);
+	bool generate_header(idl_info& cur_info, struct GeneratorParams& params);
 	void generate_skeleton(const std::string& idl_file);
 
-	void generate_srpc_file(const idl_info& cur_info);
+	bool generate_srpc_file(const idl_info& cur_info);
 	bool generate_thrift_type_file(idl_info& cur_info);
-	void generate_server_cpp_file(const idl_info& cur_info, const std::string& idle_file_name);
-	void generate_client_cpp_file(const idl_info& cur_info, const std::string& idle_file_name);
-	void thrift_replace_include(const idl_info& cur_info, std::vector<rpc_param>& params);
+	void thrift_replace_include(const idl_info& cur_info,
+								std::vector<rpc_param>& params);
 
 	bool init_file_names(const std::string& idl_file, const char *out_dir);
 
@@ -72,8 +84,6 @@ private:
 	std::string prefix;
 	std::string srpc_file;
 	std::string thrift_type_file;
-	std::string server_cpp_file;
-	std::string client_cpp_file;
 	bool is_thrift;
 };
 

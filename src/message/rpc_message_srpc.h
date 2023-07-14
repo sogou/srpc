@@ -34,7 +34,7 @@ namespace srpc
 
 static constexpr int SRPC_HEADER_SIZE = 16;
 
-// define sogou rpc protocol
+// define srpc protocol
 class SRPCMessage : public RPCMessage
 {
 public:
@@ -262,6 +262,13 @@ public:
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
 
+	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool add_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool get_http_header(const std::string& name,
+						 std::string& value) const override;
+
 public:
 	SRPCHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
@@ -298,8 +305,20 @@ public:
 		return this->SRPCResponse::set_error(error);
 	}
 
+	bool set_http_code(int code) override
+	{
+		return this->protocol::HttpResponse::set_status_code(std::to_string(code));
+	}
+
 	bool set_meta_module_data(const RPCModuleData& data) override;
 	bool get_meta_module_data(RPCModuleData& data) const override;
+
+	bool set_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool add_http_header(const std::string& name,
+						 const std::string& value) override;
+	bool get_http_header(const std::string& name,
+						 std::string& value) const override;
 
 public:
 	SRPCHttpResponse() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
@@ -345,7 +364,7 @@ inline int SRPCMessage::encode(struct iovec vectors[], int max, size_t size_limi
 
 inline bool SRPCMessage::serialize_meta()
 {
-	this->meta_len = this->meta->ByteSize();
+	this->meta_len = this->meta->ByteSizeLong();
 	this->meta_buf = new char[this->meta_len];
 	return this->meta->SerializeToArray(this->meta_buf, (int)this->meta_len);
 }

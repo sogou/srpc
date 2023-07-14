@@ -15,9 +15,12 @@
 */
 
 #include <stdio.h>
+#include "workflow/WFFacilities.h"
 #include "echo_thrift.srpc.h"
 
 using namespace srpc;
+
+static WFFacilities::WaitGroup wait_group(1);
 
 int main()
 {
@@ -26,7 +29,8 @@ int main()
 	//sync
 	EchoResult sync_res;
 
-	client.Echo(sync_res, "Hello, sogou rpc!", "1412");
+	client.Echo(sync_res, "Hello, srpc!", "1412");
+
 	if (client.thrift_last_sync_success())
 		printf("%s\n", sync_res.message.c_str());
 	else
@@ -39,12 +43,12 @@ int main()
 
 	//async
 	Example::EchoRequest req;
-	req.message = "Hello, sogou rpc!";
+	req.message = "Hello, srpc!";
 	req.name = "1412";
 
-	client.Echo(&req, [](Example::EchoResponse *response, RPCContext *ctx) {
+	client.Echo(&req, [](Example::EchoResponse *resp, RPCContext *ctx) {
 		if (ctx->success())
-			printf("%s\n", response->result.message.c_str());
+			printf("%s\n", resp->result.message.c_str());
 		else
 			printf("status[%d] error[%d] errmsg:%s\n",
 					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
@@ -55,15 +59,18 @@ int main()
 	Example::EchoResponse sync_resp;
 	RPCSyncContext sync_ctx;
 
-	sync_req.message = "Hello, sogou rpc!";
+	sync_req.message = "Hello, srpc!";
 	sync_req.name = "Sync";
+
 	client.Echo(&sync_req, &sync_resp, &sync_ctx);
+
 	if (sync_ctx.success)
 		printf("%s\n", sync_resp.result.message.c_str());
 	else
 		printf("status[%d] error[%d] errmsg:%s\n",
 				sync_ctx.status_code, sync_ctx.error, sync_ctx.errmsg.c_str());
 
+	wait_group.wait();
 	return 0;
 }
 

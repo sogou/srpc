@@ -25,7 +25,8 @@
 #include "rpc_types.h"
 #include "rpc_service.h"
 #include "rpc_options.h"
-#include "rpc_module_span.h"
+#include "rpc_trace_module.h"
+#include "rpc_metrics_module.h"
 
 namespace srpc
 {
@@ -59,8 +60,6 @@ protected:
 	void server_process(NETWORKTASK *task) const;
 
 private:
-	void set_tracing(TASK *Task);
-
 	std::mutex mutex;
 	std::map<std::string, RPCService *> service_map;
 	RPCModule *modules[SRPC_MODULE_MAX] = { NULL };
@@ -144,6 +143,11 @@ inline int RPCServer<RPCTYPESRPCHttp>::add_service(RPCService* service)
 template<class RPCTYPE>
 void RPCServer<RPCTYPE>::add_filter(RPCFilter *filter)
 {
+	using CLIENT_TASK = RPCClientTask<typename RPCTYPE::REQ,
+									  typename RPCTYPE::RESP>;
+	using SERVER_TASK = RPCServerTask<typename RPCTYPE::REQ,
+									  typename RPCTYPE::RESP>;
+
 	int type = filter->get_module_type();
 
 	this->mutex.lock();
@@ -155,14 +159,11 @@ void RPCServer<RPCTYPE>::add_filter(RPCFilter *filter)
 		{
 			switch (type)
 			{
-			case RPCModuleSpan:
-				module = new RPCSpanModule<RPCTYPE>();
+			case RPCModuleTypeTrace:
+				module = new RPCTraceModule<SERVER_TASK, CLIENT_TASK>();
 				break;
-			case RPCModuleMonitor:
-				module = new RPCMonitorModule<RPCTYPE>();
-				break;
-			case RPCModuleEmpty:
-				module = new RPCEmptyModule<RPCTYPE>();
+			case RPCModuleTypeMetrics:
+				module = new RPCMetricsModule<SERVER_TASK, CLIENT_TASK>();
 				break;
 			default:
 				break;
@@ -234,16 +235,10 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
-				RPCModuleData req_data;
 				SERIES *series;
 				auto *server_task = static_cast<TASK *>(task);
-
-				req->get_meta_module_data(req_data);
-
-				if (!req_data.empty())
-					server_task->set_module_data(std::move(req_data));
-
 				RPCModuleData *task_data = server_task->mutable_module_data();
+				req->get_meta_module_data(*task_data);
 
 				for (auto *module : this->modules)
 				{
@@ -252,8 +247,7 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				}
 
 				series = static_cast<SERIES *>(series_of(task));
-				if (!task_data->empty())
-					series->set_module_data(task_data);
+				series->set_module_data(task_data);
 
 				status_code = req->decompress();
 				if (status_code == RPCStatusOK)

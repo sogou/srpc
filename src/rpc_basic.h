@@ -21,11 +21,13 @@
 #include <chrono>
 #include <google/protobuf/message.h>
 #include "rpc_buffer.h"
+#include <vector>
 
 #ifdef _WIN32
 #include <workflow/PlatformSocket.h>
 #else
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #endif
 
 namespace srpc
@@ -37,7 +39,6 @@ static constexpr unsigned short	SRPC_DEFAULT_PORT		= 1412;
 static constexpr const char	   *SRPC_SSL_SCHEME			= "srpcs";
 static constexpr unsigned short	SRPC_SSL_DEFAULT_PORT	= 6462;
 
-static constexpr int			SRPC_COMPRESS_TYPE_MAX	= 10;
 static constexpr size_t			RPC_BODY_SIZE_LIMIT		= 2LL * 1024 * 1024 * 1024;
 static constexpr int			SRPC_MODULE_MAX			= 5;
 static constexpr size_t			SRPC_SPANID_SIZE		= 8;
@@ -75,19 +76,13 @@ static inline uint64_t ntohll(uint64_t x)
 
 #endif
 
+#define SRPC_JSON_OPTION_ADD_WHITESPACE		(1<<3)
+#define SRPC_JSON_OPTION_ENUM_AS_INITS		(1<<4)
+#define SRPC_JSON_OPTION_PRESERVE_NAMES		(1<<5)
+#define SRPC_JSON_OPTION_PRINT_PRIMITIVE	(1<<6)
+
 using ProtobufIDLMessage = google::protobuf::Message;
-
-static inline long long GET_CURRENT_MS()
-{
-	return std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch()).count();
-};
-
-static inline long long GET_CURRENT_MS_STEADY()
-{
-	return std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::steady_clock::now().time_since_epoch()).count();
-}
+using RPCLogVector = std::vector<std::pair<std::string, std::string>>;
 
 enum RPCDataType
 {
@@ -138,15 +133,73 @@ enum RPCCompressType
 	RPCCompressSnappy	=	1,
 	RPCCompressGzip		=	2,
 	RPCCompressZlib		=	3,
-	RPCCompressLz4		=	4
+	RPCCompressLz4		=	4,
+	RPCCompressMax		=	5,
 };
 
 enum RPCModuleType
 {
-	RPCModuleSpan		=	0,
-	RPCModuleMonitor	=	1,
-	RPCModuleEmpty		=	2
+	RPCModuleTypeEmpty		=	0,
+	RPCModuleTypeTrace		=	1,
+	RPCModuleTypeMetrics	=	2,
+	RPCModuleTypeLog		=	3,
 };
+
+class RPCCommon
+{
+public:
+	static void log_format(std::string& key, std::string& value,
+						   const RPCLogVector& fields);
+	static bool addr_to_string(const struct sockaddr *addr, char *ip_str,
+							   socklen_t len, unsigned short *port);
+};
+
+static inline long long GET_CURRENT_MS()
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::system_clock::now().time_since_epoch()).count();
+};
+
+static inline long long GET_CURRENT_MS_STEADY()
+{
+	return std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+static inline unsigned long long GET_CURRENT_NS()
+{
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(
+		std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+static inline void TRACE_ID_BIN_TO_HEX(const uint64_t trace_id[2],
+									   char hex[SRPC_TRACEID_SIZE * 2 + 1])
+{
+	sprintf(hex, "%016llx%016llx", (unsigned long long)ntohll(trace_id[0]),
+								   (unsigned long long)ntohll(trace_id[1]));
+}
+
+static inline void SPAN_ID_BIN_TO_HEX(const uint64_t span_id[1],
+									  char hex[SRPC_SPANID_SIZE * 2 + 1])
+{
+	sprintf(hex, "%016llx", (unsigned long long)ntohll(span_id[0]));
+}
+
+static inline void TRACE_ID_HEX_TO_BIN(const char hex[SRPC_TRACEID_SIZE * 2 + 1],
+									   uint64_t trace_id[2])
+{
+	sscanf(hex, "%016llx%016llx", (unsigned long long *)&trace_id[0],
+								  (unsigned long long *)&trace_id[1]);
+	trace_id[0] = ntohll(trace_id[0]);
+	trace_id[1] = ntohll(trace_id[1]);
+}
+
+static inline void SPAN_ID_HEX_TO_BIN(const char hex[SRPC_SPANID_SIZE * 2 + 1],
+									  uint64_t span_id[1])
+{
+	sscanf(hex, "%016llx", (unsigned long long *)&span_id[0]);
+	span_id[0] = ntohll(span_id[0]);
+}
 
 } // end namespace srpc
 

@@ -16,33 +16,33 @@
 
 #include <stdio.h>
 #include <workflow/WFTaskFactory.h>
-#include <workflow/WFOperator.h>
 #include "echo_pb.srpc.h"
 #include "workflow/WFFacilities.h"
 
 using namespace srpc;
-
-static WFFacilities::WaitGroup wait_group(1);
 
 int main()
 {
 	Example::SRPCClient client("127.0.0.1", 1412);
 
 	EchoRequest req;
-	req.set_message("Hello, sogou rpc!");
+	req.set_message("Hello, srpc!");
 	req.set_name("1412");
 
-	auto *rpc_task = client.create_Echo_task([](EchoResponse *response, RPCContext *ctx) {
+	auto *rpc_task = client.create_Echo_task([](EchoResponse *resp,
+												RPCContext *ctx)
+	{
 		if (ctx->success())
-			printf("%s\n", response->DebugString().c_str());
+			printf("%s\n", resp->DebugString().c_str());
 		else
 			printf("status[%d] error[%d] errmsg:%s\n",
 					ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
-
-		wait_group.done();
 	});
 
-	auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com", 0, 0, [](WFHttpTask *task) {
+	auto *http_task = WFTaskFactory::create_http_task("https://www.sogou.com",
+													  0, 0,
+													  [](WFHttpTask *task)
+	{
 		if (task->get_state() == WFT_STATE_SUCCESS)
 		{
 			std::string body;
@@ -58,10 +58,17 @@ int main()
 	});
 
 	rpc_task->serialize_input(&req);
-	(*http_task > rpc_task).start();
-	rpc_task->log({{"event", "info"}, {"message", "rpc client task testing log."}});
-	wait_group.wait();
+	rpc_task->log({{"event", "info"}, {"message", "rpc client task log."}});
 
+	WFFacilities::WaitGroup wait_group(1);
+
+	SeriesWork *series = Workflow::create_series_work(http_task, [&wait_group](const SeriesWork *) {
+		wait_group.done();
+	});
+	series->push_back(rpc_task);
+	series->start();
+
+	wait_group.wait();
 	return 0;
 }
 

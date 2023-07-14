@@ -45,7 +45,6 @@ message BrpcRequestMeta {
 message BrpcResponseMeta {
     optional int32 error_code = 1;
     optional string error_text = 2;
-	optional int32 status_code = 3 [default = 0];
 }
 
 ////// brpc/options.proto /////////

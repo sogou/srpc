@@ -23,22 +23,23 @@ find_package(OpenSSL REQUIRED)
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
 if (WIN32)
 	find_package(Protobuf CONFIG REQUIRED)
+	find_library(LZ4_LIBRARY NAMES lz4)
+	find_package(Snappy CONFIG REQUIRED)
 else ()
 	find_package(Protobuf REQUIRED)
 endif ()
 
-find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/lz4/lib/lz4.h")
+	set(LZ4_LIB lz4)
+endif ()
 
-#if (APPLE)
-#	if (WORKFLOW_INCLUDE_DIR)
-#		set (WORKFLOW_INCLUDE_DIR ${Workflow_DIR}/_include)
-#		set (WORKFLOW_LIB_DIR ${Workflow_DIR}/_lib)
-#	else ()
-#		find_package(Workflow REQUIRED)
-#	endif ()
-#else ()
-#	find_package(Workflow REQUIRED)
-#endif()
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy/cmake")
+	set(SNAPPY_LIB snappy)
+endif ()
+
+if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/workflow/workflow-config.cmake.in")
+	find_package(Workflow REQUIRED CONFIG HINTS ../workflow)
+endif ()
 
 find_package(srpc REQUIRED CONFIG HINTS ..)
 include_directories(
@@ -62,9 +63,9 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS benchmark_pb.proto)
 
 add_custom_target(
 	BENCHMARK_GEN ALL
-	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/benchmark_pb.proto  ${PROJECT_SOURCE_DIR}
-	COMMAND ${SRPC_GEN_PROGRAM} thrift   ${PROJECT_SOURCE_DIR}/benchmark_thrift.thrift ${PROJECT_SOURCE_DIR}
-	COMMENT "sprc generator..."
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/benchmark_pb.proto  ${PROJECT_SOURCE_DIR}
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/benchmark_thrift.thrift ${PROJECT_SOURCE_DIR}
+	COMMENT "srpc generator..."
 )
 
 if (WIN32)
@@ -76,15 +77,44 @@ else ()
 endif ()
 
 if (APPLE)
-	set(SRPC_LIB srpc workflow pthread OpenSSL::SSL OpenSSL::Crypto protobuf z)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ${CMAKE_FIND_LIBRARY_SUFFIXES})
+	find_library(Workflow_LIB workflow HINTS ../workflow/_lib)
+	find_library(Srpc_LIB srpc HINTS ../_lib)
+
+	set(SRPC_LIB
+		${Srpc_LIB}
+		${Workflow_LIB}
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		)
 elseif (WIN32)
-	set(SRPC_LIB srpc workflow ws2_32 wsock32 OpenSSL::SSL OpenSSL::Crypto)
+	set(SRPC_LIB
+		srpc
+		workflow
+		ws2_32
+		wsock32
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf::libprotobuf
+		ZLIB::ZLIB
+		Snappy::snappy
+		${LZ4_LIBRARY}
+		)
 else ()
-	if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/snappy/cmake)
-		set(SRPC_LIB srpc snappy lz4)
-	else ()
-		set(SRPC_LIB srpc)
-	endif ()
+	set(SRPC_LIB
+		srpc
+		workflow
+		pthread
+		OpenSSL::SSL
+		OpenSSL::Crypto
+		protobuf
+		z
+		${SNAPPY_LIB}
+		${LZ4_LIB}
+		)
 endif ()
 
 add_executable(server server.cc ${PROTO_SRCS} ${PROTO_HDRS})

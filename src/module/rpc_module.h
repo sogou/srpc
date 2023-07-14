@@ -27,22 +27,29 @@
 namespace srpc
 {
 
-static constexpr char const *SRPC_SPAN_LOG		= "log";
-static constexpr char const *SRPC_SPAN_EVENT	= "event";
-static constexpr char const *SRPC_SPAN_MESSAGE	= "message";
+static constexpr char const *SRPC_COMPONENT_SRPC	= "srpc.srpc";
+
+static constexpr char const *SRPC_SPAN_LOG			= "srpc.log";
+static constexpr char const *SRPC_SPAN_EVENT		= "event";
+static constexpr char const *SRPC_SPAN_MESSAGE		= "message";
+
+static constexpr char const *SRPC_START_TIMESTAMP	= "srpc.start_time";
+static constexpr char const *SRPC_FINISH_TIMESTAMP	= "srpc.finish_time";
+static constexpr char const *SRPC_DURATION			= "srpc.duration";
+static constexpr char const *SRPC_TIMEOUT_REASON	= "srpc.timeout_reason";
 
 //for SnowFlake: u_id = [timestamp][group][machine][sequence]
 static constexpr int SRPC_TIMESTAMP_BITS		= 38;
 static constexpr int SRPC_GROUP_BITS			= 4;
 static constexpr int SRPC_MACHINE_BITS			= 10;
-//static constexpr int SEQUENCE_BITS			= 12;
+//static constexpr int SRPC_SEQUENCE_BITS		= 12;
 static constexpr int SRPC_TOTAL_BITS			= 64;
 
 class RPCModule
 {
 protected:
-	virtual bool client_begin(SubTask *task, const RPCModuleData& data) = 0;
-	virtual bool server_begin(SubTask *task, const RPCModuleData& data) = 0;
+	virtual bool client_begin(SubTask *task, RPCModuleData& data) = 0;
+	virtual bool server_begin(SubTask *task, RPCModuleData& data) = 0;
 	virtual bool client_end(SubTask *task, RPCModuleData& data) = 0;
 	virtual bool server_end(SubTask *task, RPCModuleData& data) = 0;
 
@@ -55,18 +62,21 @@ public:
 	}
 
 	size_t get_filters_size() const { return this->filters.size(); }
-	RPCModuleType get_module_type() const { return this->module_type; }
+	enum RPCModuleType get_module_type() const { return this->module_type; }
 
-	bool client_task_begin(SubTask *task, const RPCModuleData& data);
-	bool server_task_begin(SubTask *task, const RPCModuleData& data);
+	bool client_task_begin(SubTask *task, RPCModuleData& data);
+	bool server_task_begin(SubTask *task, RPCModuleData& data);
 	bool client_task_end(SubTask *task, RPCModuleData& data);
 	bool server_task_end(SubTask *task, RPCModuleData& data);
 
-	RPCModule(RPCModuleType module_type) { this->module_type = module_type; }
+	RPCModule(enum RPCModuleType module_type)
+	{
+		this->module_type = module_type;
+	}
 	virtual ~RPCModule() {}
 
 private:
-	RPCModuleType module_type;
+	enum RPCModuleType module_type;
 	std::mutex mutex;
 	std::list<RPCFilter *> filters;
 };
@@ -101,6 +111,12 @@ private:
 	long long group_shift;
 	long long machine_shift;
 };
+
+bool http_get_header_module_data(const protocol::HttpMessage *msg,
+								 RPCModuleData& data);
+
+bool http_set_header_module_data(const RPCModuleData& data,
+								 protocol::HttpMessage *msg);
 
 } // end namespace srpc
 

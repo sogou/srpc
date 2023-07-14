@@ -7,13 +7,12 @@
 |Thrift Binary HttpTransport| Thrift    | http | 二进制      |不支持               | 不支持      |  支持    | 不支持  |  不支持      |
 |GRPC                       | PB        | http2| 二进制      |gzip/zlib/lz4/snappy| 支持        |  不支持  | 支持    |  支持       |
 |BRPC Std                   | PB        | tcp  | 二进制      |gzip/zlib/lz4/snappy| 支持        |  不支持  | 支持    |  支持       |
-|SogouRPC Std               | PB/Thrift | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
-|SogouRPC Std Http          | PB/Thrift | http | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
-|tRPC Std                   | PB        | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
+|SRPC Std               | PB/Thrift | tcp  | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
+|SRPC Std Http          | PB/Thrift | http | 二进制/JSON |gzip/zlib/lz4/snappy| 支持        |  支持    | 支持    |  不支持     |
 
 ## 基础概念
 - 通信层：TCP/TPC_SSL/HTTP/HTTPS/HTTP2
-- 协议层：Thrift-binary/BRPC-std/SogouRPC-std/tRPC-std
+- 协议层：Thrift-binary/BRPC-std/SRPC-std/SRPC-http/tRPC-std/tRPC-http
 - 压缩层：不压缩/gzip/zlib/lz4/snappy
 - 数据层：PB binary/Thrift binary/Json string
 - IDL序列化层：PB/Thrift serialization
@@ -85,7 +84,7 @@ service Example {
 ~~~
 
 ## RPC Service
-- 组成sogouRPC服务的基本单元
+- 组成SRPC服务的基本单元
 - 每一个Service一定由某一种IDL生成
 - Service由IDL决定，与网络通信具体协议无关
 
@@ -93,7 +92,7 @@ service Example {
 下面我们通过一个具体例子来呈现
 - 沿用上面的``example.proto``IDL描述文件
 - 执行官方的``protoc example.proto --cpp_out=./ --proto_path=./``获得``example.pb.h``和``example.pb.cpp``两个文件
-- 执行SogouRPC的``srpc_generator protobuf ./example.proto ./``获得``example.srpc.h``文件
+- 执行SRPC的``srpc_generator protobuf ./example.proto ./``获得``example.srpc.h``文件
 - 我们派生``Example::Service``来实现具体的rpc业务逻辑，这就是一个RPC Service
 - 注意这个Service没有任何网络、端口、通信协议等概念，仅仅负责完成实现从``EchoRequest``输入到输出``EchoResponse``的业务逻辑
 
@@ -129,8 +128,8 @@ public:
 - 想像一下，我们也可以从``Example::Service``派生出多个Service，而它们的rpc``Echo``实现的功能可以不同
 - 想像一下，我们可以在N个不同的端口创建N个不同的RPC Server，代表着不同的协议
 - 想像一下，我们可以把同一个ServiceIMPL实例``add_service()``到不同的Server上，我们也可以把不同的ServiceIMPL实例``add_service``到同一个Server上
-- 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BPRC-STD、SogouRPC-STD、SogouRPC-Http
-- 甚至，我们可以将1个Protobuf IDL相关的``ExampleServiceImpl``和1个Thrift IDL相关的``AnotherThriftServiceImpl``，``add_service``到同一个SogouRPC-STD Server，两种IDL在同一个端口上完美工作！
+- 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BPRC-STD、SRPC-STD、SRPC-Http
+- 甚至，我们可以将1个Protobuf IDL相关的``ExampleServiceImpl``和1个Thrift IDL相关的``AnotherThriftServiceImpl``，``add_service``到同一个SRPC-STD Server，两种IDL在同一个端口上完美工作！
 
 ~~~cpp
 int main()
@@ -139,6 +138,8 @@ int main()
     SRPCHttpServer server_srpc_http;
     BRPCServer server_brpc;
     ThriftServer server_thrift;
+    TRPCServer server_trpc;
+    TRPCHttpServer server_trpc_http;
 
     ExampleServiceImpl impl_pb;
     AnotherThriftServiceImpl impl_thrift;
@@ -149,12 +150,19 @@ int main()
     server_srpc_http.add_service(&impl_thrift);
     server_brpc.add_service(&impl_pb);
     server_thrift.add_service(&impl_thrift);
+    server_trpc.add_service(&impl_pb);
+    server_trpc_http.add_service(&impl_pb);
 
     server_srpc.start(1412);
     server_srpc_http.start(8811);
     server_brpc.start(2020);
     server_thrift.start(9090);
-    pause();
+    server_trpc.start(2022);
+    server_trpc_http.start(8822);
+
+    getchar();
+    server_trpc_http.stop();
+    server_trpc.stop();
     server_thrift.stop();
     server_brpc.stop();
     server_srpc_http.stop();
@@ -179,6 +187,7 @@ int main()
 ~~~cpp
 #include <stdio.h>
 #include "example.srpc.h"
+#include "workflow/WFFacilities.h"
 
 using namespace srpc;
 
@@ -186,18 +195,21 @@ int main()
 {
     Example::SRPCClient client("127.0.0.1", 1412);
     EchoRequest req;
-    req.set_message("Hello, sogou rpc!");
-    req.set_name("Li Yingxin");
+    req.set_message("Hello!");
+    req.set_name("SRPCClient");
 
-    client.Echo(&req, [](EchoResponse *response, RPCContext *ctx) {
+    WFFacilities::WaitGroup wait_group(1);
+
+    client.Echo(&req, [&wait_group](EchoResponse *response, RPCContext *ctx) {
         if (ctx->success())
             printf("%s\n", response->DebugString().c_str());
         else
             printf("status[%d] error[%d] errmsg:%s\n",
                     ctx->get_status_code(), ctx->get_error(), ctx->get_errmsg());
+        wait_group.done();
     });
 
-    pause();
+    wait_group.wait();
     return 0;
 }
 ~~~
@@ -206,7 +218,7 @@ int main()
 - RPCContext专门用来辅助异步接口，Service和Client通用
 - 每一个异步接口都会提供Context，用来给用户提供更高级的功能，比如获取对方ip、获取连接seqid等
 - Context上一些功能是Server或Client独有的，比如Server可以设置回复数据的压缩方式，Client可以获取请求成功或失败
-- Context上可以通过g``et_series()``获得所在的series，与workflow的异步模式无缝结合
+- Context上可以通过``get_series()``获得所在的series，与workflow的异步模式无缝结合
 
 ### RPCContext API - Common
 #### ``long long get_seqid() const;``
@@ -226,6 +238,9 @@ int main()
 
 #### ``SeriesWork *get_series() const;``
 获取当前ServerTask/ClientTask所在series
+
+#### ``bool get_http_header(const std::string& name, std::string& value);``  
+如果通讯使用HTTP协议，则根据name获取HTTP header中的value
 
 ### RPCContext API - Only for client done
 #### ``bool success() const;``
@@ -273,6 +288,33 @@ Server专用。设置发送超时，单位毫秒。-1代表无限。
 #### ``void set_keep_alive(int timeout);``
 Server专用。设置连接保活时间，单位毫秒。-1代表无限。
 
+#### ``bool set_http_code(int code);``   
+Server专用。如果通讯使用HTTP协议，则可以设置http status code返回码。仅在框架层能正确响应时有效。
+
+#### ``bool set_http_header(const std::string& name, const std::string& value);``    
+Server专用。如果通讯使用HTTP协议，可以在回复中设置HTTP header，如果name被设置过会覆盖旧value。
+
+#### ``bool add_http_header(const std::string& name, const std::string& value);``    
+Server专用。如果通讯使用HTTP协议，可以在回复中添加HTTP header，如果有重复name，会保留多个value。
+
+#### ``void log(const RPCLogVector& fields);``    
+Server专用。透传数据相关，请参考OpenTelemetry数据协议中的log语义。
+
+#### ``void baggage(const std::string& key, const std::string& value);``    
+Server专用。透传数据相关，参考OpenTelemetry数据协议中的baggage语义。
+
+#### ``void set_json_add_whitespace(bool on);``    
+Server专用。JsonPrintOptions相关，可设置增加json空格等。
+
+#### ``void set_json_always_print_enums_as_ints(bool flag);``    
+Server专用。JsonPrintOptions相关，可设置用int打印enum名。
+
+#### ``void set_json_preserve_proto_field_names(bool flag);``    
+Server专用。JsonPrintOptions相关，可设置保留原始字段名字。
+
+#### ``void set_json_always_print_primitive_fields(bool flag);``    
+Server专用。JsonPrintOptions相关，可设置带上所有默认的proto数据中的域。
+
 ## RPC Options
 ### Server Params
 |name                       |默认                      |含义                             |
@@ -305,7 +347,7 @@ Server专用。设置连接保活时间，单位毫秒。-1代表无限。
 |data_type                  | RPCDataUndefined         | 网络包数据类型，默认与RPC默认值一致，SRPC-Http协议为json，其余为对应IDL的类型 |
 
 ## 与workflow异步框架的结合
-### Server
+### 1. Server
 下面我们通过一个具体例子来呈现
 - Echo RPC在接收到请求时，向下游发起一次http请求
 - 对下游请求完成后，我们将http response的body信息填充到response的message里，回复给客户端
@@ -342,7 +384,7 @@ public:
 };
 ~~~
 
-### Client
+### 2. Client
 下面我们通过一个具体例子来呈现
 - 我们并行发出两个请求，1个是rpc请求，1个是http请求
 - 两个请求都结束后，我们再发起一次计算任务，计算两个数的平方和
@@ -388,13 +430,52 @@ int main()
     auto *calc_task = WFTaskFactory::create_go_task(calc, 3, 4);
 
     EchoRequest req;
-    req.set_message("Hello, sogou rpc!");
+    req.set_message("Hello!");
     req.set_name("1412");
     rpc_task->serialize_input(&req);
 
-    ((*http_task * rpc_task) > calc_task).start();
+    WFFacilities::WaitGroup wait_group(1);
 
-    pause();
+    SeriesWork *series = Workflow::create_series_work(http_task, [&wait_group](const SeriesWork *) {
+        wait_group.done();
+    });
+    series->push_back(rpc_task);
+    series->push_back(calc_task);
+    series->start();
+
+    wait_group.wait();
     return 0;
 }
 ~~~
+
+### 3. Upstream
+SRPC可以直接使用Workflow的任何组件，最常用的就是[Upstream](https://github.com/sogou/workflow/blob/master/docs/about-upstream.md)，SRPC的任何一种client都可以使用Upstream。
+
+我们通过参数来看看如何构造可以使用Upstream的client：
+
+```cpp
+#include "workflow/UpstreamManager.h"
+
+int main()
+{
+    // 1. 创建upstream并添加实例
+    UpstreamManager::upstream_create_weighted_random("echo_server", true);
+    UpstreamManager::upstream_add_server("echo_server", "127.0.0.1:1412");
+    UpstreamManager::upstream_add_server("echo_server", "192.168.10.10");
+    UpstreamManager::upstream_add_server("echo_server", "internal.host.com");
+
+    // 2. 构造参数，填上upstream的名字
+    RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
+    client_params.host = "srpc::echo_server"; // 这个scheme只用于upstream URI解析
+    client_params.port = 1412; // 这个port只用于upstream URI解析，不影响具体实例的选取
+
+    // 3. 用参数创建client，其他用法与示例类似
+    Example::SRPCClient client(&client_params);
+
+    ...
+```
+
+如果使用了ConsistentHash或者Manual方式创建upstream，则我们往往需要对不同的task进行区分、以供选取算法使用。这时候可以使用client task上的`int set_uri_fragment(const std::string& fragment);`接口，设置请求级相关的信息。
+
+这个域的是URI里的fragment，语义请参考[RFC3689 3.5-Fragment](https://datatracker.ietf.org/doc/html/rfc3986#section-3.5)，任何需要用到fragment的功能（如其他选取策略里附带的其他信息），都可以利用这个域。
+

@@ -21,7 +21,8 @@
 #include "rpc_context.h"
 #include "rpc_options.h"
 #include "rpc_global.h"
-#include "rpc_module_span.h"
+#include "rpc_trace_module.h"
+#include "rpc_metrics_module.h"
 
 namespace srpc
 {
@@ -131,6 +132,11 @@ inline void RPCClient<RPCTYPE>::set_watch_timeout(int timeout)
 template<class RPCTYPE>
 void RPCClient<RPCTYPE>::add_filter(RPCFilter *filter)
 {
+	using CLIENT_TASK = RPCClientTask<typename RPCTYPE::REQ,
+									  typename RPCTYPE::RESP>;
+	using SERVER_TASK = RPCServerTask<typename RPCTYPE::REQ,
+									  typename RPCTYPE::RESP>;
+
 	int type = filter->get_module_type();
 
 	this->mutex.lock();
@@ -142,14 +148,11 @@ void RPCClient<RPCTYPE>::add_filter(RPCFilter *filter)
 		{
 			switch (type)
 			{
-			case RPCModuleSpan:
-				module = new RPCSpanModule<RPCTYPE>();
+			case RPCModuleTypeTrace:
+				module = new RPCTraceModule<SERVER_TASK, CLIENT_TASK>();
 				break;
-			case RPCModuleMonitor:
-				module = new RPCMonitorModule<RPCTYPE>();
-				break;
-			case RPCModuleEmpty:
-				module = new RPCEmptyModule<RPCTYPE>();
+			case RPCModuleTypeMetrics:
+				module = new RPCMetricsModule<SERVER_TASK, CLIENT_TASK>();
 				break;
 			default:
 				break;

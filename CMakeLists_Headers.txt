@@ -12,10 +12,15 @@ set(SRC_HEADERS
 	src/thrift/rpc_thrift_enum.h
 	src/thrift/rpc_thrift_idl.h
 	src/thrift/rpc_thrift_idl.inl
-	src/module/rpc_span_policies.h
-	src/module/rpc_module_span.h
+	src/var/ckms_quantiles.h
+	src/var/time_window_quantiles.h
+	src/var/rpc_var.h
 	src/module/rpc_module.h
+	src/module/rpc_trace_module.h
+	src/module/rpc_metrics_module.h
 	src/module/rpc_filter.h
+	src/module/rpc_trace_filter.h
+	src/module/rpc_metrics_filter.h
 	src/rpc_basic.h
 	src/rpc_buffer.h
 	src/rpc_client.h
@@ -31,18 +36,35 @@ set(SRC_HEADERS
 	src/rpc_define.h
 )
 
-set(COMPRESS_HEADERS
-	third_party/snappy/snappy.h
-	third_party/snappy/snappy-c.h
-	third_party/snappy/snappy-sinksource.h
-	third_party/snappy/snappy-stubs-public.h
-	third_party/lz4/lib/lz4.h
-	third_party/lz4/lib/lz4frame.h
-)
+if (NOT WIN32)
+	set(SRC_HEADERS
+		${SRC_HEADERS}
+		src/http/http_task.h
+		src/http/http_module.h
+		src/http/http_client.h
+		src/http/http_server.h
+	)
+endif ()
 
-if(NOT VCPKG_TOOLCHAIN AND EXISTS third_party/snappy/cmake)
-	set(INCLUDE_HEADERS ${SRC_HEADERS} ${COMPRESS_HEADERS})
-else()
+if (NOT SNAPPY_INSTALLED)
+	set(SNAPPY_HEADERS
+		third_party/snappy/snappy.h
+		third_party/snappy/snappy-c.h
+		third_party/snappy/snappy-sinksource.h
+		third_party/snappy/snappy-stubs-public.h
+	)
+endif ()
+
+if (NOT LZ4_INSTALLED)
+	set(LZ4_HEADERS
+		third_party/lz4/lib/lz4.h
+		third_party/lz4/lib/lz4frame.h
+	)
+endif ()
+
+if (WITH_VCPKG_TOOLCHAIN)
 	set(INCLUDE_HEADERS ${SRC_HEADERS})
+else()
+	set(INCLUDE_HEADERS ${SRC_HEADERS} ${SNAPPY_HEADERS} ${LZ4_HEADERS})
 endif()
 

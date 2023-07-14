@@ -1,0 +1,107 @@
+{
+  "server":
+  {
+    "port": 8080
+  },
+
+  "client":
+  {
+    "remote_host": "127.0.0.1",
+    "remote_port": 8080,
+    "is_ssl" : false,
+    "redirect_max": 2,
+    "retry_max": 1,
+    "user_name": "root",
+	"password": "",
+    "callee" : "rpc_client"
+  },
+
+  "global":
+  {
+    "poller_threads": 4,
+    "handler_threads": 20,
+    "dns_threads": 4,
+    "compute_threads": -1,
+    "dns_ttl_default": 43200,
+    "dns_ttl_min": 180,
+    "resolv_conf_path": "/etc/resolv.conf",
+    "hosts_path": "/etc/hosts",
+    "endpoint_params":
+    {
+      "max_connections": 200,
+      "connect_timeout": 10000,
+      "response_timeout": 10000,
+      "ssl_connect_timeout": 10000,
+      "use_tls_sni": false
+    },
+    "dns_server_params":
+    {
+      "max_connections": 200
+    }
+  },
+
+  "metrics":[
+    {
+      "filter": "prometheus",
+      "port": 8000
+    },
+    {
+      "filter": "opentelemetry",
+      "address": "http://opentelemetry.com:4389",
+      "redirect_max": 0,
+      "retry_max": 1,
+      "report_threshold": 100,
+      "report_interval_ms": 1000,
+      "attributes": [
+        {
+          "key": "tenant.id",
+          "value": "abcd"
+        }
+      ]
+    }
+  ],
+
+  "trace":[
+    {
+      "filter": "default",
+      "span_per_second": 1000
+    },
+    {
+      "filter": "opentelemetry",
+      "address": "http://opentelemetry.com:4389",
+      "redirect_max": 0,
+      "retry_max": 1,
+      "span_per_second": 1000,
+      "report_threshold": 100,
+      "report_interval_ms": 1000,
+      "attributes": [
+        {
+          "key": "tenant.id",
+          "value": "abcd"
+        }
+      ]
+    }
+  ],
+
+  "upstream":[
+    {
+      "name": "test_weighted_random_host",
+      "type": "weighted_random",
+      "try_another": false,
+      "server":[
+        { "host": "127.0.0.1:8080", "params": {"weight": 2} },
+        { "host": "127.0.0.1:8081" }
+      ]
+    },
+
+    {
+      "name": "test_consistent_hash_host",
+      "type": "consistent_hash",
+      "server":[
+        { "host": "127.0.0.1:8083" },
+        { "host": "127.0.0.1:8084" }
+      ]
+    }
+  ]
+}
+

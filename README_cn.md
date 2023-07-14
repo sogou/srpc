@@ -1,21 +1,23 @@
-[English version](README.md)
+[English version](README.md) &nbsp;&nbsp;|&nbsp;&nbsp; [Wiki：SRPC架构介绍](/docs/wiki.md)
 
-# SRPC
-[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/sogou/srpc/blob/master/LICENSE)
-[![Language](https://img.shields.io/badge/language-c++-red.svg)](https://en.cppreference.com/)
-[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg)
-[![Build Status](https://travis-ci.com/sogou/srpc.svg?branch=master)](https://travis-ci.com/sogou/srpc)
+<img src="https://raw.githubusercontent.com/wiki/sogou/srpc/srpc-logo-min.png" width = "140" height = "40" alt="srpc-logo"/>
 
-[Wiki：SRPC架构介绍](/docs/wiki.md)
+<a href="https://github.com/sogou/srpc/blob/master/LICENSE"><img src="https://img.shields.io/github/license/sogou/srpc?color=379c9c&style=flat-square"/></a>
+<a href="https://en.cppreference.com/"><img src="https://img.shields.io/badge/language-C++-black.svg?color=379c9c&style=flat-square"/></a>
+<a href="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"><img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-black.svg?color=379c9c&style=flat-square"/></a>
+<a href="https://github.com/sogou/srpc/releases"><img src="https://img.shields.io/github/v/release/sogou/srpc?color=379c9c&logoColor=ffffff&style=flat-square"/></a>
+<a href="https://github.com/sogou/srpc/actions?query=workflow%3A%22ci+build%22++"><img src="https://img.shields.io/github/actions/workflow/status/sogou/srpc/ci.yml?branch=master&color=379c9c&style=flat-square"/></a>
 
+### NEW !!!  👉 [SRPC tools : 一个帮你快速构建Workflow和SRPC项目的小工具.](/tools/README_cn.md) 
 
 ## Introduction
-#### 这是搜狗自研的RPC系统，主要功能和特点：
-  * 这是一个基于[Sogou C++ Workflow](https://github.com/sogou/workflow)的项目，兼具：
-    * 高性能
+#### SRPC是全搜狗业务线上使用的企业级RPC系统，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。主要功能和特点：
+  * 底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，兼具：
+    * 高性能、低延迟、轻量级
     * 低开发和接入门槛
     * 完美兼容workflow的串并联任务流
     * 对于已有protobuf/thrift描述文件的项目，可以做到一键迁移
+    * 支持Linux / MacOS / Windows等多操作系统
   * 支持多种IDL格式，包括：
     * Protobuf
     * Thrift
@@ -38,39 +40,61 @@
     * 如果自己是server提供方，用任何语言的http server接受post请求，解析若干http header即可
     * 如果自己是client调用方，用任何语言的http client发送post请求，添加若干http header即可
   * 内置了可以与其他RPC框架的server/client无缝互通的client/server，包括：
+    * SRPC
     * BRPC
     * TRPC (目前唯一的TRPC协议开源实现)
-    * ~~GRPC~~
     * Thrift Framed Binary
     * Thrift Http Binary
   * 兼容workflow的使用方式：
     * 提供创建任务的接口来创建一个rpc任务
     * 可以把rpc任务放到任务流图中，回调函数里也可以拿到当前的任务流
     * workflow所支持的其他功能，包括upstream、计算调度、异步文件IO等
+  * AOP模块化插件管理：
+    * 可上报tracing和metrics到[OpenTelemetry](https://opentelemetry.io)
+    * 可上报监控到[Prometheus](https://prometheus.io)
+    * 轻松对接其他云原生系统
+  * 支持srpc协议的Envoy-filter，满足Kubernetes用户的使用需求
   * [更多功能和层次介绍](docs/rpc.md)
 
 ## Installation
-  * srpc是一个静态库libsrpc.a，只有开发环境需要依赖libsrpc，编译后二进制发布不需要依赖libsrpc库
+  * srpc默认会编译出静态库libsrpc.a和动态库libsrpc.so(或者dylib或dll)
   * srpc依赖workflow和protobuf3
-  	* protobuf需要用户自行安装v3.0.0以上的版本
+    * protobuf需要用户自行安装v3.11.0或以上的版本
     * workflow可以通过git的submodule形式进行依赖
-	* 压缩库snappy和lz4也以submodule的形式在third_party/中作源码依赖
-
+    * 压缩库snappy和lz4也以submodule的形式在third_party/中作源码依赖
+    * workflow、snappy和lz4也可以系统预装，如果thirt_party中没有拉取源码依赖，则会从系统默认安装路径寻找，snappy的预装要求版本是v1.1.6或以上
+  * Windows版下srpc代码无差异，需要依赖workflow的windows分支
 ~~~sh
 git clone --recursive https://github.com/sogou/srpc.git
 cd srpc
 make
-sudo make install
+~~~
+
+### 安装（Fedora Linux）：
+srpc已为Fedora打包。
+
+为了开发目的安装srpc库：
+~~~sh
+sudo dnf install srpc-devel
+~~~
+
+要安装srpc库以进行部署，请执行以下操作：
+~~~sh
+sudo dnf install srpc
 ~~~
 
 ## Tutorial
 
-* [第1步：设计IDL描述文件](docs/tutorial-01-idl.md)
-* [第2步：实现ServiceIMPL](docs/tutorial-02-service.md)
-* [第3步：启动Server](docs/tutorial-03-server.md)
-* [第4步：使用Client](docs/tutorial-04-client.md)
-* [第5步：了解异步Context](docs/tutorial-05-context.md)
-* [第6步：与workflow的结合使用](docs/tutorial-06-workflow.md)
+* [第1步：设计IDL描述文件](docs/docs-01-idl.md)
+* [第2步：实现ServiceIMPL](docs/docs-02-service.md)
+* [第3步：启动Server](docs/docs-03-server.md)
+* [第4步：使用Client](docs/docs-04-client.md)
+* [第5步：了解异步Context](docs/docs-05-context.md)
+* [第6步：与workflow的结合使用](docs/docs-06-workflow.md)
+* [第7步：使用SRPC发送HTTP协议](docs/docs-07-srpc-http.md)
+* [第8步：链路上报到OpenTelemetry](docs/docs-08-tracing.md)
+* [第9步：监控指标的使用与上报](docs/docs-09-metrics.md)
+* [第10步：附带生态模块功能的Workflow风格Http](/docs/docs-10-http-with-modules.md)
 
 简单的命令即可编译示例：
 
@@ -118,13 +142,6 @@ public:
     void Echo(EchoRequest *request, EchoResponse *response, RPCContext *ctx) override
     {
         response->set_message("Hi, " + request->name());
-
-        // gzip/zlib/snappy/lz4/none
-        // ctx->set_compress_type(RPCCompressGzip);
-
-        // protobuf/json
-        // ctx->set_data_type(RPCDataJson);
-
         printf("get_req:\n%s\nset_resp:\n%s\n",
                 request->DebugString().c_str(), response->DebugString().c_str());
     }
@@ -189,17 +206,20 @@ g++ -o client client.cc example.pb.cc -std=c++11 -lsrpc
 ~~~
 
 #### 6. run
-终端1
+终端1：
 ~~~sh
 ./server
 ~~~
-终端2
+终端2：
 ~~~sh
 ./client
+~~~
+也可以用CURL发送http请求：
+~~~sh
 curl 127.0.0.1:8811/Example/Echo -H 'Content-Type: application/json' -d '{message:"from curl",name:"CURL"}'
 ~~~
 
-终端1输出
+终端1输出：
 ~~~sh
 get_req:
 message: "Hello, srpc!"
@@ -214,11 +234,13 @@ name: "CURL"
 
 set_resp:
 message: "Hi, CURL"
-
 ~~~
-终端2输出
+终端2输出：
 ~~~sh
 message: "Hi, workflow"
+~~~
+CURL收到的回复：
+~~~sh
 {"message":"Hi, CURL"}
 ~~~
 
