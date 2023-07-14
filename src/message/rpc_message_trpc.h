@@ -89,6 +89,7 @@ public:
 
 	void set_service_name(const std::string& service_name);
 	void set_method_name(const std::string& method_name);
+	void set_callee_timeout(int timeout);
 	void set_caller_name(const std::string& caller_name);
 
 	int get_compress_type() const override;
