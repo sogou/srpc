@@ -27,7 +27,7 @@
 namespace srpc
 {
 
-static constexpr char const *SRPC_COMPONENT_SRPC	= "srpc.srpc";
+static constexpr char const *SRPC_COMPONENT_SRPC	= "srpc";
 
 static constexpr char const *SRPC_SPAN_LOG			= "srpc.log";
 static constexpr char const *SRPC_SPAN_EVENT		= "event";
