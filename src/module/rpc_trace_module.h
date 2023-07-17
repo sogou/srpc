@@ -47,12 +47,12 @@ static constexpr char const *SRPC_PARENT_SPAN_ID	= "srpc.parent_span_id";
 static constexpr char const *SRPC_SPAN_KIND			= "srpc.span.kind";
 static constexpr char const *SRPC_SPAN_KIND_CLIENT	= "srpc.client";
 static constexpr char const *SRPC_SPAN_KIND_SERVER	= "srpc.server";
-static constexpr char const *SRPC_STATE				= "srpc.state";
-static constexpr char const *SRPC_ERROR				= "srpc.error";
+static constexpr char const *SRPC_STATE				= "rpc.state";
+static constexpr char const *SRPC_ERROR				= "rpc.error";
 static constexpr char const *WF_TASK_STATE			= "task.state";
 static constexpr char const *WF_TASK_ERROR			= "task.error";
-static constexpr char const *SRPC_REMOTE_IP			= "srpc.peer.ip";
-static constexpr char const *SRPC_REMOTE_PORT		= "srpc.peer.port";
+static constexpr char const *SRPC_REMOTE_IP			= "server.address";
+static constexpr char const *SRPC_REMOTE_PORT		= "server.port";
 static constexpr char const *SRPC_SAMPLING_PRIO		= "srpc.sampling.priority";
 
 // for ext tags
@@ -135,9 +135,34 @@ public:
 	bool client_end(SubTask *task, RPCModuleData& data) override;
 	bool server_begin(SubTask *task, RPCModuleData& data) override;
 	bool server_end(SubTask *task, RPCModuleData& data) override;
+
+private:
+	void client_basic_info(CLIENT_TASK *task, RPCModuleData& data);
+	void server_basic_info(SERVER_TASK *task, RPCModuleData& data);
 };
 
 ////////// impl
+
+template<class STASK, class CTASK>
+void RPCTraceModule<STASK, CTASK>::client_basic_info(CTASK *task,
+													 RPCModuleData& data)
+{
+	auto *req = task->get_req();
+
+	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
+	data[OTLP_SERVICE_NAME] = req->get_service_name();
+	if (req->get_method_name().length() > 0 &&
+		req->get_method_name().at(0) == '/')
+	{
+		data[OTLP_METHOD_NAME] = req->get_method_name().substr(1,
+										req->get_method_name().length() - 1);
+	}
+	else
+		data[OTLP_METHOD_NAME] = req->get_method_name();
+
+	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
+	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
+}
 
 template<class STASK, class CTASK>
 bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task,
@@ -146,14 +171,9 @@ bool RPCTraceModule<STASK, CTASK>::client_begin(SubTask *task,
 	TraceModule::client_begin(task, data);
 
 	auto *client_task = static_cast<CTASK *>(task);
+	this->client_basic_info(client_task, data);
+
 	auto *req = client_task->get_req();
-
-	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
-	data[OTLP_SERVICE_NAME] = req->get_service_name();
-	data[OTLP_METHOD_NAME] = req->get_method_name();
-	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
-	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
-
 	TraceModule::client_begin_request(req, data);
 
 	return true;
@@ -169,6 +189,10 @@ bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task,
 	unsigned short port;
 	auto *client_task = static_cast<CTASK *>(task);
 	auto *resp = client_task->get_resp();
+
+	// failed to call client_begin
+	if (data.find(SRPC_COMPONENT) == data.end())
+		this->client_basic_info(client_task, data);
 
 	data[SRPC_STATE] = std::to_string(resp->get_status_code());
 
@@ -190,29 +214,44 @@ bool RPCTraceModule<STASK, CTASK>::client_end(SubTask *task,
 }
 
 template<class STASK, class CTASK>
+void RPCTraceModule<STASK, CTASK>::server_basic_info(STASK *task,
+													 RPCModuleData& data)
+{
+	std::string ip;
+	unsigned short port;
+	auto *req = task->get_req();
+
+	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
+	data[OTLP_SERVICE_NAME] = req->get_service_name();
+	if (req->get_method_name().length() > 0 &&
+		req->get_method_name().at(0) == '/')
+	{
+		data[OTLP_METHOD_NAME] = req->get_method_name().substr(1,
+										req->get_method_name().length() - 1);
+	}
+	else
+		data[OTLP_METHOD_NAME] = req->get_method_name();
+
+	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
+	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
+
+	if (task->get_remote(ip, &port))
+	{
+		data[SRPC_REMOTE_IP] = std::move(ip);
+		data[SRPC_REMOTE_PORT] = std::to_string(port);
+	}
+}
+
+template<class STASK, class CTASK>
 bool RPCTraceModule<STASK, CTASK>::server_begin(SubTask *task,
 												RPCModuleData& data)
 {
 	TraceModule::server_begin(task, data);
 
-	std::string ip;
-	unsigned short port;
 	auto *server_task = static_cast<STASK *>(task);
+	this->server_basic_info(server_task, data);
+
 	auto *req = server_task->get_req();
-
-	data[OTLP_SERVICE_NAME] = req->get_service_name();
-	data[OTLP_METHOD_NAME] = req->get_method_name();
-	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
-	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
-
-	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
-
-	if (server_task->get_remote(ip, &port))
-	{
-		data[SRPC_REMOTE_IP] = std::move(ip);
-		data[SRPC_REMOTE_PORT] = std::to_string(port);
-	}
-
 	TraceModule::server_begin_request(req, data);
 
 	return true;
@@ -226,6 +265,10 @@ bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task,
 
 	auto *server_task = static_cast<STASK *>(task);
 	auto *resp = server_task->get_resp();
+
+	// failed to call server_begin
+	if (data.find(SRPC_COMPONENT) == data.end())
+		this->server_basic_info(server_task, data);
 
 	data[SRPC_STATE] = std::to_string(resp->get_status_code());
 

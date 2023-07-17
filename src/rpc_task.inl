@@ -589,13 +589,14 @@ bool RPCClientTask<RPCREQ, RPCRESP>::get_remote(std::string& ip,
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof (addr);
 
-	ip.resize(INET6_ADDRSTRLEN + 1);
+	char buf[INET6_ADDRSTRLEN + 1] = { 0 };
 
-	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
+	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0 &&
+		RPCCommon::addr_to_string((struct sockaddr *)&addr, buf,
+								   INET6_ADDRSTRLEN + 1, port) == true)
 	{
-		return RPCCommon::addr_to_string((struct sockaddr *)&addr,
-										 (char *)ip.c_str(),
-										 INET6_ADDRSTRLEN + 1, port);
+		ip = buf;
+		return true;
 	}
 
 	return false;
@@ -608,13 +609,14 @@ bool RPCServerTask<RPCREQ, RPCRESP>::get_remote(std::string& ip,
 	struct sockaddr_storage addr;
 	socklen_t addrlen = sizeof (addr);
 
-	ip.resize(INET6_ADDRSTRLEN + 1);
+	char buf[INET6_ADDRSTRLEN + 1] = { 0 };
 
-	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0)
+	if (this->get_peer_addr((struct sockaddr *)&addr, &addrlen) == 0 &&
+		RPCCommon::addr_to_string((struct sockaddr *)&addr, buf,
+								   INET6_ADDRSTRLEN + 1, port) == true)
 	{
-		return RPCCommon::addr_to_string((struct sockaddr *)&addr,
-										 (char *)ip.c_str(),
-										 INET6_ADDRSTRLEN + 1, port);
+		ip = buf;
+		return true;
 	}
 
 	return false;

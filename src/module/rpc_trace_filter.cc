@@ -12,6 +12,8 @@ using namespace opentelemetry::proto::trace::v1;
 using namespace opentelemetry::proto::common::v1;
 using namespace opentelemetry::proto::resource::v1;
 
+static constexpr char const *SRPC_COMPONENT_OTEL_STR = "rpc.system";
+
 static InstrumentationLibrarySpans *
 rpc_span_fill_pb_request(const RPCModuleData& data,
 		const std::unordered_map<std::string, std::string>& attributes,
@@ -54,19 +56,34 @@ rpc_span_fill_pb_request(const RPCModuleData& data,
 }
 
 static void rpc_span_fill_pb_span(RPCModuleData& data,
-								  InstrumentationLibrarySpans *spans)
+				const std::unordered_map<std::string, std::string>& attributes,
+				InstrumentationLibrarySpans *spans)
 {
 	Span *span = spans->add_spans();
 	Status *status = span->mutable_status();
 	KeyValue *attribute;
 	AnyValue *attr_value;
 
+	for (const auto& attr : attributes)
+	{
+		attribute = span->add_attributes();
+		attribute->set_key(attr.first);
+		attr_value = attribute->mutable_value();
+		attr_value->set_string_value(attr.second);
+	}
+
 	span->set_span_id(data[SRPC_SPAN_ID].c_str(), SRPC_SPANID_SIZE);
 	span->set_trace_id(data[SRPC_TRACE_ID].c_str(), SRPC_TRACEID_SIZE);
 
 	// name is required and specified in OpenTelemetry semantic conventions.
 	if (data.find(OTLP_METHOD_NAME) != data.end())
+	{
 		span->set_name(data[OTLP_METHOD_NAME]); // for RPC
+		attribute= span->add_attributes();
+		attribute->set_key(SRPC_COMPONENT_OTEL_STR); // srpc.component -> rpc.system
+		attr_value = attribute->mutable_value();
+		attr_value->set_string_value(data[SRPC_COMPONENT]);
+	}
 	else
 		span->set_name(data[SRPC_HTTP_METHOD]); // for HTTP
 
@@ -107,6 +124,22 @@ static void rpc_span_fill_pb_span(RPCModuleData& data,
 		else if (key.compare(SRPC_FINISH_TIMESTAMP) == 0)
 		{
 			span->set_end_time_unix_nano(atoll(data[SRPC_FINISH_TIMESTAMP].data()));
+		}
+		else if (key.compare(SRPC_STATE) == 0)
+		{
+			int state = atoi(val.c_str());
+			if (state == RPCStatusOK)
+				status->set_code(Status_StatusCode_STATUS_CODE_OK);
+			else
+				status->set_code(Status_StatusCode_STATUS_CODE_ERROR);
+		}
+		else if (key.compare(WF_TASK_STATE) == 0)
+		{
+			int state = atoi(val.c_str());
+			if (state == WFT_STATE_SUCCESS)
+				status->set_code(Status_StatusCode_STATUS_CODE_OK);
+			else
+				status->set_code(Status_StatusCode_STATUS_CODE_ERROR);
 		}
 		else if (key.compare(0, 5, "srpc.") != 0)
 		{
@@ -377,6 +410,14 @@ void RPCTraceOpenTelemetry::add_attributes(const std::string& key,
 	this->mutex.unlock();
 }
 
+void RPCTraceOpenTelemetry::add_span_attributes(const std::string& key,
+												const std::string& value)
+{
+	this->mutex.lock();
+	this->span_attributes.insert(std::make_pair(key, value));
+	this->mutex.unlock();
+}
+
 size_t RPCTraceOpenTelemetry::clear_attributes()
 {
 	size_t ret;
@@ -384,6 +425,18 @@ size_t RPCTraceOpenTelemetry::clear_attributes()
 	this->mutex.lock();
 	ret = this->attributes.size();
 	this->attributes.clear();
+	this->mutex.unlock();
+
+	return ret;
+}
+
+size_t RPCTraceOpenTelemetry::clear_span_attributes()
+{
+	size_t ret;
+
+	this->mutex.lock();
+	ret = this->span_attributes.size();
+	this->span_attributes.clear();
 	this->mutex.unlock();
 
 	return ret;
@@ -426,7 +479,7 @@ bool RPCTraceOpenTelemetry::filter(RPCModuleData& data)
 		else
 			spans = (InstrumentationLibrarySpans *)it->second;
 
-		rpc_span_fill_pb_span(data, spans);
+		rpc_span_fill_pb_span(data, this->span_attributes, spans);
 	}
 
 	ret = this->filter_policy.report(this->report_span_count);
