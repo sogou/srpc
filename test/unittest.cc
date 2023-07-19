@@ -20,11 +20,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <string>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
 #include <gtest/gtest.h>
-#include <workflow/WFOperator.h>
+#include "workflow/WFOperator.h"
+#include "workflow/WFFacilities.h"
 #include "test_pb.srpc.h"
 #include "test_thrift.srpc.h"
 
@@ -74,9 +72,7 @@ public:
 template<class SERVER, class CLIENT>
 void test_pb(SERVER& server)
 {
-	std::mutex mutex;
-	std::condition_variable cond;
-	bool done = false;
+	WFFacilities::WaitGroup wg(1);
 
 	RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
 	TestPBServiceImpl impl;
@@ -92,7 +88,9 @@ void test_pb(SERVER& server)
 
 	req1.set_a(123);
 	req1.set_b(456);
-	client.Add(&req1, [&](AddResponse *response, RPCContext *ctx) {
+	client.Add(&req1, [&client, &wg](AddResponse *response, RPCContext *ctx) {
+		fprintf(stderr, "success : %d status : %d error : %d\n",
+				ctx->success(), ctx->get_status_code(), ctx->get_error());
 		EXPECT_EQ(ctx->success(), true);
 		if (ctx->success())
 		{
@@ -102,29 +100,19 @@ void test_pb(SERVER& server)
 
 			req2.set_str("hello world!");
 			req2.set_idx(6);
-			client.Substr(&req2, [&](SubstrResponse *response, RPCContext *ctx) {
+			client.Substr(&req2, [&wg](SubstrResponse *response, RPCContext *ctx) {
 				EXPECT_EQ(ctx->success(), true);
 				EXPECT_TRUE(response->str() == "world!");
-				mutex.lock();
-				done = true;
-				mutex.unlock();
-				cond.notify_one();
+				wg.done();
 			});
 		}
 		else
 		{
-			mutex.lock();
-			done = true;
-			mutex.unlock();
-			cond.notify_one();
+			wg.done();
 		}
 	});
 
-	std::unique_lock<std::mutex> lock(mutex);
-	while (!done)
-		cond.wait(lock);
-
-	lock.unlock();
+	wg.wait();
 
 	AddResponse resp1;
 	RPCSyncContext ctx1;
@@ -143,9 +131,7 @@ void test_pb(SERVER& server)
 template<class SERVER, class CLIENT>
 void test_thrift(SERVER& server)
 {
-	std::mutex mutex;
-	std::condition_variable cond;
-	bool done = false;
+	WFFacilities::WaitGroup wg(1);
 
 	RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
 	TestThriftServiceImpl impl;
@@ -161,7 +147,9 @@ void test_thrift(SERVER& server)
 
 	req1.a = 123;
 	req1.b = 456;
-	client.add(&req1, [&](TestThrift::addResponse *response, RPCContext *ctx) {
+	client.add(&req1, [&client, &wg](TestThrift::addResponse *response, RPCContext *ctx) {
+		fprintf(stderr, "success : %d status : %d error : %d\n",
+				ctx->success(), ctx->get_status_code(), ctx->get_error());
 		EXPECT_EQ(ctx->success(), true);
 		if (ctx->success())
 		{
@@ -172,29 +160,19 @@ void test_thrift(SERVER& server)
 			req2.str = "hello world!";
 			req2.idx = 6;
 			req2.length = -1;
-			client.substr(&req2, [&](TestThrift::substrResponse *response, RPCContext *ctx) {
+			client.substr(&req2, [&wg](TestThrift::substrResponse *response, RPCContext *ctx) {
 				EXPECT_EQ(ctx->success(), true);
 				EXPECT_TRUE(response->result == "world!");
-				mutex.lock();
-				done = true;
-				mutex.unlock();
-				cond.notify_one();
+				wg.done();
 			});
 		}
 		else
 		{
-			mutex.lock();
-			done = true;
-			mutex.unlock();
-			cond.notify_one();
+			wg.done();
 		}
 	});
 
-	std::unique_lock<std::mutex> lock(mutex);
-	while (!done)
-		cond.wait(lock);
-
-	lock.unlock();
+	wg.wait();
 
 	int32_t c = client.add(123, 456);
 	EXPECT_EQ(client.thrift_last_sync_success(), true);
@@ -251,9 +229,7 @@ TEST(ThriftHttp, unittest)
 
 TEST(SRPC_COMPRESS, unittest)
 {
-	std::mutex mutex;
-	std::condition_variable cond;
-	bool done = false;
+	WFFacilities::WaitGroup wg(1);
 
 	RPCServerParams server_params = RPC_SERVER_PARAMS_DEFAULT;
 	RPCClientParams client_params = RPC_CLIENT_PARAMS_DEFAULT;
@@ -292,19 +268,12 @@ TEST(SRPC_COMPRESS, unittest)
 
 	auto& par = *t1 * t2 * t3 * t4;
 
-	par.set_callback([&](const ParallelWork *par) {
-		mutex.lock();
-		done = true;
-		mutex.unlock();
-		cond.notify_one();
+	par.set_callback([&wg](const ParallelWork *par) {
+		wg.done();
 	});
 	par.start();
 
-	std::unique_lock<std::mutex> lock(mutex);
-	while (!done)
-		cond.wait(lock);
-
-	lock.unlock();
+	wg.wait();
 	server.stop();
 }
 
