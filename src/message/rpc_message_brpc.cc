@@ -28,6 +28,13 @@
 namespace srpc
 {
 
+static constexpr int BRPC_ENOSERVICE	= 1001;
+static constexpr int BRPC_ENOMETHOD		= 1002;
+static constexpr int BRPC_EREQUEST		= 1003;
+static constexpr int BRPC_EINTERNAL		= 2001;
+static constexpr int BRPC_ERESPONSE		= 2002;
+static constexpr int BRPC_ELOGOFF		= 2003;
+
 BRPCMessage::BRPCMessage()
 {
 	this->nreceived = 0;
@@ -64,6 +71,7 @@ bool BRPCRequest::deserialize_meta()
 bool BRPCResponse::deserialize_meta()
 {
 	BrpcMeta *meta = static_cast<BrpcMeta *>(this->meta);
+	int error;
 
 	if (meta->ParseFromArray(this->meta_buf, (int)this->meta_len))
 	{
@@ -78,9 +86,10 @@ bool BRPCResponse::deserialize_meta()
 		this->srpc_status_code = RPCStatusOK;
 		if (meta->has_response())
 		{
-			if (meta->mutable_response()->error_code() != 0)
+			error = meta->mutable_response()->error_code();
+			if (error != 0)
 			{
-				this->srpc_status_code = RPCStatusMetaError;
+				this->srpc_status_code = this->error_code_brpc_srpc(error);
 				this->srpc_error_msg = meta->mutable_response()->error_text();
 			}
 		}
@@ -211,15 +220,17 @@ bool BRPCRequest::serialize_meta()
 bool BRPCResponse::serialize_meta()
 {
 	BrpcMeta *meta = static_cast<BrpcMeta *>(this->meta);
+	int error;
 
-	this->meta_len = meta->ByteSizeLong();
-	this->meta_buf = new char[this->meta_len];
 	if (this->srpc_status_code != RPCStatusOK)
 	{
-		meta->mutable_response()->set_error_code(2001); //TODO
+		error = this->error_code_srpc_brpc(this->srpc_status_code);
+		meta->mutable_response()->set_error_code(error);
 		meta->mutable_response()->set_error_text(this->srpc_error_msg);
 	}
 
+	this->meta_len = meta->ByteSizeLong();
+	this->meta_buf = new char[this->meta_len];
 	return meta->SerializeToArray(this->meta_buf, (int)this->meta_len);
 }
 
@@ -509,6 +520,59 @@ int BRPCMessage::decompress()
 	}
 
 	return status_code;
+}
+
+inline int BRPCMessage::error_code_srpc_brpc(int srpc_status_code) const
+{
+	switch (srpc_status_code)
+	{
+	case RPCStatusServiceNotFound:
+		return BRPC_ENOSERVICE;
+	case RPCStatusMethodNotFound:
+		return BRPC_ENOMETHOD;
+	case RPCStatusMetaError:
+	case RPCStatusReqCompressSizeInvalid:
+	case RPCStatusReqDecompressSizeInvalid:
+	case RPCStatusReqCompressNotSupported:
+	case RPCStatusReqDecompressNotSupported:
+	case RPCStatusReqCompressError:
+	case RPCStatusReqDecompressError:
+	case RPCStatusReqSerializeError:
+	case RPCStatusReqDeserializeError:
+		return BRPC_EREQUEST;
+	case RPCStatusRespCompressSizeInvalid:
+	case RPCStatusRespDecompressSizeInvalid:
+	case RPCStatusRespCompressNotSupported:
+	case RPCStatusRespDecompressNotSupported:
+	case RPCStatusRespCompressError:
+	case RPCStatusRespDecompressError:
+	case RPCStatusRespSerializeError:
+	case RPCStatusRespDeserializeError:
+		return BRPC_ERESPONSE;
+	case RPCStatusProcessTerminated:
+		return BRPC_ELOGOFF;
+	default:
+		return BRPC_EINTERNAL;
+	}
+}
+
+inline int BRPCMessage::error_code_brpc_srpc(int brpc_error_code) const
+{
+	switch (brpc_error_code)
+	{
+	case BRPC_ENOSERVICE:
+		return RPCStatusServiceNotFound;
+	case BRPC_ENOMETHOD:
+		return RPCStatusMethodNotFound;
+	case BRPC_EREQUEST:
+		return RPCStatusReqDeserializeError;
+	case BRPC_ERESPONSE:
+		return RPCStatusRespDeserializeError;
+	case BRPC_ELOGOFF:
+		return RPCStatusProcessTerminated;
+	default:
+		return RPCStatusSystemError;
+	}
 }
 
 } // namesapce sogou 

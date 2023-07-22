@@ -70,6 +70,7 @@ protected:
 	int data_type_trpc_srpc(int trpc_content_type) const;
 	int data_type_srpc_trpc(int srpc_data_type) const;
 	int status_code_srpc_trpc(int srpc_status_code) const;
+	int status_code_trpc_srpc(int trpc_ret_code) const;
 	const char *error_msg_srpc_trpc(int srpc_status_code) const;
 
 	RPCBuffer *get_buffer() const { return this->message; }

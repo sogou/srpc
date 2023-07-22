@@ -101,7 +101,7 @@ message ResponseProtocol {
   uint32    request_id                  = 3;
   int32     ret                         = 4;
   int32     func_ret                    = 5;
-  bytes    error_msg                    = 6;
+  bytes     error_msg                   = 6;
   uint32    message_type                = 7;
   map<string, bytes> trans_info         = 8;
   uint32    content_type                = 9;

@@ -72,6 +72,10 @@ protected:
 	RPCBuffer *message;
 	RPCBuffer *attachment;
 	ProtobufIDLMessage *meta;
+
+protected:
+	int error_code_srpc_brpc(int srpc_status_code) const;
+	int error_code_brpc_srpc(int brpc_error_code) const;
 };
 
 class BRPCRequest : public BRPCMessage
