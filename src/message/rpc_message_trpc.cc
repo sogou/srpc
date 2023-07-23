@@ -397,13 +397,9 @@ bool TRPCResponse::deserialize_meta()
 	if (!meta->ParseFromArray(this->meta_buf, (int)this->meta_len))
 		return false;
 
-	this->srpc_status_code = RPCStatusOK;
-
-	if (meta->ret() != TrpcRetCode::TRPC_INVOKE_SUCCESS)
-	{
-		this->srpc_status_code = meta->ret();
-		this->srpc_error_msg = meta->error_msg();
-	}
+	this->srpc_status_code = this->status_code_trpc_srpc(meta->ret());
+	if (!meta->error_msg().empty())
+		this->srpc_error_msg = meta->error_msg().data();
 
 	return true;
 }
@@ -426,15 +422,12 @@ bool TRPCResponse::serialize_meta()
 	meta->set_version(TrpcProtoVersion::TRPC_PROTO_V1);
 	meta->set_call_type(TrpcCallType::TRPC_UNARY_CALL);
 
+	meta->set_ret(this->status_code_srpc_trpc(this->srpc_status_code));
+//	meta->set_error_msg(this->error_msg_srpc_trpc(this->srpc_status_code));
+	meta->set_error_msg(this->srpc_error_msg);
+
 	this->meta_len = meta->ByteSizeLong();
 	this->meta_buf = new char[this->meta_len];
-	if (this->srpc_status_code != RPCStatusOK)
-	{
-		meta->set_ret(this->status_code_srpc_trpc(this->srpc_status_code)); //TODO
-		meta->set_error_msg(this->error_msg_srpc_trpc(this->srpc_status_code));
-		// this->srpc_error_msg
-	}
-
 	return meta->SerializeToArray(this->meta_buf, (int)this->meta_len);
 }
 
@@ -498,9 +491,73 @@ inline int TRPCMessage::data_type_srpc_trpc(int srpc_data_type) const
 	}
 }
 
-int TRPCMessage::status_code_srpc_trpc(int srpc_status_code) const
+inline int TRPCMessage::status_code_srpc_trpc(int srpc_status_code) const
 {
-	return 0;//TODO
+	switch (srpc_status_code)
+	{
+	case RPCStatusOK:
+		return TrpcRetCode::TRPC_INVOKE_SUCCESS;
+	case RPCStatusServiceNotFound:
+		return TrpcRetCode::TRPC_SERVER_NOSERVICE_ERR;
+	case RPCStatusMethodNotFound:
+		return TrpcRetCode::TRPC_SERVER_NOFUNC_ERR;
+	case RPCStatusURIInvalid:
+	case RPCStatusMetaError:
+	case RPCStatusReqCompressSizeInvalid:
+	case RPCStatusReqCompressNotSupported:
+	case RPCStatusReqCompressError:
+	case RPCStatusReqSerializeError:
+		return TrpcRetCode::TRPC_CLIENT_ENCODE_ERR;
+	case RPCStatusReqDecompressSizeInvalid:
+	case RPCStatusReqDecompressNotSupported:
+	case RPCStatusReqDecompressError:
+	case RPCStatusReqDeserializeError:
+		return TrpcRetCode::TRPC_SERVER_DECODE_ERR;
+	case RPCStatusRespCompressSizeInvalid:
+	case RPCStatusRespCompressNotSupported:
+	case RPCStatusRespCompressError:
+	case RPCStatusRespSerializeError:
+		return TrpcRetCode::TRPC_SERVER_ENCODE_ERR;
+	case RPCStatusRespDecompressSizeInvalid:
+	case RPCStatusRespDecompressNotSupported:
+	case RPCStatusRespDecompressError:
+	case RPCStatusRespDeserializeError:
+		return TrpcRetCode::TRPC_CLIENT_DECODE_ERR;
+	case RPCStatusUpstreamFailed:
+	case RPCStatusDNSError:
+		return TrpcRetCode::TRPC_CLIENT_ROUTER_ERR;
+	case RPCStatusSystemError:
+		return TrpcRetCode::TRPC_SERVER_SYSTEM_ERR;
+//		return TrpcRetCode::TRPC_CLINET_NETWORK_ERR;
+	default:
+		return TrpcRetCode::TRPC_INVOKE_UNKNOWN_ERR;
+	}
+}
+
+inline int TRPCMessage::status_code_trpc_srpc(int trpc_ret_code) const
+{
+	switch (trpc_ret_code)
+	{
+	case TrpcRetCode::TRPC_INVOKE_SUCCESS:
+		return RPCStatusOK;
+	case TrpcRetCode::TRPC_SERVER_NOSERVICE_ERR:
+		return RPCStatusServiceNotFound;
+	case TrpcRetCode::TRPC_SERVER_NOFUNC_ERR:
+		return RPCStatusMethodNotFound;
+	case TrpcRetCode::TRPC_CLIENT_ENCODE_ERR:
+		return RPCStatusReqSerializeError;
+	case TrpcRetCode::TRPC_SERVER_DECODE_ERR:
+		return RPCStatusReqDeserializeError;
+	case TrpcRetCode::TRPC_SERVER_ENCODE_ERR:
+		return RPCStatusRespSerializeError;
+	case TrpcRetCode::TRPC_CLIENT_DECODE_ERR:
+		return RPCStatusRespDeserializeError;
+	case TrpcRetCode::TRPC_CLIENT_ROUTER_ERR:
+		return RPCStatusUpstreamFailed;
+//		return RPCStatusDNSError;
+	default:
+		return RPCStatusSystemError;
+	}
 }
 
 const char *TRPCMessage::error_msg_srpc_trpc(int srpc_status_code) const

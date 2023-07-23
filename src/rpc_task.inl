@@ -299,7 +299,8 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 		}
 	}
 
-	this->resp.set_status_code(status_code);
+	if (this->resp.get_status_code() == RPCStatusOK)
+		this->resp.set_status_code(status_code);
 
 	// for server, this is the where series->module_data stored
 	RPCModuleData *data = this->mutable_module_data();
