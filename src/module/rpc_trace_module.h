@@ -39,9 +39,6 @@ namespace srpc
 
 // follows the basic conventions of RPC part in opentracing
 static constexpr char const *SRPC_COMPONENT			= "srpc.component";
-static constexpr char const *SRPC_SPAN_ID			= "srpc.span_id";
-static constexpr char const *SRPC_TRACE_ID			= "srpc.trace_id";
-static constexpr char const *SRPC_PARENT_SPAN_ID	= "srpc.parent_span_id";
 
 // span tags
 static constexpr char const *SRPC_SPAN_KIND			= "srpc.span.kind";
@@ -151,14 +148,7 @@ void RPCTraceModule<STASK, CTASK>::client_basic_info(CTASK *task,
 
 	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
 	data[OTLP_SERVICE_NAME] = req->get_service_name();
-	if (req->get_method_name().length() > 0 &&
-		req->get_method_name().at(0) == '/')
-	{
-		data[OTLP_METHOD_NAME] = req->get_method_name().substr(1,
-										req->get_method_name().length() - 1);
-	}
-	else
-		data[OTLP_METHOD_NAME] = req->get_method_name();
+	data[OTLP_METHOD_NAME] = req->get_method_name();
 
 	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());
@@ -223,14 +213,8 @@ void RPCTraceModule<STASK, CTASK>::server_basic_info(STASK *task,
 
 	data[SRPC_COMPONENT] = SRPC_COMPONENT_SRPC;
 	data[OTLP_SERVICE_NAME] = req->get_service_name();
-	if (req->get_method_name().length() > 0 &&
-		req->get_method_name().at(0) == '/')
-	{
-		data[OTLP_METHOD_NAME] = req->get_method_name().substr(1,
-										req->get_method_name().length() - 1);
-	}
-	else
-		data[OTLP_METHOD_NAME] = req->get_method_name();
+	data[OTLP_METHOD_NAME] = "/" + req->get_service_name() +
+							 "/" + req->get_method_name();
 
 	data[SRPC_DATA_TYPE] = std::to_string(req->get_data_type());
 	data[SRPC_COMPRESS_TYPE] = std::to_string(req->get_compress_type());

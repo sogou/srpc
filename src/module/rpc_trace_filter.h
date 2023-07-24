@@ -260,13 +260,15 @@ private:
 	int retry_max;
 
 	RPCTraceFilterPolicy filter_policy;
-	std::mutex mutex;
-	std::unordered_map<std::string, std::string> attributes;
-	std::unordered_map<std::string, std::string> span_attributes;
 	google::protobuf::Message *report_req;
 	std::unordered_map<std::string, google::protobuf::Message *> report_map;
 	bool report_status;
 	size_t report_span_count;
+
+protected:
+	std::mutex mutex;
+	std::unordered_map<std::string, std::string> attributes;
+	std::unordered_map<std::string, std::string> span_attributes;
 
 private:
 	SubTask *create(RPCModuleData& span) override;

@@ -222,6 +222,10 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 		status_code = RPCStatusMetaError;
 	else
 	{
+		auto *server_task = static_cast<TASK *>(task);
+		RPCModuleData *task_data = server_task->mutable_module_data();
+		req->get_meta_module_data(*task_data);
+
 		RPCTYPE::server_reply_init(req, resp);
 		auto *service = this->find_service(req->get_service_name());
 
@@ -235,25 +239,20 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 				status_code = RPCStatusMethodNotFound;
 			else
 			{
-				SERIES *series;
-				auto *server_task = static_cast<TASK *>(task);
-				RPCModuleData *task_data = server_task->mutable_module_data();
-				req->get_meta_module_data(*task_data);
-
 				for (auto *module : this->modules)
 				{
 					if (module)
 						module->server_task_begin(server_task, *task_data);
 				}
 
-				series = static_cast<SERIES *>(series_of(task));
-				series->set_module_data(task_data);
-
 				status_code = req->decompress();
 				if (status_code == RPCStatusOK)
 					status_code = (*rpc)(server_task->worker);
 			}
 		}
+
+		SERIES *series = static_cast<SERIES *>(series_of(task));
+		series->set_module_data(task_data);
 	}
 
 	resp->set_status_code(status_code);

@@ -25,12 +25,22 @@
 
 namespace srpc
 {
+// for transfer between client-server
+static constexpr const char	   *OTLP_TRACE_PARENT			= "traceparent";
+static constexpr const char	   *OTLP_TRACE_STATE			= "tracestate";
+static constexpr const char	   *OTLP_AFFINITY_ATTRIBUTE		= "affinity_attribute";
+static constexpr size_t			OTLP_TRACE_VERSION_SIZE		= 2;
+static constexpr char const    *OTLP_TRACE_VERSION			= "trace_version";
+static constexpr char const    *OTLP_TRACE_FLAG				= "trace_flag";
+
+// for report
 static constexpr unsigned int	OTLP_HTTP_REDIRECT_MAX		= 0;
 static constexpr unsigned int	OTLP_HTTP_RETRY_MAX			= 1;
 static constexpr const char	   *OTLP_SERVICE_NAME			= "rpc.service";
 static constexpr const char	   *OTLP_METHOD_NAME			= "rpc.method";
 static constexpr const char	   *SRPC_HTTP_METHOD			= "http.method";
 static constexpr const char	   *SRPC_HTTP_STATUS_CODE		= "http.status_code";
+
 static constexpr size_t			RPC_REPORT_THREHOLD_DEFAULT	= 100;
 static constexpr size_t			RPC_REPORT_INTERVAL_DEFAULT	= 1000; /* msec */
 static constexpr const char	   *SRPC_MODULE_DATA			= "srpc_module_data";
