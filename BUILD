@@ -23,7 +23,6 @@ proto_library(
         "src/module/proto/opentelemetry_common.proto",
         "src/module/proto/opentelemetry_resource.proto",
         "src/module/proto/opentelemetry_trace.proto",
-        "src/module/proto/opentelemetry_trace_service.proto",
         "src/module/proto/opentelemetry_metrics.proto",
         "src/module/proto/opentelemetry_metrics_service.proto",
     ],
