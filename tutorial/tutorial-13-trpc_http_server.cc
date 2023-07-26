@@ -29,10 +29,19 @@ class GreeterServiceImpl : public Greeter::Service
 public:
 	void SayHello(HelloRequest *req, HelloReply *resp, RPCContext *ctx) override
 	{
-		resp->set_msg("This is SRPC framework TRPCHttp protocol. Hi back.");
+		ctx->set_compress_type(RPCCompressGzip);
+		resp->set_msg("This is SRPC framework TRPC protocol. Hello back.");
 
 		printf("Server SayHello()\nget_req:\n%s\nset_resp:\n%s\n",
-				req->DebugString().c_str(), resp->DebugString().c_str());
+		req->DebugString().c_str(), resp->DebugString().c_str());
+	}
+
+	void SayHi(HelloRequest *req, HelloReply *resp, RPCContext *ctx) override
+	{
+		resp->set_msg("This is SRPC framework TRPC protocol. Hi back.");
+
+		printf("Server SayHi()\nget_req:\n%s\nset_resp:\n%s\n",
+		req->DebugString().c_str(), resp->DebugString().c_str());
 	}
 };
 
@@ -54,6 +63,7 @@ int main()
 
 	if (server.start(1412) == 0)
 	{
+		printf("SRPC framework TRPCHttp server running on 1412...\n");
 		wait_group.wait();
 		server.stop();
 	}

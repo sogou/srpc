@@ -89,9 +89,7 @@ void test_pb(SERVER& server)
 	req1.set_a(123);
 	req1.set_b(456);
 	client.Add(&req1, [&client, &wg](AddResponse *response, RPCContext *ctx) {
-		fprintf(stderr, "success : %d status : %d error : %d\n",
-				ctx->success(), ctx->get_status_code(), ctx->get_error());
-		EXPECT_EQ(ctx->success(), true);
+		EXPECT_EQ(ctx->get_status_code(), RPCStatusOK);
 		if (ctx->success())
 		{
 			EXPECT_EQ(response->c(), 123 + 456);
@@ -101,7 +99,7 @@ void test_pb(SERVER& server)
 			req2.set_str("hello world!");
 			req2.set_idx(6);
 			client.Substr(&req2, [&wg](SubstrResponse *response, RPCContext *ctx) {
-				EXPECT_EQ(ctx->success(), true);
+				EXPECT_EQ(ctx->get_status_code(), RPCStatusOK);
 				EXPECT_TRUE(response->str() == "world!");
 				wg.done();
 			});
@@ -148,9 +146,7 @@ void test_thrift(SERVER& server)
 	req1.a = 123;
 	req1.b = 456;
 	client.add(&req1, [&client, &wg](TestThrift::addResponse *response, RPCContext *ctx) {
-		fprintf(stderr, "success : %d status : %d error : %d\n",
-				ctx->success(), ctx->get_status_code(), ctx->get_error());
-		EXPECT_EQ(ctx->success(), true);
+		EXPECT_EQ(ctx->get_status_code(), RPCStatusOK);
 		if (ctx->success())
 		{
 			EXPECT_EQ(response->result, 123 + 456);
@@ -161,7 +157,7 @@ void test_thrift(SERVER& server)
 			req2.idx = 6;
 			req2.length = -1;
 			client.substr(&req2, [&wg](TestThrift::substrResponse *response, RPCContext *ctx) {
-				EXPECT_EQ(ctx->success(), true);
+				EXPECT_EQ(ctx->get_status_code(), RPCStatusOK);
 				EXPECT_TRUE(response->result == "world!");
 				wg.done();
 			});

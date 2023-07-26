@@ -1,39 +1,35 @@
-name: ci build                                                                  
+name: ci build
 
-on:                                                                             
+on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
 
-jobs:                                                                           
-  build:
+jobs:
 
+  ubuntu-cmake:
+    name: ubuntu
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-
+    - uses: actions/checkout@master
     - name: install deps
       run: |
         sudo apt-get update
         sudo apt-get install -y libprotobuf-dev protobuf-compiler libgtest-dev valgrind
-
     - name: update submodules
       run: git submodule update --init --recursive
-
     - name: make
       run: make -j4
-
     - name: make tutorial
       run: make tutorial -j4
-
     - name: make check
       run: make check -j4
-
     - name: make install
       run: sudo make install
-  test:
+
+  fedora-cmake:
     name: fedora
     runs-on: ubuntu-latest
     
@@ -44,7 +40,7 @@ jobs:
           sudo apt-get -y install podman
           podman pull fedora:rawhide
       - name: Get source
-        uses: actions/checkout@v3
+        uses: actions/checkout@master
         with:
           path: 'workflow'
       - name: Create container and run tests
@@ -65,3 +61,13 @@ jobs:
               echo 'RUN make tutorial'
           } > podmanfile
           podman build --tag fedorarawhide -f ./podmanfile
+
+  ubuntu-bazel:
+    name: bazel
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+    - name: bazel build
+      run: bazel build ...
+

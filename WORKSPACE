@@ -32,3 +32,4 @@ new_git_repository(
     build_file = "@//third_party:snappy.BUILD",
     tag = "1.1.9",
     remote = "https://github.com/google/snappy.git")
+
