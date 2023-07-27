@@ -22,6 +22,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <workflow/HttpUtil.h>
 #include <workflow/StringUtil.h>
+#include <workflow/json_parser.h>
 #include "rpc_message_trpc.h"
 #include "rpc_meta_trpc.pb.h"
 #include "rpc_basic.h"
@@ -166,6 +167,151 @@ static std::string GetHttpCompressTypeStr(int type)
 	}
 
 	return "";
+}
+
+static int Base64Encode(const std::string& in, std::string& out)
+{
+	size_t len = in.length();
+	size_t base64_len = (len + 2) / 3 * 4;
+	const unsigned char *f = (const unsigned char *)in.c_str();
+
+	out.resize(base64_len + 1);
+	EVP_EncodeBlock((unsigned char *)&out[0], f, len);
+	out.pop_back();
+
+	return 0;
+}
+
+static int Base64Decode(const char *in, size_t len, std::string& out)
+{
+	size_t origin_len = (len + 3) / 4 * 3;
+	const unsigned char *f = (const unsigned char *)in;
+	int ret;
+	int zeros = 0;
+
+	out.resize(origin_len);
+	ret = EVP_DecodeBlock((unsigned char *)&out[0], f, len);
+
+	if (ret < 0)
+		return ret;
+
+	while (len != 0 && in[--len] == '=')
+		zeros++;
+
+	if (zeros > 2)
+		return -1;
+
+	out.resize(ret - zeros);
+	return 0;
+}
+
+static std::string JsonEscape(const std::string& in)
+{
+	std::string out;
+	out.reserve(in.size());
+
+	for (char c : in)
+	{
+		switch (c)
+		{
+		case '\"':
+			out.append("\\\"");
+			break;
+
+		case '\\':
+			out.append("\\\\");
+			break;
+
+		case '/':
+			out.append("\\/");
+			break;
+
+		case '\b':
+			out.append("\\b");
+			break;
+
+		case '\f':
+			out.append("\\f");
+			break;
+
+		case '\n':
+			out.append("\\n");
+			break;
+
+		case '\r':
+			out.append("\\r");
+			break;
+
+		case '\t':
+			out.append("\\t");
+			break;
+
+		default:
+			out.push_back(c);
+			break;
+		}
+	}
+
+	return out;
+}
+
+using TransInfoMap = ::google::protobuf::Map<::std::string, ::std::string>;
+static int DecodeTransInfo(TransInfoMap& map, const std::string& content)
+{
+	json_value_t *json;
+	json_object_t *obj;
+	const json_value_t *value;
+	const char *name, *str;
+	size_t len;
+	std::string decoded;
+
+	json = json_value_parse(content.c_str());
+	if (json == nullptr)
+		return -1;
+
+	if (json_value_type(json) != JSON_VALUE_OBJECT)
+	{
+		json_value_destroy(json);
+		return -1;
+	}
+
+	obj = json_value_object(json);
+	json_object_for_each(name, value, obj)
+	{
+		str = json_value_string(value);
+		if (!name || !str)
+			continue;
+
+		len = strlen(str);
+		if (Base64Decode(str, len, decoded) == 0)
+			map[name].assign(std::move(decoded));
+		else
+			map[name].assign(str, len);
+	}
+
+	json_value_destroy(json);
+	return 0;
+}
+
+static std::string EncodeTransInfo(const TransInfoMap& map)
+{
+	std::string s;
+	std::string encoded;
+
+	s.append("{");
+	for (const auto& kv : map)
+	{
+		Base64Encode(kv.second, encoded);
+		s.append("\"").append(JsonEscape(kv.first)).append("\":");
+		s.append("\"").append(encoded).append("\",");
+	}
+
+	if (s.back() == ',')
+		s.back() = '}';
+	else
+		s.push_back('}');
+
+	return s;
 }
 
 static constexpr const char *kTypePrefix = "type.googleapis.com";
@@ -1080,6 +1226,10 @@ bool TRPCHttpRequest::serialize_meta()
 	set_header_pair(TRPCHttpHeaders::Func, this->get_service_name());
 	set_header_pair(TRPCHttpHeaders::Caller, this->get_caller_name());
 
+	auto *req_meta = (RequestProtocol *)this->meta;
+	set_header_pair(TRPCHttpHeaders::TransInfo,
+					EncodeTransInfo(req_meta->trans_info()));
+
 	const void *buffer;
 	size_t buflen;
 
@@ -1128,7 +1278,7 @@ bool TRPCHttpRequest::deserialize_meta()
 			meta->set_message_type(std::atoi(value.c_str()));
 			break;
 		case TRPCHttpHeadersCode::TransInfo:
-			// TODO decode json
+			DecodeTransInfo(*meta->mutable_trans_info(), value);
 			break;
 		default:
 			break;
@@ -1263,6 +1413,9 @@ bool TRPCHttpResponse::serialize_meta()
 
 	set_header_pair("Connection", "Keep-Alive");
 
+	set_header_pair(TRPCHttpHeaders::TransInfo,
+					EncodeTransInfo(meta->trans_info()));
+
 	const void *buffer;
 	size_t buflen;
 
@@ -1310,7 +1463,7 @@ bool TRPCHttpResponse::deserialize_meta()
 			meta->set_message_type(std::atoi(value.c_str()));
 			break;
 		case TRPCHttpHeadersCode::TransInfo:
-			// TODO decode json
+			DecodeTransInfo(*meta->mutable_trans_info(), value);
 			break;
 		default:
 			break;
@@ -1341,21 +1494,25 @@ bool TRPCHttpResponse::deserialize_meta()
 
 bool TRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
 {
+	this->TRPCRequest::set_meta_module_data(data);
 	return http_set_header_module_data(data, this);
 }
 
 bool TRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 {
+	this->TRPCRequest::get_meta_module_data(data);
 	return http_get_header_module_data(this, data);
 }
 
 bool TRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 {
+	this->TRPCResponse::set_meta_module_data(data);
 	return http_set_header_module_data(data, this);
 }
 
 bool TRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
+	this->TRPCResponse::get_meta_module_data(data);
 	return http_get_header_module_data(this, data);
 }
 
