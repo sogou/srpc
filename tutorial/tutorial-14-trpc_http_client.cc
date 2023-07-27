@@ -45,8 +45,8 @@ int main()
 	HelloReply sync_resp;
 	RPCSyncContext sync_ctx;
 
-	sync_req.set_msg("Hello, trpc-http server. This is srpc framework trpc-http client!");
-	client.SayHello(&sync_req, &sync_resp, &sync_ctx);
+	sync_req.set_msg("Hi, trpc-http server. This is srpc framework trpc-http client!");
+	client.SayHi(&sync_req, &sync_resp, &sync_ctx);
 	if (sync_ctx.success)
 		printf("%s\n", sync_resp.DebugString().c_str());
 	else

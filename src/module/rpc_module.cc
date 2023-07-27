@@ -138,14 +138,14 @@ bool http_set_header_module_data(const RPCModuleData& data,
 		if (it->first == SRPC_TRACE_ID)
 		{
 			char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
-			TRACE_ID_BIN_TO_HEX((uint64_t *)it->second.c_str(), trace_id_buf);
+			TRACE_ID_BIN_TO_HEX((uint64_t *)it->second.data(), trace_id_buf);
 			msg->set_header_pair("Trace-Id", trace_id_buf);
 			flag |= 1;
 		}
 		else if (it->first == SRPC_SPAN_ID)
 		{
 			char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
-			SPAN_ID_BIN_TO_HEX((uint64_t *)it->second.c_str(), span_id_buf);
+			SPAN_ID_BIN_TO_HEX((uint64_t *)it->second.data(), span_id_buf);
 			msg->set_header_pair("Span-Id", span_id_buf);
 			flag |= (1 << 1);
 		}
@@ -169,7 +169,7 @@ bool http_get_header_module_data(const protocol::HttpMessage *msg,
 			value.size() == SRPC_TRACEID_SIZE * 2)
 		{
 			uint64_t trace_id[2];
-			TRACE_ID_HEX_TO_BIN(value.c_str(), trace_id);
+			TRACE_ID_HEX_TO_BIN(value.data(), trace_id);
 			data[SRPC_TRACE_ID] = std::string((char *)trace_id, SRPC_TRACEID_SIZE);
 			flag |= 1;
 		}
@@ -177,7 +177,7 @@ bool http_get_header_module_data(const protocol::HttpMessage *msg,
 				 value.size() == SRPC_SPANID_SIZE * 2)
 		{
 			uint64_t span_id[1];
-			SPAN_ID_HEX_TO_BIN(value.c_str(), span_id);
+			SPAN_ID_HEX_TO_BIN(value.data(), span_id);
 			data[SRPC_SPAN_ID] = std::string((char *)span_id, SRPC_SPANID_SIZE);
 			flag |= (1 << 1);
 		}

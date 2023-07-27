@@ -921,12 +921,77 @@ int TRPCMessage::decompress()
 	return status_code;
 }
 
+static std::string set_trace_parent(std::string& trace, std::string& span,
+									const RPCModuleData& data)
+{
+	std::string str = "00-"; // set version
+
+	char trace_id_buf[SRPC_TRACEID_SIZE * 2 + 1];
+	TRACE_ID_BIN_TO_HEX((uint64_t *)trace.data(), trace_id_buf);
+	str.append(trace_id_buf);
+	str.append("-");
+
+	char span_id_buf[SRPC_SPANID_SIZE * 2 + 1];
+	SPAN_ID_BIN_TO_HEX((uint64_t *)span.data(), span_id_buf);
+	str.append(span_id_buf);
+	str.append("-");
+
+	str.append("01"); // set traceflag : sampled
+
+	return str;
+}
+
 bool TRPCRequest::set_meta_module_data(const RPCModuleData& data)
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
+	std::string trace;
+	std::string span;
+	int flag = 0;
 
 	for (auto & pair : data)
-		meta->mutable_trans_info()->insert({pair.first, pair.second});
+	{
+		if (pair.first.compare(SRPC_TRACE_ID) == 0)
+		{
+			trace = pair.second;
+			flag |= 1;
+		}
+		else if (pair.first.compare(SRPC_SPAN_ID) == 0)
+		{
+			span = pair.second;
+			flag |= (1 << 1);
+		}
+		else
+			meta->mutable_trans_info()->insert({pair.first, pair.second});
+	}
+
+	if (flag == 3)
+		meta->mutable_trans_info()->insert({OTLP_TRACE_PARENT,
+											set_trace_parent(trace, span, data)});
+	return true;
+}
+
+static bool get_trace_parent(const std::string& str, RPCModuleData& data)
+{
+	// only support version = 00 : "00-" trace-id "-" parent-id "-" trace-flags
+	size_t begin = OTLP_TRACE_VERSION_SIZE;
+
+	if (str.length() < 55 || str.substr(0, begin).compare("00") != 0)
+		return false;
+
+//	data[OTLP_TRACE_VERSION] = "00";
+
+	uint64_t trace[2];
+	begin += 1;
+	TRACE_ID_HEX_TO_BIN(str.substr(begin, SRPC_TRACEID_SIZE * 2).data(), trace);
+	data[SRPC_TRACE_ID] = std::string((char *)trace, SRPC_TRACEID_SIZE);
+
+	uint64_t span[1];
+	begin += SRPC_TRACEID_SIZE * 2 + 1;
+	SPAN_ID_HEX_TO_BIN(str.substr(begin, SRPC_SPANID_SIZE * 2).data(), span);
+	data[SRPC_SPAN_ID] = std::string((char *)span, SRPC_SPANID_SIZE);
+
+//	begin += SRPC_SPANID_SIZE + 1;
+//	data[OTLP_TRACE_FLAG] = str.substr(begin);
 
 	return true;
 }
@@ -936,7 +1001,14 @@ bool TRPCRequest::get_meta_module_data(RPCModuleData& data) const
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
 
 	for (auto & pair : meta->trans_info())
-		data.insert(pair);
+	{
+		if (pair.first.compare(OTLP_TRACE_PARENT) == 0)
+			get_trace_parent(pair.second, data);
+		else if (pair.first.compare(OTLP_TRACE_STATE) == 0)
+			;// TODO: support tracestate
+		else
+			data.insert(pair);
+	}
 
 	return true;
 }

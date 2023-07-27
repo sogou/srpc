@@ -4,7 +4,7 @@ package trpc.test.helloworld;
 
 service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply) {}
-//  rpc Route (HelloRequest) returns (HelloReply) {}
+  rpc SayHi (HelloRequest) returns (HelloReply) {}
 }
 
 message HelloRequest {
