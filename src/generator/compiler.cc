@@ -69,7 +69,7 @@ int main(int argc, const char *argv[])
 	struct GeneratorParams params;
 
 #ifndef _WIN32
-	if (parse_origin(argc, argv, params, idl_type) == 0)
+	if (parse_origin(argc, argv, params, idl_type) != 0)
 	{
 		if (parse_getopt(argc, (char * const *)argv, params, idl_type) != 0)
 			return 0;
