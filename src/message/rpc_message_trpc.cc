@@ -264,10 +264,14 @@ static int DecodeTransInfo(TransInfoMap& map, const std::string& content)
 	const char *name, *str;
 	size_t len;
 	std::string decoded;
+	int errno_bak = errno;
 
+	errno = EBADMSG;
 	json = json_value_parse(content.c_str());
 	if (json == nullptr)
 		return -1;
+
+	errno = errno_bak;
 
 	if (json_value_type(json) != JSON_VALUE_OBJECT)
 	{
@@ -1494,26 +1498,22 @@ bool TRPCHttpResponse::deserialize_meta()
 
 bool TRPCHttpRequest::set_meta_module_data(const RPCModuleData& data)
 {
-	this->TRPCRequest::set_meta_module_data(data);
-	return http_set_header_module_data(data, this);
+	return this->TRPCRequest::set_meta_module_data(data);
 }
 
 bool TRPCHttpRequest::get_meta_module_data(RPCModuleData& data) const
 {
-	this->TRPCRequest::get_meta_module_data(data);
-	return http_get_header_module_data(this, data);
+	return this->TRPCRequest::get_meta_module_data(data);
 }
 
 bool TRPCHttpResponse::set_meta_module_data(const RPCModuleData& data)
 {
-	this->TRPCResponse::set_meta_module_data(data);
-	return http_set_header_module_data(data, this);
+	return this->TRPCResponse::set_meta_module_data(data);
 }
 
 bool TRPCHttpResponse::get_meta_module_data(RPCModuleData& data) const
 {
-	this->TRPCResponse::get_meta_module_data(data);
-	return http_get_header_module_data(this, data);
+	return this->TRPCResponse::get_meta_module_data(data);
 }
 
 bool TRPCHttpRequest::set_http_header(const std::string& name,
