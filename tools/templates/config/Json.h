@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <initializer_list>
 
 namespace wfrest
 {
@@ -216,12 +217,27 @@ public:
               typename std::enable_if<std::is_same<T, Object>::value ||
                                           std::is_same<T, Array>::value,
                                       bool>::type = true>
-    void push_back(const std::string& key, const T& val);
+    void push_back(const std::string& key, const T& val)
+    {
+        if (!can_obj_push_back())
+        {
+            return;
+        }
+        json_object_t* obj = json_value_object(node_);
+        Json copy_json = val.copy();
+        json_object_append(obj, key.c_str(), 0, copy_json.node_);
+        copy_json.reset();
+    }
 
     void push_back(const std::string& key, bool val);
     void push_back(const std::string& key, std::nullptr_t val);
     void push_back(const std::string& key, const std::string& val);
     void push_back(const std::string& key, const char* val);
+    void push_back(const std::string& key, const std::vector<std::string>& val);
+    void push_back(const std::string& key, const std::initializer_list<std::string>& val)
+    {
+        push_back(key, std::vector<std::string>(val));
+    }
     void push_back(const std::string& key, const Json& val);
 
 private:
@@ -257,12 +273,22 @@ private:
               typename std::enable_if<std::is_same<T, Object>::value ||
                                           std::is_same<T, Array>::value,
                                       bool>::type = true>
-    void placeholder_push_back(const std::string& key, const T& val);
+    void placeholder_push_back(const std::string& key, const T& val)
+    {
+        json_object_t* obj = json_value_object(parent_);
+        destroy_node(&node_);
+        Json copy_json = val.copy();
+        node_ = const_cast<json_value_t*>(
+            json_object_append(obj, key.c_str(), 0, copy_json.node_));
+        copy_json.reset();
+    }
 
     void placeholder_push_back(const std::string& key, bool val);
     void placeholder_push_back(const std::string& key, std::nullptr_t val);
     void placeholder_push_back(const std::string& key, const std::string& val);
     void placeholder_push_back(const std::string& key, const char* val);
+    void placeholder_push_back(const std::string& key,
+                               const std::vector<std::string>& val);
     void placeholder_push_back(const std::string& key, const Json& val);
 
     template <typename T, typename std::enable_if<detail::is_number<T>::value,
@@ -287,12 +313,29 @@ private:
               typename std::enable_if<std::is_same<T, Object>::value ||
                                           std::is_same<T, Array>::value,
                                       bool>::type = true>
-    void normal_push_back(const std::string& key, const T& val);
+    void normal_push_back(const std::string& key, const T& val)
+    {
+        json_object_t* obj = json_value_object(parent_);
+        const json_value_t* find = json_object_find(key.c_str(), obj);
+        Json copy_json = val.copy();
+        if (find == nullptr)
+        {
+            json_object_append(obj, key.c_str(), 0, copy_json.node_);
+            copy_json.reset();
+            return;
+        }
+        json_object_insert_before(find, obj, key.c_str(), 0, copy_json.node_);
+        copy_json.reset();
+        json_value_t* remove_val = json_object_remove(find, obj);
+        json_value_destroy(remove_val);
+    }
 
     void normal_push_back(const std::string& key, bool val);
     void normal_push_back(const std::string& key, std::nullptr_t val);
     void normal_push_back(const std::string& key, const std::string& val);
     void normal_push_back(const std::string& key, const char* val);
+    void normal_push_back(const std::string& key,
+                          const std::vector<std::string>& val);
     void normal_push_back(const std::string& key, const Json& val);
 
 public:
@@ -314,12 +357,27 @@ public:
               typename std::enable_if<std::is_same<T, Json::Object>::value ||
                                           std::is_same<T, Json::Array>::value,
                                       bool>::type = true>
-    void push_back(const T& val);
+    void push_back(const T& val)
+    {
+        if (!can_arr_push_back())
+        {
+            return;
+        }
+        json_array_t* arr = json_value_array(node_);
+        Json copy_json = val.copy();
+        json_array_append(arr, 0, copy_json.node_);
+        copy_json.reset();
+    }
 
     void push_back(bool val);
+    void push_back(std::nullptr_t val);
     void push_back(const std::string& val);
     void push_back(const char* val);
-    void push_back(std::nullptr_t val);
+    void push_back(const std::vector<std::string>& val);
+    void push_back(const std::initializer_list<std::string>& val)
+    {
+        push_back(std::vector<std::string>(val));
+    }
     void push_back(const Json& val);
 
     void erase(int index);
@@ -340,12 +398,21 @@ private:
               typename std::enable_if<std::is_same<T, Json::Object>::value ||
                                           std::is_same<T, Json::Array>::value,
                                       bool>::type = true>
-    void update_arr(const T& val);
+    void update_arr(const T& val)
+    {
+        json_array_t* arr = json_value_array(parent_);
+        Json copy_json = val.copy();
+        json_array_insert_before(node_, arr, 0, copy_json.node_);
+        copy_json.reset();
+        json_value_t* remove_val = json_array_remove(node_, arr);
+        json_value_destroy(remove_val);
+    }
 
     void update_arr(bool val);
+    void update_arr(std::nullptr_t val);
     void update_arr(const std::string& val);
     void update_arr(const char* val);
-    void update_arr(std::nullptr_t val);
+    void update_arr(const std::vector<std::string>& val);
     void update_arr(const Json& val);
 
 public:
@@ -753,8 +820,8 @@ public:
         : Json(node, parent, "")
     {
     }
-    using string_type = typename std::basic_string<char, std::char_traits<char>,
-                                                   std::allocator<char>>;
+    using string_type = std::basic_string<char, std::char_traits<char>,
+                                                std::allocator<char>>;
     using pair_type = std::pair<string_type, Json>;
 
     Object_S(std::initializer_list<pair_type> list)
@@ -796,87 +863,6 @@ typename std::enable_if<std::is_same<T, Json::Array>::value, T>::type
 Json::get() const
 {
     return Json::Array(node_, parent_);
-}
-
-template <typename T,
-          typename std::enable_if<std::is_same<T, Json::Object>::value ||
-                                      std::is_same<T, Json::Array>::value,
-                                  bool>::type>
-void Json::push_back(const std::string& key, const T& val)
-{
-    if (!can_obj_push_back())
-    {
-        return;
-    }
-    json_object_t* obj = json_value_object(node_);
-    Json copy_json = val.copy();
-    json_object_append(obj, key.c_str(), 0, copy_json.node_);
-    copy_json.reset();
-}
-
-template <typename T,
-          typename std::enable_if<std::is_same<T, Json::Object>::value ||
-                                      std::is_same<T, Json::Array>::value,
-                                  bool>::type>
-void Json::placeholder_push_back(const std::string& key, const T& val)
-{
-    json_object_t* obj = json_value_object(parent_);
-    destroy_node(&node_);
-    Json copy_json = val.copy();
-    node_ = const_cast<json_value_t*>(
-        json_object_append(obj, key.c_str(), 0, copy_json.node_));
-    copy_json.reset();
-}
-
-template <typename T,
-          typename std::enable_if<std::is_same<T, Json::Object>::value ||
-                                      std::is_same<T, Json::Array>::value,
-                                  bool>::type>
-void Json::normal_push_back(const std::string& key, const T& val)
-{
-    json_object_t* obj = json_value_object(parent_);
-    const json_value_t* find = json_object_find(key.c_str(), obj);
-    Json copy_json = val.copy();
-    if (find == nullptr)
-    {
-        json_object_append(obj, key.c_str(), 0, copy_json.node_);
-        copy_json.reset();
-        return;
-    }
-    json_object_insert_before(find, obj, key.c_str(), 0, copy_json.node_);
-    copy_json.reset();
-    json_value_t* remove_val = json_object_remove(find, obj);
-    json_value_destroy(remove_val);
-}
-
-template <typename T,
-          typename std::enable_if<std::is_same<T, Json::Object>::value ||
-                                      ::std::is_same<T, Json::Array>::value,
-                                  bool>::type>
-void Json::push_back(const T& val)
-{
-    if (!can_arr_push_back())
-    {
-        return;
-    }
-    json_array_t* arr = json_value_array(node_);
-    Json copy_json = val.copy();
-    json_array_append(arr, 0, copy_json.node_);
-    copy_json.reset();
-}
-
-template <typename T,
-          typename std::enable_if<std::is_same<T, Json::Object>::value ||
-                                      ::std::is_same<T, Json::Array>::value,
-                                  bool>::type>
-void Json::update_arr(const T& val)
-{
-    json_array_t* arr = json_value_array(parent_);
-    Json copy_json = val.copy();
-    json_array_insert_before(node_, arr, 0, copy_json.node_);
-    copy_json.reset();
-    json_value_t* remove_val = json_array_remove(node_, arr);
-    json_value_destroy(remove_val);
 }
 
 } // namespace wfrest
