@@ -256,7 +256,7 @@ static std::string JsonEscape(const std::string& in)
 }
 
 using TransInfoMap = ::google::protobuf::Map<::std::string, ::std::string>;
-static int DecodeTransInfo(TransInfoMap& map, const std::string& content)
+static int DecodeTransInfo(const std::string& content, TransInfoMap& map)
 {
 	json_value_t *json;
 	json_object_t *obj;
@@ -1282,7 +1282,7 @@ bool TRPCHttpRequest::deserialize_meta()
 			meta->set_message_type(std::atoi(value.c_str()));
 			break;
 		case TRPCHttpHeadersCode::TransInfo:
-			DecodeTransInfo(*meta->mutable_trans_info(), value);
+			DecodeTransInfo(value, *meta->mutable_trans_info());
 			break;
 		default:
 			break;
@@ -1467,7 +1467,7 @@ bool TRPCHttpResponse::deserialize_meta()
 			meta->set_message_type(std::atoi(value.c_str()));
 			break;
 		case TRPCHttpHeadersCode::TransInfo:
-			DecodeTransInfo(*meta->mutable_trans_info(), value);
+			DecodeTransInfo(value, *meta->mutable_trans_info());
 			break;
 		default:
 			break;
