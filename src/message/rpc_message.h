@@ -43,6 +43,9 @@ public:
 	virtual bool set_meta_module_data(const RPCModuleData& data) = 0;
 
 	virtual void set_seqid(long long seqid) {}
+
+public:
+	virtual ~RPCRequest() { }
 };
 
 class RPCResponse
@@ -59,6 +62,9 @@ public:
 	virtual void set_error(int error) = 0;
 
 	virtual bool set_http_code(int code) { return false; }
+
+public:
+	virtual ~RPCResponse() { }
 };
 
 class RPCMessage
@@ -129,6 +135,7 @@ public:
 
 public:
 	RPCMessage() { this->flags = 0; }
+	virtual ~RPCMessage() { }
 
 protected:
 	uint32_t flags;

@@ -948,7 +948,7 @@ bool TRPCRequest::set_meta_module_data(const RPCModuleData& data)
 	std::string span;
 	int flag = 0;
 
-	for (auto & pair : data)
+	for (const auto & pair : data)
 	{
 		if (pair.first.compare(SRPC_TRACE_ID) == 0)
 		{
@@ -1000,7 +1000,7 @@ bool TRPCRequest::get_meta_module_data(RPCModuleData& data) const
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
 
-	for (auto & pair : meta->trans_info())
+	for (const auto & pair : meta->trans_info())
 	{
 		if (pair.first.compare(OTLP_TRACE_PARENT) == 0)
 			get_trace_parent(pair.second, data);
@@ -1030,7 +1030,7 @@ bool TRPCResponse::set_meta_module_data(const RPCModuleData& data)
 {
 	ResponseProtocol *meta = static_cast<ResponseProtocol *>(this->meta);
 
-	for (auto & pair : data)
+	for (const auto & pair : data)
 		meta->mutable_trans_info()->insert({pair.first, pair.second});
 
 	return true;
@@ -1040,7 +1040,7 @@ bool TRPCResponse::get_meta_module_data(RPCModuleData& data) const
 {
 	ResponseProtocol *meta = static_cast<ResponseProtocol *>(this->meta);
 
-	for (auto & pair : meta->trans_info())
+	for (const auto & pair : meta->trans_info())
 		data.insert(pair);
 
 	return true;
