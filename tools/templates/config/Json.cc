@@ -134,19 +134,8 @@ Json::Json(JsonType type) : allocated_(true)
 }
 Json::Json(const Json& other)
 {
-    if (other.allocated_)
-    {
-        node_ = json_value_copy(other.node_);
-        allocated_ = true;
-    }
-    else
-    {
-        // watcher mode
-        node_ = other.node_;
-        parent_ = other.parent_;
-        allocated_ = false;
-        parent_key_ = other.parent_key_;
-    }
+    node_ = json_value_copy(other.node_);
+    allocated_ = true;
 }
 
 Json& Json::operator=(const Json& other)
@@ -156,21 +145,10 @@ Json& Json::operator=(const Json& other)
         return *this;
     }
     destroy_node(&node_);
-    if (other.allocated_)
-    {
-        node_ = json_value_copy(other.node_);
-        parent_ = nullptr;
-        allocated_ = true;
-        parent_key_.clear();
-    }
-    else
-    {
-        // watcher mode
-        node_ = other.node_;
-        parent_ = other.parent_;
-        allocated_ = false;
-        parent_key_ = other.parent_key_;
-    }
+    node_ = json_value_copy(other.node_);
+    parent_ = nullptr;
+    allocated_ = true;
+    parent_key_.clear();
 
     return *this;
 }

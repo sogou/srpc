@@ -700,6 +700,8 @@ private:
         }
     }
 
+    void copy(const Json& other);
+
 public:
     // Constructors for the various types of JSON value.
     // Basic json type Constructors
