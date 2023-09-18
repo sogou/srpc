@@ -11,99 +11,37 @@
 ### NEW !!!  👉 [SRPC tools : 一个帮你快速构建Workflow和SRPC项目的小工具.](/tools/README_cn.md) 
 
 ## Introduction
-#### SRPC是全搜狗业务线上使用的企业级RPC系统，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。主要功能和特点：
-  * 底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，兼具：
-    * 高性能、低延迟、轻量级
-    * 低开发和接入门槛
-    * 完美兼容workflow的串并联任务流
-    * 对于已有protobuf/thrift描述文件的项目，可以做到一键迁移
-    * 支持Linux / MacOS / Windows等多操作系统
-  * 支持多种IDL格式，包括：
-    * Protobuf
-    * Thrift
-  * 支持多种数据布局，使用上完全透明，包括：
-    * Protobuf serialize
-    * Thrift Binary serialize
-    * json serialize
-  * 支持多种压缩，使用上完全透明，包括：
-    * gzip
-    * zlib
-    * snappy
-    * lz4
-  * 支持多种通信协议，使用上完全透明，包括：
-    * tcp
-    * http
-	* sctp
-	* ssl
-	* https
-  * 用户可以通过http+json实现跨语言：
-    * 如果自己是server提供方，用任何语言的http server接受post请求，解析若干http header即可
-    * 如果自己是client调用方，用任何语言的http client发送post请求，添加若干http header即可
-  * 内置了可以与其他RPC框架的server/client无缝互通的client/server，包括：
-    * SRPC
-    * BRPC
-    * TRPC (目前唯一的TRPC协议开源实现)
-    * Thrift Framed Binary
-    * Thrift Http Binary
-  * 兼容workflow的使用方式：
-    * 提供创建任务的接口来创建一个rpc任务
-    * 可以把rpc任务放到任务流图中，回调函数里也可以拿到当前的任务流
-    * workflow所支持的其他功能，包括upstream、计算调度、异步文件IO等
-  * AOP模块化插件管理：
-    * 可上报tracing和metrics到[OpenTelemetry](https://opentelemetry.io)
-    * 可上报监控到[Prometheus](https://prometheus.io)
-    * 轻松对接其他云原生系统
-  * 支持srpc协议的Envoy-filter，满足Kubernetes用户的使用需求
-  * [更多功能和层次介绍](docs/rpc.md)
+**SRPC是全搜狗业务线上使用的企业级RPC系统，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。**
+
+**底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，是高性能、低延迟、轻量级RPC系统的极佳选择。**
+
+**使用AOP面向切面的模块，支持Metrics（监控指标）和Trace（链路追踪）功能，可上报到多种云原生系统，包括OpenTelemetry。**
+
+#### 主要功能和示例：
+  * 支持多种**RPC协议**：[SPRC](/tutorial/tutorial-01-srpc_pb_server.cc)、[BRPC](/tutorial/tutorial-05-brpc_pb_server.cc)、[Thrift](/tutorial/tutorial-07-thrift_thrift_server.cc)、[TRPC](/tutorial/tutorial-11-trpc_pb_server.cc)（目前唯一的TRPC协议开源实现）
+  * 支持多种**操作系**统：Linux / MacOS / Windows
+  * 支持多种**IDL格式**：[Protobuf](/tutorial/echo_pb.proto)、[Thrift](/tutorial/echo_thrift.thrift)
+  * 支持多种**数据布局**，使用上完全透明：Json、Protobuf、Thrift Binary
+  * 支持多种**压缩**，框架自动解压：gzip、zlib、snappy、lz4
+  * 支持多种**通信协议**：tcp、http、sctp、ssl、https
+  * 可以通过[http+json实现**跨语言**](/docs/docs-07-srpc-http.md)
+  * 可以使用[Workflow串并联**任务流**](/docs/docs-06-workflow.md)，打通计算及其他异步资源
+  * **完美兼容Workflow**所有功能：命名服务体系、[upstream](docs/docs-06-workflow.md#3-upstream)、其他组件等
+  * **链路追踪**功能：上报[Tracing](/docs/docs-08-tracing.md)到[OpenTelemetry](https://opentelemetry.io)
+  * **监控**功能：上报[Metrics](/docs/docs-09-metrics.md)到OpenTelemetry和[Prometheus](https://prometheus.io) 
 
 ## Installation
-  * srpc默认会编译出静态库libsrpc.a和动态库libsrpc.so(或者dylib或dll)
-  * srpc依赖workflow和protobuf3
-    * protobuf需要用户自行安装v3.11.0或以上的版本
-    * workflow可以通过git的submodule形式进行依赖
-    * 压缩库snappy和lz4也以submodule的形式在third_party/中作源码依赖
-    * workflow、snappy和lz4也可以系统预装，如果thirt_party中没有拉取源码依赖，则会从系统默认安装路径寻找，snappy的预装要求版本是v1.1.6或以上
-  * Windows版下srpc代码无差异，需要依赖workflow的windows分支
-~~~sh
-git clone --recursive https://github.com/sogou/srpc.git
-cd srpc
-make
-~~~
 
-### 安装（Fedora Linux）：
-srpc已为Fedora打包。
+SRPC是Debian Linux和Fedora的自带安装包，因此可以通过源码安装，和系统自带安装包安装。
 
-为了开发目的安装srpc库：
-~~~sh
-sudo dnf install srpc-devel
-~~~
-
-要安装srpc库以进行部署，请执行以下操作：
-~~~sh
-sudo dnf install srpc
-~~~
-
-## Tutorial
-
-* [第1步：设计IDL描述文件](docs/docs-01-idl.md)
-* [第2步：实现ServiceIMPL](docs/docs-02-service.md)
-* [第3步：启动Server](docs/docs-03-server.md)
-* [第4步：使用Client](docs/docs-04-client.md)
-* [第5步：了解异步Context](docs/docs-05-context.md)
-* [第6步：与workflow的结合使用](docs/docs-06-workflow.md)
-* [第7步：使用SRPC发送HTTP协议](docs/docs-07-srpc-http.md)
-* [第8步：链路上报到OpenTelemetry](docs/docs-08-tracing.md)
-* [第9步：监控指标的使用与上报](docs/docs-09-metrics.md)
-* [第10步：附带生态模块功能的Workflow风格Http](/docs/docs-10-http-with-modules.md)
-
-简单的命令即可编译示例：
-
-~~~sh
- cd tutorial
- make
-~~~
+具体参考：[Linux、MacOS、Windows安装和编译指南](docs/installation.md)
 
 ## Quick Start
+
+我们通过几个步骤快速了解如何使用。
+
+更详细的用法可以参考[更多文档](/docs)，和[官方教程](/tutorial)。
+
 #### 1. example.proto
 ~~~proto
 syntax = "proto3";//这里proto2和proto3都可以，srpc都支持
