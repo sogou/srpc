@@ -55,7 +55,7 @@ def srpc_cc_library(
         message = "Generating srpc files for %s:" % (name),
     )
 
-    runtime_deps = deps + [":libsrpc"]
+    runtime_deps = deps + [":srpc"]
     print(runtime_deps)
 
     cc_library(
