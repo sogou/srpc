@@ -45,7 +45,7 @@ cc_library(
 )
 
 cc_library(
-    name = "libsrpc",
+    name = "srpc",
     srcs = glob(["src/**/*.cc"]),
     hdrs = glob([
         "src/**/*.h",
@@ -87,7 +87,7 @@ cc_library(
     includes = ["src/generator"],
     visibility = ["//visibility:public"],
     deps = [
-        ":libsrpc",
+        ":srpc",
     ],
 )
 
@@ -96,7 +96,7 @@ cc_binary(
     srcs = ["src/generator/compiler.cc"],
     visibility = ["//visibility:public"],
     deps = [
-        ":libsrpc",
+        ":srpc",
         ":srpc_generator_lib",
     ],
 )
@@ -130,7 +130,7 @@ cc_binary(
     ],
     deps = [
         ":echo_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -145,7 +145,7 @@ cc_binary(
     ],
     deps = [
         ":echo_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -166,7 +166,7 @@ cc_binary(
     ],
     deps = [
         ":echo_thrift_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -181,7 +181,7 @@ cc_binary(
     ],
     deps = [
         ":echo_thrift_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -196,7 +196,7 @@ cc_binary(
     ],
     deps = [
         ":echo_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -211,7 +211,7 @@ cc_binary(
     ],
     deps = [
         ":echo_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -226,7 +226,7 @@ cc_binary(
     ],
     deps = [
         ":echo_thrift_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -241,7 +241,7 @@ cc_binary(
     ],
     deps = [
         ":echo_thrift_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -256,7 +256,7 @@ cc_binary(
     ],
     deps = [
         ":echo_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -271,7 +271,7 @@ cc_binary(
     ],
     deps = [
         ":echo_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -305,7 +305,7 @@ cc_binary(
     ],
     deps = [
         ":helloworld_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -320,7 +320,7 @@ cc_binary(
     ],
     deps = [
         ":helloworld_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -335,7 +335,7 @@ cc_binary(
     ],
     deps = [
         ":helloworld_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -350,7 +350,7 @@ cc_binary(
     ],
     deps = [
         ":helloworld_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -365,7 +365,7 @@ cc_binary(
     ],
     deps = [
         ":echo_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
@@ -380,7 +380,7 @@ cc_binary(
     ],
     deps = [
         ":echo_pb_srpc",
-        ":libsrpc",
+        ":srpc",
         ":srpc_hdrs",
     ],
 )
