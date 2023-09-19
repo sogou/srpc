@@ -2,79 +2,46 @@
 
 ## 1. Linux源码安装
 
-### 1.1 前置依赖
+源码安装需要一些前置依赖：CMake（要求3.6以上）、OpenSSL(推荐1.1及以上)、Protobuf（要求3.5及以上）
 
-源码安装需要一些前置依赖：
-* 手动安装：CMake（要求3.6以上）、OpenSSL(推荐1.1及以上)、Protobuf（要求3.5及以上）
-* 自动安装：Workflow、压缩库snappy和lz4  
+默认会编译出：
+1. 静态库：libsrpc.a（或者dylib）
+2. 动态库：libsrpc.so（或者dll）
+3. 用于生成代码的二进制工具：srpc_generator
+
+- **cmake**
+~~~sh
+git clone --recursive https://github.com/sogou/srpc.git
+cd srpc
+make
+make install
+
+# 编译示例
+cd tutorial
+make 
+~~~
+
+- **bazel（二选一）**
+~~~sh
+git clone --recursive https://github.com/sogou/srpc.git
+cd srpc
+bazel build ...
+# 在bazel-bin/目录下，编译出lib和srpc_generator以及所有示例编译出来的可执行文件
+~~~
+
+此外，还可以借助srpc_tools安装和部署脚手架。小工具用法参考：[srpc/tools/README_cn.md](srpc/tools/README_cn.md)
 
 Workflow、snappy和lz4也可以系统预装，如果third_party中没有通过`--recursive`参数拉取源码依赖，则会从系统默认安装路径寻找，snappy的预装要求版本是v1.1.6或以上。
 
-其中前置依赖`Protobuf`，源码安装参考：
-
+如果需要源码安装`Protobuf`，参考命令：
 ~~~sh
 git clone -b 3.20.x https://github.com/protocolbuffers/protobuf.git protobuf.3.20
 cd protobuf.3.20
 sh autogen.sh
 ./configure
-make -j4
+make
 make install
 ~~~
-
-### 1.2 源码安装SRPC
-
-支持make命令、bazel编译或者cmake命令编译，默认会编译出：
-- 静态库：libsrpc.a（或者dylib）
-- 动态库：libsrpc.so（或者dll）
-- 用于生成代码的二进制工具：srpc_generator
-
-以下命令三选一即可：
-
-- **make**
-   ~~~sh
-   git clone --recursive https://github.com/sogou/srpc.git
-   cd srpc
-   make
-   ~~~
-
-   执行以下命令安装到系统默认路径（可选，如果不执行，则自己开发代码时需要注意指定寻找SRPC库和头文件的路径）：
-   ~~~sh
-   make install
-   ~~~
-
-- **bazel**
-   ~~~sh
-   bazel build ...
-   #可以编译出lib和srpc_generator以及所有示例编译出来的可执行文件，在bazel-bin/目录下
-   ~~~
-
-- **cmake**
-   ~~~sh
-   mkdir build.cmake
-   cd build.cmake
-   cmake ..
-   make # 可以编译出lib和srpc_generator
-   ~~~
-
-### 1.3 编译教程示例
-
-tutorial目录下会默认编译出所有示例的可执行文件：
-
-~~~sh
-cd tutorial
-make
-~~~
-
-### 1.4 编译小工具
-
-tools目录下会默认编译出srpc_tools：
-
-~~~sh
-cd tools
-make
-~~~
-
-小工具用法参考：[srpc/tools/README_cn.md](srpc/tools/README_cn.md)
 
 ## 2. Debian Linux和Ubuntu自带安装包
 
