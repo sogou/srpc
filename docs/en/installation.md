@@ -2,15 +2,38 @@
 
 ## 1. Install from source code on Linux
 
-### 1.1 Dependencies
+SRPC depends on the following modules : **CMake**(Require >= v3.6.0), **OpenSSL**(Recommend >= v1.1.0), **Protobuf**(Require >= v3.5.0)
 
-SRPC depends on the following modules :
-* Manually install : **CMake**(Require >= v3.6.0), **OpenSSL**(Recommend >= v1.1.0), **Protobuf**(Require >= v3.5.0)
-* Automatically install : **Workflow**, **snappy**, **lz4**  
+Will get the following output: 
+1. static library: libsrpc.a (or dylib)
+2. dynamic library: libsrpc.so (or dll)
+3. tool for generating code: srpc_generator
+
+- **cmake**
+~~~sh
+git clone --recursive https://github.com/sogou/srpc.git
+cd srpc
+make
+make install
+
+# compile tutorial
+cd tutorial
+make
+~~~
+
+- **bazel**
+~~~sh
+git clone --recursive https://github.com/sogou/srpc.git
+cd srpc
+bazel build ...
+# It can compile out lib and src generator and all tutorials into bazel-bin/
+~~~
+
+In addition, we can use srpc_tools to install and deploy skeleton project. Refer to the usage：[srpc/tools/README.md](srpc/tools/README.md)
 
 Workflow, snappy and lz4 can also be found via installed package in the system. If the submodule dependencies are not pulled in third\_party by '--recursive', they will be searched from the default installation path of the system. The version of snappy is required v1.1.6 or above.
 
-To install **Protobuf** by source code (Please ignore it if Protobuf is installed):
+If you need to install **Protobuf** from source code, refer to the command:
 
 ~~~sh
 git clone -b 3.20.x https://github.com/protocolbuffers/protobuf.git protobuf.3.20
@@ -21,56 +44,6 @@ make -j4
 make install
 ~~~
 
-### 1.2 Compile and Install SRPC
-
-Supports 'make', 'bazel' and 'cmake'. Compiling SRPC will get the following output: 
-- static library: libsrpc.a (or dylib)
-- dynamic library: libsrpc.so (or dll)
-- tool for generating code: srpc_generator
-
-Just choose one of the following three commands:
-
-- **make**
-   ~~~sh
-   git clone --recursive https://github.com/sogou/srpc.git
-   cd srpc
-   make
-   ~~~
-
-   Execute the following command to install to the system default path (optional. Or you need to pay attention to specify the path to find the SRPC library and header files when building your own code):
-   ~~~sh
-   make install
-   ~~~
-
-- **bazel**
-   ~~~sh
-   bazel build ...
-   # It can compile out lib and src generator and all tutorials into bazel-bin/
-   ~~~
-
-- **cmake**
-   ~~~sh
-   mkdir build.cmake
-   cd build.cmake
-   cmake ..
-   make
-   ~~~
-
-### 1.3 Compile tutorial
-
-~~~sh
-cd tutorial
-make
-~~~
-
-### 1.4 Compile srpc_tools
-
-~~~sh
-cd tools
-make
-~~~
-
-Please refer to the usage：[srpc/tools/README.md](srpc/tools/README.md)
 
 ## 2. Debian Linux
 
