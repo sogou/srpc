@@ -13,22 +13,20 @@
 ## Introduction
 **SRPC是全搜狗业务线上使用的企业级RPC系统，目前每天承载上百亿的请求量，涵盖搜广推及其他类型业务。**
 
-**底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，是高性能、低延迟、轻量级RPC系统的极佳选择。**
+底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，是高性能、低延迟、轻量级RPC系统的极佳选择。且加入了AOP面向切面的模块，支持Metrics（监控指标）和Trace（链路追踪）功能，可上报到多种云原生系统，包括OpenTelemetry。
 
-**使用AOP面向切面的模块，支持Metrics（监控指标）和Trace（链路追踪）功能，可上报到多种云原生系统，包括OpenTelemetry。**
-
-#### 主要功能和示例：
-  * 支持多种**RPC协议**：[SPRC](/tutorial/tutorial-01-srpc_pb_server.cc)、[BRPC](/tutorial/tutorial-05-brpc_pb_server.cc)、[Thrift](/tutorial/tutorial-07-thrift_thrift_server.cc)、[TRPC](/tutorial/tutorial-11-trpc_pb_server.cc)（目前唯一的TRPC协议开源实现）
-  * 支持多种**操作系**统：Linux / MacOS / Windows
-  * 支持多种**IDL格式**：[Protobuf](/tutorial/echo_pb.proto)、[Thrift](/tutorial/echo_thrift.thrift)
-  * 支持多种**数据布局**，使用上完全透明：Json、Protobuf、Thrift Binary
-  * 支持多种**压缩**，框架自动解压：gzip、zlib、snappy、lz4
-  * 支持多种**通信协议**：tcp、http、sctp、ssl、https
-  * 可以通过[http+json实现**跨语言**](/docs/docs-07-srpc-http.md)
-  * 可以使用[Workflow串并联**任务流**](/docs/docs-06-workflow.md)，打通计算及其他异步资源
-  * **完美兼容Workflow**所有功能：命名服务体系、[upstream](docs/docs-06-workflow.md#3-upstream)、其他组件等
-  * **链路追踪**功能：上报[Tracing](/docs/docs-08-tracing.md)到[OpenTelemetry](https://opentelemetry.io)
-  * **监控**功能：上报[Metrics](/docs/docs-09-metrics.md)到OpenTelemetry和[Prometheus](https://prometheus.io) 
+主要功能和示例：
+  * 支持多种RPC协议：[SPRC](/tutorial/tutorial-01-srpc_pb_server.cc)、[BRPC](/tutorial/tutorial-05-brpc_pb_server.cc)、[Thrift](/tutorial/tutorial-07-thrift_thrift_server.cc)、[TRPC](/tutorial/tutorial-11-trpc_pb_server.cc)（目前唯一的TRPC协议开源实现）
+  * 支持多种操作系统：Linux / MacOS / Windows
+  * 支持多种IDL格式：[Protobuf](/tutorial/echo_pb.proto)、[Thrift](/tutorial/echo_thrift.thrift)
+  * 支持多种数据布局，使用上完全透明：Json、Protobuf、Thrift Binary
+  * 支持多种压缩，框架自动解压：gzip、zlib、snappy、lz4
+  * 支持多种通信协议：tcp、http、sctp、ssl、https
+  * 可以通过[http+json实现跨语言](/docs/docs-07-srpc-http.md)
+  * 可以使用[Workflow串并联任务流](/docs/docs-06-workflow.md)，打通计算及其他异步资源
+  * 完美兼容Workflow所有功能：命名服务体系、[upstream](docs/docs-06-workflow.md#3-upstream)、其他组件等
+  * 链路追踪功能：上报[Tracing](/docs/docs-08-tracing.md)到[OpenTelemetry](https://opentelemetry.io)
+  * 监控功能：上报[Metrics](/docs/docs-09-metrics.md)到OpenTelemetry和[Prometheus](https://prometheus.io) 
 
 ## Installation
 
