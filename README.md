@@ -30,16 +30,17 @@ Its main features include:
   * Perfectly compatible with all Workflow functions, such as name service, [upstream](docs/docs-06-workflow.md#3-upstream) and other components
   * Report [Tracing](/docs/docs-08-tracing.md) to [OpenTelemetry](https://opentelemetry.io)
   * Report [Metrics](/docs/docs-09-metrics.md) to [OpenTelemetry](https://opentelemetry.io) and [Prometheus](https://prometheus.io)
-  * [More features and layers...](/docs/en/rpc.md)
+  * [More features...](/docs/en/rpc.md)
 
 ## Installation
 
 srpc has been packaged for Debian and Fedora. Therefore, we can install it from source code or from the package in the system.
+
 reference: [Linux, MacOS, Windows Installation and Compilation Guide](docs/en/installation.md)
 
 ## Quick Start
 
-Let's quickly learn how to use it in a few steps.l
+Let's quickly learn how to use it in a few steps.
 
 For more detailed usage, please refer to [Documents](/docs) and [Tutorial](/tutorial).
 
