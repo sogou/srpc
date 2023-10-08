@@ -13,133 +13,35 @@
 
 ## Introduction
 
-#### SRPC is an enterprise-level RPC system used by almost all online services in Sogou. It handles tens of billions of requests every day, covering searches, recommendations, advertising system, and other types of services. Its main features include:
+**SRPC is an enterprise-level RPC system used by almost all online services in Sogou. It handles tens of billions of requests every day, covering searches, recommendations, advertising system, and other types of services.**
 
-* Base on [Sogou C++ Workflow](https://github.com/sogou/workflow), with the following features:
-  * High performance, low latency, lightweight
-  * Low development and access cost
-  * Compatible with SeriesWork and ParallelWork in Workflow
-  * One-click migration for existing projects with protobuf/thrift
-  * Supports multiple operating systems: Linux / MacOS / Windows
-* Support several IDL formats, including:
-  * Protobuf
-  * Thrift
-* Support several data formats, including:
-  * Protobuf serialize
-  * Thrift Binary serialize
-  * JSON serialize
-* Support several compression formats transparently, including:
-  * gzip
-  * zlib
-  * snappy
-  * lz4
-* Support several communication protocols transparently, including:
-  * tcp
-  * http
-  * sctp
-  * ssl
-  * https
-* With HTTP+JSON, you can use any language:
-  * As a server, you can accept POST requests with HTTP server developed in any language and parse the HTTP headers.
-  * As a client, you can send POST requests with HTTP client developed in any language and add the required HTTP headers.
-* Built-in client/server which can seamlessly communicate with a server/client in other RPC frameworks, including:
-  * SRPC
-  * BRPC
-  * TRPC (the only open-source implementation of TRPC protocol so far)
-  * Thrift Framed Binary
-  * Thrift Http Binary
-* How to use it together with Workflow:
-  * You can use the interface to create an RPC task
-  * You can put the RPC task into SeriesWork or ParallelWork, and you can also get the current SeriesWork in the callback.
-  * You can also use other features supported by Workflow, including upstream, calculation scheduling, asynchronous file IO, etc.
-* AOP Modular Plugin Management:
-  * Able to report tracing and metrics to [OpenTelemetry](https://opentelemetry.io)
-  * Able to pull metrics by [Prometheus](https://prometheus.io)
-  * Easy to report to other Cloud Native systems
-* srpc Envoy-filter for the users of Kubernetes
-* [More features and layers](/docs/en/rpc.md)
+Bases on [Sogou C++ Workflow](https://github.com/sogou/workflow), it is an excellent choice for high-performance, low-latency, lightweight RPC systems. Contains AOP aspect-oriented modules that can report Metrics and Trace to a variety of cloud-native systems, such as OpenTelemetry, etc.
+
+Its main features include:
+
+  * Support multiple RPC protocols: [`SPRC`](/tutorial/tutorial-01-srpc_pb_server.cc), [`BRPC`](/tutorial/tutorial-05-brpc_pb_server.cc), [`Thrift`](/tutorial/tutorial-07-thrift_thrift_server.cc), [`TRPC`](/tutorial/tutorial-11-trpc_pb_server.cc) (Currently the only open source implementation of the TRPC protocol)
+  * Support multiple operating systems: `Linux`, `MacOS`, `Windows`
+  * Support several IDL formats: [`Protobuf`](/tutorial/echo_pb.proto), [`Thrift`](/tutorial/echo_thrift.thrift)
+  * Support several data formats transparently: `Json`, `Protobuf`, `Thrift Binary`
+  * Support several compression formats, the framework automatically decompresses: `gzip`, `zlib`, `snappy`, `lz4`
+  * Support several communication protocols transparently: `tcp`, `http`, `sctp`, `ssl`, `https`
+  * With [HTTP+JSON](/docs/docs-07-srpc-http.md), you can communicate with the client or server in any language
+  * Use it together with [Workflow Series and Parallel](/docs/docs-06-workflow.md) to facilitate the use of calculations and other asynchronous resources
+  * Perfectly compatible with all Workflow functions, such as name service, [upstream](docs/docs-06-workflow.md#3-upstream) and other components
+  * Report [Tracing](/docs/docs-08-tracing.md) to [OpenTelemetry](https://opentelemetry.io)
+  * Report [Metrics](/docs/docs-09-metrics.md) to [OpenTelemetry](https://opentelemetry.io) and [Prometheus](https://prometheus.io)
+  * [More features and layers...](/docs/en/rpc.md)
 
 ## Installation
 
-* srpc will compile the static library libsrpc.a and dynamic library libsrpc.so (or dylib or dll).
-* srpc depends on Workflow and protobuf3.
-  * For protobuf, you must install protobuf v3.11.0 or above by yourself.
-  * For Workflow, it\`s added as dependency automatically via git submodule.
-  * For snappy and lz4, source codes are also included as third\_party via git submodule.
-  * Workflow, snappy and lz4 can also be found via installed package in the system. If the submodule dependencies are not pulled in third\_party, they will be searched from the default installation path of the system. The version of snappy is required v1.1.6 or above.
-* There is no difference in the srpc code under the Windows version, but users need to use the windows branch of Workflow
-
-~~~sh
-git clone --recursive https://github.com/sogou/srpc.git
-cd srpc
-make
-~~~
-
-### Installation(Debian Linux):
-srpc has been packaged for Debian. It is currently in Debian sid (unstable) but will eventually be placed into the stable repository.
-
-In order to access the unstable repository, you will need to edit your /etc/apt/sources.list file.
-
-sources.list has the format: `deb <respository server/mirror> <repository name> <sub branches of the repo>`
-
-Simply add the 'unstable' sub branch to your repo:
-~~~~sh
-deb http://deb.debian.org/ main contrib non-free 
-
---> 
-
-deb http://deb.debian.org/ unstable main contrib non-free
-~~~~
-
-Once that is added, update your repo list and then you should be able to install it:
-~~~~sh
-sudo apt-get update
-~~~~
-
-To install the srpc library for development purposes:
-~~~~sh
-sudo apt-get install libsrpc-dev
-~~~~
-
-To install the srpc library for deployment:
-~~~~sh
-sudo apt-get install libsrpc
-~~~~
-
-### Installation(Fedora Linux):
-srpc has been packaged for Fedora.
-
-To install the srpc library for development purposes:
-~~~~sh
-sudo dnf install srpc-devel
-~~~~
-
-To install the srpc library for deployment:
-~~~~sh
-sudo dnf install srpc
-~~~~
-
-## Tutorial
-
-* [Step 1: Design IDL description file](/docs/en/docs-01-idl.md)
-* [Step 2: Implement ServiceIMPL](/docs/en/docs-02-service.md)
-* [Step 3: Start the Server](/docs/en/docs-03-server.md)
-* [Step 4: Use the Client](/docs/en/docs-04-client.md)
-* [Step 5: Understand asynchrous Context](/docs/en/docs-05-context.md)
-* [Step 6: Use it together with the Workflow](/docs/en/docs-06-workflow.md)
-* [Step 7: Use Http with SRPC, TRPC and Thrift](/docs/en/docs-07-srpc-http.md)
-* [Step 8: Report Tracing to OpenTelemetry](/docs/en/docs-08-tracing.md)
-* [Step 9: Report Metrics to OpenTelemetry / Prometheus](/docs/en/docs-09-metrics.md)
-* [Step 10: Use HTTP with Workflow Style and SRPC Modules](/docs/docs-10-http-with-modules.md)
-
-Easy to compile tutorial with these commands:
-
-~~~sh
-cd tutorial
-make
-~~~
+srpc has been packaged for Debian and Fedora. Therefore, we can install it from source code or from the package in the system.
+reference: [Linux, MacOS, Windows Installation and Compilation Guide](docs/en/installation.md)
 
 ## Quick Start
+
+Let's quickly learn how to use it in a few steps.l
+
+For more detailed usage, please refer to [Documents](/docs) and [Tutorial](/tutorial).
 
 #### 1\. example.proto
 
