@@ -118,6 +118,7 @@ if (WIN32)
 else ()
 	set(STATIC_LIB_NAME ${PROJECT_NAME}-static)
 	set(SHARED_LIB_NAME ${PROJECT_NAME}-shared)
+	get_filename_component(Protobuf_LIB_DIR ${Protobuf_LIBRARY} DIRECTORY)
 	link_directories(${OPENSSL_LINK_DIR} ${WORKFLOW_LIB_DIR} ${Protobuf_LIB_DIR})
 
 	add_library(
@@ -147,7 +148,7 @@ else ()
 							  OpenSSL::SSL
 							  OpenSSL::Crypto
 							  pthread
-							  protobuf
+							  ${Protobuf_LIBRARY}
 							  workflow
 							  z ${SNAPPY_LIB} ${LZ4_LIB})
 	else ()
