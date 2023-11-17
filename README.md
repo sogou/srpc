@@ -19,12 +19,12 @@ Bases on [Sogou C++ Workflow](https://github.com/sogou/workflow), it is an excel
 
 Its main features include:
 
-  * Support multiple RPC protocols: [`SPRC`](/tutorial/tutorial-01-srpc_pb_server.cc), [`BRPC`](/tutorial/tutorial-05-brpc_pb_server.cc), [`Thrift`](/tutorial/tutorial-07-thrift_thrift_server.cc), [`TRPC`](/tutorial/tutorial-11-trpc_pb_server.cc) (Currently the only open source implementation of the TRPC protocol)
+  * Support multiple RPC protocols: [`SPRC`](/tutorial/tutorial-01-srpc_pb_server.cc), [`bRPC`](/tutorial/tutorial-05-brpc_pb_server.cc), [`Thrift`](/tutorial/tutorial-07-thrift_thrift_server.cc), [`tRPC`](/tutorial/tutorial-11-trpc_pb_server.cc)
   * Support multiple operating systems: `Linux`, `MacOS`, `Windows`
   * Support several IDL formats: [`Protobuf`](/tutorial/echo_pb.proto), [`Thrift`](/tutorial/echo_thrift.thrift)
   * Support several data formats transparently: `Json`, `Protobuf`, `Thrift Binary`
   * Support several compression formats, the framework automatically decompresses: `gzip`, `zlib`, `snappy`, `lz4`
-  * Support several communication protocols transparently: `tcp`, `http`, `sctp`, `ssl`, `https`
+  * Support several communication protocols transparently: `tcp`, `http`, `ssl`, `https`
   * With [HTTP+JSON](/docs/docs-07-srpc-http.md), you can communicate with the client or server in any language
   * Use it together with [Workflow Series and Parallel](/docs/docs-06-workflow.md) to facilitate the use of calculations and other asynchronous resources
   * Perfectly compatible with all Workflow functions, such as name service, [upstream](docs/docs-06-workflow.md#3-upstream) and other components
