@@ -59,7 +59,7 @@ srpc目前在搜狗公司内部和开源后业界一些开发者的团队中已�
 
 刚才整体介绍里看到的层级很多，但是作为srpc的开发，需要知道的层级是以下三种：
 
-<img src="https://raw.githubusercontent.com/wiki/sogou/srpc/srpc-1.1.1.png" width = "719" height = "520" alt="srpc_protocol_transport_hierarchy" align=center />
+<img src="https://raw.githubusercontent.com/wiki/sogou/srpc/srpc-1.2.png" width = "719" height = "520" alt="srpc_protocol_transport_hierarchy" align=center />
 
 ### 1. 接口描述文件层
 
