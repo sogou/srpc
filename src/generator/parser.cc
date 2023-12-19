@@ -746,7 +746,11 @@ bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,
 		auto bb = SGenUtil::split_skip_string(str.substr(left_b + 1), ',');
 		for (const auto& ele : bb)
 		{
-			auto filedparam = SGenUtil::split_skip_string(ele, ':');
+			auto single_line =  SGenUtil::split_skip_string(ele, '\n');
+			if (single_line.size() != 1)
+				continue;
+
+			auto filedparam = SGenUtil::split_skip_string(single_line[0], ':');
 			if (filedparam.size() != 2)
 			  continue;
 
@@ -861,9 +865,25 @@ void Parser::check_single_comments(std::string& line)
 	size_t pos = line.find("#");
 	if (pos == std::string::npos)
 		pos = line.find("//");
-
 	if (pos != std::string::npos)
+	{
 		line.resize(pos);
+		return;
+	}
+
+	if (pos == std::string::npos)
+		pos = line.find("/*");
+
+	size_t end;
+	while (pos != std::string::npos)
+	{
+		end = line.find("*/", pos + 2);
+		if (end == std::string::npos)
+			return; // multi_comments can handle this, except for 'a/*\n'
+
+		line.erase(pos, end - pos + 2);
+		pos = line.find("/*", pos);
+	}
 }
 
 bool Parser::parse_enum_thrift(const std::string& block, Descriptor& desc)

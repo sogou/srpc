@@ -1480,7 +1480,7 @@ inline %s %sClient::%s(%s)
 )";
 
 	std::string client_method_thrift_end_format = R"(
-	%s(&__thrift__sync__req, &__thrift__sync__resp, %sClient::get_thread_sync_ctx());
+	this->%s(&__thrift__sync__req, &__thrift__sync__resp, %sClient::get_thread_sync_ctx());
 	%s;
 }
 
