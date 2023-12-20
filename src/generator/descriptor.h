@@ -84,7 +84,7 @@ struct idl_info
 
 class SGenUtil
 {
-private:
+public:
 	static const char *skip_string(const char *cursor)
 	{
 		while (*cursor && *cursor != '\"')
@@ -102,7 +102,6 @@ private:
 		return cursor;
 	}
 
-public:
 	static std::vector<std::string> split_skip_string(const std::string& str,
 													  char sep)
 	{

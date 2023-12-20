@@ -36,6 +36,7 @@ idl_info *search_namespace(idl_info& info, const std::string name_space);
 void parse_thrift_type_name(const std::string& type_name,
 									std::string& type_prefix,
 									std::string& real_type_name);
+std::vector<std::string> parse_thrift_variable(const std::string& str, char sep);
 
 bool Parser::parse(const std::string& proto_file, idl_info& info)
 {
@@ -743,10 +744,10 @@ bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,
 	std::string idl_type;
 	if (left_b + 1 < str.size())
 	{
-		auto bb = SGenUtil::split_skip_string(str.substr(left_b + 1), ',');
+		auto bb = parse_thrift_variable(str.substr(left_b + 1), ',');
 		for (const auto& ele : bb)
 		{
-			auto single_line =  SGenUtil::split_skip_string(ele, '\n');
+			auto single_line = SGenUtil::split_skip_string(ele, '\n');
 			if (single_line.size() != 1)
 				continue;
 
@@ -754,7 +755,7 @@ bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,
 			if (filedparam.size() != 2)
 			  continue;
 
-			auto typevar = SGenUtil::split_skip_string(filedparam[1], ' ');
+			auto typevar = parse_thrift_variable(filedparam[1], ' ');
 			if (typevar.size() != 2)
 				continue;
 
@@ -781,6 +782,7 @@ bool Parser::parse_service_thrift(const std::string& file_name_prefix,
 		return false;
 
 	std::string valid_block = block.substr(st + 1, ed - st - 1);
+
 	auto arr = split_thrift_rpc(valid_block);
 
 	for (const auto& ele : arr)
@@ -1341,3 +1343,51 @@ int Parser::find_valid(const std::string& line)
 	return 0;
 }
 
+std::vector<std::string> parse_thrift_variable(const std::string& str, char sep)
+{
+	std::vector<std::string> res;
+	if (sep == '\"')
+		return res;
+
+	const char *cursor = str.c_str();
+	const char *start = cursor;
+
+	bool in_map = false;
+	std::string param;
+
+	while (*cursor)
+	{
+		if (*cursor == '\"')
+		{
+			cursor = SGenUtil::skip_string(++cursor);
+			if (!*cursor)
+				break;
+		}
+		else if (*cursor == sep)
+		{
+			param = std::string(start, cursor);
+
+			if (in_map == false &&
+				param.find("map") != std::string::npos &&
+				param.find("<") != std::string::npos)
+			{
+				in_map = true;
+				cursor++;
+				continue;
+			}
+
+			if (start < cursor)
+				res.emplace_back(param);
+
+			start = cursor + 1;
+			in_map = false;
+		}
+
+		cursor++;
+	}
+
+	if (start < cursor)
+		res.emplace_back(start, cursor);
+
+	return res;
+}
