@@ -36,6 +36,7 @@ idl_info *search_namespace(idl_info& info, const std::string name_space);
 void parse_thrift_type_name(const std::string& type_name,
 									std::string& type_prefix,
 									std::string& real_type_name);
+std::vector<std::string> parse_thrift_variable(const std::string& str, char sep);
 
 bool Parser::parse(const std::string& proto_file, idl_info& info)
 {
@@ -108,7 +109,8 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 		else if (this->check_multi_comments_begin(line))
 		{
 			state = (state & PARSER_ST_OUTSIDE_COMMENT_MASK) + PARSER_ST_INSIDE_COMMENT;
-			continue;
+			if (line.empty())
+				continue;
 		}
 
 		if (this->is_thrift == false)
@@ -743,14 +745,18 @@ bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,
 	std::string idl_type;
 	if (left_b + 1 < str.size())
 	{
-		auto bb = SGenUtil::split_skip_string(str.substr(left_b + 1), ',');
+		auto bb = parse_thrift_variable(str.substr(left_b + 1), ',');
 		for (const auto& ele : bb)
 		{
-			auto filedparam = SGenUtil::split_skip_string(ele, ':');
+			auto single_line = SGenUtil::split_skip_string(ele, '\n');
+			if (single_line.size() != 1)
+				continue;
+
+			auto filedparam = SGenUtil::split_skip_string(single_line[0], ':');
 			if (filedparam.size() != 2)
 			  continue;
 
-			auto typevar = SGenUtil::split_skip_string(filedparam[1], ' ');
+			auto typevar = parse_thrift_variable(filedparam[1], ' ');
 			if (typevar.size() != 2)
 				continue;
 
@@ -777,6 +783,7 @@ bool Parser::parse_service_thrift(const std::string& file_name_prefix,
 		return false;
 
 	std::string valid_block = block.substr(st + 1, ed - st - 1);
+
 	auto arr = split_thrift_rpc(valid_block);
 
 	for (const auto& ele : arr)
@@ -861,9 +868,25 @@ void Parser::check_single_comments(std::string& line)
 	size_t pos = line.find("#");
 	if (pos == std::string::npos)
 		pos = line.find("//");
-
 	if (pos != std::string::npos)
+	{
 		line.resize(pos);
+		return;
+	}
+
+	if (pos == std::string::npos)
+		pos = line.find("/*");
+
+	size_t end;
+	while (pos != std::string::npos)
+	{
+		end = line.find("*/", pos + 2);
+		if (end == std::string::npos)
+			return; // multi_comments can handle this, except for 'a/*\n'
+
+		line.erase(pos, end - pos + 2);
+		pos = line.find("/*", pos);
+	}
 }
 
 bool Parser::parse_enum_thrift(const std::string& block, Descriptor& desc)
@@ -1321,3 +1344,51 @@ int Parser::find_valid(const std::string& line)
 	return 0;
 }
 
+std::vector<std::string> parse_thrift_variable(const std::string& str, char sep)
+{
+	std::vector<std::string> res;
+	if (sep == '\"')
+		return res;
+
+	const char *cursor = str.c_str();
+	const char *start = cursor;
+
+	bool in_map = false;
+	std::string param;
+
+	while (*cursor)
+	{
+		if (*cursor == '\"')
+		{
+			cursor = SGenUtil::skip_string(++cursor);
+			if (!*cursor)
+				break;
+		}
+		else if (*cursor == sep)
+		{
+			param = std::string(start, cursor);
+
+			if (in_map == false &&
+				param.find("map") != std::string::npos &&
+				param.find("<") != std::string::npos)
+			{
+				in_map = true;
+				cursor++;
+				continue;
+			}
+
+			if (start < cursor)
+				res.emplace_back(param);
+
+			start = cursor + 1;
+			in_map = false;
+		}
+
+		cursor++;
+	}
+
+	if (start < cursor)
+		res.emplace_back(start, cursor);
+
+	return res;
+}
