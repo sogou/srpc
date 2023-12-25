@@ -204,6 +204,11 @@ public:
                                                   bool>::type = true>
     void push_back(const std::string& key, const T& val)
     {
+        if (is_placeholder())
+        {
+            *this = Json::Object{{key, val}};
+            return;
+        }
         if (!can_obj_push_back())
         {
             return;
@@ -219,6 +224,11 @@ public:
                                       bool>::type = true>
     void push_back(const std::string& key, const T& val)
     {
+        if (is_placeholder())
+        {
+            *this = Json::Object{{key, val}};
+            return;
+        }
         if (!can_obj_push_back())
         {
             return;
@@ -345,6 +355,11 @@ public:
                                                   bool>::type = true>
     void push_back(T val)
     {
+        if (is_placeholder())
+        {
+            *this = Json::Array{{val}};
+            return;
+        }
         if (!can_arr_push_back())
         {
             return;
@@ -359,6 +374,11 @@ public:
                                       bool>::type = true>
     void push_back(const T& val)
     {
+        if (is_placeholder())
+        {
+            *this = Json::Array{{val}};
+            return;
+        }
         if (!can_arr_push_back())
         {
             return;
@@ -709,9 +729,15 @@ public:
     Json(const std::string& str);
     Json(const char* str);
     Json(std::nullptr_t null);
-    Json(double val);
-    Json(int val);
+    template <typename T, typename std::enable_if<detail::is_number<T>::value,
+                                                  bool>::type = true>
+    Json(T val)
+        : node_(json_value_create(JSON_VALUE_NUMBER, static_cast<double>(val))),
+          parent_(nullptr), allocated_(true)
+    {
+    }
     Json(bool val);
+    Json(const std::vector<std::string>& val);
 
     // For parse
     Json(const std::string& str, bool parse_flag);
