@@ -29,7 +29,7 @@
 
 #include "generator.h"
 
-const char *SRPC_VERSION = "0.10.0";
+const char *SRPC_VERSION = "0.10.1";
 
 /* LQ - prototype to determine if the file type is thrift */
 enum
