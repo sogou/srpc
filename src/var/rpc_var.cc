@@ -58,7 +58,9 @@ RPCVar *RPCVarFactory::var(const std::string& name)
 	if (var)
 	{
 		new_var = var->create(false);
+		local->mutex.lock(); //agains reduce() for loop
 		local->add(name, new_var);
+		local->mutex.unlock();
 		return new_var;
 	}
 
@@ -232,6 +234,9 @@ bool CounterVar::label_to_str(const LABEL_MAP& labels, std::string& str)
 	return true;
 }
 
+// [deprecate]
+//    This cannot guarantee the GaugeVar still exists
+//    because global will counter->reset() and delete the internal GaugeVar
 GaugeVar *CounterVar::add(const LABEL_MAP& labels)
 {
 	std::string label_str;
@@ -251,6 +256,33 @@ GaugeVar *CounterVar::add(const LABEL_MAP& labels)
 		var = it->second;
 
 	return var;
+}
+
+void CounterVar::increase(const LABEL_MAP& labels)
+{
+	std::string label_str;
+	GaugeVar *var;
+
+	if (!this->label_to_str(labels, label_str))
+		return;
+
+	RPCVarLocal *local = RPCVarLocal::get_instance();
+	local->mutex.lock(); // against reset()
+
+	auto it = this->data.find(label_str);
+
+	if (it == this->data.end())
+	{
+		var = new GaugeVar(label_str, "");
+		this->data.insert(std::make_pair(label_str, var));
+	}
+	else
+		var = it->second;
+
+	var->increase();
+	local->mutex.unlock();
+
+	return;
 }
 
 bool CounterVar::reduce(const void *ptr, size_t)

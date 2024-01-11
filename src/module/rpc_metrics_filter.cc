@@ -64,9 +64,9 @@ RPCMetricsFilter::RPCMetricsFilter() :
 bool RPCMetricsFilter::client_end(SubTask *task, RPCModuleData& data)
 {
 	this->gauge(METRICS_REQUEST_COUNT)->increase();
-	this->counter(METRICS_REQUEST_METHOD)->add(
+	this->counter(METRICS_REQUEST_METHOD)->increase(
 				{{"service", data[OTLP_SERVICE_NAME]},
-				 {"method",  data[OTLP_METHOD_NAME] }})->increase();
+				 {"method",  data[OTLP_METHOD_NAME] }});
 	this->summary(METRICS_REQUEST_LATENCY)->observe(atoll(data[SRPC_DURATION].data()));
 
 	return true;
@@ -75,9 +75,9 @@ bool RPCMetricsFilter::client_end(SubTask *task, RPCModuleData& data)
 bool RPCMetricsFilter::server_end(SubTask *task, RPCModuleData& data)
 {
 	this->gauge(METRICS_REQUEST_COUNT)->increase();
-	this->counter(METRICS_REQUEST_METHOD)->add(
+	this->counter(METRICS_REQUEST_METHOD)->increase(
 				{{"service", data[OTLP_SERVICE_NAME]},
-				 {"method",  data[OTLP_METHOD_NAME] }})->increase();
+				 {"method",  data[OTLP_METHOD_NAME] }});
 	this->summary(METRICS_REQUEST_LATENCY)->observe(atoll(data[SRPC_DURATION].data()));
 
 	return true;
