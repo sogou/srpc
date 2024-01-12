@@ -249,6 +249,7 @@ class CounterVar : public RPCVar
 public:
 	using LABEL_MAP = std::map<std::string, std::string>;
 	GaugeVar *add(const LABEL_MAP& labels);
+	void increase(const LABEL_MAP& labels);
 
 	RPCVar *create(bool with_data) override;
 	bool reduce(const void *ptr, size_t sz) override;
