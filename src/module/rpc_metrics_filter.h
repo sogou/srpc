@@ -69,6 +69,7 @@ public:
 
 public:
 	RPCMetricsFilter();
+	RPCMetricsFilter(const std::string &name);
 
 protected:
 	void reduce(std::unordered_map<std::string, RPCVar *>& out);
@@ -141,7 +142,8 @@ public:
 					size_t report_interval_msec) :
 		report_threshold(report_threshold),
 		report_interval(report_interval_msec),
-		last_report_timestamp(0)
+		last_report_timestamp(0),
+		reporting(false)
 	{ }
 	
 	void set_report_threshold(size_t threshold)
@@ -159,11 +161,14 @@ public:
 	}
 
 	bool report(size_t count);
+	void set_reporting(bool flag);
 
 private:
 	size_t report_threshold; // metrics to report at most
 	size_t report_interval;
 	long long last_report_timestamp;
+	bool reporting;
+	std::mutex mutex;
 };
 
 class RPCMetricsOTel : public RPCMetricsFilter
@@ -186,11 +191,11 @@ public:
 	void set_scope_name(const std::string& name) { this->scope_name = name; }
 
 public:
-	RPCMetricsOTel(const std::string& url);
+	RPCMetricsOTel(const std::string &name, const std::string &url);
 
-	RPCMetricsOTel(const std::string& url, unsigned int redirect_max,
-				   unsigned int retry_max, size_t report_threshold,
-				   size_t report_interval);
+	RPCMetricsOTel(const std::string &name, const std::string& url,
+				   unsigned int redirect_max, unsigned int retry_max,
+				   size_t report_threshold, size_t report_interval);
 
 private:
 	SubTask *create(RPCModuleData& data) override;
@@ -206,40 +211,44 @@ private:
 		Collector() { }
 		virtual ~Collector();
 
-		void set_current_message(google::protobuf::Message *var_msg)
-		{
-			this->current_msg = var_msg;
-		}
-
 		void set_current_nano(unsigned long long ns)
 		{
 			this->current_timestamp_nano = ns;
 		}
 
-		void collect_gauge(RPCVar *gauge, double data) override;
+		// new api : fill var into msg
+		void collect_gauge(RPCVar *gauge, google::protobuf::Message *msg);
+		void collect_counter(RPCVar *counter, google::protobuf::Message *msg);
+		void collect_histogram(RPCVar *histogram, google::protobuf::Message *msg);
+		void collect_summary(RPCVar *summary, google::protobuf::Message *msg);
 
-		void collect_counter_each(RPCVar *counter, const std::string& label,
-								  double data) override;
+		void collect_counter_each(const std::string &label, double data,
+								  google::protobuf::Message *msg);
+		void collect_histogram_each(double bucket_boudary, size_t current_count,
+									google::protobuf::Message *msg);
+		void collect_summary_each(double quantile, double quantile_out,
+								  google::protobuf::Message *msg);
 
-		void collect_histogram_begin(RPCVar *histogram) override;
-		void collect_histogram_each(RPCVar *histogram,
-									double bucket_boudary,
-									size_t current_count) override;
-		void collect_histogram_end(RPCVar *histogram, double sum,
-								   size_t count) override;
+		// deprecated api
+		void collect_gauge(RPCVar *gauge, double data) override {}
+		void collect_counter_each(RPCVar *counter, const std::string &label,
+								  double data) override {}
 
-		void collect_summary_begin(RPCVar *summary) override;
+		void collect_histogram_begin(RPCVar *histogram) override {}
+		void collect_histogram_each(RPCVar *histogram, double bucket_boudary,
+									size_t current_count) override {}
+		void collect_histogram_end(RPCVar *histogram, double sum, size_t count) override{}
+
+		void collect_summary_begin(RPCVar *summary) override {}
 		void collect_summary_each(RPCVar *summary, double quantile,
-								  double quantile_out) override;
-		void collect_summary_end(RPCVar *summary, double sum,
-								 size_t count) override;
+								  double quantile_out) override {}
+		void collect_summary_end(RPCVar *summary, double sum, size_t count) override {}
 
 	private:
 		void add_counter_label(const std::string& label);
 
 	private:
 		using LABEL_MAP = std::map<std::string, std::string>;
-		google::protobuf::Message *current_msg;
 		unsigned long long current_timestamp_nano;
 		std::map<std::string, LABEL_MAP *> label_map;
 	};
@@ -247,11 +256,13 @@ private:
 private:
 	bool expose(google::protobuf::Message *metrics);
 
+protected:
+	Collector collector;
+
 private:
 	std::string url;
 	int redirect_max;
 	int retry_max;
-	Collector collector;
 	RPCFilterPolicy policy;
 	std::atomic<size_t> report_counts;
 	std::map<std::string, std::string> attributes;

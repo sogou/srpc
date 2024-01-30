@@ -291,6 +291,10 @@ public:
 
 	double get_sum() const { return this->sum; }
 	size_t get_count() const { return this->count; }
+	const std::vector<double> *get_bucket_boundaries() const
+	{
+		return &this->bucket_boundaries;
+	}
 	const std::vector<size_t> *get_bucket_counts() const
 	{
 		return &this->bucket_counts;
@@ -329,6 +333,18 @@ public:
 	}
 
 	void reset() override { /* no TimedSummary so no reset for Summary */}
+
+	const std::vector<struct Quantile>& get_quantiles() const
+	{
+		return this->quantiles;
+	}
+	const std::vector<double>& get_quantile_out() const
+	{
+		return this->quantile_out;
+	}
+
+	// only for clear stack variable after filled into protobuf or out_string
+	void clear_quantile_out() { this->quantile_out.clear(); }
 
 public:
 	SummaryVar(const std::string& name, const std::string& help,
@@ -402,6 +418,9 @@ public:
 				  Clock::duration duration, size_t bucket_num);
 	// for collect
 	void increase() override;
+	double get() override;
+	void set(double var) override;
+
 	// for reduce
 	const void *get_data() override;
 	RPCVar *create(bool with_data) override;
