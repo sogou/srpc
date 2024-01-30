@@ -70,9 +70,20 @@ public:
 		this->module_type = module_type;
 	}
 
+	RPCFilter(const std::string name, enum RPCModuleType module_type)
+	{
+		size_t pos = name.find("::");
+		if (pos != std::string::npos)
+			this->filter_name = name.substr(0, pos) + "::";
+		else
+			this->filter_name = name + "::";
+		this->module_type = module_type;
+	}
+
 	virtual ~RPCFilter() { }
 
 	enum RPCModuleType get_module_type() const { return this->module_type; }
+	const std::string& get_name() const { return this->filter_name; }
 
 	virtual bool client_begin(SubTask *task, RPCModuleData& data)
 	{
@@ -91,8 +102,18 @@ public:
 		return true;
 	}
 
+	const std::string raw_var_name(const std::string& name) const
+	{
+		size_t pos = name.find("::");
+		if (pos != std::string::npos)
+			return name.substr(pos + 2);
+		else
+			return name;
+	}
+
 private:
 	enum RPCModuleType module_type;
+	std::string filter_name;
 };
 
 } // end namespace srpc

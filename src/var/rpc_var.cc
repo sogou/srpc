@@ -458,7 +458,10 @@ RPCVar *SummaryVar::create(bool with_data)
 
 void SummaryVar::observe(double value)
 {
+	RPCVarLocal *local = RPCVarLocal::get_instance();
+	local->mutex.lock();
 	this->quantile_values.insert(value);
+	local->mutex.unlock();
 }
 
 bool SummaryVar::reduce(const void *ptr, size_t sz)
@@ -570,6 +573,20 @@ void TimedGaugeVar::increase()
 
 	for (auto& bucket : this->data_bucket)
 		bucket.increase();
+}
+
+void TimedGaugeVar::set(double val)
+{
+	this->rotate();
+
+	for (auto &bucket : this->data_bucket)
+		bucket.set(val);
+}
+
+double TimedGaugeVar::get()
+{
+	GaugeVar &bucket = this->rotate();
+	return bucket.get();
 }
 
 const void *TimedGaugeVar::get_data()

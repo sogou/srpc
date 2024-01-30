@@ -321,6 +321,7 @@ void RPCConfig::load_metrics()
             if (it.has("address") == false)
                 continue;
 
+            std::string name = it["filter_name"];
             std::string url = it["address"];
 
             unsigned int redirect_max = OTLP_HTTP_REDIRECT_MAX;
@@ -337,7 +338,8 @@ void RPCConfig::load_metrics()
             if (it.has("report_interval_ms"))
                 report_interval = it["report_interval_ms"];
 
-            RPCMetricsOTel *filter = new RPCMetricsOTel(url,
+            RPCMetricsOTel *filter = new RPCMetricsOTel(name,
+                                                        url,
                                                         redirect_max,
                                                         retry_max,
                                                         report_threshold,
