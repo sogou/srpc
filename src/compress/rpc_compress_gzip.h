@@ -125,7 +125,10 @@ static int CommonCompress(const char *msg, size_t msglen,
 	while (c_stream.avail_in != 0 && c_stream.total_in < buflen) 
 	{
 		if (deflate(&c_stream, Z_NO_FLUSH) != Z_OK)
+		{
+			deflateEnd(&c_stream);
 			return -1;
+		}
 	}
 
 	if (c_stream.avail_in != 0)
@@ -139,7 +142,10 @@ static int CommonCompress(const char *msg, size_t msglen,
 			break;
 
 		if(err != Z_OK)
+		{
+			deflateEnd(&c_stream);
 			return -1;
+		}
 	}
 
 	if (deflateEnd(&c_stream) != Z_OK)
@@ -203,12 +209,18 @@ static int CommonDecompress(const char *buf, size_t buflen, char *msg, size_t ms
 		if (err != Z_OK)
 		{
 			if (err != Z_DATA_ERROR)
+			{
+				inflateEnd(&d_stream);
 				return -1;
+			}
 
 			d_stream.next_in = (Bytef*) dummy_head;
 			d_stream.avail_in = sizeof (dummy_head);
 			if (inflate(&d_stream, Z_NO_FLUSH) != Z_OK)
+			{
+				inflateEnd(&d_stream);
 				return -1;
+			}
 		}
 	}
 
@@ -247,7 +259,10 @@ static int CommonCompressIOVec(RPCBuffer *src, RPCBuffer *dst, int option_format
 		if (c_stream.avail_in == 0)
 		{
 			if ((c_stream.avail_in = (uInt)src->fetch(&in)) == 0)
+			{
+				deflateEnd(&c_stream);
 				return -1;
+			}
 
 			c_stream.next_in = static_cast<Bytef *>(const_cast<void *>(in));
 		}
@@ -255,7 +270,10 @@ static int CommonCompressIOVec(RPCBuffer *src, RPCBuffer *dst, int option_format
 		if (c_stream.avail_out == 0)
 		{
 			if (dst->acquire(&out, &out_len) == false)
+			{
+				deflateEnd(&c_stream);
 				return -1;
+			}
 
 			total_alloc += out_len;
 			c_stream.next_out = static_cast<Bytef *>(out);
@@ -263,7 +281,10 @@ static int CommonCompressIOVec(RPCBuffer *src, RPCBuffer *dst, int option_format
 		}
 
 		if (deflate(&c_stream, Z_NO_FLUSH) != Z_OK)
+		{
+			deflateEnd(&c_stream);
 			return -1;
+		}
 	}
 
 //	if (c_stream.avail_in != 0)
@@ -286,7 +307,10 @@ static int CommonCompressIOVec(RPCBuffer *src, RPCBuffer *dst, int option_format
 			break;
 
 		if(err != Z_OK)
+		{
+			deflateEnd(&c_stream);
 			return -1;
+		}
 	}
 
 	if (deflateEnd(&c_stream) != Z_OK)
@@ -346,7 +370,10 @@ static int CommonDecompressIOVec(RPCBuffer *src, RPCBuffer *dst)
 		if (d_stream.avail_in == 0)
 		{
 			if ((d_stream.avail_in = (uInt)src->fetch(&in)) == 0)
+			{
+				inflateEnd(&d_stream);
 				return -1;
+			}
 
 			d_stream.next_in = static_cast<Bytef *>(const_cast<void *>(in));
 		}
@@ -354,7 +381,10 @@ static int CommonDecompressIOVec(RPCBuffer *src, RPCBuffer *dst)
 		if (d_stream.avail_out == 0)
 		{
 			if (dst->acquire(&out, &out_len) == false)
+			{
+				inflateEnd(&d_stream);
 				return -1;
+			}
 
 			total_alloc += out_len;
 			d_stream.next_out = static_cast<Bytef *>(out);
@@ -368,12 +398,18 @@ static int CommonDecompressIOVec(RPCBuffer *src, RPCBuffer *dst)
 		if (err != Z_OK)
 		{
 			if (err != Z_DATA_ERROR)
+			{
+				inflateEnd(&d_stream);
 				return -1;
+			}
 
 			d_stream.next_in = (Bytef*) dummy_head;
 			d_stream.avail_in = sizeof (dummy_head);
 			if (inflate(&d_stream, Z_NO_FLUSH) != Z_OK)
+			{
+				inflateEnd(&d_stream);
 				return -1;
+			}
 		}
 	}
 
