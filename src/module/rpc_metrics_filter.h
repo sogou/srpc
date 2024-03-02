@@ -57,11 +57,16 @@ public:
 							   const std::vector<struct Quantile>& quantile,
 							   const std::chrono::milliseconds max_age,
 							   int age_bucket);
+
+	HistogramCounterVar *create_histogram_counter(const std::string &name,
+												  const std::string &help,
+												  const std::vector<double> &bucket);
 	// thread local api
 	GaugeVar *gauge(const std::string& name);
 	CounterVar *counter(const std::string& name);
 	HistogramVar *histogram(const std::string& name);
 	SummaryVar *summary(const std::string& name);
+	HistogramCounterVar *histogram_counter(const std::string &name);
 
 	// filter api
 	bool client_end(SubTask *task, RPCModuleData& data) override;
@@ -73,6 +78,7 @@ public:
 
 protected:
 	void reduce(std::unordered_map<std::string, RPCVar *>& out);
+	void reset();
 
 protected:
 	std::mutex mutex;
@@ -219,12 +225,16 @@ private:
 		// new api : fill var into msg
 		void collect_gauge(RPCVar *gauge, google::protobuf::Message *msg);
 		void collect_counter(RPCVar *counter, google::protobuf::Message *msg);
-		void collect_histogram(RPCVar *histogram, google::protobuf::Message *msg);
+		void collect_histogram(RPCVar *histogram,
+							   google::protobuf::Message *msg);
 		void collect_summary(RPCVar *summary, google::protobuf::Message *msg);
+		void collect_histogram_counter(RPCVar *histogram_counter,
+									   google::protobuf::Message *msg);
 
 		void collect_counter_each(const std::string &label, double data,
 								  google::protobuf::Message *msg);
-		void collect_histogram_each(double bucket_boudary, size_t current_count,
+		void collect_histogram_each(double bucket_boudary,
+									size_t current_count,
 									google::protobuf::Message *msg);
 		void collect_summary_each(double quantile, double quantile_out,
 								  google::protobuf::Message *msg);
@@ -237,12 +247,14 @@ private:
 		void collect_histogram_begin(RPCVar *histogram) override {}
 		void collect_histogram_each(RPCVar *histogram, double bucket_boudary,
 									size_t current_count) override {}
-		void collect_histogram_end(RPCVar *histogram, double sum, size_t count) override{}
+		void collect_histogram_end(RPCVar *histogram, double sum,
+								   size_t count) override{}
 
 		void collect_summary_begin(RPCVar *summary) override {}
 		void collect_summary_each(RPCVar *summary, double quantile,
 								  double quantile_out) override {}
-		void collect_summary_end(RPCVar *summary, double sum, size_t count) override {}
+		void collect_summary_end(RPCVar *summary, double sum,
+								 size_t count) override {}
 
 	private:
 		void add_counter_label(const std::string& label);

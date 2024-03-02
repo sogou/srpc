@@ -24,6 +24,19 @@
 namespace srpc
 {
 
+static bool label_to_str(const std::map<std::string, std::string>& labels, std::string& str)
+{
+	for (auto it = labels.begin(); it != labels.end(); it++)
+	{
+		if (it != labels.begin())
+			str += ",";
+		//TODO: check label name regex is "[a-zA-Z_:][a-zA-Z0-9_:]*"
+		str += it->first + "=\"" + it->second + "\"";
+	}
+
+	return true;
+}
+
 GaugeVar *RPCVarFactory::gauge(const std::string& name)
 {
 	return static_cast<GaugeVar *>(RPCVarFactory::var(name));
@@ -42,6 +55,11 @@ HistogramVar *RPCVarFactory::histogram(const std::string& name)
 SummaryVar *RPCVarFactory::summary(const std::string& name)
 {
 	return static_cast<SummaryVar *>(RPCVarFactory::var(name));
+}
+
+HistogramCounterVar *RPCVarFactory::histogram_counter(const std::string &name)
+{
+	return static_cast<HistogramCounterVar *>(RPCVarFactory::var(name));
 }
 
 RPCVar *RPCVarFactory::var(const std::string& name)
@@ -197,6 +215,12 @@ RPCVar *GaugeVar::create(bool with_data)
 	return var;
 }
 
+CounterVar::CounterVar(const std::string &name, const std::string &help)
+	: RPCVar(name, help, VAR_COUNTER)
+{
+	this->sum = 0;
+}
+
 CounterVar::~CounterVar()
 {
 	for (auto it = this->data.begin(); it != this->data.end(); it++)
@@ -204,7 +228,7 @@ CounterVar::~CounterVar()
 }
 
 // Caution :
-//    make sure local->mutex.lock() before CounterVar::create(true)
+//	make sure local->mutex.lock() before CounterVar::create(true)
 RPCVar *CounterVar::create(bool with_data)
 {
 	CounterVar *var = new CounterVar(this->name, this->help);
@@ -216,33 +240,22 @@ RPCVar *CounterVar::create(bool with_data)
 			var->data.insert(std::make_pair(it->first,
 							(GaugeVar *)it->second->create(true)));
 		}
+		var->sum = this->sum;
 	}
 
 	return var;
 }
 
-bool CounterVar::label_to_str(const LABEL_MAP& labels, std::string& str)
-{
-	for (auto it = labels.begin(); it != labels.end(); it++)
-	{
-		if (it != labels.begin())
-			str += ",";
-		//TODO: check label name regex is "[a-zA-Z_:][a-zA-Z0-9_:]*"
-		str += it->first + "=\"" + it->second + "\"";
-	}
-
-	return true;
-}
 
 // [deprecate]
-//    This cannot guarantee the GaugeVar still exists
-//    because global will counter->reset() and delete the internal GaugeVar
+//	This cannot guarantee the GaugeVar still exists
+//	because global will counter->reset() and delete the internal GaugeVar
 GaugeVar *CounterVar::add(const LABEL_MAP& labels)
 {
 	std::string label_str;
 	GaugeVar *var;
 
-	if (!this->label_to_str(labels, label_str))
+	if (!label_to_str(labels, label_str))
 		return NULL;
 
 	auto it = this->data.find(label_str);
@@ -263,7 +276,7 @@ void CounterVar::increase(const LABEL_MAP& labels)
 	std::string label_str;
 	GaugeVar *var;
 
-	if (!this->label_to_str(labels, label_str))
+	if (!label_to_str(labels, label_str))
 		return;
 
 	RPCVarLocal *local = RPCVarLocal::get_instance();
@@ -285,12 +298,43 @@ void CounterVar::increase(const LABEL_MAP& labels)
 	return;
 }
 
+void CounterVar::increase(const LABEL_MAP& labels, double value)
+{
+	std::string label_str;
+	GaugeVar *var;
+
+	if (!label_to_str(labels, label_str))
+		return;
+
+	RPCVarLocal *local = RPCVarLocal::get_instance();
+	local->mutex.lock();
+	auto it = this->data.find(label_str);
+
+	if (it == this->data.end())
+	{
+		var = new GaugeVar(label_str, "");
+		this->data.insert(std::make_pair(label_str, var));
+	}
+	else
+	{
+		var = it->second;
+	}
+
+	double current = var->get();
+	var->set(current + value);
+	this->sum += value;
+	local->mutex.unlock();
+
+	return;
+}
+
 // Caution :
-//    make sure local->mutex.lock() before CounterVar::reduce()
+//	make sure local->mutex.lock() before CounterVar::reduce()
 bool CounterVar::reduce(const void *ptr, size_t)
 {
-	std::unordered_map<std::string, GaugeVar *> *data;
-	data = (std::unordered_map<std::string, GaugeVar *> *)ptr;
+	const CounterVar *counter = (const CounterVar *)ptr;
+	const std::unordered_map<std::string, GaugeVar *> *data;
+	data = counter->get_map();
 
 	for (auto it = data->begin(); it != data->end(); it++)
 	{
@@ -305,6 +349,7 @@ bool CounterVar::reduce(const void *ptr, size_t)
 			my_it->second->reduce(it->second->get_data(),
 								  it->second->get_size());
 	}
+	this->sum += counter->get_sum();
 
 	return true;
 }
@@ -402,17 +447,20 @@ void HistogramVar::collect(RPCVarCollector *collector)
 	collector->collect_histogram_begin(this);
 	for (; i < this->bucket_boundaries.size(); i++)
 	{
-		current += this->bucket_counts[i];
+		// current += this->bucket_counts[i];
+		current = this->bucket_counts[i];
 		collector->collect_histogram_each(this, this->bucket_boundaries[i],
 										  current);
 	}
 
-	current += this->bucket_counts[i];
+	// current += this->bucket_counts[i];
+	current = this->bucket_counts[i];
 	collector->collect_histogram_each(this, DBL_MAX, current);
 	collector->collect_histogram_end(this, this->sum, this->count);
 }
 
-void HistogramVar::reset() {
+void HistogramVar::reset()
+{
 	for (size_t i = 0; i < this->bucket_boundaries.size(); i++)
 		this->bucket_counts[i] = 0;
 	this->sum = 0;
@@ -616,6 +664,105 @@ RPCVar *TimedGaugeVar::create(bool with_data)
 	}
 
 	return var;
+}
+
+HistogramCounterVar::HistogramCounterVar(const std::string &name,
+										 const std::string &help,
+										 const std::vector<double> &bucket)
+	: RPCVar(name, help, VAR_HISTOGRAM_COUNTER),
+	  bucket(bucket)
+{
+}
+
+HistogramCounterVar::~HistogramCounterVar()
+{
+	for (auto it = this->data.begin(); it != this->data.end(); it++)
+		delete it->second;
+}
+
+//  Caution :
+//	 make sure local->mutex.lock() before HistogramCounterVar::create(true)
+RPCVar *HistogramCounterVar::create(bool with_data)
+{
+	HistogramCounterVar *var = new HistogramCounterVar(this->name, this->help,
+													   this->bucket);
+
+	if (with_data)
+	{
+		for (auto it = this->data.begin(); it != this->data.end(); it++)
+		{
+			var->data.insert(std::make_pair(it->first,
+									(HistogramVar *)it->second->create(true)));
+		}
+	}
+
+	return var;
+}
+
+void HistogramCounterVar::observe(const LABEL_MAP &labels, double value)
+{
+	std::string label_str;
+	HistogramVar *var;
+
+	if (!label_to_str(labels, label_str))
+		return;
+
+	RPCVarLocal *local = RPCVarLocal::get_instance();
+	local->mutex.lock();
+	auto it = this->data.find(label_str);
+
+	if (it == this->data.end())
+	{
+		var = new HistogramVar(label_str, "", this->bucket);
+		this->data.insert(std::make_pair(label_str, var));
+	}
+	else
+	{
+		var = it->second;
+	}
+
+	var->observe(value);
+	local->mutex.unlock();
+
+	return;
+}
+
+//  Caution :
+//	   make sure local->mutex.lock() before HistogramCounterVar::reduce()
+bool HistogramCounterVar::reduce(const void *ptr, size_t)
+{
+	const HistogramCounterVar *counter = (const HistogramCounterVar *)ptr;
+	const std::unordered_map<std::string, HistogramVar *> *data;
+	data = counter->get_map();
+
+	for (auto it = data->begin(); it != data->end(); it++) {
+		auto my_it = this->data.find(it->first);
+
+		if (my_it == this->data.end()) {
+			HistogramVar *var = (HistogramVar *)it->second->create(true);
+			this->data.insert(std::make_pair(it->first, var));
+		}
+		else
+		{
+			my_it->second->reduce(it->second->get_data(),
+								  it->second->get_size());
+		}
+	}
+
+	return true;
+}
+
+// TODO: deprecated api available for Prometheus.
+void HistogramCounterVar::collect(RPCVarCollector *collector)
+{
+}
+
+void HistogramCounterVar::reset()
+{
+	for (auto it = this->data.begin(); it != this->data.end(); it++)
+		delete it->second;
+
+	this->data.clear();
 }
 
 } // end namespace srpc
