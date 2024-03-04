@@ -102,7 +102,7 @@ public:
 		return true;
 	}
 
-	const std::string raw_var_name(const std::string& name) const
+	static const std::string raw_var_name(const std::string& name)
 	{
 		size_t pos = name.find("::");
 		if (pos != std::string::npos)

@@ -35,13 +35,15 @@ class GaugeVar;
 class CounterVar;
 class HistogramVar;
 class SummaryVar;
+class HistogramCounterVar;
 
 enum RPCVarType
 {
-	VAR_GAUGE		=	0,
-	VAR_COUNTER		=	1,
-	VAR_HISTOGRAM	=	2,
-	VAR_SUMMARY		=	3
+	VAR_GAUGE				=	0,
+	VAR_COUNTER				=	1,
+	VAR_HISTOGRAM			=	2,
+	VAR_SUMMARY				=	3,
+	VAR_HISTOGRAM_COUNTER	=	4
 };
 
 static std::string type_string(RPCVarType type)
@@ -53,6 +55,7 @@ static std::string type_string(RPCVarType type)
 	case VAR_COUNTER:
 		return "counter";
 	case VAR_HISTOGRAM:
+	case VAR_HISTOGRAM_COUNTER:
 		return "histogram";
 	case VAR_SUMMARY:
 		return "summary";
@@ -73,6 +76,8 @@ public:
 	static HistogramVar *histogram(const std::string& name);
 
 	static SummaryVar *summary(const std::string& name);
+
+	static HistogramCounterVar *histogram_counter(const std::string &name);
 
 	static RPCVar *var(const std::string& name);
 	static bool check_name_format(const std::string& name);
@@ -111,7 +116,6 @@ public:
 	std::mutex mutex;
 	std::vector<RPCVarLocal *> local_vars;
 	bool finished;
-//	friend class RPCVarFactory;
 };
 
 class RPCVarLocal
@@ -146,7 +150,6 @@ public:
 	std::mutex mutex;
 	std::unordered_map<std::string, RPCVar *> vars;
 	friend class RPCVarGlobal;
-//	friend class RPCVarFactory;
 };
 
 class RPCVarCollector
@@ -250,28 +253,30 @@ public:
 	using LABEL_MAP = std::map<std::string, std::string>;
 	GaugeVar *add(const LABEL_MAP& labels);
 	void increase(const LABEL_MAP& labels);
+	void increase(const LABEL_MAP &labels, double value);
 
 	RPCVar *create(bool with_data) override;
 	bool reduce(const void *ptr, size_t sz) override;
 	void collect(RPCVarCollector *collector) override;
 
 	size_t get_size() const override { return this->data.size(); }
-	const void *get_data() override { return &this->data; }
-
-	static bool label_to_str(const LABEL_MAP& labels, std::string& str);
+	const void *get_data() override { return this; }
+	const std::unordered_map<std::string, GaugeVar *> *get_map() const
+	{
+		return &this->data;
+	}
+	double get_sum() const { return this->sum; }
+	void increase_sum(double value) { this->sum += value; }
 
 	void reset() override;
 
 public:
-	CounterVar(const std::string& name, const std::string& help) :
-		RPCVar(name, help, VAR_COUNTER)
-	{
-	}
-
-	~CounterVar();
+	CounterVar(const std::string &name, const std::string &help);
+	virtual ~CounterVar();
 
 private:
 	std::unordered_map<std::string, GaugeVar *> data;
+	double sum;
 };
 
 class HistogramVar : public RPCVar
@@ -332,7 +337,7 @@ public:
 		return &this->quantile_values;
 	}
 
-	void reset() override { /* no TimedSummary so no reset for Summary */}
+	void reset() override { /* TODO: incorrect if reset() by report interval */ }
 
 	const std::vector<struct Quantile>& get_quantiles() const
 	{
@@ -424,6 +429,35 @@ public:
 	// for reduce
 	const void *get_data() override;
 	RPCVar *create(bool with_data) override;
+};
+
+class HistogramCounterVar : public RPCVar
+{
+public:
+	using LABEL_MAP = std::map<std::string, std::string>;
+	void observe(const LABEL_MAP &labels, double value);
+
+	RPCVar *create(bool with_data) override;
+	bool reduce(const void *ptr, size_t sz) override;
+	void collect(RPCVarCollector *collector) override;
+
+	size_t get_size() const override { return this->data.size(); }
+	const void *get_data() override { return this; }
+	const std::unordered_map<std::string, HistogramVar *> *get_map() const
+	{
+		return &this->data;
+	}
+
+	void reset() override;
+
+public:
+	HistogramCounterVar(const std::string &name, const std::string &help,
+						const std::vector<double> &bucket);
+	virtual ~HistogramCounterVar();
+
+private:
+	std::unordered_map<std::string, HistogramVar *> data;
+	std::vector<double> bucket;
 };
 
 } // end namespace srpc
