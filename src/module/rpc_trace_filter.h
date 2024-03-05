@@ -277,7 +277,10 @@ private:
 public:
 	RPCTraceOpenTelemetry(const std::string& url);
 
+	RPCTraceOpenTelemetry(const std::string& url, const std::string& path);
+
 	RPCTraceOpenTelemetry(const std::string& url,
+						  const std::string& path,
 						  int redirect_max,
 						  int retry_max,
 						  size_t spans_per_second,

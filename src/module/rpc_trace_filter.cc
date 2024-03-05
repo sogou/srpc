@@ -346,13 +346,29 @@ RPCTraceOpenTelemetry::RPCTraceOpenTelemetry(const std::string& url) :
 }
 
 RPCTraceOpenTelemetry::RPCTraceOpenTelemetry(const std::string& url,
+											 const std::string& path) :
+	RPCFilter(RPCModuleTypeTrace),
+	url(url + path),
+	redirect_max(OTLP_HTTP_REDIRECT_MAX),
+	retry_max(OTLP_HTTP_RETRY_MAX),
+	filter_policy(SPANS_PER_SECOND_DEFAULT,
+				  RPC_REPORT_THREHOLD_DEFAULT,
+				  RPC_REPORT_INTERVAL_DEFAULT),
+	report_status(false),
+	report_span_count(0)
+{
+	this->report_req = new TracesData;
+}
+
+RPCTraceOpenTelemetry::RPCTraceOpenTelemetry(const std::string& url,
+											 const std::string& path,
 											 int redirect_max,
 											 int retry_max,
 											 size_t spans_per_second,
 											 size_t report_threshold,
 											 size_t report_interval) :
 	RPCFilter(RPCModuleTypeTrace),
-	url(url + OTLP_TRACES_PATH),
+	url(url + path),
 	redirect_max(redirect_max),
 	retry_max(retry_max),
 	filter_policy(spans_per_second, report_threshold, report_interval),
