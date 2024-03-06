@@ -51,9 +51,10 @@ struct RPCClientParams
 
 struct RPCServerParams : public WFServerParams
 {
-	RPCServerParams() :
-		WFServerParams(SERVER_PARAMS_DEFAULT)
-	{}
+	RPCServerParams() : WFServerParams(SERVER_PARAMS_DEFAULT)
+	{
+		this->request_size_limit = RPC_BODY_SIZE_LIMIT;
+	}
 };
 
 static constexpr struct RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
