@@ -23,7 +23,7 @@
 #include <string>
 #include "workflow/HttpUtil.h"
 #include "workflow/WFTaskFactory.h"
-#include "workflow/WFHttpServerTask.h"
+#include "workflow/WFGlobal.h"
 #include "rpc_module.h"
 
 namespace srpc
@@ -84,13 +84,16 @@ private:
 	std::list<RPCModule *> modules_;
 };
 
-class HttpServerTask : public WFHttpServerTask
+class HttpServerTask : public WFServerTask<protocol::HttpRequest,
+										   protocol::HttpResponse>
 {
 public:
 	HttpServerTask(CommService *service,
 				   std::list<RPCModule *>&& modules,
 				   std::function<void (WFHttpTask *)>& process) :
-		WFHttpServerTask(service, process),
+		WFServerTask(service, WFGlobal::get_scheduler(), process),
+		req_is_alive_(false),
+		req_has_keep_alive_header_(false),
 		modules_(std::move(modules))
 	{}
 
@@ -99,7 +102,8 @@ public:
 	bool is_ssl() const { return this->is_ssl_; }
 	unsigned short listen_port() const { return this->listen_port_; }
 
-	class ModuleSeries : public Series
+	class ModuleSeries : public WFServerTask<protocol::HttpRequest,
+											 protocol::HttpResponse>::Series
 	{
 	public:
 		ModuleSeries(WFServerTask<protocol::HttpRequest,
@@ -128,8 +132,12 @@ public:
 
 protected:
 	virtual void handle(int state, int error);
+	virtual CommMessageOut *message_out();
 
 protected:
+	bool req_is_alive_;
+	bool req_has_keep_alive_header_;
+	std::string req_keep_alive_;
 	RPCModuleData module_data_;
 	std::list<RPCModule *> modules_;
 	bool is_ssl_;
