@@ -102,14 +102,11 @@ public:
 	bool is_ssl() const { return this->is_ssl_; }
 	unsigned short listen_port() const { return this->listen_port_; }
 
-	class ModuleSeries : public WFServerTask<protocol::HttpRequest,
-											 protocol::HttpResponse>::Series
+	class ModuleSeries : public WFServerTask::Series
 	{
 	public:
-		ModuleSeries(WFServerTask<protocol::HttpRequest,
-								  protocol::HttpResponse> *task) :
-			WFServerTask<protocol::HttpRequest,
-						 protocol::HttpResponse>::Series(task),
+		ModuleSeries(WFServerTask *task) :
+			WFServerTask::Series(task),
 			module_data_(NULL)
 		{}
 
