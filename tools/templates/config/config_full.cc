@@ -405,6 +405,7 @@ void RPCConfig::load_trace()
                 report_interval = it["report_interval_ms"];
 
             auto *filter = new RPCTraceOpenTelemetry(url,
+													 OTLP_TRACES_PATH,
                                                      redirect_max,
                                                      retry_max,
                                                      spans_per_second,

@@ -726,6 +726,7 @@ void RPCMetricsOTel::Collector::collect_counter_each(const std::string& label,
 
 	if (!label.empty())
 	{
+		it = this->label_map.find(label);
 		if (it == this->label_map.end())
 		{
 			this->add_counter_label(label);
