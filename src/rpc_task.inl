@@ -292,14 +292,6 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 	if (status_code == RPCStatusOK)
 		status_code = this->resp.compress();
 
-	// for server, this is the where series->module_data stored
-	RPCModuleData *data = this->mutable_module_data();
-
-	for (auto *module : modules_)
-		module->server_task_end(this, *data);
-
-	this->resp.set_meta_module_data(*data);
-
 	if (status_code == RPCStatusOK)
 	{
 		if (!this->resp.serialize_meta())
@@ -308,6 +300,14 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 
 	if (this->resp.get_status_code() == RPCStatusOK)
 		this->resp.set_status_code(status_code);
+
+	// for server, this is the where series->module_data stored
+	RPCModuleData *data = this->mutable_module_data();
+
+	for (auto *module : modules_)
+		module->server_task_end(this, *data);
+
+	this->resp.set_meta_module_data(*data);
 
 	if (status_code == RPCStatusOK)
 		return this->WFServerTask<RPCREQ, RPCRESP>::message_out();

@@ -262,7 +262,7 @@ bool RPCTraceModule<STASK, CTASK>::server_end(SubTask *task,
 		return true;
 	}
 
-	TraceModule::client_end_response(resp, data);
+	TraceModule::server_end_response(resp, data);
 
 	return true;
 }
