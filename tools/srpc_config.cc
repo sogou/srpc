@@ -409,6 +409,13 @@ static std::string ctl_client_load_params_format = R"(
 	RPCClientParams params = RPC_CLIENT_PARAMS_DEFAULT;
 	params.host = config.client_host();
 	params.port = config.client_port();
+	params.transport_type = config.client_transport_type();
+	params.is_ssl = config.client_is_ssl();
+	params.url = config.client_url();
+	params.callee_timeout = config.client_callee_timeout();
+	params.caller = config.client_caller();
+
+	params.task_params.retry_max = config.client_retry_max();
 )";
 
 static std::string ctl_client_main_params_format = R"(
@@ -465,10 +472,6 @@ void ControlGenerator::ControlPrinter::print_server_load_config()
 void ControlGenerator::ControlPrinter::print_client_params()
 {
 	fprintf(this->out_file, "%s", ctl_client_load_params_format.c_str());
-	fprintf(this->out_file, "\tparams.is_ssl = config.client_is_ssl();\n");
-	fprintf(this->out_file, "\tparams.url = config.client_url();\n");
-	fprintf(this->out_file, "\tparams.caller = config.client_caller();\n");
-
 	// TODO: set client task params
 }
 

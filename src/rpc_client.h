@@ -180,18 +180,33 @@ inline void RPCClient<RPCTYPE>::init(const RPCClientParams *params)
 																this->uri,
 																&this->ss,
 																&this->ss_len);
+
+	if (this->params.is_ssl)
+	{
+		if (this->params.transport_type == TT_TCP)
+			this->params.transport_type = TT_TCP_SSL;
+		else if (this->params.transport_type == TT_SCTP)
+			this->params.transport_type = TT_SCTP_SSL;
+	}
+	else if (this->params.transport_type == TT_TCP_SSL ||
+			 this->params.transport_type == TT_SCTP_SSL)
+	{
+		this->params.is_ssl = true;
+	}
 }
 
 template<class RPCTYPE>
 inline void RPCClient<RPCTYPE>::__task_init(COMPLEXTASK *task) const
 {
 	if (this->has_addr_info)
-		task->init(this->params.is_ssl ? TT_TCP_SSL : TT_TCP,
+	{
+		task->init(this->params.transport_type,
 				   (const struct sockaddr *)&this->ss, this->ss_len, "");
+	}
 	else
 	{
 		task->init(this->uri);
-		task->set_transport_type(this->params.is_ssl ? TT_TCP_SSL : TT_TCP);
+		task->set_transport_type(this->params.transport_type);
 	}
 }
 
