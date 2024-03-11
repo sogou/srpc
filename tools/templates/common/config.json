@@ -6,10 +6,10 @@
 
   "client":
   {
+    "transport_type": "TT_TCP",
     "remote_host": "127.0.0.1",
     "remote_port": 8080,
     "is_ssl" : false,
-    "redirect_max": 2,
     "retry_max": 1,
     "user_name": "root",
 	"password": "",

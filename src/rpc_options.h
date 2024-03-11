@@ -39,6 +39,7 @@ struct RPCTaskParams
 struct RPCClientParams
 {
 	RPCTaskParams task_params;
+	enum TransportType transport_type;
 //host + port + is_ssl
 	std::string host;
 	unsigned short port;
@@ -71,6 +72,7 @@ static constexpr struct RPCTaskParams RPC_TASK_PARAMS_DEFAULT =
 static const struct RPCClientParams RPC_CLIENT_PARAMS_DEFAULT =
 {
 /*	.task_params		=	*/	RPC_TASK_PARAMS_DEFAULT,
+/*	.transport_type		=	*/	TT_TCP,
 /*	.host				=	*/	"",
 /*	.port				=	*/	SRPC_DEFAULT_PORT,
 /*	.is_ssl				=	*/	false,

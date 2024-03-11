@@ -1305,31 +1305,6 @@ inline %sClient::%sClient(const struct srpc::RPCClientParams *params):
 		this->register_compress_type(srpc::RPCCompressGzip);
 )";
 
-	std::string client_class_constructor_params_format = R"(
-	%sClient(struct srpc::RPCServiceParams& params) :
-			srpc::RPCService("%s")
-	{
-		this->params.service_params = params;
-
-		if (!params.url.empty())
-		{
-			URIParser::parse(params.url, this->params.uri);
-			this->params.has_uri = true;
-		} else {
-			this->params.has_uri = false;
-		}
-
-		if (!params.host.empty() && !params.port.empty())
-		{
-			get_addr_info(params.host.c_str(), params.port.c_str(), &this->params.ai);
-			this->params.has_addr_info = true;
-		} else {
-			this->params.has_addr_info = false;
-		}
-
-		this->register_compress_type(srpc::RPCCompressGzip);
-)";
-
 	std::string client_class_functions = R"(
 	const struct srpc::RPCClientParams *get_params()
 	{

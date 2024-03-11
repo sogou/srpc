@@ -245,11 +245,26 @@ void RPCConfig::load_server()
 
 void RPCConfig::load_client()
 {
+    if (this->data["client"].has("transport_type"))
+    {
+        std::string type = this->data["client"]["transport_type"].get<std::string>();
+        if (type == "TT_SCTP")
+            this->c_transport_type = TT_SCTP;
+        else if (type == "TT_UDP")
+            this->c_transport_type = TT_UDP;
+    }
+
     if (this->data["client"].has("remote_host"))
         this->c_host = this->data["client"]["remote_host"].get<std::string>();
 
     if (this->data["client"].has("remote_port"))
         this->c_port = this->data["client"]["remote_port"];
+
+    if (this->data["client"].has("is_ssl"))
+        this->c_is_ssl = this->data["client"]["is_ssl"];
+
+    if (this->data["client"].has("callee_timeout"))
+        this->c_callee_timeout = this->data["client"]["callee_timeout"];
 
     if (this->data["client"].has("redirect_max"))
         this->c_redirect_max = this->data["client"]["redirect_max"];
@@ -405,7 +420,7 @@ void RPCConfig::load_trace()
                 report_interval = it["report_interval_ms"];
 
             auto *filter = new RPCTraceOpenTelemetry(url,
-													 OTLP_TRACES_PATH,
+                                                     OTLP_TRACES_PATH,
                                                      redirect_max,
                                                      retry_max,
                                                      spans_per_second,
