@@ -52,9 +52,13 @@ bool RPCModule::client_task_end(SubTask *task, RPCModuleData& data)
 
 	for (RPCFilter *filter : this->filters)
 	{
-		ret = ret && filter->client_end(task, data);
-		filter_task = filter->create_filter_task(data);
-		series_of(task)->push_front(filter_task);
+		if (filter->client_end(task, data))
+		{
+			filter_task = filter->create_filter_task(data);
+			series_of(task)->push_front(filter_task);
+		}
+		else
+			ret = false;
 	}
 
 	return ret;
@@ -67,9 +71,13 @@ bool RPCModule::server_task_end(SubTask *task, RPCModuleData& data)
 
 	for (RPCFilter *filter : this->filters)
 	{
-		ret = ret && filter->server_end(task, data);
-		filter_task = filter->create_filter_task(data);
-		series_of(task)->push_front(filter_task);
+		if (filter->server_end(task, data))
+		{
+			filter_task = filter->create_filter_task(data);
+			series_of(task)->push_front(filter_task);
+		}
+		else
+			ret = false;
 	}
 
 	return ret;
