@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
 project(srpc-ctl
-		VERSION 0.10.1
+		VERSION 0.10.2
 		LANGUAGES C CXX
 )
 
