@@ -21,7 +21,7 @@
   * 支持多种IDL格式：[`Protobuf`](/tutorial/echo_pb.proto)、[`Thrift`](/tutorial/echo_thrift.thrift)
   * 支持多种数据布局，使用上完全透明：`Json`、`Protobuf`、`Thrift Binary`
   * 支持多种压缩，框架自动解压：`gzip`、`zlib`、`snappy`、`lz4`
-  * 支持多种通信协议：`tcp`、`http`、`sctp`、`ssl`、`https`
+  * 支持多种通信协议：`tcp`, `udp`, `sctp`, `tcp ssl`
   * 可以通过[http+json实现跨语言](/docs/docs-07-srpc-http.md)
   * 可以使用[Workflow串并联任务流](/docs/docs-06-workflow.md)，打通计算及其他异步资源
   * 完美兼容Workflow所有功能：命名服务体系、[upstream](docs/docs-06-workflow.md#3-upstream)、其他组件等

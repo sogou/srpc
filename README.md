@@ -24,7 +24,7 @@ Its main features include:
   * Support several IDL formats: [`Protobuf`](/tutorial/echo_pb.proto), [`Thrift`](/tutorial/echo_thrift.thrift)
   * Support several data formats transparently: `Json`, `Protobuf`, `Thrift Binary`
   * Support several compression formats, the framework automatically decompresses: `gzip`, `zlib`, `snappy`, `lz4`
-  * Support several communication protocols transparently: `tcp`, `http`, `ssl`, `https`
+  * Support several communication protocols transparently: `tcp`, `udp`, `sctp`, `tcp ssl`
   * With [HTTP+JSON](/docs/docs-07-srpc-http.md), you can communicate with the client or server in any language
   * Use it together with [Workflow Series and Parallel](/docs/docs-06-workflow.md) to facilitate the use of calculations and other asynchronous resources
   * Perfectly compatible with all Workflow functions, such as name service, [upstream](docs/docs-06-workflow.md#3-upstream) and other components
