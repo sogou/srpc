@@ -482,7 +482,10 @@ long RPCBuffer::read_back(long offset)
 		}
 
  		if (cur_.first == buffer_list_.begin())
- 			break;
+		{
+			cur_.second = 0;
+			break;
+		}
 
 		--cur_.first;
 		cur_.second = cur_.first->buflen;
