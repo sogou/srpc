@@ -486,6 +486,7 @@ long RPCBuffer::read_back(long offset)
 			cur_.second = 0;
 			break;
 		}
+
 		--cur_.first;
 		cur_.second = cur_.first->buflen;
 	}
