@@ -52,6 +52,8 @@ int main()
 
 	if (server.start(1412) == 0)
 	{
+		printf("SRPC framework Thrift protocol server with thrift IDL is running on 1412\n"
+			   "Try ./thrift_thrift_client to send requests.\n\n");
 		wait_group.wait();
 		server.stop();
 	}

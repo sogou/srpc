@@ -38,8 +38,13 @@ private:
 public:
 	void Echo(EchoRequest *request, EchoResponse *response, RPCContext *context) override
 	{
+		printf("Proxy Server Echo() get and transfer request:\n%s\n",
+				request->DebugString().c_str());
+
 		auto *task = this->client->create_Echo_task([response](EchoResponse *resp,
 															   RPCContext *ctx) {
+			printf("Proxy Server Echo() get and transfer response:\n%s\n",
+				   resp->DebugString().c_str());
 			if (ctx->success())
 				*response = std::move(*resp);
 		});
@@ -67,6 +72,8 @@ int main()
 
 	if (server.start(61412) == 0)
 	{
+		printf("Proxy server serving on 61412 and redirect to backend server 127.0.0.1:1412\n"
+			   "Try start ./srpc_pb_server as backend and send requests to 61412.\n\n");
 		wait_group.wait();
 		server.stop();
 	}

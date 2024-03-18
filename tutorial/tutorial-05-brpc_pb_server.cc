@@ -55,6 +55,8 @@ int main()
 
 	if (server.start(1412) == 0)
 	{
+		printf("SRPC framework BRPC Protobuf server is running on 1412\n"
+			   "Try ./brpc_pb_client to send requests.\n\n");
 		wait_group.wait();
 		server.stop();
 	}

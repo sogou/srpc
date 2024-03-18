@@ -45,6 +45,8 @@ void callback(WFHttpTask *task)
 		fflush(stdout);
 		fprintf(stderr, "\nfinish print body. body_len = %zu\n", body_len);
 	}
+
+	wait_group.done();
 }
 
 int main()

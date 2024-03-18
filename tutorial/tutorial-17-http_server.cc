@@ -59,6 +59,8 @@ int main()
 
 	if (server.start(1412) == 0)
 	{
+		printf("HTTP protocol server is running on 1412\n"
+			   "Try ./http_client to send requests.\n\n");
 		wait_group.wait();
 		server.stop();
 	}
