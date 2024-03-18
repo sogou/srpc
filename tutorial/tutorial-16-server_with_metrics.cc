@@ -73,6 +73,9 @@ int main()
 
 	if (server.start(1412) == 0)
 	{
+		printf("Server with metrics for Promethes(port:8080) is running on 1412\n"
+			   "Try ./srpc_pb_client to send requests.\n"
+			   "Try ' curl http://localhost:8080/metrics ' to get prometheus data.\n");
 		wait_group.wait();
 		server.stop();
 	}

@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
 
 	if (server.start(1412) == 0)
 	{
+		printf("Asynchronous server with HTTP requests is running on 1412\n"
+			   "Try ./client_task or ./srpc_pb_client to trigger this example.\n\n");
 		wait_group.wait();
 		server.stop();
 	}

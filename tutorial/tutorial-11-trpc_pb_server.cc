@@ -63,7 +63,8 @@ int main()
 
 	if (server.start(1412) == 0)
 	{
-		printf("SRPC framework TRPC server running on 1412...\n");
+		printf("SRPC framework TRPC server is running on 1412\n"
+			   "Try ./trpc_pb_client to send requests.\n\n");
 		wait_group.wait();
 		server.stop();
 	}

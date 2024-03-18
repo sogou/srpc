@@ -43,6 +43,8 @@ int main()
 
 		while (ctx->get_attachment(&attachment, &len))
 			printf("get attachment [%.*s] len=%zu\n", (int)len, attachment, len);
+
+		wait_group.done();
 	});
 
 	//sync
