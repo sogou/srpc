@@ -290,6 +290,8 @@ Json Json::operator[](const std::string& key) const
 
 bool Json::has(const std::string& key) const
 {
+    if (!is_object())
+        return false;
     json_object_t* obj = json_value_object(node_);
     const json_value_t* find = json_object_find(key.c_str(), obj);
     return find != nullptr;
