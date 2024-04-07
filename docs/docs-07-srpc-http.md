@@ -1,6 +1,6 @@
 [English version](/docs/docs-07-srpc-http.md)
 
-## 07 - 使用SPRC、TRPC、Thrift发送Http
+## 07 - 使用SRPC、TRPC、Thrift发送Http
 
 **SRPC**支持**HTTP**协议，只要把**idl**的内容作填到**HTTP**的**body**中，并且在**header**里填上**idl**的类型(**json**/**protobuf**/**thrift**)，就可以与其他框架通过**HTTP**协议互通，由此可以实现跨语言。
 

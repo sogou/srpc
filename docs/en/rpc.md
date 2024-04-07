@@ -140,7 +140,7 @@ You can follow the detailed example below:
 - Imagine that we can also derive more Serivce from `Example::Service`, which have different implementations of rpc `Echo`.
 - Imagine that we can create N different RPC Servers on N different ports, serving on different network protocols.
 - Imagine that we can use `add_service()` to add the same ServiceIMPL instance on different Servers, or we can use `add_service()` to add different ServiceIMPL instances on the same server.
-- Imagine that we can use the same `ExampleServiceImpl`, serving BPRC-STD, SRPC-STD, SRPC-Http at three different ports at the same time.
+- Imagine that we can use the same `ExampleServiceImpl`, serving BRPC-STD, SRPC-STD, SRPC-Http at three different ports at the same time.
 - And we can use `add_service()` to add one `ExampleServiceImpl` related to Protobuf IDL and one `AnotherThriftServiceImpl` related to Thrift IDL to the same SRPC-STD Server, and the two IDLs work perfectly on the same port!
 
 ~~~cpp

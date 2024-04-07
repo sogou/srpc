@@ -128,7 +128,7 @@ public:
 - 想像一下，我们也可以从``Example::Service``派生出多个Service，而它们的rpc``Echo``实现的功能可以不同
 - 想像一下，我们可以在N个不同的端口创建N个不同的RPC Server，代表着不同的协议
 - 想像一下，我们可以把同一个ServiceIMPL实例``add_service()``到不同的Server上，我们也可以把不同的ServiceIMPL实例``add_service``到同一个Server上
-- 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BPRC-STD、SRPC-STD、SRPC-Http
+- 想像一下，我们可以用同一个``ExampleServiceImpl``，在三个不同端口、同时服务于BRPC-STD、SRPC-STD、SRPC-Http
 - 甚至，我们可以将1个Protobuf IDL相关的``ExampleServiceImpl``和1个Thrift IDL相关的``AnotherThriftServiceImpl``，``add_service``到同一个SRPC-STD Server，两种IDL在同一个端口上完美工作！
 
 ~~~cpp

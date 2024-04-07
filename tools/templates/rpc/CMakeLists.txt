@@ -56,7 +56,7 @@ set(SRPC_GEN_PROGRAM ${SRPC_BIN_DIR}/srpc_generator) %s
 
 add_custom_target(SRPC_GEN ALL
     COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/${IDL_FILE} ${PROJECT_SOURCE_DIR} -s
-    COMMENT "sprc generator..."
+    COMMENT "srpc generator..."
 )
 
 # Prefer to static link first
