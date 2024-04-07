@@ -19,7 +19,7 @@ Bases on [Sogou C++ Workflow](https://github.com/sogou/workflow), it is an excel
 
 Its main features include:
 
-  * Support multiple RPC protocols: [`SPRC`](/tutorial/tutorial-01-srpc_pb_server.cc), [`bRPC`](/tutorial/tutorial-05-brpc_pb_server.cc), [`Thrift`](/tutorial/tutorial-07-thrift_thrift_server.cc), [`tRPC`](/tutorial/tutorial-11-trpc_pb_server.cc)
+  * Support multiple RPC protocols: [`SRPC`](/tutorial/tutorial-01-srpc_pb_server.cc), [`bRPC`](/tutorial/tutorial-05-brpc_pb_server.cc), [`Thrift`](/tutorial/tutorial-07-thrift_thrift_server.cc), [`tRPC`](/tutorial/tutorial-11-trpc_pb_server.cc)
   * Support multiple operating systems: `Linux`, `MacOS`, `Windows`
   * Support several IDL formats: [`Protobuf`](/tutorial/echo_pb.proto), [`Thrift`](/tutorial/echo_thrift.thrift)
   * Support several data formats transparently: `Json`, `Protobuf`, `Thrift Binary`

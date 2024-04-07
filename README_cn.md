@@ -16,7 +16,7 @@
 底层基于[Sogou C++ Workflow](https://github.com/sogou/workflow)，是高性能、低延迟、轻量级RPC系统的极佳选择。且加入了AOP面向切面的模块，支持Metrics（监控指标）和Trace（链路追踪）功能，可上报到多种云原生系统，包括OpenTelemetry。
 
 主要功能和示例：
-  * 支持多种RPC协议：[`SPRC`](/tutorial/tutorial-01-srpc_pb_server.cc)、[`bRPC`](/tutorial/tutorial-05-brpc_pb_server.cc)、[`Thrift`](/tutorial/tutorial-07-thrift_thrift_server.cc)、[`tRPC`](/tutorial/tutorial-11-trpc_pb_server.cc)
+  * 支持多种RPC协议：[`SRPC`](/tutorial/tutorial-01-srpc_pb_server.cc)、[`bRPC`](/tutorial/tutorial-05-brpc_pb_server.cc)、[`Thrift`](/tutorial/tutorial-07-thrift_thrift_server.cc)、[`tRPC`](/tutorial/tutorial-11-trpc_pb_server.cc)
   * 支持多种操作系统：`Linux` / `MacOS` / `Windows`
   * 支持多种IDL格式：[`Protobuf`](/tutorial/echo_pb.proto)、[`Thrift`](/tutorial/echo_thrift.thrift)
   * 支持多种数据布局，使用上完全透明：`Json`、`Protobuf`、`Thrift Binary`
