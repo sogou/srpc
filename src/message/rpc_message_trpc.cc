@@ -771,18 +771,20 @@ const std::string& TRPCRequest::get_method_name() const
 	return meta->func();
 }
 
+// like p.service_name
 void TRPCRequest::set_service_name(const std::string& service_name)
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
 
-	meta->set_callee(service_name);
+	meta->set_callee(service_name); // useless in transfer protocol
 }
 
+// like /p.service_name/method_name
 void TRPCRequest::set_method_name(const std::string& method_name)
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
 
-	meta->set_func(method_name);
+	meta->set_func(method_name); // use this prefix as service_name for route
 }
 
 void TRPCRequest::set_callee_timeout(int timeout)
@@ -1166,14 +1168,23 @@ bool TRPCRequest::get_meta_module_data(RPCModuleData& data) const
 bool TRPCRequest::trim_method_prefix()
 {
 	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
-	std::string *method = meta->mutable_func();
+	std::string *func = meta->mutable_func();
 
-	auto pos = method->find_last_of('/');
-	if (pos == std::string::npos)
-		return false;
+	if ((*func)[0] == '/')
+	{
+		size_t pos = func->find('/', 1);
+		if (pos != std::string::npos)
+		{
+			// callee is not guaranteed being set as service_name in transfer protocol
+			// so server need to get from func and set on callee for local use
+			meta->set_callee(func->substr(1, pos - 1));
+			meta->set_func(func->substr(pos + 1, func->length()));
+			return true;
+		}
+	}
 
-	meta->set_func(method->substr(pos + 1, method->length()));
-	return true;
+	meta->set_callee(""); // make it fail in find_service()
+	return false;
 }
 
 bool TRPCResponse::set_meta_module_data(const RPCModuleData& data)
