@@ -83,7 +83,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 
 	while (fgets(line_buffer, LINE_LENGTH_MAX, in))
 	{
-		std::string line = SGenUtil::lstrip(line_buffer);
+		std::string line = SGenUtil::strip(line_buffer);
 
 		if (line.empty())
 			continue;
