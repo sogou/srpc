@@ -193,6 +193,135 @@ private:
 	}
 };
 
+template<class VALIMPL>
+class ThriftDescriptorImpl<std::vector<bool>, TDT_LIST, void, VALIMPL> : public ThriftDescriptor
+{
+public:
+	static const ThriftDescriptor *get_instance()
+	{
+		static const ThriftDescriptorImpl<std::vector<bool>, TDT_LIST, void, VALIMPL> kInstance;
+
+		return &kInstance;
+	}
+
+	static bool read(ThriftBuffer *buffer, void *data)
+	{
+		std::vector<bool> *list = static_cast<std::vector<bool> *>(data);
+		const auto *val_desc = VALIMPL::get_instance();
+		int8_t field_type;
+		int32_t count;
+
+		if (!buffer->readI08(field_type))
+			return false;
+
+		if (!buffer->readI32(count))
+			return false;
+
+		list->resize(count);
+		for (size_t i = 0; i < list->size(); ++i)
+		{
+			bool ele;
+			if (!val_desc->reader(buffer, &ele))
+				return false;
+			(*list)[i] = ele;
+		}
+
+		return true;
+	}
+
+	static bool write(const void *data, ThriftBuffer *buffer)
+	{
+		const std::vector<bool> *list = static_cast<const std::vector<bool> *>(data);
+		const auto *val_desc = VALIMPL::get_instance();
+
+		if (!buffer->writeI08(val_desc->data_type))
+			return false;
+
+		if (!buffer->writeI32(list->size()))
+			return false;
+
+		for (size_t i = 0; i < list->size(); ++i)
+		{
+			bool ele = (*list)[i];
+			if (!val_desc->writer(&ele, buffer))
+				return false;
+		}
+
+		return true;
+	}
+
+	static bool read_json(ThriftBuffer *buffer, void *data)
+	{
+		std::vector<bool> *list = static_cast<std::vector<bool> *>(data);
+		const auto *val_desc = VALIMPL::get_instance();
+		bool is_first = true;
+		bool ele;
+		char ch;
+
+		if (!ThriftJsonUtil::skip_character(buffer, '['))
+			return false;
+
+		while (ThriftJsonUtil::peek_first_meaningful_char(buffer, ch))
+		{
+			if (ch == ']')
+			{
+				buffer->buffer->seek(1);
+				return true;
+			}
+
+			if (is_first)
+				is_first = false;
+			else
+			{
+				buffer->buffer->seek(1);
+				if (ch != ',')
+					break;
+			}
+
+			if (!val_desc->json_reader(buffer, &ele))
+				break;
+
+			list->emplace_back(std::move(ele));
+		}
+
+		return false;
+	}
+
+	static bool write_json(const void *data, ThriftBuffer *buffer)
+	{
+		const std::vector<bool> *list = static_cast<const std::vector<bool> *>(data);
+		const auto *val_desc = VALIMPL::get_instance();
+		bool is_first = true;
+
+		if (!buffer->writeI08('['))
+			return false;
+
+		for (size_t i = 0; i < list->size(); ++i)
+		{
+			bool ele = (*list)[i];
+			if (is_first)
+				is_first = false;
+			else if (!buffer->writeI08(','))
+				return false;
+
+			if (!val_desc->json_writer(&ele, buffer))
+				return false;
+		}
+
+		return buffer->writeI08(']');
+	}
+
+private:
+	ThriftDescriptorImpl():
+		ThriftDescriptor(ThriftDescriptorImpl<std::vector<bool>, TDT_LIST, void, VALIMPL>::read,
+						 ThriftDescriptorImpl<std::vector<bool>, TDT_LIST, void, VALIMPL>::write,
+						 ThriftDescriptorImpl<std::vector<bool>, TDT_LIST, void, VALIMPL>::read_json,
+						 ThriftDescriptorImpl<std::vector<bool>, TDT_LIST, void, VALIMPL>::write_json)
+	{
+		this->data_type = TDT_LIST;
+	}
+};
+
 template<class T, class VALIMPL>
 class ThriftDescriptorImpl<T, TDT_SET, void, VALIMPL> : public ThriftDescriptor
 {
