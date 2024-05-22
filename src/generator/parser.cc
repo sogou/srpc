@@ -808,18 +808,21 @@ bool Parser::parse_service_thrift(const std::string& file_name_prefix,
 		if (left_b == std::string::npos)
 			continue;
 
-		auto aa = SGenUtil::split_skip_string(line.substr(0, left_b), ' ');
-		if (aa.size() != 2)
-			continue;
+		std::string idl_type;
+		std::string tmp = SGenUtil::strip(line.substr(0, left_b));
+		auto sp_pos = tmp.find_last_of(" \t");
 
-		rpc_desc.method_name = SGenUtil::strip(aa[1]);
-		if (rpc_desc.method_name.empty())
+		if (sp_pos != std::string::npos)
+		{
+			idl_type = SGenUtil::strip(tmp.substr(0, sp_pos));
+			rpc_desc.method_name = SGenUtil::strip(tmp.substr(sp_pos+1));
+		}
+		else
 			continue;
 
 		rpc_desc.request_name = rpc_desc.method_name + "Request";
 		rpc_desc.response_name = rpc_desc.method_name + "Response";
 
-		auto idl_type = SGenUtil::strip(aa[0]);
 		rpc_param param;
 
 		param.var_name = "result";
