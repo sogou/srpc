@@ -318,6 +318,8 @@ public:
 	bool get_http_header(const std::string& name,
 						 std::string& value) const override;
 
+	bool trim_method_prefix();
+
 public:
 	TRPCHttpRequest() { this->size_limit = RPC_BODY_SIZE_LIMIT; }
 };
