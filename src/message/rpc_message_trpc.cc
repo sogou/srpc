@@ -1187,6 +1187,19 @@ bool TRPCRequest::trim_method_prefix()
 	return false;
 }
 
+bool TRPCHttpRequest::trim_method_prefix()
+{
+	RequestProtocol *meta = static_cast<RequestProtocol *>(this->meta);
+	std::string *method = meta->mutable_func();
+
+	auto pos = method->find_last_of('/');
+	if (pos == std::string::npos)
+		return false;
+
+	meta->set_func(method->substr(pos + 1, method->length()));
+	return true;
+}
+
 bool TRPCResponse::set_meta_module_data(const RPCModuleData& data)
 {
 	ResponseProtocol *meta = static_cast<ResponseProtocol *>(this->meta);
