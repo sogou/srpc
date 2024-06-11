@@ -281,7 +281,7 @@ public:
 			if (!val_desc->json_reader(buffer, &ele))
 				break;
 
-			list->emplace_back(std::move(ele));
+			list->push_back(ele);
 		}
 
 		return false;
