@@ -466,7 +466,8 @@ bool Parser::parse_thrift_typedef(const std::string& line,
 								  std::string& new_type_name,
 								  idl_info&info)
 {
-	std::vector<std::string> elems = SGenUtil::split_by_space(line);
+	std::string str = line.substr(0, line.find_first_of(';'));
+	std::vector<std::string> elems = SGenUtil::split_by_space(str);
 
 	if (elems.size() >= 3 && elems[0] == "typedef")
 	{
@@ -1278,10 +1279,14 @@ std::string type_prefix_to_namespace(const std::string& type_name,
 		return type_name;
 	}
 
-	if (include->package_name.size() > 0)
-		return include->package_name[0]+"::"+real_type;
+	std::string namespc;
+	for (const auto& name : include->package_name)
+		namespc += name+"::";
 
-	return "::"+real_type;
+	if (namespc.empty())
+		namespc = "::";
+
+	return namespc+real_type;
 }
 
 Descriptor *search_cur_file_descriptor(idl_info& info,
