@@ -41,6 +41,8 @@ public:
 	bool server_begin(SubTask *task, RPCModuleData& data) override;
 };
 
+using HttpCustomModule = CustomModule;
+
 } // end namespace srpc
 
 #endif
