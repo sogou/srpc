@@ -131,6 +131,9 @@ void HttpClient::add_filter(RPCFilter *filter)
 			case RPCModuleTypeMetrics:
 				module = new HttpMetricsModule();
 				break;
+			case RPCModuleTypeCustom:
+				module = new HttpCustomModule();
+				break;
 			default:
 				break;
 			}
