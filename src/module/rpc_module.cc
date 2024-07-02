@@ -135,6 +135,26 @@ bool SnowFlake::get_id(long long group_id, long long machine_id,
 	return true;
 }
 
+bool CustomModule::client_begin(SubTask *task, RPCModuleData& data)
+{
+	return true;
+}
+
+bool CustomModule::client_end(SubTask *task, RPCModuleData& data)
+{
+	return true;
+}
+
+bool CustomModule::server_begin(SubTask *task, RPCModuleData& data)
+{
+	return true;
+}
+
+bool CustomModule::server_end(SubTask *task, RPCModuleData& data)
+{
+	return true;
+}
+
 bool http_set_header_module_data(const RPCModuleData& data,
 								 protocol::HttpMessage *msg)
 {

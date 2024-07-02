@@ -143,6 +143,7 @@ enum RPCModuleType
 	RPCModuleTypeTrace		=	1,
 	RPCModuleTypeMetrics	=	2,
 	RPCModuleTypeLog		=	3,
+	RPCModuleTypeCustom		=	4,
 };
 
 class RPCCommon

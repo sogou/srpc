@@ -165,6 +165,9 @@ void RPCServer<RPCTYPE>::add_filter(RPCFilter *filter)
 			case RPCModuleTypeMetrics:
 				module = new RPCMetricsModule<SERVER_TASK, CLIENT_TASK>();
 				break;
+			case RPCModuleTypeCustom:
+				module = new RPCCustomModule<SERVER_TASK, CLIENT_TASK>();
+				break;
 			default:
 				break;
 			}
