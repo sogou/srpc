@@ -409,6 +409,8 @@ const char *SRPCResponse::get_errmsg() const
 		return "IDL Serialize Not Supported";
 	case RPCStatusIDLDeserializeNotSupported:
 		return "IDL Deserialize Not Supported";
+	case RPCStatusModuleFilterFailed:
+		return "Module or filter check failed";
 	case RPCStatusURIInvalid:
 		return "URI Invalid";
 	case RPCStatusUpstreamFailed:

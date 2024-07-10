@@ -105,7 +105,10 @@ void HttpClient::callback(WFHttpTask *task)
 //			http_get_header_module_data(task->get_resp(), *resp_data);
 
 		for (RPCModule *module : module_list)
-			module->client_task_end(task, *resp_data);
+		{
+			if (!module->client_task_end(task, *resp_data))
+				break;
+		}
 	}
 
 	if (client_task->user_callback_)

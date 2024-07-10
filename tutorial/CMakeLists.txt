@@ -119,6 +119,7 @@ set(TUTORIAL_PB_LIST
 	tutorial-10-server_async
 	tutorial-15-srpc_pb_proxy
 	tutorial-16-server_with_metrics
+	tutorial-19-custom_filter
 )
 
 if (APPLE)

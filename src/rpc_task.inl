@@ -305,12 +305,19 @@ CommMessageOut *RPCServerTask<RPCREQ, RPCRESP>::message_out()
 	RPCModuleData *data = this->mutable_module_data();
 
 	for (auto *module : modules_)
-		module->server_task_end(this, *data);
-
-	this->resp.set_meta_module_data(*data);
+	{
+		if (!module->server_task_end(this, *data))
+		{
+			status_code = RPCStatusModuleFilterFailed;
+			break;
+		}
+	}
 
 	if (status_code == RPCStatusOK)
+	{
+		this->resp.set_meta_module_data(*data);
 		return this->WFServerTask<RPCREQ, RPCRESP>::message_out();
+	}
 
 	errno = EBADMSG;
 	return NULL;
@@ -438,15 +445,9 @@ template<class RPCREQ, class RPCRESP>
 bool RPCClientTask<RPCREQ, RPCRESP>::check_request()
 {
 	int status_code = this->resp.get_status_code();
-	return status_code == RPCStatusOK || status_code == RPCStatusUndefined;
-}
 
-template<class RPCREQ, class RPCRESP>
-CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
-{
-	this->req.set_seqid(this->get_task_seq());
-
-	int status_code = this->req.compress();
+	if (status_code != RPCStatusOK && status_code != RPCStatusUndefined)
+		return false;
 
 	void *series_data = series_of(this)->get_specific(SRPC_MODULE_DATA);
 	RPCModuleData *data = (RPCModuleData *)series_data;
@@ -456,9 +457,24 @@ CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
 	data = this->mutable_module_data();
 
 	for (auto *module : modules_)
-		module->client_task_begin(this, *data);
+	{
+		if (!module->client_task_begin(this, *data))
+		{
+			this->resp.set_status_code(RPCStatusModuleFilterFailed);
+			return false;
+		}
+	}
 
 	this->req.set_meta_module_data(*data);
+	return true;
+}
+
+template<class RPCREQ, class RPCRESP>
+CommMessageOut *RPCClientTask<RPCREQ, RPCRESP>::message_out()
+{
+	this->req.set_seqid(this->get_task_seq());
+
+	int status_code = this->req.compress();
 
 	if (status_code == RPCStatusOK)
 	{
@@ -575,7 +591,11 @@ void RPCClientTask<RPCREQ, RPCRESP>::rpc_callback(WFNetworkTask<RPCREQ, RPCRESP>
 //			this->resp.get_meta_module_data(resp_data);
 
 		for (auto *module : modules_)
-			module->client_task_end(this, *resp_data);
+		{
+			// do not affect status_code, which is important for user_done_
+			if (!module->client_task_end(this, *resp_data))
+				break;
+		}
 	}
 
 	if (status_code != RPCStatusOK)

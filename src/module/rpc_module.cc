@@ -27,60 +27,66 @@ namespace srpc
 
 bool RPCModule::client_task_begin(SubTask *task, RPCModuleData& data)
 {
-	bool ret = this->client_begin(task, data);
+	if (!this->client_begin(task, data))
+		return false;
 
 	for (RPCFilter *filter : this->filters)
-		ret = ret && filter->client_begin(task, data);
+	{
+		if (!filter->client_begin(task, data))
+			return false;
+	}
 
-	return ret;
+	return true;
 }
 
 bool RPCModule::server_task_begin(SubTask *task, RPCModuleData& data)
 {
-	bool ret = this->server_begin(task, data);
+	if (!this->server_begin(task, data))
+		return false;
 
 	for (RPCFilter *filter : this->filters)
-		ret = ret && filter->server_begin(task, data);
+	{
+		if (!filter->server_begin(task, data))
+			return false;
+	}
 
-	return ret;
+	return true;
 }
 
 bool RPCModule::client_task_end(SubTask *task, RPCModuleData& data)
 {
 	SubTask *filter_task;
-	bool ret = this->client_end(task, data);
+	if (!this->client_end(task, data))
+		return false;
 
 	for (RPCFilter *filter : this->filters)
 	{
-		if (filter->client_end(task, data))
-		{
-			filter_task = filter->create_filter_task(data);
-			series_of(task)->push_front(filter_task);
-		}
-		else
-			ret = false;
+		if (!filter->client_end(task, data))
+			return false;
+
+		filter_task = filter->create_filter_task(data);
+		series_of(task)->push_front(filter_task);
 	}
 
-	return ret;
+	return true;
 }
 
 bool RPCModule::server_task_end(SubTask *task, RPCModuleData& data)
 {
 	SubTask *filter_task;
-	bool ret = this->server_end(task, data);
+	if (!this->server_end(task, data))
+		return false;
 
 	for (RPCFilter *filter : this->filters)
 	{
-		if (filter->server_end(task, data))
-		{
-			filter_task = filter->create_filter_task(data);
-			series_of(task)->push_front(filter_task);
-		}
-		else
-			ret = false;
+		if (!filter->server_end(task, data))
+			return false;
+
+		filter_task = filter->create_filter_task(data);
+		series_of(task)->push_front(filter_task);
 	}
 
-	return ret;
+	return true;
 }
 
 SnowFlake::SnowFlake(int timestamp_bits, int group_bits, int machine_bits)
