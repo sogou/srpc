@@ -62,11 +62,8 @@ std::string HttpClientTask::get_uri_scheme() const
 	return "";
 }
 
-CommMessageOut *HttpClientTask::message_out()
+bool HttpClientTask::check_request()
 {
-	HttpRequest *req = this->get_req();
-	struct HttpMessageHeader header;
-	bool is_alive;
 	void *series_data = series_of(this)->get_specific(SRPC_MODULE_DATA);
 	RPCModuleData *data = (RPCModuleData *)series_data;
 
@@ -75,11 +72,25 @@ CommMessageOut *HttpClientTask::message_out()
 	data = this->mutable_module_data();
 
 	for (auto *module : modules_)
-		module->client_task_begin(this, *data);
+	{
+		if (!module->client_task_begin(this, *data))
+		{
+			this->state = WFT_STATE_TASK_ERROR;
+			this->error = RPCStatusModuleFilterFailed;
+			return false;
+		}
+	}
 
-	http_set_header_module_data(*data, req);
+	http_set_header_module_data(*data, this->get_req());
+	return true;
+}
 
-	// from ComplexHttpTask::message_out()
+CommMessageOut *HttpClientTask::message_out()
+{
+	HttpRequest *req = this->get_req();
+	struct HttpMessageHeader header;
+	bool is_alive;
+
 	if (!req->is_chunked() && !req->has_content_length_header())
 	{
 		size_t body_size = req->get_output_body_size();
@@ -397,7 +408,13 @@ void HttpServerTask::handle(int state, int error)
 		for (auto *module : this->modules_)
 		{
 			if (module)
-				module->server_task_begin(this, this->module_data_);
+			{
+				if (!module->server_task_begin(this, this->module_data_))
+				{
+					delete this;
+					return;
+				}
+			}
 		}
 
 		series->set_module_data(this->mutable_module_data());
@@ -412,9 +429,17 @@ void HttpServerTask::handle(int state, int error)
 
 		// prepare module_data from series to response
 		for (auto *module : modules_)
-			module->server_task_end(this, this->module_data_);
+		{
+			if (!module->server_task_end(this, this->module_data_))
+			{
+				this->noreply();
+				this->error = RPCStatusModuleFilterFailed;
+				break;
+			}
+		}
 
-		http_set_header_module_data(this->module_data_, this->get_resp());
+		if (this->error != RPCStatusModuleFilterFailed)
+			http_set_header_module_data(this->module_data_, this->get_resp());
 
 		this->subtask_done();
 	}

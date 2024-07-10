@@ -61,8 +61,14 @@ public:
 	}
 
 private:
-	virtual SubTask *create(RPCModuleData& data) = 0;
-	virtual bool filter(RPCModuleData& data) = 0;
+	virtual SubTask *create(RPCModuleData& data)
+	{
+		return WFTaskFactory::create_empty_task();
+	}
+	virtual bool filter(RPCModuleData& data)
+	{
+		return false;
+	}
 
 public:
 	RPCFilter(enum RPCModuleType module_type)

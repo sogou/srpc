@@ -60,6 +60,7 @@ public:
 */
 
 protected:
+	virtual bool check_request();
 	virtual CommMessageOut *message_out();
 	virtual CommMessageIn *message_in();
 	virtual int keep_alive_timeout();

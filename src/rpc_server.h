@@ -221,42 +221,54 @@ void RPCServer<RPCTYPE>::server_process(NETWORKTASK *task) const
 	auto *resp = task->get_resp();
 	int status_code;
 
-	if (!req->deserialize_meta())
-		status_code = RPCStatusMetaError;
-	else
+	do
 	{
+		if (!req->deserialize_meta())
+		{
+			status_code = RPCStatusMetaError;
+			break;
+		}
+
+		RPCTYPE::server_reply_init(req, resp);
+
+		auto *service = this->find_service(req->get_service_name());
+		if (!service)
+		{
+			status_code = RPCStatusServiceNotFound;
+			break;
+		}
+
+		auto *rpc = service->find_method(req->get_method_name());
+		if (!rpc)
+		{
+			status_code = RPCStatusMethodNotFound;
+			break;
+		}
+
+		status_code = req->decompress();
+		if (status_code != RPCStatusOK)
+			break;
+
 		auto *server_task = static_cast<TASK *>(task);
 		RPCModuleData *task_data = server_task->mutable_module_data();
 		req->get_meta_module_data(*task_data);
 
-		RPCTYPE::server_reply_init(req, resp);
-		auto *service = this->find_service(req->get_service_name());
-
-		if (!service)
-			status_code = RPCStatusServiceNotFound;
-		else
+		for (auto *module : this->modules)
 		{
-			auto *rpc = service->find_method(req->get_method_name());
-
-			if (!rpc)
-				status_code = RPCStatusMethodNotFound;
-			else
+			if (module && !module->server_task_begin(server_task, *task_data))
 			{
-				for (auto *module : this->modules)
-				{
-					if (module)
-						module->server_task_begin(server_task, *task_data);
-				}
-
-				status_code = req->decompress();
-				if (status_code == RPCStatusOK)
-					status_code = (*rpc)(server_task->worker);
+				status_code = RPCStatusModuleFilterFailed;
+				break;
 			}
 		}
 
+		if (status_code == RPCStatusOK)
+			status_code = (*rpc)(server_task->worker);
+
 		SERIES *series = static_cast<SERIES *>(series_of(task));
 		series->set_module_data(task_data);
-	}
+
+	} while (0);
 
 	resp->set_status_code(status_code);
 }

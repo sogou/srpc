@@ -118,6 +118,7 @@ enum RPCStatusCode
 	RPCStatusRespDeserializeError		=	20,
 	RPCStatusIDLSerializeNotSupported	=	21,
 	RPCStatusIDLDeserializeNotSupported	=	22,
+	RPCStatusModuleFilterFailed			=	23,
 
 	RPCStatusURIInvalid					=	30,
 	RPCStatusUpstreamFailed				=	31,
