@@ -463,7 +463,7 @@ int SRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 					ResolverInstance::get_resolver() :
 					util::NewTypeResolverForDescriptorPool(kTypePrefix, pool));
 
-		util::JsonOptions options;
+		util::JsonPrintOptions options;
 		options.add_whitespace = this->get_json_add_whitespace();
 		options.always_print_enums_as_ints = this->get_json_enums_as_ints();
 		options.preserve_proto_field_names = this->get_json_preserve_names();
@@ -506,8 +506,10 @@ int SRPCMessage::deserialize(ProtobufIDLMessage *pb_msg)
 					ResolverInstance::get_resolver() :
 					util::NewTypeResolverForDescriptorPool(kTypePrefix, pool));
 
-		if (JsonToBinaryStream(resolver, GetTypeUrl(pb_msg),
-							   &input_stream, &output_stream).ok())
+		util::JsonParseOptions options;
+		options.ignore_unknown_fields = true;
+		if (JsonToBinaryStream(resolver, GetTypeUrl(pb_msg), &input_stream,
+							   &output_stream, options).ok())
 		{
 			ret = pb_msg->ParseFromString(binary_output) ? 0 : -1;
 		}
