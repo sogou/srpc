@@ -872,7 +872,14 @@ void Json::string_convert(const char* str, std::string* out_str)
                 out_str->append("\\\\");
                 break;
             default:
-                out_str->push_back(*str);
+                if ((unsigned char)*str < 0x20)
+                {
+                    char buf[8];
+                    snprintf(buf, 8, "\\u00%02x", *str);
+                    out_str->append(buf);
+                }
+                else
+                    out_str->push_back(*str);
                 break;
         }
         str++;
@@ -960,9 +967,8 @@ void Json::object_convert_not_format(const json_object_t* obj,
             out_str->append(",");
         }
         n++;
-        out_str->append("\"");
-        out_str->append(name);
-        out_str->append("\":");
+        string_convert(name, out_str);
+        out_str->append(":");
         value_convert(val, 0, 0, out_str);
     }
     out_str->append("}");
