@@ -6,8 +6,6 @@ project(srpc_tutorial
 		LANGUAGES C CXX
 )
 
-###Options
-
 if (WIN32)
 	option(SRPC_TUTORIAL_BUILD_STATIC_RUNTIME "Use static runtime" ON)
 endif ()
@@ -73,16 +71,47 @@ else ()
 	set(SRPC_GEN_PROGRAM ${SRPC_BIN_DIR}/srpc_generator)
 endif ()
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS echo_pb.proto)
-protobuf_generate_cpp(HELLOWORLD_SRCS HELLOWORLD_HDRS helloworld.proto)
+### generating codes for echo_pb.proto
 
-add_custom_target(
-	TURORIAL_GEN ALL
-	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/echo_pb.proto  ${PROJECT_SOURCE_DIR}
-	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/echo_thrift.thrift ${PROJECT_SOURCE_DIR}
-	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/helloworld.proto ${PROJECT_SOURCE_DIR}
-	COMMENT "srpc generator..."
+set(PROTO_FILE "echo_pb.proto")
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILE})
+add_custom_target(ECHO_PB_CHANGED DEPENDS ${PROTO_SRCS} ${PROTO_HDRS})
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/${PROTO_FILE} ${PROJECT_SOURCE_DIR}
+	COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak
+	DEPENDS ${PROJECT_SOURCE_DIR}/${PROTO_FILE}
+	COMMENT "srpc generator for ${PROTO_FILE}"
 )
+add_custom_target(ECHO_PB_GENERATED DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak)
+add_dependencies(ECHO_PB_GENERATED ECHO_PB_CHANGED)
+
+### generating codes for echo_thrift.thrift
+
+set(PROTO_FILE "echo_thrift.thrift")
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak
+	COMMAND ${SRPC_GEN_PROGRAM} ${PROJECT_SOURCE_DIR}/${PROTO_FILE} ${PROJECT_SOURCE_DIR}
+	COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak
+	DEPENDS ${PROJECT_SOURCE_DIR}/${PROTO_FILE}
+	COMMENT "srpc generator for ${PROTO_FILE}"
+)
+add_custom_target(THRIFT_GENERATED DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak)
+
+### generating codes for helloworld.proto
+
+set(PROTO_FILE "helloworld.proto")
+protobuf_generate_cpp(HELLOWORLD_SRCS HELLOWORLD_HDRS ${PROTO_FILE})
+add_custom_target(HELLOWORLD_CHANGED DEPENDS ${HELLOWORLD_SRCS} ${HELLOWORLD_HDRS})
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak
+	COMMAND ${SRPC_GEN_PROGRAM} protobuf ${PROJECT_SOURCE_DIR}/${PROTO_FILE} ${PROJECT_SOURCE_DIR}
+	COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak
+	DEPENDS ${PROJECT_SOURCE_DIR}/${PROTO_FILE}
+	COMMENT "srpc generator for ${PROTO_FILE}"
+)
+add_custom_target(HELLOWORLD_GENERATED DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_FILE}.bak)
+add_dependencies(HELLOWORLD_GENERATED HELLOWORLD_CHANGED)
 
 if (WIN32)
 	if (SRPC_TUTORIAL_BUILD_STATIC_RUNTIME)
@@ -109,18 +138,6 @@ else ()
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -fPIC -pipe -std=gnu90")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++11 -fno-exceptions")
 endif ()
-
-set(TUTORIAL_PB_LIST
-	tutorial-01-srpc_pb_server
-	tutorial-02-srpc_pb_client
-	tutorial-05-brpc_pb_server
-	tutorial-06-brpc_pb_client
-	tutorial-09-client_task
-	tutorial-10-server_async
-	tutorial-15-srpc_pb_proxy
-	tutorial-16-server_with_metrics
-	tutorial-19-custom_filter
-)
 
 if (APPLE)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ${CMAKE_FIND_LIBRARY_SUFFIXES})
@@ -163,12 +180,24 @@ else ()
 		)
 endif ()
 
+set(TUTORIAL_PB_LIST
+	tutorial-01-srpc_pb_server
+	tutorial-02-srpc_pb_client
+	tutorial-05-brpc_pb_server
+	tutorial-06-brpc_pb_client
+	tutorial-09-client_task
+	tutorial-10-server_async
+	tutorial-15-srpc_pb_proxy
+	tutorial-16-server_with_metrics
+	tutorial-19-custom_filter
+)
+
 foreach(src ${TUTORIAL_PB_LIST})
 	string(REPLACE "-" ";" arr ${src})
 	list(GET arr -1 bin_name)
 	add_executable(${bin_name} ${src}.cc ${PROTO_SRCS} ${PROTO_HDRS})
 	target_link_libraries(${bin_name} ${SRPC_LIB})
-	add_dependencies(${bin_name} TURORIAL_GEN)
+	add_dependencies(${bin_name} ECHO_PB_GENERATED)
 endforeach()
 
 set(TUTORIAL_THRIFT_LIST
@@ -183,7 +212,7 @@ foreach(src ${TUTORIAL_THRIFT_LIST})
 	list(GET arr -1 bin_name)
 	add_executable(${bin_name} ${src}.cc)
 	target_link_libraries(${bin_name} ${SRPC_LIB})
-	add_dependencies(${bin_name} TURORIAL_GEN)
+	add_dependencies(${bin_name} THRIFT_GENERATED)
 endforeach()
 
 set(TUTORIAL_HELLOWORLD_LIST
@@ -198,7 +227,7 @@ foreach(src ${TUTORIAL_HELLOWORLD_LIST})
 	list(GET arr -1 bin_name)
 	add_executable(${bin_name} ${src}.cc ${HELLOWORLD_SRCS} ${HELLOWORLD_HDRS})
 	target_link_libraries(${bin_name} ${SRPC_LIB})
-	add_dependencies(${bin_name} TURORIAL_GEN)
+	add_dependencies(${bin_name} HELLOWORLD_GENERATED)
 endforeach()
 
 if (NOT WIN32)
@@ -212,7 +241,14 @@ if (NOT WIN32)
 		list(GET arr -1 bin_name)
 		add_executable(${bin_name} ${src}.cc)
 		target_link_libraries(${bin_name} ${SRPC_LIB})
-		add_dependencies(${bin_name} TURORIAL_GEN)
+		add_dependencies(${bin_name} ECHO_PB_GENERATED)
 	endforeach()
 endif ()
+
+set_property(DIRECTORY APPEND PROPERTY
+	ADDITIONAL_MAKE_CLEAN_FILES
+	${CMAKE_CURRENT_BINARY_DIR}/echo_pb.proto.bak
+	${CMAKE_CURRENT_BINARY_DIR}/echo_thrift.proto.bak
+	${CMAKE_CURRENT_BINARY_DIR}/helloworld.proto.bak
+)
 
