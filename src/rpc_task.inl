@@ -130,7 +130,9 @@ public:
 	void set_json_add_whitespace(bool on);
 	void set_json_always_print_enums_as_ints(bool on);
 	void set_json_preserve_proto_field_names(bool on);
+	// deprecated : Please use set_json_always_print_fields_with_no_presence()
 	void set_json_always_print_primitive_fields(bool on);
+	void set_json_always_print_fields_with_no_presence(bool on);
 
 protected:
 	using user_done_t = std::function<int (int, RPCWorker&)>;
@@ -694,7 +696,13 @@ inline void RPCClientTask<RPCREQ, RPCRESP>::set_json_preserve_proto_field_names(
 template<class RPCREQ, class RPCRESP>
 inline void RPCClientTask<RPCREQ, RPCRESP>::set_json_always_print_primitive_fields(bool on)
 {
-	this->req.set_json_print_primitive(on);
+	this->req.set_json_fields_no_presence(on);
+}
+
+template<class RPCREQ, class RPCRESP>
+inline void RPCClientTask<RPCREQ, RPCRESP>::set_json_always_print_fields_with_no_presence(bool on)
+{
+	this->req.set_json_fields_no_presence(on);
 }
 
 template<class RPCREQ, class RPCRESP>

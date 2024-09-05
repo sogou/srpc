@@ -183,7 +183,7 @@ public:
     {
         resp->set_message("Hi back");
         resp->set_error(0); // 0是error类型int32在proto3中的默认值
-        ctx->set_json_always_print_primitive_fields(true); // 带上所有原始域
+        ctx->set_json_always_print_fields_with_no_presence(true); // 带上所有原始域
         ctx->set_json_add_whitespace(true); // 增加json格式的空格
     }
 };

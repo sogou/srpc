@@ -185,7 +185,7 @@ public:
     {
         resp->set_message("Hi back");
         resp->set_error(0); // the type of error is int32 and 0 is the default value of int32
-        ctx->set_json_always_print_primitive_fields(true); // with all primitive fields
+        ctx->set_json_always_print_fields_with_no_presence(true); // all fields with no precense
         ctx->set_json_add_whitespace(true); // add spaces, line breaks and indentation 
     }
 };
