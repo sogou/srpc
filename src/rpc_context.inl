@@ -261,10 +261,10 @@ public:
 			task_->get_resp()->set_json_preserve_names(on);
 	}
 
-	void set_json_always_print_primitive_fields(bool on) override
+	void set_json_always_print_fields_with_no_presence(bool on) override
 	{
 		if (this->is_server_task())
-			task_->get_resp()->set_json_print_primitive(on);
+			task_->get_resp()->set_json_fields_no_presence(on);
 	}
 
 	//void noreply() override;

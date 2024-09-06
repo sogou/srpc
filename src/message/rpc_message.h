@@ -106,8 +106,8 @@ public:
 	virtual bool get_json_enums_as_ints() const;
 	virtual void set_json_preserve_names(bool on);
 	virtual bool get_json_preserve_names() const;
-	virtual void set_json_print_primitive(bool on);
-	virtual bool get_json_print_primitive() const;
+	virtual void set_json_fields_no_presence(bool on);
+	virtual bool get_json_fields_no_presence() const;
 
 public:
 	//pb
@@ -182,17 +182,17 @@ inline bool RPCMessage::get_json_preserve_names() const
 	return this->flags & SRPC_JSON_OPTION_PRESERVE_NAMES;
 }
 
-inline void RPCMessage::set_json_print_primitive(bool on)
+inline void RPCMessage::set_json_fields_no_presence(bool on)
 {
 	if (on)
-		this->flags |= SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+		this->flags |= SRPC_JSON_OPTION_FIELDS_NO_PRECENCE;
 	else
-		this->flags &= ~SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+		this->flags &= ~SRPC_JSON_OPTION_FIELDS_NO_PRECENCE;
 }
 
-inline bool RPCMessage::get_json_print_primitive() const
+inline bool RPCMessage::get_json_fields_no_presence() const
 {
-	return this->flags & SRPC_JSON_OPTION_PRINT_PRIMITIVE;
+	return this->flags & SRPC_JSON_OPTION_FIELDS_NO_PRECENCE;
 }
 
 } // namespace srpc
