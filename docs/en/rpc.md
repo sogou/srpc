@@ -360,9 +360,9 @@ For Server only. For JsonPrintOptions, whether to always print enums as ints.
 
 For Server only. For JsonPrintOptions, whether to preserve proto field names.
 
-#### `void set_json_always_print_primitive_fields(bool flag);`
+#### `void set_json_always_print_fields_with_no_presence(bool flag);`
 
-For Server only. For JsonPrintOptions, whether to always print primitive fields.
+For Server only. For JsonPrintOptions, whether to always print fields with no presence.
 
 ## RPC Options
 

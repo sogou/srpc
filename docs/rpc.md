@@ -297,22 +297,22 @@ Server专用。如果通讯使用HTTP协议，可以在回复中设置HTTP heade
 #### ``bool add_http_header(const std::string& name, const std::string& value);``    
 Server专用。如果通讯使用HTTP协议，可以在回复中添加HTTP header，如果有重复name，会保留多个value。
 
-#### ``void log(const RPCLogVector& fields);``    
+#### ``void log(const RPCLogVector& fields);``
 Server专用。透传数据相关，请参考OpenTelemetry数据协议中的log语义。
 
-#### ``void baggage(const std::string& key, const std::string& value);``    
+#### ``void baggage(const std::string& key, const std::string& value);``
 Server专用。透传数据相关，参考OpenTelemetry数据协议中的baggage语义。
 
-#### ``void set_json_add_whitespace(bool on);``    
+#### ``void set_json_add_whitespace(bool on);``
 Server专用。JsonPrintOptions相关，可设置增加json空格等。
 
-#### ``void set_json_always_print_enums_as_ints(bool flag);``    
+#### ``void set_json_always_print_enums_as_ints(bool flag);``
 Server专用。JsonPrintOptions相关，可设置用int打印enum名。
 
-#### ``void set_json_preserve_proto_field_names(bool flag);``    
+#### ``void set_json_preserve_proto_field_names(bool flag);``
 Server专用。JsonPrintOptions相关，可设置保留原始字段名字。
 
-#### ``void set_json_always_print_primitive_fields(bool flag);``    
+#### ``void set_json_always_print_fields_with_no_presence(bool flag);``
 Server专用。JsonPrintOptions相关，可设置带上所有默认的proto数据中的域。
 
 ## RPC Options

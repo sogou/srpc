@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <vector>
 #include <string>
+#include <google/protobuf/stubs/common.h>
 #include <google/protobuf/util/json_util.h>
 #include <google/protobuf/util/type_resolver_util.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
@@ -912,7 +913,11 @@ int TRPCMessage::serialize(const ProtobufIDLMessage *pb_msg)
 		options.add_whitespace = this->get_json_add_whitespace();
 		options.always_print_enums_as_ints = this->get_json_enums_as_ints();
 		options.preserve_proto_field_names = this->get_json_preserve_names();
-		options.always_print_primitive_fields = this->get_json_print_primitive();
+#if GOOGLE_PROTOBUF_VERSION >= 5026000
+		options.always_print_fields_with_no_presence = this->get_json_fields_no_presence();
+#else
+		options.always_print_primitive_fields = this->get_json_fields_no_presence();
+#endif
 
 		ret = BinaryToJsonStream(resolver, GetTypeUrl(pb_msg), &input_stream,
 								 &output_stream, options).ok() ? 0 : -1;
