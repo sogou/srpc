@@ -402,8 +402,6 @@ void HttpServerTask::handle(int state, int error)
 		this->target = this->get_target();
 
 		// fill module data from request to series
-		ModuleSeries *series = new ModuleSeries(this);
-
 		http_get_header_module_data(req, this->module_data_);
 		for (auto *module : this->modules_)
 		{
@@ -416,6 +414,8 @@ void HttpServerTask::handle(int state, int error)
 				}
 			}
 		}
+
+		ModuleSeries *series = new ModuleSeries(this);
 
 		series->set_module_data(this->mutable_module_data());
 		series->start();
