@@ -998,9 +998,8 @@ void Json::object_convert(const json_object_t* obj, int spaces, int depth,
         {
             out_str->append(padding);
         }
-        out_str->append("\"");
-        out_str->append(name);
-        out_str->append("\": ");
+        string_convert(name, out_str);
+        out_str->append(": ");
         value_convert(val, spaces, depth + 1, out_str);
     }
 
