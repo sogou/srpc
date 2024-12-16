@@ -415,7 +415,7 @@ static std::string ctl_client_load_params_format = R"(
 	params.callee_timeout = config.client_callee_timeout();
 	params.caller = config.client_caller();
 
-	params.task_params.retry_max = config.client_retry_max();
+	params.task_params.retry_max = config.retry_max();
 )";
 
 static std::string ctl_client_main_params_format = R"(

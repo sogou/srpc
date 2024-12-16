@@ -59,7 +59,7 @@ public:
 
 public:
     RPCConfig() :
-        s_port(0), c_port(0), c_is_ssl(false), c_redirect_max(0), c_retry_max(0)
+        s_port(0), c_transport_type(TT_TCP), c_port(0), c_is_ssl(false), c_redirect_max(0), c_retry_max(0)
     { }
     ~RPCConfig();
 
