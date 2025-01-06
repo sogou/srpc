@@ -62,12 +62,3 @@ jobs:
           } > podmanfile
           podman build --tag fedorarawhide -f ./podmanfile
 
-  ubuntu-bazel:
-    name: bazel
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@master
-    - name: bazel build
-      run: bazel build ...
-
