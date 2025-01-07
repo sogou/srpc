@@ -154,6 +154,8 @@ public:
 						   const RPCLogVector& fields);
 	static bool addr_to_string(const struct sockaddr *addr, char *ip_str,
 							   socklen_t len, unsigned short *port);
+	static bool json_to_map(const std::string& json_str,
+							std::map<std::string, std::string>& kv_map);
 };
 
 static inline long long GET_CURRENT_MS()
