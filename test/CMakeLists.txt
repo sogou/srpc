@@ -68,14 +68,14 @@ else ()
 	find_package(GTest REQUIRED)
 endif ()
 
-set(CXX_STD "c++14")
+set(CMAKE_CXX_STANDARD 14)
 
 if (WIN32)
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   /MP /wd4200")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /wd4200 /Zc:__cplusplus /std:c++14")
 else ()
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -fPIC -pipe -std=gnu90")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=${CXX_STD} -fno-exceptions")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -fno-exceptions")
 endif ()
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS test_pb.proto)
