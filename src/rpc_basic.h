@@ -177,14 +177,16 @@ static inline unsigned long long GET_CURRENT_NS()
 static inline void TRACE_ID_BIN_TO_HEX(const uint64_t trace_id[2],
 									   char hex[SRPC_TRACEID_SIZE * 2 + 1])
 {
-	sprintf(hex, "%016llx%016llx", (unsigned long long)ntohll(trace_id[0]),
-								   (unsigned long long)ntohll(trace_id[1]));
+	snprintf(hex, SRPC_TRACEID_SIZE * 2 + 1, "%016llx%016llx",
+			 (unsigned long long)ntohll(trace_id[0]),
+			 (unsigned long long)ntohll(trace_id[1]));
 }
 
 static inline void SPAN_ID_BIN_TO_HEX(const uint64_t span_id[1],
 									  char hex[SRPC_SPANID_SIZE * 2 + 1])
 {
-	sprintf(hex, "%016llx", (unsigned long long)ntohll(span_id[0]));
+	snprintf(hex, SRPC_SPANID_SIZE * 2 + 1, "%016llx",
+			 (unsigned long long)ntohll(span_id[0]));
 }
 
 static inline void TRACE_ID_HEX_TO_BIN(const char hex[SRPC_TRACEID_SIZE * 2 + 1],
