@@ -62,3 +62,19 @@ jobs:
           } > podmanfile
           podman build --tag fedorarawhide -f ./podmanfile
 
+  ubuntu-bazel:
+    name: bazel
+    runs-on: ubuntu-latest
+
+     steps:
+     - uses: actions/checkout@master
+     - name: Install Bazel 5.4.0
+       run: |
+         sudo apt-get update
+         sudo apt-get install -y apt-transport-https curl gnupg
+         curl -LO "https://releases.bazel.build/5.4.0/release/bazel-5.4.0-linux-x86_64"
+         chmod +x bazel-5.4.0-linux-x86_64
+         sudo mv bazel-5.4.0-linux-x86_64 /usr/local/bin/bazel
+     - name: bazel build
+       run: bazel build ...
+
