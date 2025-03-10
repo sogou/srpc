@@ -849,8 +849,11 @@ bool SRPCHttpRequest::serialize_meta()
 
 	set_http_version("HTTP/1.1");
 	set_method("POST");
-	set_request_uri("/" + meta->mutable_request()->service_name() +
-					"/" + meta->mutable_request()->method_name());
+	if (!get_request_uri())
+	{
+		set_request_uri("/" + meta->mutable_request()->service_name() +
+						"/" + meta->mutable_request()->method_name());
+	}
 
 	//set header
 	set_header_pair(SRPCHttpHeaders.DataType,

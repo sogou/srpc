@@ -190,6 +190,7 @@ set(TUTORIAL_PB_LIST
 	tutorial-15-srpc_pb_proxy
 	tutorial-16-server_with_metrics
 	tutorial-19-custom_filter
+	tutorial-20-trans_coding
 )
 
 foreach(src ${TUTORIAL_PB_LIST})
