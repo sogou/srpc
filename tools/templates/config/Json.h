@@ -180,7 +180,7 @@ public:
         return node_ != nullptr;
     }
 
-    int size() const;
+    size_t size() const;
 
     bool empty() const;
 
