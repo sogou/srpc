@@ -144,7 +144,7 @@ int main()
 
 #### 5\. make
 
-These compile commands are only for Linux system. On other system, complete cmake in [tutorial](/tutorial) is recommanded.
+These compile commands are only for Linux system. On other system, complete cmake in [tutorial](/tutorial) is recommended.
 
 ~~~sh
 g++ -o server server.cc example.pb.cc -std=c++11 -lsrpc
@@ -276,7 +276,7 @@ Duration = 20s
 Server = 1
 ServerIOThread = 16
 ServerHandlerThread = 16
-Outiler = 1%
+Outlier = 1%
 ~~~
 
 ![IMG](/docs/images/benchmark5.png)
@@ -292,7 +292,7 @@ Duration = 20s
 Server = 1
 ServerIOThread = 16
 ServerHandlerThread = 16
-Outiler = 1%
+Outlier = 1%
 ~~~
 
 ![IMG](/docs/images/benchmark6.png)
