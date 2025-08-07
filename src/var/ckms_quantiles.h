@@ -81,7 +81,8 @@ CKMSQuantiles<TYPE>::Item::Item(TYPE val, int lower_del, int del)
 
 template<typename TYPE>
 CKMSQuantiles<TYPE>::CKMSQuantiles(const std::vector<Quantile> *q) :
-	quantiles(q)
+	quantiles(q),
+	buffer()
 {
 	this->count = 0;
 	this->sum = 0;
