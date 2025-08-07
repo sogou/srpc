@@ -344,7 +344,7 @@ private:
 
 static inline std::string GetTypeUrl(const ProtobufIDLMessage *pb_msg)
 {
-	return std::string(kTypePrefix) + "/" + pb_msg->GetDescriptor()->full_name();
+	return std::string(kTypePrefix) + "/" + std::string(pb_msg->GetDescriptor()->full_name());
 }
 
 TRPCMessage::TRPCMessage()
