@@ -84,6 +84,22 @@ bool Generator::generate(struct GeneratorParams& params)
 		return false;
 	}
 
+	bool include_service_define = false;
+	for (auto& include_info : this->info.include_list)
+	{
+		if (!include_info.desc_list.empty())
+		{
+			include_service_define = true;
+			break;
+		}
+	}
+
+	if (this->info.desc_list.empty() && !include_service_define)
+	{
+		fprintf(stdout, "[Generator Error] No 'service' definition.\n");
+		return false;
+	}
+
 	if (this->generate_header(this->info, params) == false)
 	{
 		fprintf(stderr, "[Generator Error] generate failed.\n");
