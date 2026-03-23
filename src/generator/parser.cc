@@ -191,7 +191,7 @@ bool Parser::parse(const std::string& proto_file, idl_info& info)
 		if ((state & PARSER_ST_BLOCK_MASK) == PARSER_ST_INSIDE_BLOCK)
 		{
 			if (flag_append == true)
-				block.append(line);
+				block.append(line); // block.append(line + "\n");
 
 			if (this->check_block_begin(line) == true)
 				++stack_count;
@@ -758,11 +758,31 @@ bool Parser::parse_rpc_param_thrift(const std::string& file_name_prefix,
 			  continue;
 
 			auto typevar = parse_thrift_variable(filedparam[1], ' ');
-			if (typevar.size() != 2)
+
+			if (typevar.size() == 3) // for optional/required in thrift2
+			{
+				std::string qualifier = SGenUtil::strip(typevar[0]);
+				if (qualifier == "optional")
+				{
+					param.required_state = srpc::THRIFT_STRUCT_FIELD_OPTIONAL;
+					typevar.erase(typevar.begin());
+				}
+				else if (qualifier == "required")
+				{
+					param.required_state = srpc::THRIFT_STRUCT_FIELD_REQUIRED;
+					typevar.erase(typevar.begin());
+				}
+				else
+					continue; // error
+			}
+			else if (typevar.size() == 2)
+			{
+				param.required_state = srpc::THRIFT_STRUCT_FIELD_REQUIRED;
+			}
+			else
 				continue;
 
 			param.var_name = typevar[1];
-			param.required_state = srpc::THRIFT_STRUCT_FIELD_REQUIRED;
 			param.field_id = atoi(SGenUtil::strip(filedparam[0]).c_str());
 			idl_type = SGenUtil::strip(typevar[0]);
 			fill_rpc_param_type(file_name_prefix, idl_type, param, info);
