@@ -441,8 +441,15 @@ int TRPCMessage::append(const void *buf, size_t *size, size_t size_limit)
 			sp = (uint16_t *)this->header + 4;
 			this->meta_len = ntohs(*sp);
 
-			this->message_len = buf_len - TRPC_HEADER_SIZE - this->meta_len;
+			if (buf_len < TRPC_HEADER_SIZE ||
+				this->meta_len > buf_len - TRPC_HEADER_SIZE)
+			{
+				errno = EBADMSG;
+				return -1;
+			}
+
 			buf_len -= TRPC_HEADER_SIZE;
+			this->message_len = buf_len - this->meta_len;
 
 			if (buf_len >= size_limit)
 			{

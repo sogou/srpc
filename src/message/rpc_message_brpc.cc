@@ -118,6 +118,12 @@ int BRPCMessage::append(const void *buf, size_t *size, size_t size_limit)
 			buf_len = ntohl(*p); // payload_len
 			p = (uint32_t *)this->header + 2;
 			this->meta_len = ntohl(*p);
+			if (this->meta_len > buf_len)
+			{
+				errno = EBADMSG;
+				return -1;
+			}
+
 			this->message_len = buf_len - this->meta_len; // msg_len + attachment_len
 
 			if (buf_len >= size_limit)
