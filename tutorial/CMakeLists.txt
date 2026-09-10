@@ -136,7 +136,7 @@ if (WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /wd4200 /Zc:__cplusplus /std:c++14")
 else ()
 	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -fPIC -pipe -std=gnu90")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++14 -fno-exceptions")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -pipe -std=c++17 -fno-exceptions")
 endif ()
 
 if (APPLE)
@@ -251,4 +251,3 @@ set_property(DIRECTORY APPEND PROPERTY
 	${CMAKE_CURRENT_BINARY_DIR}/echo_thrift.proto.bak
 	${CMAKE_CURRENT_BINARY_DIR}/helloworld.proto.bak
 )
-
