@@ -63,7 +63,7 @@ public:
 	size_t size() const { return size_; }
 
 	/**
-	 * @brief      Cut current buffer at absolutely offset. Current buffer keeps
+	 * @brief      Cut current buffer at absolute offset. Current buffer keeps
 	 * 				the first part and gives the second part to the out buffer.
 	 * @param[in]  offset           where to cut
 	 * @param[in]  out              points to out buffer
@@ -77,7 +77,7 @@ public:
 	 * @brief      For write. Add one buffer allocated by RPCBuffer
 	 * @param[in,out]  buf          a pointer to a buffer
 	 * @param[in,out]  size         points to the expect size of buffer, return actual size
-	 * @return     false if OOM, or your will get a buffer actual size <=expect-size
+	 * @return     false if OOM, or you will get a buffer actual size <=expect-size
 	 * @note       Ownership of this buffer remains with the stream
 	 */
 	bool acquire(void **buf, size_t *size);
@@ -96,10 +96,10 @@ public:
 	 * @param[in]  buflen           consistent-hash functional
 	 * @param[in]  mode             BUFFER_MODE_XXX
 	 * @return     false if OOM
-	 * @note       BUFFER_MODE_NOCOPY      mean in deconstructor ignore this buffer
+	 * @note       BUFFER_MODE_NOCOPY      mean in destructor ignore this buffer
 	 * @note       BUFFER_MODE_COPY        mean memcpy this buffer right here at once
-	 * @note       BUFFER_MODE_GIFT_NEW    mean in deconstructor delete this buffer
-	 * @note       BUFFER_MODE_GIFT_MALLOC mean in deconstructor free this buffer
+	 * @note       BUFFER_MODE_GIFT_NEW    mean in destructor delete this buffer
+	 * @note       BUFFER_MODE_GIFT_MALLOC mean in destructor free this buffer
 	 */
 	bool append(void *buf, size_t buflen, int mode);
 	bool append(const void *buf, size_t buflen, int mode);
@@ -134,7 +134,7 @@ public:
 	/**
 	 * @brief      merge all buffer into one piece
 	 * @param[out] iov              pointer and length of result
-	 * @return     suceess or OOM
+	 * @return     success or OOM
 	 * @retval     0                success
 	 * @retval     -1               OOM
 	 */
@@ -155,10 +155,10 @@ public:
 	size_t peek(const void **buf);
 
 	/**
-	 * @brief      For read. Get one buffer by except size, move offset
+	 * @brief      For read. Get one buffer by expected size, move offset
 	 * @param[in,out]  buf          a pointer to a buffer
-	 * @param[in,out]  size         except buffer size, and return actual size
-	 * @return     false if OOM, or your will get a buffer actual size <=expect-size
+	 * @param[in,out]  size         expected buffer size, and return actual size
+	 * @return     false if OOM, or you will get a buffer actual size <=expect-size
 	 */
 	bool fetch(const void **buf, size_t *size);
 
@@ -172,14 +172,14 @@ public:
 	/**
 	 * @brief      For read. Fill one buffer with memcpy, move offset
 	 * @param[in]  buf              buffer wait to fill
-	 * @param[in]  buflen           except buffer size
+	 * @param[in]  buflen           expected buffer size
 	 * @return     true if fill buffer exactly bytes, false if no more data to read
 	 */
 	bool read(void *buf, size_t buflen);
 
 	/**
 	 * @brief      For read. move offset, positive mean skip, negative mean backward
-	 * @param[in]  offset           except move offset
+	 * @param[in]  offset           expected move offset
 	 * @return     actual move offset
 	 * @note       If offset=0, do nothing at all
 	 */
