@@ -118,7 +118,7 @@ private:
 
 		void collect_histogram_begin(RPCVar *histogram) override { }
 		void collect_histogram_each(RPCVar *histogram,
-									double bucket_boudary,
+									double bucket_boundary,
 									size_t current_count) override;
 		void collect_histogram_end(RPCVar *histogram, double sum,
 								   size_t count) override;
@@ -233,7 +233,7 @@ private:
 
 		void collect_counter_each(const std::string &label, double data,
 								  google::protobuf::Message *msg);
-		void collect_histogram_each(double bucket_boudary,
+		void collect_histogram_each(double bucket_boundary,
 									size_t current_count,
 									google::protobuf::Message *msg);
 		void collect_summary_each(double quantile, double quantile_out,
@@ -245,7 +245,7 @@ private:
 								  double data) override {}
 
 		void collect_histogram_begin(RPCVar *histogram) override {}
-		void collect_histogram_each(RPCVar *histogram, double bucket_boudary,
+		void collect_histogram_each(RPCVar *histogram, double bucket_boundary,
 									size_t current_count) override {}
 		void collect_histogram_end(RPCVar *histogram, double sum,
 								   size_t count) override{}

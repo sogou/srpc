@@ -162,7 +162,7 @@ public:
 
 	virtual void collect_histogram_begin(RPCVar *histogram) = 0;
 	virtual void collect_histogram_each(RPCVar *histogram,
-										double bucket_boudary,
+										double bucket_boundary,
 										size_t current_count) = 0;
 	virtual void collect_histogram_end(RPCVar *histogram, double sum,
 									   size_t count) = 0;
