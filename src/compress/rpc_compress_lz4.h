@@ -237,8 +237,11 @@ static int LZ4DecompressIOVec(RPCBuffer *src, RPCBuffer *dst)
 			in_len = in_len - consumed_len;
 			in_buf = (const char *)in_buf + consumed_len;
 			first_chunk = false;
-		} else {
-			in_len = src->fetch(&in_buf);
+		} else if ((in_len = src->fetch(&in_buf)) == 0) {
+			// No more input, but the frame is not finished yet. The data is
+			// a truncated LZ4 frame, otherwise this loop would never end.
+			LZ4F_freeDecompressionContext(dctx);
+			return -1;
 		}
 
 		out_len = in_len;
